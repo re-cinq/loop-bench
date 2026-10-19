@@ -33,17 +33,21 @@ export function cellsOf(loops: readonly LoopRecord[]): CellSummary[] {
   return [...byKey.values()].sort(compareCells);
 }
 
-function compareCells(a: CellSummary, b: CellSummary): number {
-  return a.ticket - b.ticket || a.station.localeCompare(b.station) || score(b) - score(a) || a.agent.localeCompare(b.agent);
+/** Ticket, then station, then model name, then context and prompt: the same model's rows sit together. */
+function compareRows(a: RowKey, b: RowKey): number {
+  return a.ticket - b.ticket || a.station.localeCompare(b.station) || a.agent.localeCompare(b.agent) || a.context.localeCompare(b.context) || a.prompt.localeCompare(b.prompt);
 }
 
-/** The sort score: green share first, then judge mean, then cheaper. */
-function score(cell: CellSummary): number {
-  const green = cell.loops.filter((loop) => loop.reached_green).length / cell.loops.length;
-  const judge = spreadOf(cell.loops.flatMap((loop) => (loop.judge ? [loop.judge.correctness + loop.judge.completeness_vs_ticket] : [])))?.mean ?? 0;
-  const cost = spreadOf(cell.loops.map((loop) => loop.total_cost_usd))?.mean ?? 0;
+interface RowKey {
+  ticket: number;
+  station: string;
+  agent: string;
+  context: string;
+  prompt: string;
+}
 
-  return green * 100 + judge * 5 - cost;
+function compareCells(a: CellSummary, b: CellSummary): number {
+  return compareRows(a, b);
 }
 
 const money = (value: number): string => `$${value.toFixed(2)}`;
@@ -67,13 +71,13 @@ export function renderResultsTable(cells: readonly CellSummary[], pending: reado
     "| Ticket | Station varied | Agent | Effort | Context | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |",
     "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
-  const rows = cells.map((cell) => {
+  const rows = cells.map((cell): RowKey & { line: string } => {
     const loops = cell.loops;
     const judged = loops.flatMap((loop) => (loop.judge ? [loop.judge] : []));
     const dod = loops.flatMap((loop) => (loop.dod_check ? [loop.dod_check] : []));
     const structural = loops.flatMap((loop) => (loop.structural ? [loop.structural] : []));
 
-    return `| ${[
+    return { ...cell, line: `| ${[
       `#${cell.ticket}`,
       cell.station,
       `\`${cell.agent}\``,
@@ -91,18 +95,19 @@ export function renderResultsTable(cells: readonly CellSummary[], pending: reado
       dod.length === 0 ? "—" : `${dod.filter((check) => check.red_on_base && check.green_with_reference).length}/${dod.length}`,
       formatSpread(spreadOf(structural.map((item) => item.files)), count) + (structural.length ? ` (${formatSpread(spreadOf(structural.map((item) => item.jaccard_files)), (value) => value.toFixed(2))})` : ""),
       structural.length ? `+${count(spreadOf(structural.map((item) => item.additions))?.mean ?? 0)}/−${count(spreadOf(structural.map((item) => item.deletions))?.mean ?? 0)}` : "—",
-    ].join(" | ")} |`;
+    ].join(" | ")} |` };
   });
 
-  const pendingRows = pending.map(
-    (cell) => `| #${cell.ticket} | ${cell.station} | \`${cell.agent}\` | ${cell.effort} | ${cell.context} | ${cell.prompt} | 0 | ${cell.status} | — | — | — | — | — | — | — | — | — |`,
-  );
+  const pendingRows = pending.map((cell) => ({
+    ...cell,
+    line: `| #${cell.ticket} | ${cell.station} | \`${cell.agent}\` | ${cell.effort} | ${cell.context} | ${cell.prompt} | 0 | ${cell.status} | — | — | — | — | — | — | — | — | — |`,
+  }));
 
-  return [...header, ...rows, ...pendingRows].join("\n");
+  return [...header, ...[...rows, ...pendingRows].sort(compareRows).map((row) => row.line)].join("\n");
 }
 
 export function renderEndReasons(cells: readonly CellSummary[]): string {
-  const rows = cells.map((cell) => {
+  const rows = cells.map((cell): RowKey & { line: string } => {
     const reasons = new Map<string, number>();
 
     for (const loop of cell.loops) {
@@ -128,7 +133,7 @@ The implementation loop's stations (\`dod\`, \`tdd-round\`, \`repair-build\`) ea
 
 ## Results
 
-Each row is one cell: one station varied against the production baseline, every other station at baseline. Cells of the same ticket, station and context that have not finished a loop yet are listed last, as running or not run yet. Values are the mean over the cell's runs, with min–max and standard deviation in parentheses.
+Each row is one cell: one station varied against the production baseline, every other station at baseline. Rows are sorted by model name; cells that have not finished a loop yet show as running or not run yet. Values are the mean over the cell's runs, with min–max and standard deviation in parentheses.
 
 ${renderResultsTable(cells, input.pending)}
 
