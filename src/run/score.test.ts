@@ -44,3 +44,11 @@ describe("withoutTools", () => {
     expect(withoutTools("gemini", ["--prompt", "p", "--yolo", "--policy", "/h/p.toml", "--skip-trust"])).toEqual(["--prompt", "p", "--skip-trust"]);
   });
 });
+
+import { isTestSupport } from "./score.js";
+
+describe("isTestSupport", () => {
+  it("orchestratorTestSupport.ts and a.test.ts are support, chatOrchestrator.ts and spec.md are not", () => {
+    expect(["src/orchestration/orchestratorTestSupport.ts", "src/a.test.ts", "src/orchestration/chatOrchestrator.ts", "specs/x/spec.md"].map(isTestSupport)).toEqual([true, true, false, false]);
+  });
+});

@@ -1,4 +1,5 @@
 // Scoring a finished loop: the deterministic dod check, and the judge's verdict on the diff.
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ExperimentConfig, Ticket } from "../config/experiment.js";
@@ -62,8 +63,10 @@ export async function scoreDod(input: {
     if (acceptance.length === 0) {
       return { acceptance_files: named, red_on_base: null, green_with_reference: null, detail: "no acceptance test file the branch added or changed" };
     }
-    // The acceptance tests alone, on the base commit: the implementation the later rounds wrote must not be there.
-    await git(["checkout", "--quiet", "candidate", "--", ...acceptance], repo);
+    // The acceptance tests and the test helpers they lean on, alone on the base commit: the implementation the later rounds wrote must not be there.
+    const support = [...onBranch].filter((path) => isTestSupport(path) && !acceptance.includes(path) && existsSyncAt(repo, "candidate", path));
+
+    await git(["checkout", "--quiet", "candidate", "--", ...acceptance, ...support], repo);
     const nodeModules = cachedNodeModulesDir(join(input.paths.cacheDir, input.config.id), input.ticket.base_sha);
     const { cpSync } = await import("node:fs");
 
@@ -87,7 +90,7 @@ export async function scoreDod(input: {
     const applied = await runProcess({ bin: "git", args: ["apply", "--3way", join(work, "reference-production.patch")], cwd: repo, env: envOf(), timeoutMs: 60_000 });
     const withReference = applied.exitCode === 0 ? await run() : { passed: false, tail: `reference patch did not apply: ${applied.stderr.slice(-1500)}` };
     const check: DodCheck = {
-      acceptance_files: acceptance,
+      acceptance_files: [...acceptance, ...support.map((path) => `${path} (support)`)],
       red_on_base: !onBase.passed,
       green_with_reference: withReference.passed,
       detail: `on base: ${onBase.passed ? "green" : "red"}\n${onBase.tail}\n\nwith reference production code: ${withReference.passed ? "green" : "red"}\n${withReference.tail}`,
@@ -154,4 +157,21 @@ function envOf(): Record<string, string> {
 
 export function withScores(record: LoopRecord, dodCheck: DodCheck | null, judge: (JudgeScores & { model: string }) | null): LoopRecord {
   return { ...record, dod_check: dodCheck ?? record.dod_check, judge: judge ?? record.judge };
+}
+
+const TEST_SUPPORT = /(test|spec|fixture|support|mock)[^/]*\.[cm]?[jt]sx?$/i;
+
+/** A code file a test leans on: a helper, a fixture, a shared test file. */
+export function isTestSupport(path: string): boolean {
+  return TEST_SUPPORT.test(path.split("/").at(-1) ?? "");
+}
+
+function existsSyncAt(repo: string, ref: string, path: string): boolean {
+  try {
+    execFileSync("git", ["cat-file", "-e", `${ref}:${path}`], { cwd: repo, stdio: "ignore" });
+
+    return true;
+  } catch {
+    return false;
+  }
 }
