@@ -169,6 +169,7 @@ _(written by hand from \`analyze\` and \`propose\`)_
 
 - Local CI is one Node version on one machine, not GitHub's matrix.
 - Codex has no Bash guard, so its rounds may run acceptance tests the others are refused.
+- In the \`lore-mcp\` arm every station of the loop has the Lore MCP server, the tdd rounds included, so a with-or-without difference is Lore's effect on the whole loop, not on the varied station alone.
 - In the \`lore-mcp\` arm the Lore memory holds episodes from the real runs on these tickets.
 
 `;

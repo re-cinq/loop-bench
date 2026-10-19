@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-19 15:24 UTC: 19 loops over 19 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-19 15:43 UTC: 21 loops over 21 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -23,13 +23,13 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 | dod | `claude/claude-opus-5-5` | medium (claude CLI default) | none | baseline | 1 | 1/1 | 1.0 | $4.34 | 19.5 min | 5.0 | 5.0 | 4.0 | 1/1 | 13 (0.54) | +190/−48 |
 | #93 | dod | `claude/claude-sonnet-4-6` | high (claude CLI default) | lore-mcp | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `claude/claude-sonnet-4-6` | high (claude CLI default) | none | baseline | 1 | 1/1 | 3.0 | $5.19 | 27.4 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.50) | +164/−43 |
-| #93 | dod | `claude/claude-sonnet-5-5` | medium (claude CLI default) | lore-mcp | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `claude/claude-sonnet-5-5` | medium (claude CLI default) | lore-mcp | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `claude/claude-sonnet-5-5` | medium (claude CLI default) | none | baseline | 1 | 1/1 | 2.0 | $4.90 | 46.0 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.29) | +194/−38 |
-| #93 | dod | `codex/gpt-5.6-luna` | medium (codex default) | lore-mcp | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `codex/gpt-5.6-luna` | medium (codex default) | lore-mcp | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `codex/gpt-5.6-luna` | medium (codex default) | none | baseline | 1 | 1/1 | 2.0 | $3.99 | 22.7 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.50) | +199/−44 |
 | #93 | dod | `codex/gpt-5.6-sol` | low (codex default) | lore-mcp | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `codex/gpt-5.6-sol` | low (codex default) | none | baseline | 1 | 1/1 | 2.0 | $2.64 | 12.5 min | 4.0 | 4.0 | 4.0 | 1/1 | 7 (0.27) | +153/−7 |
-| #93 | dod | `codex/gpt-5.6-terra` | medium (codex default) | lore-mcp | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `codex/gpt-5.6-terra` | medium (codex default) | lore-mcp | baseline | 1 | 1/1 | 1.0 | $2.34 | 11.8 min | 5.0 | 4.0 | 4.0 | 1/1 | 8 (0.36) | +177/−9 |
 | #93 | dod | `codex/gpt-5.6-terra` | medium (codex default) | none | baseline | 1 | 1/1 | 2.0 | $4.35 | 23.4 min | 5.0 | 4.0 | 4.0 | 1/1 | 9 (0.45) | +201/−12 |
 | #93 | dod | `codex/gpt-6-astra` | low (codex default) | lore-mcp | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `codex/gpt-6-astra` | low (codex default) | none | baseline | 1 | 1/1 | 3.0 | $4.55 | 20.2 min | 4.0 | 4.0 | 4.0 | 1/1 | 9 (0.60) | +173/−20 |
@@ -42,10 +42,10 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 | dod | `gemini/gemini-3-flash-preview` | high (gemini-cli default) | lore-mcp | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `gemini/gemini-3-flash-preview` | high (gemini-cli default) | none | baseline | 1 | 1/1 | 3.0 | $6.49 | 38.3 min | 4.0 | 5.0 | 3.0 | 0/1 | 13 (0.43) | +222/−44 |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | lore-mcp | no-traceability | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | lore-mcp | short | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | lore-mcp | short | 0 | running | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | none | no-traceability | 1 | 1/1 | 3.0 | $7.05 | 56.7 min | 3.0 | 5.0 | 3.0 | 0/1 | 14 (0.40) | +242/−50 |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | none | short | 1 | 1/1 | 2.0 | $5.49 | 26.6 min | 4.0 | 4.0 | 3.0 | 1/1 | 11 (0.50) | +204/−38 |
-| #93 | dod | `gemini/gemini-4-argon` | medium (gemini-cli default) | lore-mcp | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `gemini/gemini-4-argon` | medium (gemini-cli default) | lore-mcp | baseline | 1 | 1/1 | 1.0 | $3.23 | 14.9 min | 5.0 | 5.0 | 4.0 | 1/1 | 9 (0.45) | +142/−12 |
 | #93 | dod | `gemini/gemini-4-argon` | medium (gemini-cli default) | none | baseline | 1 | 1/1 | 3.0 | $6.44 | 29.7 min | 5.0 | 4.0 | 4.0 | 1/1 | 12 (0.58) | +235/−44 |
 
 What the columns mean:
@@ -72,6 +72,7 @@ What the columns mean:
 | #93 | dod | `claude/claude-sonnet-5-5` | none | green ×1 |
 | #93 | dod | `codex/gpt-5.6-luna` | none | green ×1 |
 | #93 | dod | `codex/gpt-5.6-sol` | none | green ×1 |
+| #93 | dod | `codex/gpt-5.6-terra` | lore-mcp | green ×1 |
 | #93 | dod | `codex/gpt-5.6-terra` | none | green ×1 |
 | #93 | dod | `codex/gpt-6-astra` | none | green ×1 |
 | #93 | dod | `codex/gpt-6-luna` | none | green ×1 |
@@ -80,6 +81,7 @@ What the columns mean:
 | #93 | dod | `gemini/gemini-3-flash-preview` | none | green ×1 |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | none | green ×1 |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | none | green ×1 |
+| #93 | dod | `gemini/gemini-4-argon` | lore-mcp | green ×1 |
 | #93 | dod | `gemini/gemini-4-argon` | none | green ×1 |
 
 ## What we read in it
@@ -112,5 +114,6 @@ _(written by hand from `analyze` and `propose`)_
 
 - Local CI is one Node version on one machine, not GitHub's matrix.
 - Codex has no Bash guard, so its rounds may run acceptance tests the others are refused.
+- In the `lore-mcp` arm every station of the loop has the Lore MCP server, the tdd rounds included, so a with-or-without difference is Lore's effect on the whole loop, not on the varied station alone.
 - In the `lore-mcp` arm the Lore memory holds episodes from the real runs on these tickets.
 
