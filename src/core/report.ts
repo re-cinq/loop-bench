@@ -51,7 +51,18 @@ const minutes = (value: number): string => `${(value / 60_000).toFixed(1)} min`;
 const one = (value: number): string => value.toFixed(1);
 const count = (value: number): string => String(Math.round(value));
 
-export function renderResultsTable(cells: readonly CellSummary[]): string {
+/** A planned cell with no finished loop yet, shown so every model in the matrix is visible. */
+export interface PendingCell {
+  ticket: number;
+  station: string;
+  agent: string;
+  effort: string;
+  context: string;
+  prompt: string;
+  status: "running" | "not run yet";
+}
+
+export function renderResultsTable(cells: readonly CellSummary[], pending: readonly PendingCell[] = []): string {
   const header = [
     "| Ticket | Station varied | Agent | Effort | Context | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |",
     "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -83,7 +94,11 @@ export function renderResultsTable(cells: readonly CellSummary[]): string {
     ].join(" | ")} |`;
   });
 
-  return [...header, ...rows].join("\n");
+  const pendingRows = pending.map(
+    (cell) => `| #${cell.ticket} | ${cell.station} | \`${cell.agent}\` | ${cell.effort} | ${cell.context} | ${cell.prompt} | 0 | ${cell.status} | — | — | — | — | — | — | — | — | — |`,
+  );
+
+  return [...header, ...rows, ...pendingRows].join("\n");
 }
 
 export function renderEndReasons(cells: readonly CellSummary[]): string {
@@ -100,7 +115,7 @@ export function renderEndReasons(cells: readonly CellSummary[]): string {
   return ["| Ticket | Station varied | Agent | Context | How the loops ended |", "|---|---|---|---|---|", ...rows].join("\n");
 }
 
-export function renderReport(input: { experimentId: string; loops: readonly LoopRecord[]; visits: readonly VisitRow[]; promptsLoreSha: string; subjectRepo: string; generatedAt: string; conclusions: string }): string {
+export function renderReport(input: { experimentId: string; loops: readonly LoopRecord[]; pending: readonly PendingCell[]; visits: readonly VisitRow[]; promptsLoreSha: string; subjectRepo: string; generatedAt: string; conclusions: string }): string {
   const cells = cellsOf(input.loops);
 
   return `# Which model runs each implementation-loop station best
@@ -113,9 +128,9 @@ The implementation loop's stations (\`dod\`, \`tdd-round\`, \`repair-build\`) ea
 
 ## Results
 
-Each row is one cell: one station varied against the production baseline, every other station at baseline. Values are the mean over the cell's runs, with min–max and standard deviation in parentheses.
+Each row is one cell: one station varied against the production baseline, every other station at baseline. Cells of the same ticket, station and context that have not finished a loop yet are listed last, as running or not run yet. Values are the mean over the cell's runs, with min–max and standard deviation in parentheses.
 
-${renderResultsTable(cells)}
+${renderResultsTable(cells, input.pending)}
 
 What the columns mean:
 

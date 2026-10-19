@@ -5,13 +5,14 @@ import { parseArgs } from "node:util";
 import { loadExperiment, type ExperimentConfig } from "./config/experiment.js";
 import { analyzeTranscript, type TranscriptAnalysis } from "./core/analyze.js";
 import type { VisitRow } from "./core/station-report.js";
-import type { BenchRecord } from "./core/records.js";
+import type { BenchRecord, LoopRecord } from "./core/records.js";
 import { enforce } from "./core/enforce.js";
 import { HarnessSchema, StationSchema, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
 import { breadthFirst } from "./core/order.js";
 import { costOf } from "./core/pricing.js";
-import { renderReport } from "./core/report.js";
+import { renderReport, type PendingCell } from "./core/report.js";
+import { effortLabel } from "./core/effort.js";
 import { finalText, parseNodeResult } from "./core/result-line.js";
 import { usageFromStream } from "./core/usage.js";
 import { ADAPTERS } from "./harness/adapters.js";
@@ -341,9 +342,11 @@ function writeReport(config: ExperimentConfig): string {
     };
   });
   const conclusionsPath = join(experimentDir, "conclusions.md");
+  const loops = latestLoops(records);
   const markdown = renderReport({
     experimentId: config.id,
-    loops: latestLoops(records),
+    loops,
+    pending: pendingCells(config, loops),
     visits,
     promptsLoreSha: readFileSync(join(paths.promptsDir, "LORE_SHA"), "utf8").trim(),
     subjectRepo: config.subject.repo,
@@ -372,6 +375,36 @@ function repriced(records: readonly BenchRecord[]): BenchRecord[] {
     ...visits,
     ...latestLoops(records).map((loop) => ({ ...loop, total_cost_usd: costByLoop.get(loop.loop_id) ?? loop.total_cost_usd })),
   ];
+}
+
+/** Every planned cell of a ticket, station and context that has at least one finished loop, which has none itself. */
+function pendingCells(config: ExperimentConfig, loops: readonly LoopRecord[]): PendingCell[] {
+  const keyOf = (ticket: number, station: string, context: string): string => `${ticket}|${station}|${context}`;
+  const started = new Set(loops.map((loop) => keyOf(loop.ticket, loop.varied_station ?? loop.mode, loop.context_mode)));
+  const finished = new Set(loops.map((loop) => loop.cell_path.replace(/\/rep-\d+$/, "")));
+  const seen = new Set<string>();
+
+  return plannedLoops(config).flatMap((loop) => {
+    const station = loop.varied_station ?? loop.mode;
+    const cell = cellPath(loop).replace(/\/rep-\d+$/, "");
+
+    if (!started.has(keyOf(loop.ticket.number, station, loop.context_mode)) || finished.has(cell) || seen.has(cell)) {
+      return [];
+    }
+    seen.add(cell);
+    const choice = loop.varied_station ? loop.assignments[loop.varied_station] : loop.assignments.dod;
+    const running = existsSync(join(paths.resultsDir, cell, `rep-1`, "stations"));
+
+    return [{
+      ticket: loop.ticket.number,
+      station,
+      agent: `${choice.harness}/${choice.model}`,
+      effort: effortLabel(choice.harness, choice.model, choice.effort),
+      context: loop.context_mode,
+      prompt: loop.prompt_variant,
+      status: running ? "running" : "not run yet",
+    }];
+  });
 }
 
 function readRecordId(dir: string): string | null {
