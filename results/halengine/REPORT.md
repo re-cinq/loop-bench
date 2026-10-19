@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-19 13:41 UTC: 17 loops over 17 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-19 15:24 UTC: 19 loops over 19 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -18,7 +18,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 | dod | `claude/claude-haiku-4-5-20251001` | none (no thinking) (claude CLI default) | lore-mcp | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `claude/claude-haiku-4-5-20251001` | none (no thinking) (claude CLI default) | none | baseline | 1 | 1/1 | 3.0 | $7.55 | 37.1 min | 5.0 | 4.0 | 3.0 | 1/1 | 11 (0.50) | +277/−35 |
 | #93 | dod | `claude/claude-haiku-5-5` | medium (claude CLI default) | lore-mcp | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | dod | `claude/claude-haiku-5-5` | medium (claude CLI default) | none | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `claude/claude-haiku-5-5` | medium (claude CLI default) | none | baseline | 1 | 1/1 | 2.0 | $5.23 | 103.8 min | 5.0 | 4.0 | 3.0 | 1/1 | 11 (0.50) | +194/−40 |
 | #93 | dod | `claude/claude-opus-5-5` | medium (claude CLI default) | lore-mcp | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `claude/claude-opus-5-5` | medium (claude CLI default) | none | baseline | 1 | 1/1 | 1.0 | $4.34 | 19.5 min | 5.0 | 5.0 | 4.0 | 1/1 | 13 (0.54) | +190/−48 |
 | #93 | dod | `claude/claude-sonnet-4-6` | high (claude CLI default) | lore-mcp | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -43,7 +43,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 | dod | `gemini/gemini-3-flash-preview` | high (gemini-cli default) | none | baseline | 1 | 1/1 | 3.0 | $6.49 | 38.3 min | 4.0 | 5.0 | 3.0 | 0/1 | 13 (0.43) | +222/−44 |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | lore-mcp | no-traceability | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | lore-mcp | short | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | none | no-traceability | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | none | no-traceability | 1 | 1/1 | 3.0 | $7.05 | 56.7 min | 3.0 | 5.0 | 3.0 | 0/1 | 14 (0.40) | +242/−50 |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | none | short | 1 | 1/1 | 2.0 | $5.49 | 26.6 min | 4.0 | 4.0 | 3.0 | 1/1 | 11 (0.50) | +204/−38 |
 | #93 | dod | `gemini/gemini-4-argon` | medium (gemini-cli default) | lore-mcp | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
 | #93 | dod | `gemini/gemini-4-argon` | medium (gemini-cli default) | none | baseline | 1 | 1/1 | 3.0 | $6.44 | 29.7 min | 5.0 | 4.0 | 4.0 | 1/1 | 12 (0.58) | +235/−44 |
@@ -66,6 +66,7 @@ What the columns mean:
 | #93 | dod | `claude/claude-fable-5-1` | lore-mcp | green ×1 |
 | #93 | dod | `claude/claude-fable-5-1` | none | green ×1 |
 | #93 | dod | `claude/claude-haiku-4-5-20251001` | none | green ×1 |
+| #93 | dod | `claude/claude-haiku-5-5` | none | green ×1 |
 | #93 | dod | `claude/claude-opus-5-5` | none | green ×1 |
 | #93 | dod | `claude/claude-sonnet-4-6` | none | green ×1 |
 | #93 | dod | `claude/claude-sonnet-5-5` | none | green ×1 |
@@ -78,11 +79,24 @@ What the columns mean:
 | #93 | dod | `codex/gpt-6.1-sol` | none | green ×1 |
 | #93 | dod | `gemini/gemini-3-flash-preview` | none | green ×1 |
 | #93 | dod | `gemini/gemini-3.1-pro-preview` | none | green ×1 |
+| #93 | dod | `gemini/gemini-3.1-pro-preview` | none | green ×1 |
 | #93 | dod | `gemini/gemini-4-argon` | none | green ×1 |
 
 ## What we read in it
 
-_No conclusions yet: too few loops have finished._
+_First reading, 2026-10-19, after wave 1: ticket #93, the dod station varied, no Lore MCP, **one run per cell**. Treat every point as a hypothesis for the repeats to confirm or kill; the judge alone moved one loop's score by a point when it was asked twice._
+
+- **Every model can write the definition of done for this ticket.** All 15 models and both prompt variants reached a green build, and 16 of the 18 cells wrote acceptance tests that fail on the base commit and pass once the merged pull request's code is applied. The two that did not are Gemini 3 Flash and the production model on the `no-traceability` prompt: their tests pin an interface the merged fix does not have. Gemini 3 Flash's tests expect the hook to receive a per-round breakdown (`{ usage, rounds: [...] }`) that neither the ticket nor the fix asks for; the `no-traceability` run's test expects data at a place the fix never sends it. A loop can go green on such a dod, but it implements the test's design rather than the team's.
+- **The dod step is cheap; the rounds after it are the bill.** dod alone cost $0.03 (gpt-6-luna) to $1.53 (Fable 5.1). The loop cost $1.40 to $7.55, almost all of it the Claude Sonnet 4.6 tdd rounds that follow. A definition of done that needs fewer rounds saves more than a cheaper dod model does.
+- **The production choice, Gemini 3.1 Pro, is the costliest strong dod and needed the most rounds.** Its dod cost $1.48, the second most, and the loop took 4 tdd rounds, more than any other cell; the judge rated its result 4 / 4 / 3. Opus 5.5 and gpt-6-sol reached green in one round each, at $4.34 and $3.60 per loop.
+- **Best quality: Claude Opus 5.5 and gpt-6.1-sol**, the only cells the judge rated 5 for both correctness and completeness. Opus 5.5 did it in one round at $4.34 a loop, with its dod at $0.50 and medium effort. gpt-6.1-sol took two rounds at $4.36, running at low effort.
+- **Best value: gpt-6-luna and gpt-5.6-sol.** gpt-6-luna's loop cost $1.40 in 10 minutes and gpt-5.6-sol's $2.64 in 13, both with judge scores of 4 / 4 / 3-4. Both touched the fewest files (7) and overlap the merged pull request least (Jaccard 0.27): they solve the ticket more narrowly than the team did.
+- **The newest Claude models match the older ones for less.** Sonnet 5.5 and Haiku 5.5 wrote dods for $0.21 and $0.13, against $1.17 for Sonnet 4.6, with equal judge scores and one round fewer. Fable 5.1 was the most expensive dod ($1.53) and did not score above Opus 5.5.
+- **Effort was never equal.** Every run used its CLI's default: high for the Gemini 3 models, Fable 5.1 and Sonnet 4.6; medium for Opus 5.5, Sonnet 5.5, Haiku 5.5 and Gemini 4 Argon; low for three of the Codex models. The low and medium cells did as well as the high ones here, so effort is the next variable to pin down.
+- **Prompt:** the `short` variant, which drops the out-of-memory stories written for pods, halved the rounds (4 to 2) and cut the dod cost from $1.48 to $1.05 at the same quality. Dropping the spec-link instructions (`no-traceability`) made the result worse: the dod no longer matched the merged fix, the judge's correctness fell to 3, and the loop took 57 minutes. On a repository whose lint enforces spec links, those instructions earn their tokens.
+- **Lore MCP:** too early. One cell has run with Lore so far (Fable 5.1: 1 round, $3.34, 11 minutes, against $4.96 and 20 minutes without).
+
+**What would change a decision, once the repeats agree:** moving `dod` off Gemini 3.1 Pro to Opus 5.5 or gpt-6.1-sol for quality, or to gpt-6-luna for cost, and shipping the `short` dod prompt.
 
 ## What would improve it
 

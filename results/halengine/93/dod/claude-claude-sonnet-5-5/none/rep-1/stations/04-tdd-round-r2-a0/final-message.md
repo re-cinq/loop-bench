@@ -1,0 +1,3 @@
+Branch is pushed and up to date. The fix was: the `spec:names --fix` script repointed 25 spec citations (across `hal-engine-tool-budget/spec.md` and `hal-engine-architecture/spec.md`) whose line numbers had drifted after the previous round added two `// prettier-ignore` comments to `toolBudget.test.ts`, shifting all tests below them by +1. The second describe block had drifted -2 from an earlier change. Both eslint `require-spec-link` failures and `spec-names` failures should now be resolved.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix drifted spec citation line numbers (eslint+spec-names CI failures)","tdd_next":"acceptance green"}}
