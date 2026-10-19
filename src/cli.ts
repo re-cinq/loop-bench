@@ -360,10 +360,10 @@ function writeReport(config: ExperimentConfig): string {
   return markdown;
 }
 
-/** List prices are applied when the report is written, so a corrected price table reaches every run already recorded. */
+/** Market prices are applied when the report is written, so a corrected price table reaches every run already recorded. */
 function repriced(records: readonly BenchRecord[]): BenchRecord[] {
   const visits = latestStationRuns(records).map((visit) =>
-    visit.cost_basis === "reported" ? visit : { ...visit, cost_usd: costOf(visit.harness, visit.model, visit.usage).usd },
+    ({ ...visit, cost_usd: costOf(visit.harness, visit.model, visit.usage).usd, cost_basis: costOf(visit.harness, visit.model, visit.usage).basis }),
   );
   const costByLoop = new Map<string, number>();
 

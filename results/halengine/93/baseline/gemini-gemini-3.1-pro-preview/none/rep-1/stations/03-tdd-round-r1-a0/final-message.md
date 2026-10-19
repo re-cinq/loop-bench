@@ -1,0 +1,5 @@
+Branch is pushed and up to date. This round fixed all 11 ESLint errors from the CI failure: extracted `scriptedProvider` to a shared `testUtils.ts` (eliminating the cross-file duplication), refactored the acceptance test with `captureUsage()` and `runWith()` helpers (eliminating `any` types, internal duplicate code, and the 3-line comment block), and downgraded the spec status from "Shipped" to "In Progress" since 2 of 12 testable statements lack test links.
+
+0 tests written this round, 0 regressions. The open DoD facet — type-level disambiguation of the hook signature to convey sum semantics — remains for the next round.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint failures: duplicate code, any types, spec status","tdd_next":"add type-level disambiguation so the hook signature conveys sum semantics (facet 1)"}}

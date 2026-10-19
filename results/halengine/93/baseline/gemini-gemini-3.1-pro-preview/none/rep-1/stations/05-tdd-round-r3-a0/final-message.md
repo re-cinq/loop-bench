@@ -1,0 +1,3 @@
+The CI failure was an ESLint `re-lint/no-duplicate-code` error on the acceptance test — two test cases shared identical round fixtures inline. I extracted them into named constants (`ROUND_TOOL_CALL_10_20_30` and `ROUND_FINAL_DONE_5_5_10`), which eliminates the duplication while keeping the test behaviour identical. The DOD facets remain unchanged from last round.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI: eliminate duplicate-code lint error in acceptance test fixtures","tdd_next":"add type-level disambiguation so the hook signature conveys sum semantics (facet 1)"}}

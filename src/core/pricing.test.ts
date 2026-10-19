@@ -2,30 +2,23 @@ import { describe, expect, it } from "vitest";
 import { costOf } from "./pricing.js";
 import { EMPTY_USAGE } from "./usage.js";
 
+const million = 1_000_000;
+
 describe("costOf", () => {
-  it("uses the reported claude cost 0.0021 when the stream carries one", () => {
-    expect(costOf("claude", "claude-sonnet-4-6", { ...EMPTY_USAGE, reported_cost_usd: 0.0021 })).toEqual({
-      usd: 0.0021,
-      basis: "reported",
-    });
+  it("prices claude from tokens even when the CLI reported its own cost: opus-5-5 1M out is $20", () => {
+    expect(costOf("claude", "claude-opus-5-5", { ...EMPTY_USAGE, output_tokens: million, reported_cost_usd: 1 })).toEqual({ usd: 20, basis: "list" });
   });
 
-  it("gemini-3.1-pro-preview: 1M input + 1M output is $14 at list", () => {
-    const usage = { ...EMPTY_USAGE, input_tokens: 1_000_000, output_tokens: 1_000_000 };
-
-    expect(costOf("gemini", "gemini-3.1-pro-preview", usage)).toEqual({ usd: 14, basis: "list" });
+  it("claude cache writes cost 1.25x input and reads $0.20 on opus-5-5: 1M of each is $5.20", () => {
+    expect(costOf("claude", "claude-opus-5-5", { ...EMPTY_USAGE, cache_write_tokens: million, cache_read_tokens: million }).usd).toBeCloseTo(5.2, 9);
   });
 
-  it("codex counts cached input at the cached rate: gpt-5.6-terra 1M input of which 1M cached is $0.125", () => {
-    const usage = { ...EMPTY_USAGE, input_tokens: 1_000_000, cache_read_tokens: 1_000_000 };
-
-    expect(costOf("codex", "gpt-5.6-terra", usage).usd).toBeCloseTo(0.125, 9);
+  it("gemini-4-argon at its December price: 1M input of which 1M cached plus 1M output is $20.20", () => {
+    expect(costOf("gemini", "gemini-4-argon", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(20.2, 9);
   });
 
-  it("gemini counts cached input at a tenth: 1M input of which 1M cached on gemini-3.1-pro-preview is $0.20", () => {
-    const usage = { ...EMPTY_USAGE, input_tokens: 1_000_000, cache_read_tokens: 1_000_000 };
-
-    expect(costOf("gemini", "gemini-3.1-pro-preview", usage).usd).toBeCloseTo(0.2, 9);
+  it("gpt-5.6-sol at its pre-promotion price: 1M uncached input plus 1M reasoning is $35", () => {
+    expect(costOf("codex", "gpt-5.6-sol", { ...EMPTY_USAGE, input_tokens: million, reasoning_tokens: million }).usd).toBeCloseTo(35, 9);
   });
 
   it("an unknown model costs 0 with basis unknown-model", () => {

@@ -1,0 +1,3 @@
+Branch is pushed and up to date with main. All 8 spec citation mismatches are fixed, the `afterModelResponse` JSDoc is added to clarify summed turn usage, and facet 2 is ticked in the DoD. Regressions: 0 — these were all pre-existing drift from the previous round's line shift. No new tests were written since this round repaired CI metadata (spec links are not behaviour).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"docs: reanchor 8 spec citations and add afterModelResponse JSDoc (facet 2)","tdd_next":"acceptance green"}}

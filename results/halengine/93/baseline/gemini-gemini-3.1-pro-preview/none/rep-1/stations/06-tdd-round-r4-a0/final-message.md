@@ -1,0 +1,3 @@
+Branch is pushed and up to date. This round fixed 2 CI failures (0 regressions — I wrote no new tests, only fixed spec anchor line numbers that drifted from a prior edit). The DoD facet for type-level disambiguation remains open for the next round.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI: reanchor spec citations to correct test line numbers (#L60, #L69, #L74)","tdd_next":"add type-level disambiguation so the hook signature conveys sum semantics (facet 1)"}}

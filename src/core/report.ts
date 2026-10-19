@@ -1,7 +1,7 @@
 // The results as a table per cell, replicates folded into mean and spread, in the shape of docs/building-lore/decompose-model-comparison.md.
 import type { LoopRecord } from "./records.js";
 import { formatSpread, spreadOf } from "./stats.js";
-import { renderStationSummary, type VisitRow } from "./station-report.js";
+import type { VisitRow } from "./station-report.js";
 
 export interface CellSummary {
   key: string;
@@ -117,7 +117,7 @@ What the columns mean:
 
 - **Reached green**: the loop ended with the subject's CI checks passing on the pushed branch.
 - **Rounds**: tdd rounds the loop spent (12 is the budget).
-- **Cost**: what the Claude CLI reports for Claude runs; token counts at list prices for Gemini and Codex.
+- **Cost**: every model's token counts at its standard market price per million tokens, read 2026-10-19 (\`src/core/pricing.ts\`). No launch or promotional discounts: Gemini 4 Argon is priced at its December rate and gpt-5.6-sol at its pre-promotion rate, so the numbers hold for a long-term decision. Claude and Codex runs used subscriptions; their dollar figures are what the same tokens cost on the API.
 - **Judge**: a fixed model's 1–5 scores against the issue and the merged pull request.
 - **dod red→green**: the agent's acceptance tests failed on the base commit and passed once the merged pull request's production code was applied.
 - **Files (Jaccard vs PR)**: files the branch touched, and the overlap of that set with the merged pull request's.
@@ -125,12 +125,6 @@ What the columns mean:
 ### How the loops ended
 
 ${renderEndReasons(cells)}
-
-### Every station, folded per agent
-
-One row per station, agent, context and prompt, over every visit it made in any loop. "CI green after" is the local CI verdict on the push that visit made.
-
-${renderStationSummary(input.visits)}
 
 ## What we read in it
 
