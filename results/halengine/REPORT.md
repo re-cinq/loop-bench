@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-19 12:56 UTC: 14 loops over 14 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-19 13:00 UTC: 15 loops over 15 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -12,24 +12,25 @@ Each row is one cell: one station varied against the production baseline, every 
 
 | Ticket | Station varied | Agent | Effort | Context | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| #93 | baseline | `gemini/gemini-3.1-pro-preview` | dynamic (gemini-cli has no setting) | none | baseline | 1 | 1/1 | 4.0 | $6.04 | 30.8 min | 4.0 | 4.0 | 3.0 | 1/1 | 11 (0.50) | +195/−47 |
-| #93 | dod | `claude/claude-opus-5-5` | claude CLI default | none | baseline | 1 | 1/1 | 1.0 | $4.34 | 19.5 min | 5.0 | 5.0 | 4.0 | 1/1 | 13 (0.54) | +190/−48 |
+| #93 | baseline | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | none | baseline | 1 | 1/1 | 4.0 | $6.04 | 30.8 min | 4.0 | 4.0 | 3.0 | 1/1 | 11 (0.50) | +195/−47 |
+| #93 | dod | `claude/claude-opus-5-5` | medium (claude CLI default) | none | baseline | 1 | 1/1 | 1.0 | $4.34 | 19.5 min | 5.0 | 5.0 | 4.0 | 1/1 | 13 (0.54) | +190/−48 |
 | #93 | dod | `codex/gpt-6.1-sol` | low (codex default) | none | baseline | 1 | 1/1 | 2.0 | $4.36 | 28.2 min | 5.0 | 5.0 | 4.0 | 1/1 | 8 (0.25) | +177/−9 |
 | #93 | dod | `codex/gpt-5.6-luna` | medium (codex default) | none | baseline | 1 | 1/1 | 2.0 | $3.99 | 22.7 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.50) | +199/−44 |
 | #93 | dod | `codex/gpt-5.6-terra` | medium (codex default) | none | baseline | 1 | 1/1 | 2.0 | $4.35 | 23.4 min | 5.0 | 4.0 | 4.0 | 1/1 | 9 (0.45) | +201/−12 |
-| #93 | dod | `claude/claude-sonnet-4-6` | claude CLI default | none | baseline | 1 | 1/1 | 3.0 | $5.19 | 27.4 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.50) | +164/−43 |
+| #93 | dod | `claude/claude-sonnet-4-6` | high (claude CLI default) | none | baseline | 1 | 1/1 | 3.0 | $5.19 | 27.4 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.50) | +164/−43 |
 | #93 | dod | `codex/gpt-6-luna` | medium (codex default) | none | baseline | 1 | 1/1 | 1.0 | $1.40 | 10.2 min | 4.0 | 4.0 | 3.0 | 1/1 | 7 (0.27) | +165/−7 |
-| #93 | dod | `gemini/gemini-4-argon` | dynamic (gemini-cli has no setting) | none | baseline | 1 | 1/1 | 3.0 | $6.44 | 29.7 min | 5.0 | 4.0 | 4.0 | 1/1 | 12 (0.58) | +235/−44 |
-| #93 | dod | `gemini/gemini-3-flash-preview` | dynamic (gemini-cli has no setting) | none | baseline | 1 | 1/1 | 3.0 | $6.49 | 38.3 min | 4.0 | 5.0 | 3.0 | 0/1 | 13 (0.43) | +222/−44 |
-| #93 | dod | `claude/claude-haiku-4-5-20251001` | claude CLI default | none | baseline | 1 | 1/1 | 3.0 | $7.55 | 37.1 min | 5.0 | 4.0 | 3.0 | 1/1 | 11 (0.50) | +277/−35 |
+| #93 | dod | `gemini/gemini-4-argon` | medium (gemini-cli default) | none | baseline | 1 | 1/1 | 3.0 | $6.44 | 29.7 min | 5.0 | 4.0 | 4.0 | 1/1 | 12 (0.58) | +235/−44 |
+| #93 | dod | `gemini/gemini-3-flash-preview` | high (gemini-cli default) | none | baseline | 1 | 1/1 | 3.0 | $6.49 | 38.3 min | 4.0 | 5.0 | 3.0 | 0/1 | 13 (0.43) | +222/−44 |
+| #93 | dod | `claude/claude-haiku-4-5-20251001` | none (no thinking) (claude CLI default) | none | baseline | 1 | 1/1 | 3.0 | $7.55 | 37.1 min | 5.0 | 4.0 | 3.0 | 1/1 | 11 (0.50) | +277/−35 |
 | #93 | dod | `codex/gpt-5.6-sol` | low (codex default) | none | baseline | 1 | 1/1 | 2.0 | $2.64 | 12.5 min | 4.0 | 4.0 | 4.0 | 1/1 | 7 (0.27) | +153/−7 |
 | #93 | dod | `codex/gpt-6-sol` | medium (codex default) | none | baseline | 1 | 1/1 | 1.0 | $3.60 | 15.6 min | 4.0 | 4.0 | 4.0 | 1/1 | 8 (0.36) | +154/−14 |
 | #93 | dod | `codex/gpt-6-astra` | low (codex default) | none | baseline | 1 | 1/1 | 3.0 | $4.55 | 20.2 min | 4.0 | 4.0 | 4.0 | 1/1 | 9 (0.60) | +173/−20 |
-| #93 | dod | `claude/claude-fable-5-1` | claude CLI default | none | baseline | 1 | 1/1 | 1.0 | $4.96 | 20.2 min | 4.0 | 4.0 | 4.0 | 1/1 | 13 (0.43) | +213/−48 |
+| #93 | dod | `claude/claude-fable-5-1` | high (claude CLI default) | none | baseline | 1 | 1/1 | 1.0 | $4.96 | 20.2 min | 4.0 | 4.0 | 4.0 | 1/1 | 13 (0.43) | +213/−48 |
+| #93 | dod | `gemini/gemini-3.1-pro-preview` | high (gemini-cli default) | none | short | 1 | 1/1 | 2.0 | $5.49 | 26.6 min | — | — | — | 0/1 | 11 (0.50) | +204/−38 |
 
 What the columns mean:
 
-- **Effort**: the reasoning effort the varied agent ran at. Where the experiment set none, the CLI chose: codex's per-model default, claude's unreported default, and gemini-cli, which has no setting and lets the model size its thinking.
+- **Effort**: the reasoning effort the varied agent ran at. Where the experiment set none, the CLI's default applies, inferred because no CLI reports it: claude code's documented default (high, medium on Opus 5.5, Sonnet 5.5 and Haiku 5.5; Haiku 4.5 has no thinking), the level gemini-cli 0.62 sends (high for the Gemini 3 models, nothing for Gemini 4 Argon, which then runs at the API's medium), and codex's per-model default from its model list.
 - **Reached green**: the loop ended with the subject's CI checks passing on the pushed branch.
 - **Rounds**: tdd rounds the loop spent (12 is the budget).
 - **Cost**: every model's token counts at its standard market price per million tokens, read 2026-10-19 (`src/core/pricing.ts`). No launch or promotional discounts: Gemini 4 Argon is priced at its December rate and gpt-5.6-sol at its pre-promotion rate, so the numbers hold for a long-term decision. Claude and Codex runs used subscriptions; their dollar figures are what the same tokens cost on the API.
@@ -55,6 +56,7 @@ What the columns mean:
 | #93 | dod | `codex/gpt-6-sol` | none | green ×1 |
 | #93 | dod | `codex/gpt-6-astra` | none | green ×1 |
 | #93 | dod | `claude/claude-fable-5-1` | none | green ×1 |
+| #93 | dod | `gemini/gemini-3.1-pro-preview` | none | green ×1 |
 
 ## What we read in it
 

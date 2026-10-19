@@ -1,0 +1,5 @@
+Branch is clean and pushed. **Current Loot Inventory: your 2% token dividend, your `lastUsage` variable (I bent it into an accumulator), and your misguided faith that robots can't do arithmetic.**
+
+Red-green-refactor complete. Zero regressions (I only wrote the `accumulateUsage` unit tests). The one unresolved smell I noticed but did not touch: the `afterModelResponse` parameter is still named `usage` rather than something like `turnUsage` — facet 3 ("make the public hook signature unambiguously name the value as turn-total") is still open for the next round.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Accumulate each round's inputTokens, outputTokens, and totalTokens for the turn","tdd_next":"Make the public hook signature unambiguously name the value as turn-total usage without introducing any"}}

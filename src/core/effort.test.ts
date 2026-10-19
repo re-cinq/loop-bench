@@ -6,10 +6,12 @@ import { effortLabel } from "./effort.js";
 const spec = { model: "m", prompt: "p", workspaceDir: "/w", homeDir: "/h", mcp: null, extraEnv: {}, gemini: null, userHome: "/u" };
 
 describe("effort", () => {
-  it("labels an unset effort by the CLI that chose it: codex gpt-6.1-sol low, gemini dynamic, claude default", () => {
+  it("labels an unset effort by the CLI that chose it: codex gpt-6.1-sol low, gemini and claude by their documented defaults", () => {
     expect(effortLabel("codex", "gpt-6.1-sol", undefined)).toBe("low (codex default)");
-    expect(effortLabel("gemini", "gemini-4-argon", undefined)).toBe("dynamic (gemini-cli has no setting)");
-    expect(effortLabel("claude", "claude-opus-5-5", undefined)).toBe("claude CLI default");
+    expect(effortLabel("gemini", "gemini-4-argon", undefined)).toBe("medium (gemini-cli default)");
+    expect(effortLabel("gemini", "gemini-3.1-pro-preview", undefined)).toBe("high (gemini-cli default)");
+    expect(effortLabel("claude", "claude-opus-5-5", undefined)).toBe("medium (claude CLI default)");
+    expect(effortLabel("claude", "claude-fable-5-1", undefined)).toBe("high (claude CLI default)");
     expect(effortLabel("claude", "claude-opus-5-5", "high")).toBe("high");
   });
 

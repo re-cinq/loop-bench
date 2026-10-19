@@ -119,7 +119,7 @@ ${renderResultsTable(cells)}
 
 What the columns mean:
 
-- **Effort**: the reasoning effort the varied agent ran at. Where the experiment set none, the CLI chose: codex's per-model default, claude's unreported default, and gemini-cli, which has no setting and lets the model size its thinking.
+- **Effort**: the reasoning effort the varied agent ran at. Where the experiment set none, the CLI's default applies, inferred because no CLI reports it: claude code's documented default (high, medium on Opus 5.5, Sonnet 5.5 and Haiku 5.5; Haiku 4.5 has no thinking), the level gemini-cli 0.62 sends (high for the Gemini 3 models, nothing for Gemini 4 Argon, which then runs at the API's medium), and codex's per-model default from its model list.
 - **Reached green**: the loop ended with the subject's CI checks passing on the pushed branch.
 - **Rounds**: tdd rounds the loop spent (12 is the budget).
 - **Cost**: every model's token counts at its standard market price per million tokens, read 2026-10-19 (\`src/core/pricing.ts\`). No launch or promotional discounts: Gemini 4 Argon is priced at its December rate and gpt-5.6-sol at its pre-promotion rate, so the numbers hold for a long-term decision. Claude and Codex runs used subscriptions; their dollar figures are what the same tokens cost on the API.
