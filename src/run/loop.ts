@@ -16,6 +16,7 @@ import { prepareRunWorkspace, pushedHead, type RunWorkspace } from "../workspace
 import { cliVersion } from "./cli-version.js";
 import type { BenchPaths } from "./paths.js";
 import { appendRecord, writeLoopJson } from "./results.js";
+import { HarnessLanes, UNLIMITED } from "./harness-lanes.js";
 import { runStation, type StationPlan } from "./station.js";
 
 export interface LoopDeps {
@@ -24,6 +25,7 @@ export interface LoopDeps {
   log: (line: string) => void;
   /** Keep runs/<loop_id> after the loop (default: delete it once the cell folder is written). */
   keepRun?: boolean;
+  lanes?: HarnessLanes;
 }
 
 export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<LoopRecord> {
@@ -72,7 +74,7 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
       };
 
       log(`[${planned.loop_id}] ${station} ${plan.choice.harness}/${plan.choice.model} round ${state.rounds} attempt ${state.attempts[station]}`);
-      const record = await runStation(plan, { config, paths, workspace, cliVersion });
+      const record = await (deps.lanes ?? UNLIMITED).run(plan.choice.harness, () => runStation(plan, { config, paths, workspace, cliVersion }));
 
       visits.push(record);
       appendRecord(paths.resultsDir, config.id, record);

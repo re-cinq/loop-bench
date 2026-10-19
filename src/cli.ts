@@ -17,6 +17,7 @@ import { ADAPTERS } from "./harness/adapters.js";
 import { buildScratchHome } from "./harness/scratch-home.js";
 import { runProcess } from "./io/spawn.js";
 import { InfraError, runLoop } from "./run/loop.js";
+import { HarnessLanes } from "./run/harness-lanes.js";
 import { loreServer } from "./run/station.js";
 import { benchPaths } from "./run/paths.js";
 import { propose, type ProposalEvidence } from "./run/propose.js";
@@ -40,6 +41,7 @@ const USAGE = `loop-bench <command> [options]
   propose     --experiment <file> --station <s> [--worst 5]
   report      --experiment <file>             rewrite results/<experiment>/REPORT.md and print it
   run ... --parallel <n>                      run n loops at a time (default 1)
+  run ... --per-harness <n>                   at most n agent runs per CLI at a time, across all loops
 
 filters: --ticket <n> --station <dod|tdd-round|repair-build|baseline|whole_loop> --agent <harness/model>
          --context <none|lore-mcp> --prompt <variant> --replicates <n> --limit <n>`;
@@ -65,6 +67,7 @@ async function main(argv: readonly string[]): Promise<void> {
       force: { type: "boolean", default: false },
       "keep-run": { type: "boolean", default: false },
       parallel: { type: "string", default: "1" },
+      "per-harness": { type: "string" },
     },
   });
   const config = (): ExperimentConfig => loadExperiment(values.experiment);
@@ -78,7 +81,7 @@ async function main(argv: readonly string[]): Promise<void> {
     case "smoke":
       return smoke(config(), values.harness, values.model, values.context === "lore-mcp");
     case "run":
-      return runSelected(config(), breadthFirst(selected()), values.force, values["keep-run"], Number(values.parallel));
+      return runSelected(config(), breadthFirst(selected()), values.force, values["keep-run"], Number(values.parallel), values["per-harness"] === undefined ? undefined : new HarnessLanes(Number(values["per-harness"])));
     case "make-artifact":
       return makeArtifact(config(), values.ticket, values.kind, values["from-cell"]);
     case "score":
@@ -188,7 +191,7 @@ function breadthFirst(loops: readonly PlannedLoop[]): PlannedLoop[] {
   return [...loops].sort((a, b) => a.replicate - b.replicate || contextOrder(a) - contextOrder(b));
 }
 
-async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], force: boolean, keepRun: boolean, parallel: number): Promise<void> {
+async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], force: boolean, keepRun: boolean, parallel: number, lanes?: HarnessLanes): Promise<void> {
   const pending = loops.filter((loop) => force || !readLoopJson(join(paths.resultsDir, cellPath(loop))));
   let next = 0;
   let stopped = false;
@@ -204,7 +207,7 @@ async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop
       }
       log(`[loop-bench] ${index + 1}/${pending.length} ${cellPath(loop)}`);
       try {
-        await runLoop(loop, { config, paths, log, keepRun });
+        await runLoop(loop, { config, paths, log, keepRun, ...(lanes ? { lanes } : {}) });
         await scoreSelected(config, [loop]);
         analyzeAll(config);
         writeReport(config);
