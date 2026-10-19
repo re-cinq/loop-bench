@@ -22,6 +22,12 @@ describe("costOf", () => {
     expect(costOf("codex", "gpt-5.6-terra", usage).usd).toBeCloseTo(0.125, 9);
   });
 
+  it("gemini counts cached input at a tenth: 1M input of which 1M cached on gemini-3.1-pro-preview is $0.20", () => {
+    const usage = { ...EMPTY_USAGE, input_tokens: 1_000_000, cache_read_tokens: 1_000_000 };
+
+    expect(costOf("gemini", "gemini-3.1-pro-preview", usage).usd).toBeCloseTo(0.2, 9);
+  });
+
   it("an unknown model costs 0 with basis unknown-model", () => {
     expect(costOf("gemini", "gemini-9", { ...EMPTY_USAGE, input_tokens: 10 })).toEqual({ usd: 0, basis: "unknown-model" });
   });

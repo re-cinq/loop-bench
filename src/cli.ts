@@ -5,6 +5,7 @@ import { parseArgs } from "node:util";
 import { loadExperiment, type ExperimentConfig } from "./config/experiment.js";
 import { analyzeTranscript, type TranscriptAnalysis } from "./core/analyze.js";
 import type { VisitRow } from "./core/station-report.js";
+import type { BenchRecord } from "./core/records.js";
 import { enforce } from "./core/enforce.js";
 import { HarnessSchema, StationSchema, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
@@ -329,7 +330,7 @@ async function proposeFor(config: ExperimentConfig, station: string | undefined,
 
 /** The one markdown file holding everything: tables from results.jsonl, every visit with its analysis, and the conclusions written beside it. */
 function writeReport(config: ExperimentConfig): string {
-  const records = readRecords(paths.resultsDir, config.id);
+  const records = repriced(readRecords(paths.resultsDir, config.id));
   const experimentDir = join(paths.resultsDir, config.id);
   const visits: VisitRow[] = latestStationRuns(records).map((record) => {
     const loop = latestLoops(records).find((candidate) => candidate.loop_id === record.loop_id);
@@ -357,6 +358,23 @@ function writeReport(config: ExperimentConfig): string {
   writeFileSync(join(experimentDir, "REPORT.md"), markdown);
 
   return markdown;
+}
+
+/** List prices are applied when the report is written, so a corrected price table reaches every run already recorded. */
+function repriced(records: readonly BenchRecord[]): BenchRecord[] {
+  const visits = latestStationRuns(records).map((visit) =>
+    visit.cost_basis === "reported" ? visit : { ...visit, cost_usd: costOf(visit.harness, visit.model, visit.usage).usd },
+  );
+  const costByLoop = new Map<string, number>();
+
+  for (const visit of visits) {
+    costByLoop.set(visit.loop_id, (costByLoop.get(visit.loop_id) ?? 0) + visit.cost_usd);
+  }
+
+  return [
+    ...visits,
+    ...latestLoops(records).map((loop) => ({ ...loop, total_cost_usd: costByLoop.get(loop.loop_id) ?? loop.total_cost_usd })),
+  ];
 }
 
 function readRecordId(dir: string): string | null {

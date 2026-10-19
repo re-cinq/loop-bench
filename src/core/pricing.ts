@@ -69,8 +69,10 @@ export function costOf(harness: Harness, model: string, usage: Usage): Cost {
 
 function listCost(harness: Harness, price: PricePerMillion, usage: Usage): number {
   const perToken = (perMillion: number): number => perMillion / 1_000_000;
-  const cachedRate = price.cachedInput ?? (harness === "claude" ? price.input * 0.1 : price.input);
-  const uncachedInput = harness === "codex" ? usage.input_tokens - usage.cache_read_tokens : usage.input_tokens;
+  // Cache reads bill at a tenth of the input price on Anthropic and on Gemini 2.5 and later (implicit caching).
+  const cachedRate = price.cachedInput ?? price.input * 0.1;
+  // Codex and gemini count their cache hits inside input_tokens; claude reports them apart.
+  const uncachedInput = harness === "claude" ? usage.input_tokens : usage.input_tokens - usage.cache_read_tokens;
 
   return (
     uncachedInput * perToken(price.input) +
