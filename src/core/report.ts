@@ -1,4 +1,5 @@
 // The results as a table per cell, replicates folded into mean and spread, in the shape of docs/building-lore/decompose-model-comparison.md.
+import { effortLabel } from "./effort.js";
 import type { LoopRecord } from "./records.js";
 import { formatSpread, spreadOf } from "./stats.js";
 import type { VisitRow } from "./station-report.js";
@@ -8,6 +9,7 @@ export interface CellSummary {
   ticket: number;
   station: string;
   agent: string;
+  effort: string;
   context: string;
   prompt: string;
   loops: LoopRecord[];
@@ -20,8 +22,9 @@ export function cellsOf(loops: readonly LoopRecord[]): CellSummary[] {
     const station = loop.varied_station ?? loop.mode;
     const choice = loop.varied_station ? loop.assignments[loop.varied_station] : loop.assignments.dod;
     const agent = `${choice.harness}/${choice.model}`;
-    const key = [loop.ticket, station, agent, loop.context_mode, loop.prompt_variant].join("|");
-    const cell = byKey.get(key) ?? { key, ticket: loop.ticket, station, agent, context: loop.context_mode, prompt: loop.prompt_variant, loops: [] };
+    const effort = effortLabel(choice.harness, choice.model, choice.effort);
+    const key = [loop.ticket, station, agent, effort, loop.context_mode, loop.prompt_variant].join("|");
+    const cell = byKey.get(key) ?? { key, ticket: loop.ticket, station, agent, effort, context: loop.context_mode, prompt: loop.prompt_variant, loops: [] };
 
     cell.loops.push(loop);
     byKey.set(key, cell);
@@ -50,8 +53,8 @@ const count = (value: number): string => String(Math.round(value));
 
 export function renderResultsTable(cells: readonly CellSummary[]): string {
   const header = [
-    "| Ticket | Station varied | Agent | Context | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |",
-    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+    "| Ticket | Station varied | Agent | Effort | Context | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
   const rows = cells.map((cell) => {
     const loops = cell.loops;
@@ -63,6 +66,7 @@ export function renderResultsTable(cells: readonly CellSummary[]): string {
       `#${cell.ticket}`,
       cell.station,
       `\`${cell.agent}\``,
+      cell.effort,
       cell.context,
       cell.prompt,
       String(loops.length),
@@ -115,6 +119,7 @@ ${renderResultsTable(cells)}
 
 What the columns mean:
 
+- **Effort**: the reasoning effort the varied agent ran at. Where the experiment set none, the CLI chose: codex's per-model default, claude's unreported default, and gemini-cli, which has no setting and lets the model size its thinking.
 - **Reached green**: the loop ended with the subject's CI checks passing on the pushed branch.
 - **Rounds**: tdd rounds the loop spent (12 is the budget).
 - **Cost**: every model's token counts at its standard market price per million tokens, read 2026-10-19 (\`src/core/pricing.ts\`). No launch or promotional discounts: Gemini 4 Argon is priced at its December rate and gpt-5.6-sol at its pre-promotion rate, so the numbers hold for a long-term decision. Claude and Codex runs used subscriptions; their dollar figures are what the same tokens cost on the API.

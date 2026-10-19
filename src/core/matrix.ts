@@ -82,7 +82,8 @@ function withId(loop: Omit<PlannedLoop, "loop_id">): PlannedLoop {
 export function cellPath(loop: PlannedLoop): string {
   const station = loop.varied_station ?? loop.mode;
   const varied = loop.varied_station ? loop.assignments[loop.varied_station] : loop.assignments.dod;
-  const agent = loop.prompt_variant === "baseline" ? `${varied.harness}-${varied.model}` : `prompt-${loop.prompt_variant}`;
+  const effort = varied.effort ? `-${varied.effort}` : "";
+  const agent = loop.prompt_variant === "baseline" ? `${varied.harness}-${varied.model}${effort}` : `prompt-${loop.prompt_variant}`;
 
   return [loop.experiment_id, String(loop.ticket.number), station, agent, loop.context_mode, `rep-${loop.replicate}`].join("/");
 }

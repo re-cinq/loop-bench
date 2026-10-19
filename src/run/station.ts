@@ -5,6 +5,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentChoice, ExperimentConfig } from "../config/experiment.js";
 import type { ContextMode, Station } from "../core/harness-names.js";
+import { effortLabel } from "../core/effort.js";
 import { costOf } from "../core/pricing.js";
 import { buildStationPrompt } from "../core/prompt.js";
 import type { StationRunRecord } from "../core/records.js";
@@ -59,6 +60,7 @@ export async function runStation(plan: StationPlan, deps: StationDeps): Promise<
   });
   const spec: InvocationSpec = {
     model: plan.choice.model,
+    effort: plan.choice.effort,
     prompt: built.prompt,
     workspaceDir: workspace.workspaceDir,
     homeDir: plan.homeDir,
@@ -99,6 +101,7 @@ export async function runStation(plan: StationPlan, deps: StationDeps): Promise<
     attempt: plan.attempt,
     harness: plan.choice.harness,
     model: plan.choice.model,
+    effort: effortLabel(plan.choice.harness, plan.choice.model, plan.choice.effort),
     prompt_variant: plan.promptVariant,
     context_mode: plan.contextMode,
     outcome: nodeResult?.outcome ?? "failed",

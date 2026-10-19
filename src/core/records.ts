@@ -18,6 +18,8 @@ export const StationRunRecordSchema = z.object({
   attempt: z.number().int(),
   harness: HarnessSchema,
   model: z.string(),
+  /** Recorded since 2026-10-19; older runs used each CLI's default. */
+  effort: z.string().optional(),
   prompt_variant: z.string(),
   context_mode: ContextModeSchema,
   outcome: OutcomeSchema,

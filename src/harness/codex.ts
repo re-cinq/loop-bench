@@ -30,6 +30,7 @@ export const codexAdapter: HarnessAdapter = {
       bin: CODEX_BIN,
       args: [
         ...codexMcpOverrides(spec),
+        ...(spec.effort ? ["-c", `model_reasoning_effort=${JSON.stringify(spec.effort)}`] : []),
         "exec",
         "--json",
         "--model", spec.model,

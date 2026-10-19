@@ -21,6 +21,7 @@ export const claudeAdapter: HarnessAdapter = {
         "--verbose",
         "--output-format", "stream-json",
         "--model", spec.model,
+        ...(spec.effort ? ["--effort", spec.effort] : []),
         "--dangerously-skip-permissions",
         "--settings", join(spec.homeDir, ".claude", "settings.json"),
         ...(mcp ? ["--mcp-config", mcp, "--strict-mcp-config"] : ["--strict-mcp-config"]),

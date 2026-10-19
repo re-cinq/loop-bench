@@ -4,7 +4,11 @@ import { parse } from "yaml";
 import { z } from "zod";
 import { ContextModeSchema, HarnessSchema, StationSchema } from "../core/harness-names.js";
 
-export const AgentChoiceSchema = z.object({ harness: HarnessSchema, model: z.string().min(1) });
+export const EffortSchema = z.enum(["low", "medium", "high", "xhigh", "max"]);
+export type Effort = z.infer<typeof EffortSchema>;
+
+/** A harness and model, and the effort to run it at; no effort means the CLI's own default. */
+export const AgentChoiceSchema = z.object({ harness: HarnessSchema, model: z.string().min(1), effort: EffortSchema.optional() });
 export type AgentChoice = z.infer<typeof AgentChoiceSchema>;
 
 const CiCheckSchema = z.object({ name: z.string(), command: z.string(), timeout_minutes: z.number().default(10) });

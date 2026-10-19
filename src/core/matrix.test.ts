@@ -52,3 +52,13 @@ describe("plannedLoops", () => {
     expect(paths).toContain("exp/93/whole_loop/codex-gpt/none/rep-1");
   });
 });
+
+describe("effort in the cell path", () => {
+  it("an explicit effort adds -high to the folder, an unset one leaves the existing folder name", () => {
+    const withEffort = ExperimentConfigSchema.parse({ ...config, variants: { dod: [{ harness: "claude", model: "opus", effort: "high" }] }, prompt_variants: {}, whole_loop: [] });
+    const paths = plannedLoops(withEffort).map(cellPath);
+
+    expect(paths).toContain("exp/93/dod/claude-opus-high/none/rep-1");
+    expect(paths).toContain("exp/93/baseline/gemini-g-pro/none/rep-1");
+  });
+});

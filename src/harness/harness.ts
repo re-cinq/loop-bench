@@ -10,6 +10,8 @@ export interface McpStdioServer {
 
 export interface InvocationSpec {
   model: string;
+  /** Undefined runs the CLI at its own default. */
+  effort?: string | undefined;
   prompt: string;
   /** The directory the CLI runs in: the run's workspace, holding target/ and ticket.md. */
   workspaceDir: string;
