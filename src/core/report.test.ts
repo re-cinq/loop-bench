@@ -39,6 +39,6 @@ describe("renderResultsTable", () => {
     const row = renderResultsTable(cells).split("\n")[2] ?? "";
 
     expect(row).toContain("| 2 | 1/2 | 3.0 (2.0–4.0, sd 1.0) | $1.50 ($1.00–$2.00, sd $0.50) |");
-    expect(row).toContain("`claude/opus`");
+    expect(row).toContain("`opus` (claude) | unknown (claude CLI default) | without Lore");
   });
 });

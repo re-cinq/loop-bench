@@ -50,6 +50,15 @@ function compareCells(a: CellSummary, b: CellSummary): number {
   return compareRows(a, b);
 }
 
+const CONTEXT_LABEL: Record<string, string> = { none: "without Lore", "lore-mcp": "with Lore" };
+const contextLabel = (context: string): string => CONTEXT_LABEL[context] ?? context;
+/** `claude/claude-haiku-4-5-20251001` reads as `claude-haiku-4-5-20251001 (claude)`: the model id once, the CLI after it. */
+const agentLabel = (agent: string): string => {
+  const [harness = "", model = ""] = agent.split("/");
+
+  return `\`${model}\` (${harness})`;
+};
+
 const money = (value: number): string => `$${value.toFixed(2)}`;
 const minutes = (value: number): string => `${(value / 60_000).toFixed(1)} min`;
 const one = (value: number): string => value.toFixed(1);
@@ -68,7 +77,7 @@ export interface PendingCell {
 
 export function renderResultsTable(cells: readonly CellSummary[], pending: readonly PendingCell[] = []): string {
   const header = [
-    "| Ticket | Station varied | Agent | Effort | Context | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |",
+    "| Ticket | Station varied | Model (CLI) | Effort | Lore | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |",
     "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
   const rows = cells.map((cell): RowKey & { line: string } => {
@@ -80,9 +89,9 @@ export function renderResultsTable(cells: readonly CellSummary[], pending: reado
     return { ...cell, line: `| ${[
       `#${cell.ticket}`,
       cell.station,
-      `\`${cell.agent}\``,
+      agentLabel(cell.agent),
       cell.effort,
-      cell.context,
+      contextLabel(cell.context),
       cell.prompt,
       String(loops.length),
       `${loops.filter((loop) => loop.reached_green).length}/${loops.length}`,
@@ -100,7 +109,7 @@ export function renderResultsTable(cells: readonly CellSummary[], pending: reado
 
   const pendingRows = pending.map((cell) => ({
     ...cell,
-    line: `| #${cell.ticket} | ${cell.station} | \`${cell.agent}\` | ${cell.effort} | ${cell.context} | ${cell.prompt} | 0 | ${cell.status} | — | — | — | — | — | — | — | — | — |`,
+    line: `| #${cell.ticket} | ${cell.station} | ${agentLabel(cell.agent)} | ${cell.effort} | ${contextLabel(cell.context)} | ${cell.prompt} | 0 | ${cell.status} | — | — | — | — | — | — | — | — | — |`,
   }));
 
   return [...header, ...[...rows, ...pendingRows].sort(compareRows).map((row) => row.line)].join("\n");
@@ -114,10 +123,10 @@ export function renderEndReasons(cells: readonly CellSummary[]): string {
       reasons.set(loop.end_reason, (reasons.get(loop.end_reason) ?? 0) + 1);
     }
 
-    return `| #${cell.ticket} | ${cell.station} | \`${cell.agent}\` | ${cell.context} | ${[...reasons].map(([reason, n]) => `${reason} ×${n}`).join(", ")} |`;
+    return `| #${cell.ticket} | ${cell.station} | ${agentLabel(cell.agent)} | ${contextLabel(cell.context)} | ${[...reasons].map(([reason, n]) => `${reason} ×${n}`).join(", ")} |`;
   });
 
-  return ["| Ticket | Station varied | Agent | Context | How the loops ended |", "|---|---|---|---|---|", ...rows].join("\n");
+  return ["| Ticket | Station varied | Model (CLI) | Lore | How the loops ended |", "|---|---|---|---|---|", ...rows].join("\n");
 }
 
 export function renderReport(input: { experimentId: string; loops: readonly LoopRecord[]; pending: readonly PendingCell[]; visits: readonly VisitRow[]; promptsLoreSha: string; subjectRepo: string; generatedAt: string; conclusions: string }): string {
