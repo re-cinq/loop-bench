@@ -44,10 +44,8 @@ export function buildStationPrompt(input: {
   header: PromptHeader;
 }): BuiltPrompt {
   const verbatim = stripFrontmatter(input.markdown);
-  const prompt = withTaskHeader(
-    localizeWorkspacePaths(fillTicketPath(verbatim, input.ticketPath), input.workspaceDir),
-    input.header,
-  );
+  // Rewrite before filling: the run directory may itself sit under a folder named workspace.
+  const prompt = withTaskHeader(fillTicketPath(localizeWorkspacePaths(verbatim, input.workspaceDir), input.ticketPath), input.header);
 
   return { prompt, sha256Verbatim: sha256(verbatim), sha256Sent: sha256(prompt) };
 }

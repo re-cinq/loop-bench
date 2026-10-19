@@ -5,7 +5,7 @@ import { ContextModeSchema, HarnessSchema, StationSchema } from "./harness-names
 import { OutcomeSchema } from "./result-line.js";
 import { UsageSchema } from "./usage.js";
 
-export const FailureClassSchema = z.enum(["none", "no_result_line", "timeout", "spawn_error", "nonzero_exit"]);
+export const FailureClassSchema = z.enum(["none", "no_result_line", "timeout", "spawn_error", "nonzero_exit", "infra"]);
 
 export const StationRunRecordSchema = z.object({
   kind: z.literal("station_run"),

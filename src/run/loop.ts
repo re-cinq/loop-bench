@@ -76,6 +76,9 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
 
       visits.push(record);
       appendRecord(paths.resultsDir, config.id, record);
+      if (record.failure_class === "infra") {
+        throw new InfraError(`${station} on ${plan.choice.harness}/${plan.choice.model} hit an infrastructure error; see ${plan.visitDir}/stderr.log. The cell is left unrun.`);
+      }
       handoff = handoffOf(record.extras) ?? handoff;
       log(`[${planned.loop_id}]   -> ${record.outcome} (${record.failure_class}) $${record.cost_usd.toFixed(3)} ${Math.round(record.wall_ms / 1000)}s pushed=${record.pushed}`);
       ({ state, step } = nextStep(state, { kind: "agent", station, outcome: record.outcome }));
@@ -210,3 +213,5 @@ export function referenceArtifact(paths: BenchPaths, experimentId: string, ticke
 
   return { bundle, roundBrief: existsSync(brief) ? readFileSync(brief, "utf8") : null };
 }
+
+export class InfraError extends Error {}

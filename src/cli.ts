@@ -14,7 +14,7 @@ import { usageFromStream } from "./core/usage.js";
 import { ADAPTERS } from "./harness/adapters.js";
 import { buildScratchHome } from "./harness/scratch-home.js";
 import { runProcess } from "./io/spawn.js";
-import { runLoop } from "./run/loop.js";
+import { InfraError, runLoop } from "./run/loop.js";
 import { loreServer } from "./run/station.js";
 import { benchPaths } from "./run/paths.js";
 import { propose, type ProposalEvidence } from "./run/propose.js";
@@ -190,6 +190,11 @@ async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop
     try {
       await runLoop(loop, { config, paths, log, keepRun });
     } catch (error) {
+      if (error instanceof InfraError) {
+        log(`[loop-bench] stopping: ${error.message}`);
+
+        return;
+      }
       log(`[loop-bench] ${cellPath(loop)} errored: ${error instanceof Error ? error.stack ?? error.message : String(error)}`);
     }
   }

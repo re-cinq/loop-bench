@@ -103,7 +103,7 @@ export async function runStation(plan: StationPlan, deps: StationDeps): Promise<
     context_mode: plan.contextMode,
     outcome: nodeResult?.outcome ?? "failed",
     extras: nodeResult?.extras ?? {},
-    failure_class: failureClassOf(result, nodeResult !== null),
+    failure_class: isInfraError(result) ? "infra" : failureClassOf(result, nodeResult !== null),
     exit_code: result.exitCode,
     usage,
     cost_usd: cost.usd,
@@ -123,6 +123,13 @@ export async function runStation(plan: StationPlan, deps: StationDeps): Promise<
   writeFileSync(join(plan.visitDir, "record.json"), JSON.stringify(record, null, 2));
 
   return record;
+}
+
+// Credentials, quota or the vendor's API failing: not the model's doing, so the loop stops and the cell stays unrun.
+const INFRA_ERROR = /invalid_grant|invalid_rapt|reauth|API key not valid|invalid_api_key|401 Unauthorized|RESOURCE_EXHAUSTED|429 Too Many Requests|requires a newer version of Codex|Credit balance is too low|authentication_error/;
+
+export function isInfraError(result: Pick<SpawnResult, "stdout" | "stderr" | "exitCode">): boolean {
+  return result.exitCode !== 0 && INFRA_ERROR.test(`${result.stdout.slice(-20_000)}\n${result.stderr.slice(-20_000)}`);
 }
 
 function failureClassOf(result: SpawnResult, hasResultLine: boolean): StationRunRecord["failure_class"] {

@@ -37,6 +37,17 @@ describe("localizeWorkspacePaths", () => {
 });
 
 describe("buildStationPrompt", () => {
+  it("leaves a ticket path under /home/u/workspace untouched", () => {
+    const built = buildStationPrompt({
+      markdown: "cd /workspace/target and read `{ticket_path}`.",
+      workspaceDir: "/home/u/workspace/runs/1/workspace",
+      ticketPath: "/home/u/workspace/runs/1/workspace/ticket.md",
+      header: { repo: "o/r", ticketNumber: 1, ticketTitle: "t" },
+    });
+
+    expect(built.prompt).toContain("cd /home/u/workspace/runs/1/workspace/target and read `/home/u/workspace/runs/1/workspace/ticket.md`.");
+  });
+
   it("starts with the Repository and Ticket header and records both hashes", () => {
     const built = buildStationPrompt({
       markdown: "---\nmodel: x\n---\nRead `{ticket_path}` in /workspace.",
