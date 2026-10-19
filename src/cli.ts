@@ -3,7 +3,8 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync
 import { join, relative } from "node:path";
 import { parseArgs } from "node:util";
 import { loadExperiment, type ExperimentConfig } from "./config/experiment.js";
-import { analyzeTranscript } from "./core/analyze.js";
+import { analyzeTranscript, type TranscriptAnalysis } from "./core/analyze.js";
+import type { VisitRow } from "./core/station-report.js";
 import { enforce } from "./core/enforce.js";
 import { HarnessSchema, StationSchema, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
@@ -18,7 +19,7 @@ import { InfraError, runLoop } from "./run/loop.js";
 import { loreServer } from "./run/station.js";
 import { benchPaths } from "./run/paths.js";
 import { propose, type ProposalEvidence } from "./run/propose.js";
-import { appendRecord, latestLoops, readLoopJson, readRecords, writeLoopJson } from "./run/results.js";
+import { appendRecord, latestLoops, latestStationRuns, readLoopJson, readRecords, writeLoopJson } from "./run/results.js";
 import { scoreDod, scoreJudge, withScores } from "./run/score.js";
 import { ensureDepsCache } from "./workspace/deps-cache.js";
 
@@ -36,7 +37,8 @@ const USAGE = `loop-bench <command> [options]
   score       --experiment <file> [filters]   dod red/green check + judge on finished loops
   analyze     --experiment <file>             transcript metrics per station visit -> analysis.json
   propose     --experiment <file> --station <s> [--worst 5]
-  report      --experiment <file>             markdown report on stdout
+  report      --experiment <file>             rewrite results/<experiment>/REPORT.md and print it
+  run ... --parallel <n>                      run n loops at a time (default 1)
 
 filters: --ticket <n> --station <dod|tdd-round|repair-build|baseline|whole_loop> --agent <harness/model>
          --context <none|lore-mcp> --prompt <variant> --replicates <n> --limit <n>`;
@@ -61,6 +63,7 @@ async function main(argv: readonly string[]): Promise<void> {
       worst: { type: "string", default: "5" },
       force: { type: "boolean", default: false },
       "keep-run": { type: "boolean", default: false },
+      parallel: { type: "string", default: "1" },
     },
   });
   const config = (): ExperimentConfig => loadExperiment(values.experiment);
@@ -74,17 +77,17 @@ async function main(argv: readonly string[]): Promise<void> {
     case "smoke":
       return smoke(config(), values.harness, values.model, values.context === "lore-mcp");
     case "run":
-      return runSelected(config(), selected(), values.force, values["keep-run"]);
+      return runSelected(config(), breadthFirst(selected()), values.force, values["keep-run"], Number(values.parallel));
     case "make-artifact":
       return makeArtifact(config(), values.ticket, values.kind, values["from-cell"]);
     case "score":
       return scoreSelected(config(), selected());
     case "analyze":
-      return analyzeAll(config());
+      return void analyzeAll(config());
     case "propose":
       return proposeFor(config(), values.station, Number(values.worst));
     case "report":
-      return report(config());
+      return void process.stdout.write(writeReport(config()));
     default:
       process.stdout.write(`${USAGE}\n`);
   }
@@ -177,27 +180,46 @@ async function smoke(config: ExperimentConfig, harness: string | undefined, mode
   );
 }
 
-async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], force: boolean, keepRun: boolean): Promise<void> {
-  log(`[loop-bench] ${loops.length} loops selected`);
-  for (const [index, loop] of loops.entries()) {
-    const cellDir = join(paths.resultsDir, cellPath(loop));
+/** Every cell's first run before any cell's second, without Lore before with: each pass over the matrix is a complete table. */
+function breadthFirst(loops: readonly PlannedLoop[]): PlannedLoop[] {
+  const contextOrder = (loop: PlannedLoop): number => (loop.context_mode === "none" ? 0 : 1);
 
-    if (!force && readLoopJson(cellDir)) {
-      log(`[loop-bench] ${index + 1}/${loops.length} ${cellPath(loop)} already done, skipped`);
-      continue;
-    }
-    log(`[loop-bench] ${index + 1}/${loops.length} ${cellPath(loop)}`);
-    try {
-      await runLoop(loop, { config, paths, log, keepRun });
-    } catch (error) {
-      if (error instanceof InfraError) {
-        log(`[loop-bench] stopping: ${error.message}`);
+  return [...loops].sort((a, b) => a.replicate - b.replicate || contextOrder(a) - contextOrder(b));
+}
 
+async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], force: boolean, keepRun: boolean, parallel: number): Promise<void> {
+  const pending = loops.filter((loop) => force || !readLoopJson(join(paths.resultsDir, cellPath(loop))));
+  let next = 0;
+  let stopped = false;
+
+  log(`[loop-bench] ${loops.length} loops selected, ${pending.length} not yet run, ${parallel} at a time`);
+  const worker = async (): Promise<void> => {
+    while (!stopped && next < pending.length) {
+      const index = next++;
+      const loop = pending[index];
+
+      if (!loop) {
         return;
       }
-      log(`[loop-bench] ${cellPath(loop)} errored: ${error instanceof Error ? error.stack ?? error.message : String(error)}`);
+      log(`[loop-bench] ${index + 1}/${pending.length} ${cellPath(loop)}`);
+      try {
+        await runLoop(loop, { config, paths, log, keepRun });
+        await scoreSelected(config, [loop]);
+        analyzeAll(config);
+        writeReport(config);
+      } catch (error) {
+        if (error instanceof InfraError) {
+          stopped = true;
+          log(`[loop-bench] stopping: ${error.message}`);
+
+          return;
+        }
+        log(`[loop-bench] ${cellPath(loop)} errored: ${error instanceof Error ? error.stack ?? error.message : String(error)}`);
+      }
     }
-  }
+  };
+
+  await Promise.all(Array.from({ length: Math.max(1, parallel) }, worker));
 }
 
 async function makeArtifact(config: ExperimentConfig, ticket: string | undefined, kind: string | undefined, fromCell: string | undefined): Promise<void> {
@@ -273,10 +295,10 @@ function visitDirs(experimentId: string): string[] {
     .map((entry) => entry.parentPath);
 }
 
-async function analyzeAll(config: ExperimentConfig): Promise<void> {
+function analyzeAll(config: ExperimentConfig): void {
   const dirs = visitDirs(config.id);
 
-  for (const dir of dirs) {
+  for (const dir of dirs.filter((visit) => existsSync(join(visit, "stdout.jsonl")))) {
     const record = JSON.parse(readFileSync(join(dir, "record.json"), "utf8")) as { harness: string; usage: unknown; cost_usd: number; wall_ms: number; outcome: string };
     const harness = HarnessSchema.parse(record.harness);
     const analysis = analyzeTranscript(harness, readFileSync(join(dir, "stdout.jsonl"), "utf8"));
@@ -305,18 +327,44 @@ async function proposeFor(config: ExperimentConfig, station: string | undefined,
   log(`[loop-bench] proposals written to ${await propose({ config, paths, station: parsedStation, evidence })}`);
 }
 
-async function report(config: ExperimentConfig): Promise<void> {
-  const loops = latestLoops(readRecords(paths.resultsDir, config.id));
+/** The one markdown file holding everything: tables from results.jsonl, every visit with its analysis, and the conclusions written beside it. */
+function writeReport(config: ExperimentConfig): string {
+  const records = readRecords(paths.resultsDir, config.id);
+  const experimentDir = join(paths.resultsDir, config.id);
+  const visits: VisitRow[] = latestStationRuns(records).map((record) => {
+    const loop = latestLoops(records).find((candidate) => candidate.loop_id === record.loop_id);
+    const visitDir = visitDirs(config.id).find((dir) => readRecordId(dir) === record.run_id);
+    const analysisPath = visitDir ? join(visitDir, "analysis.json") : null;
 
-  process.stdout.write(
-    renderReport({
-      experimentId: config.id,
-      loops,
-      promptsLoreSha: readFileSync(join(paths.promptsDir, "LORE_SHA"), "utf8").trim(),
-      subjectRepo: config.subject.repo,
-      generatedAt: new Date().toISOString().slice(0, 10),
-    }),
-  );
+    return {
+      record,
+      analysis: analysisPath && existsSync(analysisPath) ? (JSON.parse(readFileSync(analysisPath, "utf8")) as TranscriptAnalysis) : null,
+      cellPath: loop?.cell_path ?? (visitDir ? relative(paths.resultsDir, join(visitDir, "..", "..")) : record.loop_id),
+    };
+  });
+  const conclusionsPath = join(experimentDir, "conclusions.md");
+  const markdown = renderReport({
+    experimentId: config.id,
+    loops: latestLoops(records),
+    visits,
+    promptsLoreSha: readFileSync(join(paths.promptsDir, "LORE_SHA"), "utf8").trim(),
+    subjectRepo: config.subject.repo,
+    generatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC",
+    conclusions: existsSync(conclusionsPath) ? readFileSync(conclusionsPath, "utf8").trim() : "_No conclusions yet: too few loops have finished._",
+  });
+
+  mkdirSync(experimentDir, { recursive: true });
+  writeFileSync(join(experimentDir, "REPORT.md"), markdown);
+
+  return markdown;
+}
+
+function readRecordId(dir: string): string | null {
+  try {
+    return (JSON.parse(readFileSync(join(dir, "record.json"), "utf8")) as { run_id?: string }).run_id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 process.stdout.on("error", () => process.exit(0));

@@ -97,6 +97,7 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
       lastVisit.ci = { green: verdict.green, failed_checks: verdict.checks.filter((check) => !check.passed).map((check) => check.name), head_sha: verdict.headSha, wall_ms: verdict.wallMs };
       writeFileSync(join(visitDirOf(cellDir, visitIndex, lastVisit), "record.json"), JSON.stringify(lastVisit, null, 2));
       writeFileSync(join(visitDirOf(cellDir, visitIndex, lastVisit), "ci-verdict.json"), JSON.stringify(verdict, null, 2));
+      appendRecord(paths.resultsDir, config.id, lastVisit);
     }
     log(`[${planned.loop_id}]   CI on ${verdict.headSha.slice(0, 8)}: ${verdict.green ? "green" : `red (${verdict.checks.filter((c) => !c.passed).map((c) => c.name).join(", ")})`}`);
     const feedback = ciFeedbackOf(verdict.headSha, verdict.checks);

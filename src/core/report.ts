@@ -1,6 +1,7 @@
 // The results as a table per cell, replicates folded into mean and spread, in the shape of docs/building-lore/decompose-model-comparison.md.
 import type { LoopRecord } from "./records.js";
 import { formatSpread, spreadOf } from "./stats.js";
+import { renderStationSummary, renderVisitLog, type VisitRow } from "./station-report.js";
 
 export interface CellSummary {
   key: string;
@@ -95,7 +96,7 @@ export function renderEndReasons(cells: readonly CellSummary[]): string {
   return ["| Ticket | Station varied | Agent | Context | How the loops ended |", "|---|---|---|---|---|", ...rows].join("\n");
 }
 
-export function renderReport(input: { experimentId: string; loops: readonly LoopRecord[]; promptsLoreSha: string; subjectRepo: string; generatedAt: string }): string {
+export function renderReport(input: { experimentId: string; loops: readonly LoopRecord[]; visits: readonly VisitRow[]; promptsLoreSha: string; subjectRepo: string; generatedAt: string; conclusions: string }): string {
   const cells = cellsOf(input.loops);
 
   return `# Which model runs each implementation-loop station best
@@ -125,9 +126,15 @@ What the columns mean:
 
 ${renderEndReasons(cells)}
 
+### Every station, folded per agent
+
+One row per station, agent, context and prompt, over every visit it made in any loop. "CI green after" is the local CI verdict on the push that visit made.
+
+${renderStationSummary(input.visits)}
+
 ## What we read in it
 
-_(written by hand after reading the cells)_
+${input.conclusions}
 
 ## What would improve it
 
@@ -144,5 +151,11 @@ _(written by hand from \`analyze\` and \`propose\`)_
 - Local CI is one Node version on one machine, not GitHub's matrix.
 - Codex has no Bash guard, so its rounds may run acceptance tests the others are refused.
 - In the \`lore-mcp\` arm the Lore memory holds episodes from the real runs on these tickets.
+
+## Appendix: every station visit
+
+Every agent run in order, with what it reported. Its transcript, prompt and final message are in \`results/<cell>/stations/\`.
+
+${renderVisitLog(input.visits)}
 `;
 }
