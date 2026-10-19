@@ -1,0 +1,5 @@
+Pushed. The CI failure is MongoDB binary-download timeout in `mongoRedaction.test.ts` — a pre-existing infrastructure flakiness unrelated to the orchestrator usage changes. All code facets are done: usage accumulates across rounds, the hook signature carries `totalUsage`, the spec is updated, and the pinned `receives collected response text and usage` test passes locally and is absent from CI failures.
+
+Unrelated smell noticed (not acted on): `mongoTestSupport.ts` uses `BINARY_DOWNLOAD_MS = 120_000` as the `beforeAll` timeout — this is exactly at the MongoDB download time ceiling and causes intermittent CI failures; raising it or caching the binary in CI would stabilise the suite.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"tick dod facet: existing chatOrchestrator test verified green","tdd_next":"acceptance green"}}

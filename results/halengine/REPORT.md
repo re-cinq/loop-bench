@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-19 22:13 UTC: 8 loops over 8 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-19 23:50 UTC: 18 loops over 18 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -12,22 +12,23 @@ Each row is one cell: one station varied against the production baseline, every 
 
 | Ticket | Station varied | Model (CLI) | Effort | Lore | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| #93 | baseline | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 3.0 | $9.66 | 60.5 min | 4.0 | 5.0 | 3.0 | 0/1 | 14 (0.40) | +268/−51 |
 | #93 | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 1 | 1/1 | 2.0 | $7.72 | 23.7 min | 4.0 | 4.0 | 4.0 | 1/1 | 13 (0.54) | +229/−62 |
-| #93 | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
-| #93 | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 1 | 1/1 | 3.0 | $8.48 | 67.3 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.50) | +224/−41 |
+| #93 | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 1 | 1/1 | 6.0 | $7.21 | 68.5 min | 4.0 | 4.0 | 3.0 | 1/1 | 15 (0.38) | +256/−61 |
 | #93 | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 1 | 1/1 | 2.0 | $5.77 | 24.0 min | 4.0 | 4.0 | 4.0 | 1/1 | 9 (0.45) | +172/−20 |
-| #93 | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 1 | 1/1 | 3.0 | $6.37 | 43.0 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.50) | +172/−30 |
 | #93 | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 1 | 1/1 | 2.0 | $2.76 | 15.4 min | 5.0 | 5.0 | 4.0 | 1/1 | 8 (0.67) | +153/−20 |
 | #93 | dod | `gpt-5.6-luna` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 3.0 | $4.28 | 25.0 min | 4.0 | 4.0 | 3.0 | 1/1 | 12 (0.46) | +195/−47 |
 | #93 | dod | `gpt-5.6-sol` (codex) | low (codex default) | without Lore | baseline | 1 | 1/1 | 1.0 | $4.38 | 16.9 min | 3.0 | 3.0 | 3.0 | 1/1 | 8 (0.36) | +136/−7 |
 | #93 | dod | `gpt-5.6-terra` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 0.0 | $2.06 | 10.5 min | 4.0 | 4.0 | 4.0 | 1/1 | 7 (0.27) | +159/−7 |
-| #93 | dod | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
-| #93 | dod | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
-| #93 | dod | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
-| #93 | dod | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 1 | 1/1 | 3.0 | $5.43 | 39.0 min | 5.0 | 5.0 | 4.0 | 1/1 | 9 (0.23) | +173/−8 |
+| #93 | dod | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 2.0 | $2.16 | 22.4 min | 4.0 | 3.0 | 3.0 | 1/1 | 7 (0.27) | +106/−3 |
+| #93 | dod | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 5.0 | $5.92 | 46.7 min | 4.0 | 5.0 | 4.0 | 1/1 | 9 (0.33) | +197/−11 |
+| #93 | dod | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 1 | 1/1 | 4.0 | $4.71 | 36.0 min | 4.0 | 5.0 | 4.0 | 1/1 | 11 (0.20) | +178/−8 |
 | #93 | dod | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 2.0 | $4.67 | 24.9 min | 4.0 | 4.0 | 3.0 | 1/1 | 7 (0.27) | +194/−7 |
-| #93 | dod | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | no-traceability | 0 | running | — | — | — | — | — | — | — | — | — |
-| #93 | dod | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | short | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 | dod | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | no-traceability | 1 | 1/1 | 4.0 | $9.37 | 70.2 min | 5.0 | 4.0 | 4.0 | 1/1 | 8 (0.36) | +161/−7 |
+| #93 | dod | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | short | 1 | 1/1 | 7.0 | $8.30 | 74.7 min | 4.0 | 5.0 | 4.0 | 1/1 | 14 (0.40) | +208/−46 |
 | #93 | dod | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 1.0 | $5.84 | 15.7 min | 4.0 | 4.0 | 4.0 | 1/1 | 8 (0.36) | +157/−5 |
 
 What the columns mean:
@@ -44,13 +45,23 @@ What the columns mean:
 
 | Ticket | Station varied | Model (CLI) | Lore | How the loops ended |
 |---|---|---|---|---|
+| #93 | baseline | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 | dod | `claude-fable-5-1` (claude) | without Lore | green ×1 |
+| #93 | dod | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×1 |
+| #93 | dod | `claude-haiku-5-5` (claude) | without Lore | green ×1 |
 | #93 | dod | `claude-opus-5-5` (claude) | without Lore | green ×1 |
+| #93 | dod | `claude-sonnet-4-6` (claude) | without Lore | green ×1 |
 | #93 | dod | `claude-sonnet-5-5` (claude) | without Lore | green ×1 |
 | #93 | dod | `gpt-5.6-luna` (codex) | without Lore | green ×1 |
 | #93 | dod | `gpt-5.6-sol` (codex) | without Lore | green ×1 |
 | #93 | dod | `gpt-5.6-terra` (codex) | without Lore | green ×1 |
+| #93 | dod | `gpt-6-astra` (codex) | without Lore | green ×1 |
+| #93 | dod | `gpt-6-luna` (codex) | without Lore | green ×1 |
+| #93 | dod | `gpt-6-sol` (codex) | without Lore | green ×1 |
+| #93 | dod | `gpt-6.1-sol` (codex) | without Lore | green ×1 |
 | #93 | dod | `gemini-3-flash-preview` (gemini) | without Lore | green ×1 |
+| #93 | dod | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
+| #93 | dod | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 | dod | `gemini-4-argon` (gemini) | without Lore | green ×1 |
 
 ## What we read in it

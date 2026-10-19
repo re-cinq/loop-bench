@@ -1,0 +1,5 @@
+I have identified the CI failure. The `test` job failed specifically in `src/infrastructure/stores/mongo/mongoRedaction.test.ts` (and likely other Mongo-based tests) because the initial one-time `mongodb-memory-server` binary download took longer than the hardcoded 120,000ms (`MONGO_START_MS`) timeout. I reproduced this locally by running the tests, which showed the download timing out at ~35%.
+
+I have fixed this by editing `src/infrastructure/stores/mongo/mongoTestSupport.ts` to increase `BINARY_DOWNLOAD_MS` from `120_000` to `600_000` (10 minutes) so the download can comfortably finish on CI runners without failing the hook. The test suite passes locally after this change. I formatted the file, committed, merged `origin/main`, and pushed back to the branch.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"increased BINARY_DOWNLOAD_MS timeout to fix MongoMemoryServer download flake"}}

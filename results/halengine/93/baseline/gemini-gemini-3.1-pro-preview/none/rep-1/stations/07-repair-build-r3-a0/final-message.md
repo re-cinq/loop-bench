@@ -1,0 +1,5 @@
+I have investigated the CI failure and found that the `mongoRedaction.test.ts` suite was timing out during the `beforeAll` hook. The timeout was caused by the `mongodb-memory-server-core` binary download taking longer than the 120 seconds configured as `BINARY_DOWNLOAD_MS` in `src/infrastructure/stores/mongo/mongoTestSupport.ts`. This was purely a test setup timeout issue caused by slow download speeds in the CI environment. 
+
+To fix this, I increased the `BINARY_DOWNLOAD_MS` to `300_000` (5 minutes) which provides enough time for the environment to complete the test setup. I also made sure to run Prettier over the file changed, committed it, pushed the branch and ensured it was up to date with `main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"increased BINARY_DOWNLOAD_MS to 300_000 to prevent MongoDB download timeout in CI"}}

@@ -1,0 +1,3 @@
+Pushed and up to date. The round closed the first facet: `accumulateUsage` in `orchestratorHelpers.ts` sums token fields across rounds (returning `undefined` only when nothing reported), and `chatOrchestrator.ts` now calls it instead of discarding earlier rounds. No regressions: 32 tests across the two files passed. Unrelated smells noticed: none.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Accumulate reported usage across all provider calls without manufacturing usage when none is reported","tdd_next":"Keep the existing 'receives collected response text and usage' no-tool test in chatOrchestrator.test.ts unedited and green — verify CI passes the acceptance test with the new accumulation logic"}}
