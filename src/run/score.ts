@@ -52,14 +52,18 @@ export async function scoreDod(input: {
 
     await git(["clone", "--quiet", input.config.subject.mirror_dir, repo], work);
     await git(["fetch", "--quiet", bundle, `refs/heads/loop-bench/${input.ticket.number}:refs/heads/candidate`], repo);
-    await git(["checkout", "--quiet", "candidate"], repo);
+    await git(["checkout", "--quiet", "--detach", input.ticket.base_sha], repo);
     const testFile = new RegExp(input.config.subject.test_file_pattern);
     const added = (await changedFiles(repo, input.ticket.base_sha, "candidate")).filter((path) => testFile.test(path));
-    const acceptance = acceptanceFilesOf(readFileSync(dodPath, "utf8"), added).filter((path) => existsSync(join(repo, path)));
+    const named = acceptanceFilesOf(readFileSync(dodPath, "utf8"), added);
+    const onBranch = new Set(await changedFiles(repo, input.ticket.base_sha, "candidate"));
+    const acceptance = named.filter((path) => onBranch.has(path));
 
     if (acceptance.length === 0) {
-      return { acceptance_files: [], red_on_base: null, green_with_reference: null, detail: "no acceptance test file found on the branch" };
+      return { acceptance_files: named, red_on_base: null, green_with_reference: null, detail: "no acceptance test file the branch added or changed" };
     }
+    // The acceptance tests alone, on the base commit: the implementation the later rounds wrote must not be there.
+    await git(["checkout", "--quiet", "candidate", "--", ...acceptance], repo);
     const nodeModules = cachedNodeModulesDir(join(input.paths.cacheDir, input.config.id), input.ticket.base_sha);
     const { cpSync } = await import("node:fs");
 
@@ -79,7 +83,7 @@ export async function scoreDod(input: {
       (await changedFiles(input.config.subject.mirror_dir, input.ticket.base_sha, input.ticket.merge_sha)).filter((path) => !testFile.test(path) && !path.startsWith(".lore/")),
     );
 
-    writeFileSync(join(work, "reference-production.patch"), productionDiff);
+    writeFileSync(join(work, "reference-production.patch"), `${productionDiff}\n`);
     const applied = await runProcess({ bin: "git", args: ["apply", "--3way", join(work, "reference-production.patch")], cwd: repo, env: envOf(), timeoutMs: 60_000 });
     const withReference = applied.exitCode === 0 ? await run() : { passed: false, tail: `reference patch did not apply: ${applied.stderr.slice(-1500)}` };
     const check: DodCheck = {
@@ -121,7 +125,7 @@ export async function scoreJudge(input: { config: ExperimentConfig; paths: Bench
 
   buildScratchHome({ spec, adapter, promptsDir: input.paths.promptsDir, skills: [] });
   const command = adapter.command(spec);
-  const result = await runProcess({ ...command, args: withoutTools(judge.harness, command.args, homeDir), timeoutMs: 15 * 60_000, stdoutPath: join(input.cellDir, "judge-stdout.jsonl") });
+  const result = await runProcess({ ...command, args: withoutTools(judge.harness, command.args), timeoutMs: 15 * 60_000, stdoutPath: join(input.cellDir, "judge-stdout.jsonl") });
   const text = finalText(judge.harness, result.stdout);
   const scores = parseJudgeOutput(text);
 
@@ -131,22 +135,16 @@ export async function scoreJudge(input: { config: ExperimentConfig; paths: Bench
   return scores ? { ...scores, model: judge.model } : null;
 }
 
-const DENY_ALL_POLICY = `[[rule]]\ntoolName = "*"\ndecision = "deny"\npriority = 300\n`;
-
 /** The judge reads its brief and answers; it uses no tools. */
-function withoutTools(harness: ExperimentConfig["judge"]["harness"], args: string[], homeDir: string): string[] {
+export function withoutTools(harness: ExperimentConfig["judge"]["harness"], args: string[]): string[] {
   if (harness === "claude") {
     return ["--tools", "", ...args.filter((arg) => arg !== "--dangerously-skip-permissions")];
   }
   if (harness === "gemini") {
-    const policy = join(homeDir, ".gemini", "deny-all.toml");
+    const policyIndex = args.indexOf("--policy");
 
-    writeFileSync(policy, DENY_ALL_POLICY);
-    const index = args.indexOf("--policy");
-
-    return index >= 0 ? [...args.slice(0, index), "--policy", policy, ...args.slice(index + 2)] : [...args, "--policy", policy];
+    return args.filter((arg, index) => arg !== "--yolo" && index !== policyIndex && index !== policyIndex + 1);
   }
-
   return args.map((arg) => (arg === "--dangerously-bypass-approvals-and-sandbox" ? "--sandbox" : arg)).flatMap((arg) => (arg === "--sandbox" ? ["--sandbox", "read-only"] : [arg]));
 }
 

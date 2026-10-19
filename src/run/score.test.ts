@@ -36,3 +36,11 @@ describe("isInfraError", () => {
     expect(isInfraError({ exitCode: 0, stdout: "invalid_grant mentioned in a file the agent read", stderr: "" })).toBe(false);
   });
 });
+
+import { withoutTools } from "./score.js";
+
+describe("withoutTools", () => {
+  it("gemini judge runs without --yolo and without the bypass policy", () => {
+    expect(withoutTools("gemini", ["--prompt", "p", "--yolo", "--policy", "/h/p.toml", "--skip-trust"])).toEqual(["--prompt", "p", "--skip-trust"]);
+  });
+});
