@@ -1,0 +1,3 @@
+Branch is pushed and up to date. This round fixed all 3 failing CI jobs (eslint, spec-names, spec-links): 0 regressions, 0 new tests written (this was a pure CI-repair round). Smells noted but not touched: the `re-lint/no-catch-as-control-flow` pattern in the test's `generateStructured` stub returning `{}` is fine as-is.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI repair — eslint max-expects, invalid lint rule, stale spec anchors, misplaced and missing validated-by links","tdd_next":"acceptance green"}}
