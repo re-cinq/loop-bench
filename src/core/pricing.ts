@@ -18,7 +18,11 @@ const anthropic = (input: number, output: number, cacheRead: number): PricePerMi
 
 export const MARKET_PRICES: Record<Harness, Record<string, PricePerMillion>> = {
   claude: {
+    "claude-fable-5-1": anthropic(10, 50, 0.25),
     "claude-opus-5-5": anthropic(4, 20, 0.2),
+    "claude-sonnet-5-5": anthropic(2, 10, 0.2),
+    // $0.10/$0.50 up to 100K-token prompts, $0.50/$2.50 above; the bench sees a run's total tokens, not each request's, so it takes the higher tier.
+    "claude-haiku-5-5": anthropic(0.5, 2.5, 0.05),
     "claude-sonnet-4-6": anthropic(3, 15, 0.3),
     "claude-haiku-4-5-20251001": anthropic(1, 5, 0.1),
   },
