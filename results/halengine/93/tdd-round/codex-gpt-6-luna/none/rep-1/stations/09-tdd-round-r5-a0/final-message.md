@@ -1,0 +1,3 @@
+Removed the redundant assertion that caused the CI lint failure. The targeted test passed; commit `6fb8b3c` is pushed, and the branch is synchronized with its upstream. No unrelated issues were acted on. This round repaired one CI finding; no regressions were identified.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair CI lint finding in turnUsageType.test.ts","tdd_next":"acceptance green"}}

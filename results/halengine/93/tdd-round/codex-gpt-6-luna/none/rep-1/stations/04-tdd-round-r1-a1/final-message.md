@@ -1,0 +1,5 @@
+Committed and pushed `053622e` (`docs(orchestration): clarify turn usage hook type`). The branch is up to date with `origin/main` and its upstream.
+
+The hook now names its third argument `TurnUsageMetadata`; I updated the generated API excerpts, spec, changelog, and MINOR version, and removed the duplicated test that caused the previous lint finding. The focused test passed. **It did not provide a true red phase:** Jest transpiles this type-only import without checking TypeScript, so the test passed before the alias was added. No acceptance tests or other checks were run. CI reported **0 red tests of mine and 0 regressions**. No unrelated issues were acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Make the hook signature say it receives turn-total usage; update the spec, changelog and MINOR version","tdd_next":"acceptance green"}}

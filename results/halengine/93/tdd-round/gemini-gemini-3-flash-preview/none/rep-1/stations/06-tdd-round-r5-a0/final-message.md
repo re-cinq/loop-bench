@@ -1,0 +1,3 @@
+I have fixed the ESLint errors in `src/orchestration/usageAccumulation.test.ts` by refactoring the tests to eliminate code duplication and adding the missing spec links. I also updated `specs/hal-engine-config-hooks/spec.md` with the correct line numbers for all traceable tests in that file, ensuring the build remains green and the suite stays traceable. All 9 tests in `src/orchestration/usageAccumulation.test.ts` passed locally, and `check-spec-links.mjs` confirmed zero misplaced links.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix ESLint errors (duplication and spec links)","tdd_next":"acceptance green"}}

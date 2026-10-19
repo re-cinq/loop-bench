@@ -1,0 +1,5 @@
+Branch is up to date and pushed. 0 tests were regressions; all 8 are new. Smells I noticed but did not touch: the `chatOrchestrator.test.ts` has a test "keeps the usage an earlier round reported when a later round reports none" which was testing last-wins behavior — with the new summing implementation it will now return only the first round's usage (which is the same value since the second round omits usage), so it stays green naturally.
+
+**Current Loot Inventory:** Your running token totals from every prior conversation, your sense that arithmetic is simple, your trust in last-wins semantics.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum inputTokens, outputTokens and totalTokens across all provider calls in one turn, ignoring calls without usage","tdd_next":"Preserve undefined when every provider call omits usage and keep the existing one-call test unedited and green"}}

@@ -11,3 +11,10 @@ _First reading, 2026-10-19, after wave 1: ticket #93, the dod station varied, no
 - **Lore MCP:** too early. One cell has run with Lore so far (Fable 5.1: 1 round, $3.34, 11 minutes, against $4.96 and 20 minutes without).
 
 **What would change a decision, once the repeats agree:** moving `dod` off Gemini 3.1 Pro to Opus 5.5 or gpt-6.1-sol for quality, or to gpt-6-luna for cost, and shipping the `short` dod prompt.
+
+**tdd-round, first reading** (ticket #93, every cell starting from Opus 5.5's dod, no Lore, one run per cell, non-Claude models only so far):
+
+- **The Codex models finish the implementation for a fraction of production's cost.** In production Sonnet 4.6 runs these rounds; after the same Opus dod they cost about $3.84. gpt-6-sol needed 2 rounds and $1.08, gpt-5.6-terra 3 rounds and $1.17, gpt-5.6-luna 5 rounds and $0.21, and gpt-6-luna 8 rounds and $0.12. The judge scored all of them 5 for correctness and completeness.
+- **Cheap models buy their price with rounds.** gpt-6-luna needed 8 rounds, against a budget of 12; each round is a CI run in production, so its real cost includes eight CI cycles.
+- **Gemini 4 Argon wrote the closest result to the merged PR** (judge 5 / 5 / 5, two rounds) but cost the most of these at $4.44.
+- **Two models refused to start without Lore.** gpt-6-astra and gpt-6.1-sol stopped before editing anything, because the prompt makes two Lore tool calls mandatory and, separately, tells the round to follow a `tdd-loop` skill that codex is never given. Both are production defects, not model failures: re-cinq/lore#2834 (prompt) and re-cinq/ai-agent-subsystem#241 (skills staged for claude only, which every codex and gemini pod also lacks).

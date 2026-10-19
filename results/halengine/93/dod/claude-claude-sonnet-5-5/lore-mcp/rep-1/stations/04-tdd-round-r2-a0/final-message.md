@@ -1,0 +1,3 @@
+Branch is pushed and up to date. The fix adds a spec statement in `specs/hal-engine-config-hooks/spec.md` linking the `accumulateUsage` unit test ("adds the token counts when both rounds reported" at line 11) to the accumulation behavior it validates, satisfying the `require-spec-link` ESLint rule that caused the CI failure.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint require-spec-link failure for orchestratorHelpers.test.ts line 11","tdd_next":"acceptance green"}}
