@@ -73,8 +73,12 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
         homeDir: join(runDir, `home-${visitIndex}`),
       };
 
-      log(`[${planned.loop_id}] ${station} ${plan.choice.harness}/${plan.choice.model} round ${state.rounds} attempt ${state.attempts[station]}`);
-      const record = await (deps.lanes ?? UNLIMITED).run(plan.choice.harness, () => runStation(plan, { config, paths, workspace, cliVersion }));
+      log(`[${planned.loop_id}] ${station} ${plan.choice.harness}/${plan.choice.model} round ${state.rounds} attempt ${state.attempts[station]}: waiting for a ${plan.choice.harness} lane`);
+      const record = await (deps.lanes ?? UNLIMITED).run(plan.choice.harness, () => {
+        log(`[${planned.loop_id}] ${station} ${plan.choice.harness}/${plan.choice.model} started`);
+
+        return runStation(plan, { config, paths, workspace, cliVersion });
+      });
 
       visits.push(record);
       appendRecord(paths.resultsDir, config.id, record);

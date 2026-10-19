@@ -9,6 +9,7 @@ import type { BenchRecord } from "./core/records.js";
 import { enforce } from "./core/enforce.js";
 import { HarnessSchema, StationSchema, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
+import { breadthFirst } from "./core/order.js";
 import { costOf } from "./core/pricing.js";
 import { renderReport } from "./core/report.js";
 import { finalText, parseNodeResult } from "./core/result-line.js";
@@ -182,13 +183,6 @@ async function smoke(config: ExperimentConfig, harness: string | undefined, mode
       2,
     )}\n`,
   );
-}
-
-/** Every cell's first run before any cell's second, without Lore before with: each pass over the matrix is a complete table. */
-function breadthFirst(loops: readonly PlannedLoop[]): PlannedLoop[] {
-  const contextOrder = (loop: PlannedLoop): number => (loop.context_mode === "none" ? 0 : 1);
-
-  return [...loops].sort((a, b) => a.replicate - b.replicate || contextOrder(a) - contextOrder(b));
 }
 
 async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], force: boolean, keepRun: boolean, parallel: number, lanes?: HarnessLanes): Promise<void> {
