@@ -1,0 +1,3 @@
+Branch is up to date. Now update the DoD checklist — all facets were already ticked; this round fixed a CI failure (eslint spec-link errors) rather than opening a new facet. The DoD stays as-is since all facets are already checked.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"add spec validated-by links for addUsage unit tests (fixes eslint re-lint/require-spec-link CI failure)","tdd_next":"acceptance green"}}

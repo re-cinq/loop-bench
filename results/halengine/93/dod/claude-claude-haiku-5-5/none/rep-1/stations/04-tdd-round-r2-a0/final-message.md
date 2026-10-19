@@ -1,0 +1,3 @@
+Pushed successfully. The CI failure was all 22 `validated by` links in `specs/hal-engine-tool-budget/spec.md` pointing 4 lines past their actual test positions — a prior insert in `toolBudget.test.ts` shifted everything. Fixed by updating each `#Lnnn` anchor to match the current line. The next facet is adding the named type or doc comment on `afterModelResponse` to make turn-sum semantics explicit (facet 3).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec-anchor line numbers (spec-names CI check)","tdd_next":"add named type or doc comment on afterModelResponse making turn-sum semantics explicit (facet 3)"}}

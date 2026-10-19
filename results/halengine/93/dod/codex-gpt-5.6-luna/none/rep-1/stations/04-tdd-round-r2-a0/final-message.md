@@ -1,0 +1,5 @@
+Branch is up to date. All 27 drifted spec citations were reanchored (fixing both the `spec-names` and `re-lint/require-spec-link` CI failures), the architecture spec's ambiguous "usage the provider reported" was updated to "aggregate usage across all provider calls in the turn", the config-hooks section header was corrected, and all three remaining DoD facets were ticked.
+
+0 red tests from regressions; 0 new tests written (this round's work was purely CI repair — all failing tests were caused by citation line drift, not broken behavior). Unrelated smells noticed: the `chatOrchestrator.ts#L150` source-file citation in config-hooks spec points to the `catch` line rather than the `instanceof Error` guard one line below — harmless but slightly imprecise.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"reanchor drifted spec citations and close remaining DoD facets (Preserve, Make type unambiguous, Replace historical statement)","tdd_next":"acceptance green"}}

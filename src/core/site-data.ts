@@ -13,6 +13,8 @@ export interface SiteCell {
   lore: boolean;
   prompt: string;
   status: "done" | "running" | "not run yet";
+  /** One per finished replicate, in replicate order; `diffs/<loop id>.patch` holds that loop's branch diff. */
+  loopIds: string[];
   runs: number;
   reachedGreen: number;
   rounds: Spread | null;
@@ -130,6 +132,7 @@ function finishedCell(cell: CellSummary): SiteCell {
     lore: cell.context === LORE_CONTEXT,
     prompt: cell.prompt,
     status: "done",
+    loopIds: [...loops].sort((a, b) => a.replicate - b.replicate).map((loop) => loop.loop_id),
     runs: loops.length,
     reachedGreen: loops.filter((loop) => loop.reached_green).length,
     rounds: spreadOf(loops.map((loop) => loop.rounds)),
@@ -159,6 +162,7 @@ function pendingCell(cell: PendingCell): SiteCell {
     lore: cell.context === LORE_CONTEXT,
     prompt: cell.prompt,
     status: cell.status,
+    loopIds: [],
     runs: 0,
     reachedGreen: 0,
     rounds: null,

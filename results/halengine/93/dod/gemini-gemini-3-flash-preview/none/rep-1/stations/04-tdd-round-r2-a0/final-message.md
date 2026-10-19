@@ -1,0 +1,3 @@
+Branch is up to date. The commit is pushed. Unnoticed smells (not acted on): the `onError instanceof Error` measured-semantic statement and one other statement in the spec still lack test links — those are the two that keep coverage at 10+4 of 12+4 = 14/16, which "In Progress" status permits.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix ESLint CI failures (prefer-early-return, no-duplicate-code, require-spec-link, require-status-matches-coverage)","tdd_next":"rename afterModelResponse hook parameter usage→totalUsage for type clarity"}}

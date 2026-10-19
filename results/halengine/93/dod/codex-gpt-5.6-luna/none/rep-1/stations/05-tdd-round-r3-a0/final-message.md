@@ -1,0 +1,5 @@
+Branch is up to date. The fix: the `require-status-matches-coverage` rule found 8 of 11 testable statements linked in `specs/hal-engine-config-hooks/spec.md` — the two narrative sentences in the "Measured semantics" intro paragraph ("These two properties are recorded..." and "The `onError` gate was not changed...") plus the `catch gates onError` bullet (which only has a source-code citation, not a `[validated by]` test link) are the three unlinked statements. Changing the status from "Shipped" to "In Progress" aligns it with actual coverage.
+
+Red tests: 0 mine, 0 regressions. Unrelated smells noticed but not acted on: the `catch gates onError` bullet (line 27 of spec) has only a source file citation and no test link — a future round could add one if a test for that guard is written.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint status-coverage mismatch in spec","tdd_next":"acceptance green"}}

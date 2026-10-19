@@ -18,7 +18,7 @@ export type StationEvent =
   | { kind: "agent"; station: Station; outcome: Outcome }
   | { kind: "ci"; green: boolean; headSha: string };
 
-export type EndReason = "green" | "dod_scoped_out" | "round_budget" | "repair_budget" | "retry_budget";
+export type EndReason = "green" | "dod_scoped_out" | "round_budget" | "repair_budget" | "retry_budget" | "excluded_harness";
 
 export type Step = { kind: "run"; station: Station } | { kind: "ci" } | { kind: "done"; reason: EndReason };
 

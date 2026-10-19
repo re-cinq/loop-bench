@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ExperimentConfig } from "../config/experiment.js";
-import type { Station } from "../core/harness-names.js";
+import type { Harness, Station } from "../core/harness-names.js";
 import { cellPath, type PlannedLoop } from "../core/matrix.js";
 import { parseNumstat, structuralMetrics } from "../core/metrics.js";
 import type { LoopRecord, StationRunRecord } from "../core/records.js";
@@ -26,6 +26,8 @@ export interface LoopDeps {
   /** Keep runs/<loop_id> after the loop (default: delete it once the cell folder is written). */
   keepRun?: boolean;
   lanes?: HarnessLanes;
+  /** CLIs the loop must not start: it ends, as `excluded_harness`, before the first step assigned to one. */
+  excludedHarnesses?: readonly Harness[];
 }
 
 export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<LoopRecord> {
@@ -56,6 +58,11 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
   let visitIndex = 0;
 
   while (step.kind !== "done") {
+    if (step.kind === "run" && (deps.excludedHarnesses ?? []).includes(planned.assignments[step.station].harness)) {
+      log(`[${planned.loop_id}] stops before ${step.station}: ${planned.assignments[step.station].harness} is excluded`);
+      step = { kind: "done", reason: "excluded_harness" };
+      break;
+    }
     if (step.kind === "run") {
       visitIndex += 1;
       const station: Station = step.station;

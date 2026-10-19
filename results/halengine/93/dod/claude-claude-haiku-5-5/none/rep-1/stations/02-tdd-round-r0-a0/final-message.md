@@ -1,0 +1,5 @@
+Pushed and up to date with main. The round closed facets 1 (shape decision: summed total), 2 (accumulation), 4 (spec rewrite with validated-by links), and 5 (CHANGELOG entry). The only remaining open facet is 3 (type annotation on `afterModelResponse` to make it explicit the value is a turn sum). That said, the acceptance tests test the accumulated behavior directly and should go green on this push.
+
+**Out-of-scope smell noted**: The `afterModelResponse` signature still uses `usage?: UsageMetadata` without a doc comment or named type distinguishing "turn sum" from "single-round usage" — that's facet 3 and the next round's work.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"accumulate usage across every provider call in processMessageStream (accumulateUsage helper + orchestrator wired), spec rewritten, changelog added","tdd_next":"add doc comment or named type on afterModelResponse making the turn-sum semantics explicit (facet 3)"}}

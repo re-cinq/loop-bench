@@ -1,5 +1,5 @@
 // loop-bench: replay the implementation loop's agent stations across harnesses, models, contexts and prompts.
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { loadExperiment, type ExperimentConfig } from "./config/experiment.js";
@@ -7,13 +7,14 @@ import { analyzeTranscript, type TranscriptAnalysis } from "./core/analyze.js";
 import type { VisitRow } from "./core/station-report.js";
 import type { BenchRecord, LoopRecord, StationRunRecord } from "./core/records.js";
 import { ciFeedbackOf, handoffOf, roundBriefOf, type CheckResult } from "./core/round-brief.js";
-import { git } from "./workspace/git.js";
+import { diffOf, git } from "./workspace/git.js";
 import { enforce } from "./core/enforce.js";
-import { HarnessSchema, StationSchema, type Station } from "./core/harness-names.js";
+import { HarnessSchema, StationSchema, type Harness, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
 import { breadthFirst } from "./core/order.js";
 import { costOf } from "./core/pricing.js";
 import { renderReport, type PendingCell } from "./core/report.js";
+import { siteDataOf } from "./core/site-data.js";
 import { effortLabel } from "./core/effort.js";
 import { finalText, parseNodeResult } from "./core/result-line.js";
 import { usageFromStream } from "./core/usage.js";
@@ -45,8 +46,10 @@ const USAGE = `loop-bench <command> [options]
   analyze     --experiment <file>             transcript metrics per station visit -> analysis.json
   propose     --experiment <file> --station <s> [--worst 5]
   report      --experiment <file>             rewrite results/<experiment>/REPORT.md and print it
+  site        --experiment <file>             write the results website's data to site/data/
   run ... --parallel <n>                      run n loops at a time (default 1)
   run ... --per-harness <n>                   at most n agent runs per CLI at a time, across all loops
+  run ... --exclude claude[,gemini]          end a loop before any step assigned to these CLIs
 
 filters: --ticket <n> --station <dod|tdd-round|repair-build|baseline|whole_loop> --agent <harness/model>
          --context <none|lore-mcp> --prompt <variant> --replicates <n> --limit <n>`;
@@ -73,6 +76,7 @@ async function main(argv: readonly string[]): Promise<void> {
       "keep-run": { type: "boolean", default: false },
       parallel: { type: "string", default: "1" },
       "per-harness": { type: "string" },
+      exclude: { type: "string" },
     },
   });
   const config = (): ExperimentConfig => loadExperiment(values.experiment);
@@ -86,7 +90,7 @@ async function main(argv: readonly string[]): Promise<void> {
     case "smoke":
       return smoke(config(), values.harness, values.model, values.context === "lore-mcp");
     case "run":
-      return runSelected(config(), breadthFirst(selected()), values.force, values["keep-run"], Number(values.parallel), values["per-harness"] === undefined ? undefined : new HarnessLanes(Number(values["per-harness"])));
+      return runSelected(config(), breadthFirst(selected()), values.force, values["keep-run"], Number(values.parallel), values["per-harness"] === undefined ? undefined : new HarnessLanes(Number(values["per-harness"])), (values.exclude?.split(",") ?? []).map((harness) => HarnessSchema.parse(harness)));
     case "make-artifact":
       return makeArtifact(config(), values.ticket, values.kind, values["from-cell"]);
     case "score":
@@ -97,6 +101,8 @@ async function main(argv: readonly string[]): Promise<void> {
       return proposeFor(config(), values.station, Number(values.worst));
     case "report":
       return void process.stdout.write(writeReport(config()));
+    case "site":
+      return writeSiteData(config());
     default:
       process.stdout.write(`${USAGE}\n`);
   }
@@ -189,7 +195,7 @@ async function smoke(config: ExperimentConfig, harness: string | undefined, mode
   );
 }
 
-async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], force: boolean, keepRun: boolean, parallel: number, lanes?: HarnessLanes): Promise<void> {
+async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], force: boolean, keepRun: boolean, parallel: number, lanes?: HarnessLanes, excludedHarnesses: readonly Harness[] = []): Promise<void> {
   const leaks = ancestorInstructionFiles(paths.runsDir);
 
   enforce(leaks.length === 0, `agents would load these instruction files from above ${paths.runsDir}: ${leaks.join(", ")}. Set LOOP_BENCH_RUNS to a folder outside your home.`);
@@ -208,7 +214,7 @@ async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop
       }
       log(`[loop-bench] ${index + 1}/${pending.length} ${cellPath(loop)}`);
       try {
-        await runLoop(loop, { config, paths, log, keepRun, ...(lanes ? { lanes } : {}) });
+        await runLoop(loop, { config, paths, log, keepRun, excludedHarnesses, ...(lanes ? { lanes } : {}) });
         await scoreSelected(config, [loop]);
         analyzeAll(config);
         writeReport(config);
@@ -356,12 +362,35 @@ async function proposeFor(config: ExperimentConfig, station: string | undefined,
   log(`[loop-bench] proposals written to ${await propose({ config, paths, station: parsedStation, evidence })}`);
 }
 
-/** The one markdown file holding everything: tables from results.jsonl, every visit with its analysis, and the conclusions written beside it. */
-function writeReport(config: ExperimentConfig): string {
+interface ReportInputs {
+  records: BenchRecord[];
+  loops: LoopRecord[];
+  experimentDir: string;
+  promptsLoreSha: string;
+  generatedAt: string;
+  conclusions: string;
+}
+
+function reportInputs(config: ExperimentConfig): ReportInputs {
   const records = repriced(readRecords(paths.resultsDir, config.id));
   const experimentDir = join(paths.resultsDir, config.id);
+  const conclusionsPath = join(experimentDir, "conclusions.md");
+
+  return {
+    records,
+    loops: latestLoops(records),
+    experimentDir,
+    promptsLoreSha: readFileSync(join(paths.promptsDir, "LORE_SHA"), "utf8").trim(),
+    generatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC",
+    conclusions: existsSync(conclusionsPath) ? readFileSync(conclusionsPath, "utf8").trim() : "_No conclusions yet: too few loops have finished._",
+  };
+}
+
+/** The one markdown file holding everything: tables from results.jsonl, every visit with its analysis, and the conclusions written beside it. */
+function writeReport(config: ExperimentConfig): string {
+  const { records, loops, experimentDir, promptsLoreSha, generatedAt, conclusions } = reportInputs(config);
   const visits: VisitRow[] = latestStationRuns(records).map((record) => {
-    const loop = latestLoops(records).find((candidate) => candidate.loop_id === record.loop_id);
+    const loop = loops.find((candidate) => candidate.loop_id === record.loop_id);
     const visitDir = visitDirs(config.id).find((dir) => readRecordId(dir) === record.run_id);
     const analysisPath = visitDir ? join(visitDir, "analysis.json") : null;
 
@@ -371,23 +400,60 @@ function writeReport(config: ExperimentConfig): string {
       cellPath: loop?.cell_path ?? (visitDir ? relative(paths.resultsDir, join(visitDir, "..", "..")) : record.loop_id),
     };
   });
-  const conclusionsPath = join(experimentDir, "conclusions.md");
-  const loops = latestLoops(records);
   const markdown = renderReport({
     experimentId: config.id,
     loops,
     pending: pendingCells(config, loops),
     visits,
-    promptsLoreSha: readFileSync(join(paths.promptsDir, "LORE_SHA"), "utf8").trim(),
+    promptsLoreSha,
     subjectRepo: config.subject.repo,
-    generatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC",
-    conclusions: existsSync(conclusionsPath) ? readFileSync(conclusionsPath, "utf8").trim() : "_No conclusions yet: too few loops have finished._",
+    generatedAt,
+    conclusions,
   });
 
   mkdirSync(experimentDir, { recursive: true });
   writeFileSync(join(experimentDir, "REPORT.md"), markdown);
 
   return markdown;
+}
+
+/** The website reads the same repriced records as REPORT.md, so the two never disagree; results.jsonl is copied beside it for download. */
+async function writeSiteData(config: ExperimentConfig): Promise<void> {
+  const { records, loops, experimentDir, promptsLoreSha, generatedAt, conclusions } = reportInputs(config);
+  const dataDir = join(ROOT, "site", "data");
+  const data = siteDataOf({
+    experimentId: config.id,
+    subjectRepo: config.subject.repo,
+    promptsLoreSha,
+    generatedAt,
+    conclusions,
+    loops,
+    pending: pendingCells(config, loops),
+    stationRuns: latestStationRuns(records),
+  });
+
+  mkdirSync(dataDir, { recursive: true });
+  writeFileSync(join(dataDir, "bench.json"), JSON.stringify(data));
+  if (existsSync(join(experimentDir, "results.jsonl"))) {
+    copyFileSync(join(experimentDir, "results.jsonl"), join(dataDir, "results.jsonl"));
+  }
+  await writeSiteDiffs(config, loops, join(dataDir, "diffs"));
+  log(`[loop-bench] site data written to ${relative(ROOT, dataDir)}: ${data.cells.length} cells, ${data.lorePairs.length} Lore pairs`);
+}
+
+/** Each loop's branch diff and each ticket's merged pull request diff, fetched by the diffs page only when someone opens a comparison. */
+async function writeSiteDiffs(config: ExperimentConfig, loops: readonly LoopRecord[], diffsDir: string): Promise<void> {
+  mkdirSync(diffsDir, { recursive: true });
+  for (const loop of loops) {
+    const patch = join(paths.resultsDir, loop.cell_path, "diff.patch");
+
+    if (existsSync(patch)) {
+      copyFileSync(patch, join(diffsDir, `${loop.loop_id}.patch`));
+    }
+  }
+  await Promise.all(config.tickets.map(async (ticket) =>
+    writeFileSync(join(diffsDir, `pr-${ticket.number}.patch`), `${await diffOf(config.subject.mirror_dir, ticket.base_sha, ticket.merge_sha)}\n`),
+  ));
 }
 
 /** Market prices are applied when the report is written, so a corrected price table reaches every run already recorded. */
