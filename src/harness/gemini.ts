@@ -18,7 +18,9 @@ export const EXPERIMENTS = JSON.stringify({ flags: [{ flagId: 45773134, intValue
 
 export function geminiSettings(spec: InvocationSpec, hookSettings: string): string {
   const settings = JSON.parse(hookSettings) as Record<string, unknown>;
-  const mcpServers = spec.mcp ? { [spec.mcp.name]: { command: spec.mcp.command, args: spec.mcp.args, env: spec.mcp.env } } : {};
+  const mcpServers = spec.mcp
+    ? { [spec.mcp.name]: { command: spec.mcp.command, args: spec.mcp.args, env: spec.mcp.env, ...(spec.mcp.blockedTools.length > 0 ? { excludeTools: spec.mcp.blockedTools } : {}) } }
+    : {};
 
   return JSON.stringify({ ...settings, mcpServers }, null, 2);
 }

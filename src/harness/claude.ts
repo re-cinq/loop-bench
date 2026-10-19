@@ -25,6 +25,9 @@ export const claudeAdapter: HarnessAdapter = {
         "--dangerously-skip-permissions",
         "--settings", join(spec.homeDir, ".claude", "settings.json"),
         ...(mcp ? ["--mcp-config", mcp, "--strict-mcp-config"] : ["--strict-mcp-config"]),
+        ...(spec.mcp && spec.mcp.blockedTools.length > 0
+          ? ["--disallowedTools", ...spec.mcp.blockedTools.map((tool) => `mcp__${spec.mcp?.name}__${tool}`)]
+          : []),
         "--",
         spec.prompt,
       ],

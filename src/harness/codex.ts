@@ -15,6 +15,7 @@ export function codexMcpOverrides(spec: InvocationSpec): string[] {
     "-c", `${prefix}.command=${JSON.stringify(spec.mcp.command)}`,
     "-c", `${prefix}.args=${JSON.stringify(spec.mcp.args)}`,
     "-c", `${prefix}.env=${tomlInlineTable(spec.mcp.env)}`,
+    ...(spec.mcp.blockedTools.length > 0 ? ["-c", `${prefix}.disabled_tools=${JSON.stringify(spec.mcp.blockedTools)}`] : []),
   ];
 }
 

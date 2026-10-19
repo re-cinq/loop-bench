@@ -6,6 +6,8 @@ export interface McpStdioServer {
   command: string;
   args: string[];
   env: Record<string, string>;
+  /** Tool names the agent must not call on this server. */
+  blockedTools: string[];
 }
 
 export interface InvocationSpec {

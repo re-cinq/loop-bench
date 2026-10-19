@@ -1,0 +1,3 @@
+# Archived results
+
+`halengine-2026-10-19-claude-saw-user-claude-md/` holds every run made before 2026-10-19 22:30. Those runs worked under `~/workspace/loop-bench/runs/`, and Claude Code loads `.claude/CLAUDE.md` from every ancestor of its working directory, so every Claude step (Claude dod cells and every Sonnet 4.6 tdd round) ran with the author's personal `~/.claude/CLAUDE.md`: a persona and personal coding rules. Gemini and Codex steps were not affected. The results are kept for reference only and are not in any report. Runs now work under `/var/tmp/loop-bench/runs`, and `run` refuses to start when any instruction file sits above the runs folder.

@@ -3,7 +3,7 @@ import { claudeAdapter } from "./claude.js";
 import { codexAdapter } from "./codex.js";
 import { geminiAdapter, geminiSettings } from "./gemini.js";
 import type { InvocationSpec } from "./harness.js";
-import { loreStdioServer } from "./mcp.js";
+import { LORE_WRITE_TOOLS, loreStdioServer } from "./mcp.js";
 
 const spec: InvocationSpec = {
   model: "m",
@@ -32,6 +32,7 @@ describe("claude command", () => {
     const args = claudeAdapter.command(withLore).args;
     const config = JSON.parse(args[args.indexOf("--mcp-config") + 1] ?? "{}");
 
+    expect(args).toContain("mcp__lore__lore_write_memory");
     expect(config).toEqual({
       mcpServers: { lore: { type: "stdio", command: "node", args: ["/lore/apps/mcp-server/dist/index.js"], env: { LORE_API_URL: "https://api", LORE_INGEST_TOKEN: "tok", CONTEXT_PATH: "/lore" } } },
     });
@@ -59,7 +60,7 @@ describe("gemini command", () => {
 
     expect(settings).toEqual({
       hooks: { BeforeTool: [] },
-      mcpServers: { lore: { command: "node", args: ["/lore/apps/mcp-server/dist/index.js"], env: { LORE_API_URL: "https://api", LORE_INGEST_TOKEN: "tok", CONTEXT_PATH: "/lore" } } },
+      mcpServers: { lore: { command: "node", args: ["/lore/apps/mcp-server/dist/index.js"], env: { LORE_API_URL: "https://api", LORE_INGEST_TOKEN: "tok", CONTEXT_PATH: "/lore" }, excludeTools: [...LORE_WRITE_TOOLS] } },
     });
   });
 });
@@ -76,6 +77,7 @@ describe("codex command", () => {
   });
 
   it("renders the lore server as -c mcp_servers.lore.* overrides before exec", () => {
+    expect(codexAdapter.command(withLore).args).toContain(`mcp_servers.lore.disabled_tools=${JSON.stringify([...LORE_WRITE_TOOLS])}`);
     expect(codexAdapter.command(withLore).args.slice(0, 6)).toEqual([
       "-c", 'mcp_servers.lore.command="node"',
       "-c", 'mcp_servers.lore.args=["/lore/apps/mcp-server/dist/index.js"]',

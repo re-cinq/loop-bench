@@ -21,6 +21,7 @@ import { ADAPTERS } from "./harness/adapters.js";
 import { buildScratchHome } from "./harness/scratch-home.js";
 import { runProcess } from "./io/spawn.js";
 import { InfraError, runLoop } from "./run/loop.js";
+import { ancestorInstructionFiles } from "./run/isolation.js";
 import { HarnessLanes } from "./run/harness-lanes.js";
 import { loreServer } from "./run/station.js";
 import { benchPaths } from "./run/paths.js";
@@ -148,7 +149,7 @@ async function smoke(config: ExperimentConfig, harness: string | undefined, mode
   const spec = {
     model,
     prompt: withLore
-      ? "Call the Lore MCP tool lore_list_repos. Then reply with one line naming how many repositories it returned, and end with the line: LORE_NODE_RESULT: success"
+      ? "Call the Lore MCP tool lore_list_repos, then try to call lore_write_memory with key loop-bench/smoke-write-probe and value test. Reply with how many repositories lore_list_repos returned and whether the write tool was available, and end with the line: LORE_NODE_RESULT: success"
       : "Run the shell command `npm test` in this directory, then reply with exactly one line: LORE_NODE_RESULT: success",
     workspaceDir,
     homeDir: join(dir, "home"),
@@ -189,6 +190,9 @@ async function smoke(config: ExperimentConfig, harness: string | undefined, mode
 }
 
 async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], force: boolean, keepRun: boolean, parallel: number, lanes?: HarnessLanes): Promise<void> {
+  const leaks = ancestorInstructionFiles(paths.runsDir);
+
+  enforce(leaks.length === 0, `agents would load these instruction files from above ${paths.runsDir}: ${leaks.join(", ")}. Set LOOP_BENCH_RUNS to a folder outside your home.`);
   const pending = loops.filter((loop) => force || !readLoopJson(join(paths.resultsDir, cellPath(loop))));
   let next = 0;
   let stopped = false;
