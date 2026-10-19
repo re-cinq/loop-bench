@@ -225,28 +225,25 @@ function stationSpendOf(runs: readonly StationRunRecord[]): StationSpend[] {
     groups.set(key, [...(groups.get(key) ?? []), run]);
   }
 
-  return [...groups.values()].flatMap(([first, ...rest]) => {
-    if (!first) {
-      return [];
-    }
-    const group = [first, ...rest];
+  return [...groups].map(([key, group]) => {
+    const [station = "", harness = "", model = "", context = ""] = key.split("|");
     const failures: Record<string, number> = {};
 
     for (const run of group.filter((candidate) => candidate.failure_class !== "none")) {
       failures[run.failure_class] = (failures[run.failure_class] ?? 0) + 1;
     }
 
-    return [{
-      station: first.station,
-      harness: first.harness,
-      model: first.model,
-      lore: first.context_mode === LORE_CONTEXT,
+    return {
+      station,
+      harness,
+      model,
+      lore: context === LORE_CONTEXT,
       visits: group.length,
       costUsd: spreadOf(group.map((run) => run.cost_usd)),
       minutes: spreadOf(group.map((run) => minutesOf(run.wall_ms))),
       outputTokens: spreadOf(group.map((run) => run.usage.output_tokens)),
       toolCalls: spreadOf(group.flatMap((run) => (run.usage.tool_calls === null ? [] : [run.usage.tool_calls]))),
       failures,
-    }];
+    };
   }).sort((a, b) => a.station.localeCompare(b.station) || a.model.localeCompare(b.model) || Number(a.lore) - Number(b.lore));
 }

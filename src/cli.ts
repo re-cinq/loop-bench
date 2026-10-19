@@ -119,7 +119,7 @@ function filterLoops(loops: readonly PlannedLoop[], filters: Filters): PlannedLo
 
     return (
       (filters.ticket === undefined || String(loop.ticket.number) === filters.ticket) &&
-      (filters.station === undefined || station === filters.station) &&
+      (filters.station === undefined || filters.station.split(",").includes(station)) &&
       (filters.agent === undefined || filters.agent.split(",").includes(`${choice.harness}/${choice.model}`)) &&
       (filters.context === undefined || loop.context_mode === filters.context) &&
       (filters.prompt === undefined || loop.prompt_variant === filters.prompt) &&
