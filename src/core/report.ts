@@ -107,7 +107,7 @@ export function renderResultsTable(cells: readonly CellSummary[], pending: reado
 }
 
 export function renderEndReasons(cells: readonly CellSummary[]): string {
-  const rows = cells.map((cell): RowKey & { line: string } => {
+  const rows = cells.map((cell): string => {
     const reasons = new Map<string, number>();
 
     for (const loop of cell.loops) {
