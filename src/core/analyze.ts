@@ -109,7 +109,7 @@ function classify(name: string, input: unknown): ToolCall {
   const text = (key: string): string => (typeof params[key] === "string" ? (params[key] as string) : "");
   const lower = name.toLowerCase();
 
-  if (lower.startsWith("mcp__") || lower.startsWith("lore")) {
+  if (lower.startsWith("mcp__") || lower.startsWith("mcp_") || lower.startsWith("lore")) {
     return { kind: "mcp", name, detail: "" };
   }
   if (lower === "bash" || lower === "run_shell_command" || lower === "shell") {

@@ -1,5 +1,8 @@
 // codex exec --json; auth comes from CODEX_HOME, which holds only a copy of auth.json. No hook bundle exists for codex.
 import { join } from "node:path";
+
+// The pods pin codex 0.142.5, which the gpt-5.6 and gpt-6 models refuse; the bench runs its own pinned copy.
+export const CODEX_BIN = join(import.meta.dirname, "..", "..", "node_modules", ".bin", "codex");
 import { baseEnv, type HarnessAdapter, type InvocationSpec } from "./harness.js";
 
 export function codexMcpOverrides(spec: InvocationSpec): string[] {
@@ -24,7 +27,7 @@ export const codexAdapter: HarnessAdapter = {
   versionArgs: ["--version"],
   command(spec) {
     return {
-      bin: "codex",
+      bin: CODEX_BIN,
       args: [
         ...codexMcpOverrides(spec),
         "exec",

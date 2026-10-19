@@ -1,4 +1,5 @@
 // One station visit: the prompt, a scratch HOME, the CLI run to its deadline, and what it reported.
+import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -138,18 +139,27 @@ function failureClassOf(result: SpawnResult, hasResultLine: boolean): StationRun
   return "none";
 }
 
-function loreServer(config: ExperimentConfig) {
+export function loreServer(config: ExperimentConfig) {
   const mcp = config.lore_mcp;
 
   if (!mcp) {
     throw new Error("context_mode lore-mcp needs a lore_mcp block in the experiment file");
   }
-  const apiUrl = process.env[mcp.api_url_env];
-  const token = process.env[mcp.token_env];
+  const apiUrl = process.env[mcp.api_url_env] ?? gitConfig("lore.api-url");
+  const token = process.env[mcp.token_env] ?? gitConfig("lore.ingest-token");
 
   if (!apiUrl || !token) {
-    throw new Error(`context_mode lore-mcp needs ${mcp.api_url_env} and ${mcp.token_env} in the environment`);
+    throw new Error(`context_mode lore-mcp needs ${mcp.api_url_env} and ${mcp.token_env} in the environment, or lore.api-url and lore.ingest-token in git config`);
   }
 
   return loreStdioServer(mcp.lore_dir, apiUrl, token);
+}
+
+// Where install.sh keeps them.
+function gitConfig(key: string): string | undefined {
+  try {
+    return execFileSync("git", ["config", "--get", key], { encoding: "utf8" }).trim() || undefined;
+  } catch {
+    return undefined;
+  }
 }

@@ -34,11 +34,11 @@ describe("analyzeTranscript", () => {
 
   it("gemini: run_shell_command and replace, with a lore mcp call listed by name", () => {
     const stream = [
-      JSON.stringify({ type: "tool_use", tool_name: "lore_assemble_context", parameters: {} }),
+      JSON.stringify({ type: "tool_use", tool_name: "mcp_lore_lore_assemble_context", parameters: {} }),
       JSON.stringify({ type: "tool_use", tool_name: "run_shell_command", parameters: { command: "ls" } }),
       JSON.stringify({ type: "tool_use", tool_name: "replace", parameters: { file_path: "a.ts" } }),
     ].join("\n");
 
-    expect(analyzeTranscript("gemini", stream)).toMatchObject({ by_kind: { mcp: 1, shell: 1, edit: 1 }, lore_calls: ["lore_assemble_context"] });
+    expect(analyzeTranscript("gemini", stream)).toMatchObject({ by_kind: { mcp: 1, shell: 1, edit: 1 }, lore_calls: ["mcp_lore_lore_assemble_context"] });
   });
 });

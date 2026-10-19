@@ -15,6 +15,7 @@ import { ADAPTERS } from "./harness/adapters.js";
 import { buildScratchHome } from "./harness/scratch-home.js";
 import { runProcess } from "./io/spawn.js";
 import { runLoop } from "./run/loop.js";
+import { loreServer } from "./run/station.js";
 import { benchPaths } from "./run/paths.js";
 import { propose, type ProposalEvidence } from "./run/propose.js";
 import { appendRecord, latestLoops, readLoopJson, readRecords, writeLoopJson } from "./run/results.js";
@@ -71,7 +72,7 @@ async function main(argv: readonly string[]): Promise<void> {
     case "prepare":
       return prepare(config());
     case "smoke":
-      return smoke(config(), values.harness, values.model);
+      return smoke(config(), values.harness, values.model, values.context === "lore-mcp");
     case "run":
       return runSelected(config(), selected(), values.force, values["keep-run"]);
     case "make-artifact":
@@ -125,7 +126,7 @@ async function prepare(config: ExperimentConfig): Promise<void> {
   }
 }
 
-async function smoke(config: ExperimentConfig, harness: string | undefined, model: string | undefined): Promise<void> {
+async function smoke(config: ExperimentConfig, harness: string | undefined, model: string | undefined, withLore: boolean): Promise<void> {
   const parsedHarness = HarnessSchema.parse(harness);
 
   enforce(model !== undefined, "smoke needs --model");
@@ -135,10 +136,12 @@ async function smoke(config: ExperimentConfig, harness: string | undefined, mode
   mkdirSync(workspaceDir, { recursive: true });
   const spec = {
     model,
-    prompt: "Run the shell command `npm test` in this directory, then reply with exactly one line: LORE_NODE_RESULT: success",
+    prompt: withLore
+      ? "Call the Lore MCP tool lore_list_repos. Then reply with one line naming how many repositories it returned, and end with the line: LORE_NODE_RESULT: success"
+      : "Run the shell command `npm test` in this directory, then reply with exactly one line: LORE_NODE_RESULT: success",
     workspaceDir,
     homeDir: join(dir, "home"),
-    mcp: null,
+    mcp: withLore ? loreServer(config) : null,
     extraEnv: {},
     gemini: config.gemini ?? null,
     userHome: process.env["HOME"] ?? "",
@@ -161,6 +164,8 @@ async function smoke(config: ExperimentConfig, harness: string | undefined, mode
         result: parseNodeResult(text),
         guard_blocked_npm_test: result.stdout.includes("[lore] blocked"),
         npm_test_ran: result.stdout.includes("SMOKE_TEST_RAN"),
+        final_text: text.slice(-300),
+        lore_tool_calls: analyzeTranscript(parsedHarness, result.stdout).lore_calls,
         usage,
         cost: costOf(parsedHarness, model, usage),
         stderr_tail: result.stderr.slice(-600),
