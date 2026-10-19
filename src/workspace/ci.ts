@@ -42,7 +42,8 @@ export async function runSubjectCi(input: {
       env: { ...processEnv(), CI: "true" },
       timeoutMs: check.timeout_minutes * 60_000,
     });
-    const output = `${result.stdout}\n${result.stderr}`;
+    // Repository-relative paths, as a CI runner's log reads to the agent: the local checkout directory is not where the agent works.
+    const output = `${result.stdout}\n${result.stderr}`.replaceAll(`${input.checkoutDir}/`, "");
 
     checks.push({
       name: check.name,

@@ -1,0 +1,3 @@
+Branch is pushed and up to date. Fixed all 4 ESLint errors: split the 2-expect test into two single-expect tests, and added `([validated by: ...])` spec links to `specs/hal-engine-config-hooks/spec.md` for all three `accumulateUsage` test cases. All 8 unit tests pass. 0 regressions introduced; 0 new tests written (this was a repair round for CI failures, not a new red-green facet).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint: spec links + max-expects on accumulateUsage tests","tdd_next":"acceptance green"}}

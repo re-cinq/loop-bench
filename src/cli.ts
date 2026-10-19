@@ -1,11 +1,13 @@
 // loop-bench: replay the implementation loop's agent stations across harnesses, models, contexts and prompts.
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { loadExperiment, type ExperimentConfig } from "./config/experiment.js";
 import { analyzeTranscript, type TranscriptAnalysis } from "./core/analyze.js";
 import type { VisitRow } from "./core/station-report.js";
-import type { BenchRecord, LoopRecord } from "./core/records.js";
+import type { BenchRecord, LoopRecord, StationRunRecord } from "./core/records.js";
+import { ciFeedbackOf, handoffOf, roundBriefOf, type CheckResult } from "./core/round-brief.js";
+import { git } from "./workspace/git.js";
 import { enforce } from "./core/enforce.js";
 import { HarnessSchema, StationSchema, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
@@ -221,45 +223,69 @@ async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop
   await Promise.all(Array.from({ length: Math.max(1, parallel) }, worker));
 }
 
-async function makeArtifact(config: ExperimentConfig, ticket: string | undefined, kind: string | undefined, fromCell: string | undefined): Promise<void> {
-  enforce(ticket !== undefined && (kind === "dod" || kind === "red") && fromCell !== undefined, "make-artifact needs --ticket, --kind dod|red and --from-cell");
+/**
+ * The branch a varied station starts from, cut from a finished cell at the right commit:
+ * `dod`, the commit the dod visit pushed (acceptance tests, no implementation), for tdd-round;
+ * `red`, the first commit CI judged red, with the round brief that verdict produced, for repair-build.
+ */
+async function makeArtifact(config: ExperimentConfig, ticket: string | undefined, kind: string | undefined, cellArgument: string | undefined): Promise<void> {
+  enforce(ticket !== undefined && (kind === "dod" || kind === "red") && cellArgument !== undefined, "make-artifact needs --ticket, --kind dod|red and --from-cell");
+  const fromCell = resolve(cellArgument);
   const bundle = join(fromCell, "branch.bundle");
 
   enforce(existsSync(bundle), `${bundle} does not exist: the cell's loop pushed nothing`);
+  const visits = readdirSync(join(fromCell, "stations"))
+    .sort()
+    .map((visit) => join(fromCell, "stations", visit))
+    .map((dir) => ({ dir, record: JSON.parse(readFileSync(join(dir, "record.json"), "utf8")) as StationRunRecord }));
+  const cut = kind === "dod" ? dodCut(visits) : redCut(visits);
+
+  enforce(cut !== null, kind === "dod" ? `no dod visit pushed in ${fromCell}` : `no red CI verdict in ${fromCell}: pick a cell whose loop went red at least once`);
   const dir = join(paths.artifactsDir, config.id, ticket, kind);
+  const work = join(paths.runsDir, `artifact-${Date.now()}`);
+  const branch = `loop-bench/${ticket}`;
 
   mkdirSync(dir, { recursive: true });
-  cpSync(bundle, join(dir, "branch.bundle"));
-  if (kind === "red") {
-    const brief = latestRoundBrief(fromCell);
-
-    enforce(brief !== null, `no red CI verdict in ${fromCell}: pick a cell whose loop went red at least once`);
-    writeFileSync(join(dir, "round-brief.md"), brief);
+  mkdirSync(work, { recursive: true });
+  await git(["clone", "--quiet", "--bare", bundle, join(work, "repo.git")], work);
+  await git(["update-ref", `refs/heads/${branch}`, cut.sha], join(work, "repo.git"));
+  await git(["bundle", "create", join(dir, "branch.bundle"), branch], join(work, "repo.git"));
+  rmSync(work, { recursive: true, force: true });
+  if (cut.brief) {
+    writeFileSync(join(dir, "round-brief.md"), cut.brief);
   }
-  writeFileSync(join(dir, "SOURCE"), `${relative(ROOT, fromCell)}\n`);
-  log(`[loop-bench] ${kind} artifact for #${ticket} from ${fromCell}`);
+  writeFileSync(join(dir, "SOURCE"), `${relative(ROOT, fromCell)} at ${cut.sha}\n`);
+  log(`[loop-bench] ${kind} artifact for #${ticket}: ${cut.sha.slice(0, 8)} from ${fromCell}`);
 }
 
-function latestRoundBrief(cellDir: string): string | null {
-  const stationsDir = join(cellDir, "stations");
-  const verdicts = readdirSync(stationsDir)
-    .sort()
-    .map((visit) => join(stationsDir, visit, "ci-verdict.json"))
-    .filter(existsSync)
-    .map((path) => JSON.parse(readFileSync(path, "utf8")) as { green: boolean; headSha: string; checks: Array<{ name: string; passed: boolean; tail: string }> })
-    .filter((verdict) => !verdict.green);
-  const last = verdicts.at(-1);
-
-  if (!last) {
-    return null;
-  }
-  const { ciFeedbackOf, roundBriefOf } = awaitedRoundBrief;
-  const feedback = ciFeedbackOf(last.headSha, last.checks);
-
-  return feedback ? roundBriefOf({ feedback, handoff: null }) : null;
+interface Visit {
+  dir: string;
+  record: StationRunRecord;
 }
 
-const awaitedRoundBrief = await import("./core/round-brief.js");
+function dodCut(visits: readonly Visit[]): { sha: string; brief: null } | null {
+  const dod = visits.find((visit) => visit.record.station === "dod" && visit.record.outcome === "success" && visit.record.pushed);
+
+  return dod ? { sha: dod.record.head_sha_after, brief: null } : null;
+}
+
+function redCut(visits: readonly Visit[]): { sha: string; brief: string } | null {
+  for (const visit of visits) {
+    const verdictPath = join(visit.dir, "ci-verdict.json");
+
+    if (!existsSync(verdictPath)) {
+      continue;
+    }
+    const verdict = JSON.parse(readFileSync(verdictPath, "utf8")) as { green: boolean; headSha: string; checks: CheckResult[] };
+    const feedback = verdict.green ? null : ciFeedbackOf(verdict.headSha, verdict.checks);
+
+    if (feedback) {
+      return { sha: verdict.headSha, brief: roundBriefOf({ feedback, handoff: handoffOf(visit.record.extras) }) };
+    }
+  }
+
+  return null;
+}
 
 async function scoreSelected(config: ExperimentConfig, loops: readonly PlannedLoop[]): Promise<void> {
   for (const loop of loops) {
