@@ -57,36 +57,3 @@ export function renderStationSummary(rows: readonly VisitRow[]): string {
     ...lines,
   ].join("\n");
 }
-
-export function renderVisitLog(rows: readonly VisitRow[]): string {
-  const lines = [...rows]
-    .sort((a, b) => a.record.started_at.localeCompare(b.record.started_at))
-    .map(({ record, analysis, cellPath }) => {
-      const extras = Object.entries(record.extras)
-        .map(([key, value]) => `${key}: ${value.replaceAll("|", "\\|").slice(0, 120)}`)
-        .join("; ");
-
-      return `| ${[
-        record.started_at.slice(0, 16).replace("T", " "),
-        `#${record.ticket}`,
-        `\`${cellPath}\``,
-        `${record.station} r${record.round} a${record.attempt}`,
-        `\`${record.harness}/${record.model}\``,
-        record.context_mode,
-        record.outcome,
-        record.failure_class,
-        record.pushed ? "yes" : "no",
-        record.ci ? (record.ci.green ? "green" : `red: ${record.ci.failed_checks.join(", ")}`) : "—",
-        money(record.cost_usd),
-        minutes(record.wall_ms),
-        analysis ? `${analysis.tool_calls} (sh ${analysis.by_kind.shell}, rd ${analysis.by_kind.read}, ed ${analysis.by_kind.edit})` : "—",
-        extras || "—",
-      ].join(" | ")} |`;
-    });
-
-  return [
-    "| Started (UTC) | Ticket | Cell | Visit | Agent | Context | Outcome | Broken | Pushed | CI after | Cost | Time | Tool calls | What it reported |",
-    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
-    ...lines,
-  ].join("\n");
-}

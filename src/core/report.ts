@@ -1,7 +1,7 @@
 // The results as a table per cell, replicates folded into mean and spread, in the shape of docs/building-lore/decompose-model-comparison.md.
 import type { LoopRecord } from "./records.js";
 import { formatSpread, spreadOf } from "./stats.js";
-import { renderStationSummary, renderVisitLog, type VisitRow } from "./station-report.js";
+import { renderStationSummary, type VisitRow } from "./station-report.js";
 
 export interface CellSummary {
   key: string;
@@ -152,10 +152,5 @@ _(written by hand from \`analyze\` and \`propose\`)_
 - Codex has no Bash guard, so its rounds may run acceptance tests the others are refused.
 - In the \`lore-mcp\` arm the Lore memory holds episodes from the real runs on these tickets.
 
-## Appendix: every station visit
-
-Every agent run in order, with what it reported. Its transcript, prompt and final message are in \`results/<cell>/stations/\`.
-
-${renderVisitLog(input.visits)}
 `;
 }
