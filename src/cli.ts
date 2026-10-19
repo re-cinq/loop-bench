@@ -111,7 +111,7 @@ function filterLoops(loops: readonly PlannedLoop[], filters: Filters): PlannedLo
     return (
       (filters.ticket === undefined || String(loop.ticket.number) === filters.ticket) &&
       (filters.station === undefined || station === filters.station) &&
-      (filters.agent === undefined || `${choice.harness}/${choice.model}` === filters.agent) &&
+      (filters.agent === undefined || filters.agent.split(",").includes(`${choice.harness}/${choice.model}`)) &&
       (filters.context === undefined || loop.context_mode === filters.context) &&
       (filters.prompt === undefined || loop.prompt_variant === filters.prompt) &&
       (filters.replicates === undefined || loop.replicate <= Number(filters.replicates))
