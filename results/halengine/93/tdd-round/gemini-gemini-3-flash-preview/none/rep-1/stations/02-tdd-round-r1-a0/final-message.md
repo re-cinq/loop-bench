@@ -1,0 +1,3 @@
+I have fixed the lint errors identified by CI in the previous round. Specifically, I converted the empty `TurnUsage` interface in `src/types/ai.ts` to a type alias and added the missing spec validation link for the second tool usage test in `specs/hal-engine-config-hooks/spec.md`. I also verified the usage aggregation logic with a unit test.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

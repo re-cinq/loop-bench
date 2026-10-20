@@ -1,0 +1,3 @@
+I have fixed the failures reported by the CI build. The duplicated test in `src/orchestration/chatOrchestrator.test.ts` was removed as the same case is already covered by the acceptance test added in the previous round, and the missing spec statement for the other acceptance test was added to `specs/hal-engine-config-hooks/spec.md`. The spec links were repointed, and the project passes the linter cleanly. The changes have been pushed successfully.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fixed CI failures","tdd_next":"acceptance green"}}

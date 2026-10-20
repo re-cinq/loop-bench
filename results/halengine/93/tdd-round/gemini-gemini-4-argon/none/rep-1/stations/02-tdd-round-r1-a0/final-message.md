@@ -1,0 +1,3 @@
+Added the missing spec citation `([validated by: counts reported rounds while leaving a turn with no reported usage undefined](../../src/orchestration/chatOrchestratorUsage.acceptance.test.ts#L67))` to `specs/hal-engine-config-hooks/spec.md` to resolve the `re-lint/require-spec-link` CI failure. 0 red tests were mine and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cite the second usage acceptance test in specs/hal-engine-config-hooks/spec.md to satisfy re-lint/require-spec-link","tdd_next":"acceptance green"}}

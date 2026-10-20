@@ -1,0 +1,7 @@
+Completed the red-green-refactor round for `#93`:
+
+- Added unit tests in `src/orchestration/chatOrchestrator.test.ts` covering multi-round usage summation, skipping intermediate rounds that report no usage, and returning `undefined` when no round reports usage (2 red tests before implementation, 0 regressions; all 27 tests in `src/orchestration/chatOrchestrator.test.ts` green after implementation, with `receives collected response text and usage` preserved unchanged).
+- Updated `OrchestratorHooks.afterModelResponse` (`totalUsage?: UsageMetadata`) and accumulated per-round usage via `accumulateUsage` in `src/orchestration/chatOrchestrator.ts`.
+- Updated `CLAUDE.md`, `specs/hal-engine-architecture/spec.md`, `specs/hal-engine-config-hooks/spec.md`, `specs/hal-engine-tool-input-validation/spec.md`, `CHANGELOG.md`, and `.lore/dod.md`, formatted with Prettier, and pushed to `origin/loop-bench/93`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit; sum each token field only for provider rounds that report usage, preserving undefined when none do; preserve the unchanged no-tool regression guard; and update the hooks spec and CHANGELOG.","tdd_next":"acceptance green"}}

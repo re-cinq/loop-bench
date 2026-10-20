@@ -1,0 +1,3 @@
+I have fixed the ESLint errors reported by the CI build. The tests missing spec links have been addressed by adding the appropriate `[validated by]` inline references inside grouped trailing parentheticals in `specs/hal-engine-config-hooks/spec.md`. The test exceeding the `max-expects` limit has been split into two independent tests. I've verified these updates locally using the linter, formatted the files, and successfully pushed the commit to the branch.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added missing spec links and split test to resolve max-expects error"}}

@@ -1,0 +1,3 @@
+Committed and pushed the two CI lint fixes. The focused Jest file passed; acceptance tests were left for CI. The remaining usage facets were already implemented, so this round did not produce a new failing test. Red tests: 0 ours, 0 regressions. The branch is up to date with `origin/main` and its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Close the already-implemented missing-usage facet and repair its CI findings","tdd_next":"acceptance green"}}

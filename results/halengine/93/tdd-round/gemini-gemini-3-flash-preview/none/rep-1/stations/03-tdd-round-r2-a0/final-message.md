@@ -1,0 +1,3 @@
+Fixed CI failures in `specs/hal-engine-config-hooks/spec.md` by splitting a multi-statement bullet point to ensure citations are trailing parentheticals, as required by `spec-links` and `eslint` rules. Verified the fix with `scripts/check-spec-links.mjs` (0 misplaced) and `npm run spec:names` (all matching). No tests were run in this pod as the failures were diagnostic and verified via scripts.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

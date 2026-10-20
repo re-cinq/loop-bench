@@ -1,0 +1,3 @@
+Committed and pushed the usage aggregation change. The test written this round failed before the fix and passed after refactoring. I did not run the acceptance tests; CI will judge them. Red tests: 1 written this round, 0 regressions. No unrelated changes were made.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum provider usage across tool rounds and document the turn-total contract","tdd_next":"acceptance green"}}

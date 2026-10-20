@@ -1,0 +1,3 @@
+Repointed the three shifted spec anchor links in `specs/hal-engine-architecture/spec.md` and `specs/hal-engine-config-hooks/spec.md` (`#L543` → `#L544` and `#L554` → `#L555` for `src/orchestration/chatOrchestrator.test.ts`), resolving all `eslint` (`re-lint/require-spec-link`) and `spec-names` CI failures from the round brief. No red tests were mine and 0 were test regressions (the previous push failed only on the shifted spec link line numbers).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repoint shifted spec links in hal-engine-architecture and hal-engine-config-hooks specs to resolve eslint and spec-names CI failures","tdd_next":"acceptance green"}}

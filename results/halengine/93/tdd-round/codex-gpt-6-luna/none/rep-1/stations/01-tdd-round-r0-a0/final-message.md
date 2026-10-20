@@ -1,0 +1,5 @@
+Implemented and pushed commit `fc1e4c7`. `afterModelResponse` now receives a named `TotalUsageMetadata` sum across provider calls; the no-tool regression test remains untouched. Updated the hooks spec, changelog, and DoD checklist.
+
+The test I wrote failed before the implementation and passed afterward, including after formatting. **Red tests:** 1 written by me; 0 regressions observed locally. The CI verdict and coverage graph were unavailable because no Lore tools or commands were exposed, so CI regressions are unknown. No acceptance tests or other suites were run. The branch is clean and up to date with its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"aggregate usage across provider rounds, including missing-round handling and public type documentation","tdd_next":"acceptance green"}}

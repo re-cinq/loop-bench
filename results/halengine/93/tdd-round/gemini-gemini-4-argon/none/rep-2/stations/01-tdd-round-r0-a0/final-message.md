@@ -1,0 +1,3 @@
+Implemented `TurnUsageMetadata` and `accumulateUsage` to sum `inputTokens`, `outputTokens`, and `totalTokens` across every provider round that reports usage in `chatOrchestrator.ts`, updated `specs/hal-engine-config-hooks/spec.md`, `CHANGELOG.md`, synced doc blocks, and verified with `src/orchestration/orchestratorHelpers.test.ts` (1 red test written and made green this round; 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract, sum token fields across reported rounds, and update specs and CHANGELOG","tdd_next":"acceptance green"}}

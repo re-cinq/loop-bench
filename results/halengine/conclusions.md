@@ -11,3 +11,12 @@ _First clean reading, 2026-10-20 01:30: ticket #93, the dod station varied, no L
 **Running overnight without Claude:** the tdd-round and repair-build comparisons for the ten Gemini and Codex models, with and without Lore, three runs each (120 loops), from clean starting branches: gpt-5.6-terra's dod and the first red build of the Gemini 4 Argon loop. Claude cells, the with-Lore dod wave and the dod repeats resume when Claude is back.
 
 **Production defects found along the way:** re-cinq/lore#2834 (the tdd-round prompt makes Lore tools mandatory; two Codex models refused to work without them) and re-cinq/ai-agent-subsystem#241 (skills reach Claude pods only).
+
+**tdd-round and repair-build, Gemini models** (ticket #93, three runs per cell, with and without Lore; tdd-round starts from gpt-5.6-terra's clean dod, repair-build from the first red build of the clean Gemini 4 Argon loop):
+
+- **All three Gemini models finish the implementation every time.** 18 of 18 tdd-round loops reached a green build, in 0 to 4 extra rounds.
+- **Gemini 4 Argon writes the best code; Gemini 3 Flash is the cheap option.** Argon: judge 5 / 5 / 4-5 in every run, $2.22 to $2.94 a loop. Flash: 4.7-5 / 5 / 4, $0.80 to $1.26. Gemini 3.1 Pro: 3.7-4.3 / 4.7 / 3.7 at $1.68 to $2.60, below both. For scale, production's Sonnet 4.6 took the same terra dod to green for about $1.70 in the clean wave 1 (one run).
+- **Repairs are cheap and mostly succeed.** A Gemini repair costs $0.20 to $1.22 and takes 2.5 to 3.6 minutes; 17 of 18 repairs left the build green. The one that did not was Gemini 3.1 Pro, the production repair model, without Lore.
+- **Lore makes no consistent difference here.** With Lore, Flash's tdd rounds got cheaper ($0.80 against $1.26) and Argon's too ($2.22 against $2.94), but Gemini 3.1 Pro's got dearer ($2.60 against $1.68), and Flash's repairs cost six times more with Lore ($1.22 against $0.20). With three runs per cell and spreads of $0.40 to $1.10, none of these differences is clear of the noise.
+
+**Codex models: pending.** The ChatGPT account hit its usage limit at about 02:30, so 67 Codex loops failed in seconds; they were discarded and rerun from 04:05, when the limit reset.

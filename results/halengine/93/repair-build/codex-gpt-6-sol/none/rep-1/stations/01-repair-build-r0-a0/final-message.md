@@ -1,0 +1,3 @@
+Fixed all four reported lint findings: linked the usage helper tests to the spec and combined the two assertions in one test. Formatted the changed files, committed and pushed the fix. The branch is up to date with `origin/main` and its upstream; CI has not yet judged this push. I did not run the linter locally, as instructed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added missing spec links and reduced a usage helper test to one assertion"}}

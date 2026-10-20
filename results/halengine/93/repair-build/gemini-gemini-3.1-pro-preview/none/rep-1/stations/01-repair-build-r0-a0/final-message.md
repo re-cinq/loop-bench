@@ -1,0 +1,3 @@
+I fixed the ESLint failures reported in `src/orchestration/orchestratorHelpers.test.ts`. Specifically, I split a test that exceeded the maximum expect calls limit (`re-lint/max-expects`), and I linked all `accumulateUsage` tests to their relevant statement in `specs/hal-engine-config-hooks/spec.md` using inline `[validated by: ...]` tags (`re-lint/require-spec-link`). The tests now correctly run with zero ESLint warnings locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"fixed missing spec links and split test with multiple expects in orchestratorHelpers.test.ts"}}

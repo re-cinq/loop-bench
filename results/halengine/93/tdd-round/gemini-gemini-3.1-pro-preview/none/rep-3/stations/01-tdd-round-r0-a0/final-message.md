@@ -1,0 +1,3 @@
+I have completed a TDD round. I wrote a failing unit test to verify that usage from multiple provider calls in a tool loop is properly summed and aggregated. I then updated `UsageMetadata` to create a deliberately named `AggregateUsage` contract and implemented the aggregation logic in `chatOrchestrator.ts`. The new test passes, and the prior tests still pass (e.g. keeping `undefined` usage intact when some rounds don't report any).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Update the hooks spec and CHANGELOG with the aggregate-usage behavior and its impact on existing consumers."}}
