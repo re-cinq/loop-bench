@@ -50,7 +50,7 @@ function compareCells(a: CellSummary, b: CellSummary): number {
   return compareRows(a, b);
 }
 
-const CONTEXT_LABEL: Record<string, string> = { none: "without Lore", "lore-mcp": "with Lore" };
+const CONTEXT_LABEL: Record<string, string> = { none: "without Lore", "lore-mcp": "with Lore", "lore-utopia": "Lore on Utopia" };
 const contextLabel = (context: string): string => CONTEXT_LABEL[context] ?? context;
 /** `claude/claude-haiku-4-5-20251001` reads as `claude-haiku-4-5-20251001 (claude)`: the model id once, the CLI after it. */
 const agentLabel = (agent: string): string => {

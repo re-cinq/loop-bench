@@ -48,7 +48,13 @@ export const ExperimentConfigSchema = z.object({
   replicates: z.number().int().min(1).default(5),
   station_timeout_minutes: StationMap(z.number()).default({ dod: 60, "tdd-round": 60, "repair-build": 45 }),
   lore_mcp: z
-    .object({ lore_dir: z.string(), api_url_env: z.string().default("LORE_API_URL"), token_env: z.string().default("LORE_INGEST_TOKEN") })
+    .object({
+      lore_dir: z.string(),
+      /** A Lore checkout new enough to take `backend` on its store reads (lore#2787), for the lore-utopia setting. */
+      utopia_lore_dir: z.string().optional(),
+      api_url_env: z.string().default("LORE_API_URL"),
+      token_env: z.string().default("LORE_INGEST_TOKEN"),
+    })
     .optional(),
   judge: z.object({ harness: HarnessSchema, model: z.string(), diff_cap_chars: z.number().default(60_000) }),
   gemini: z.object({ project: z.string(), location: z.string().default("global") }).optional(),

@@ -10,6 +10,6 @@ describe("experiments/halengine.yaml", () => {
     expect(config.tickets.map((ticket) => ticket.number)).toEqual([93, 94, 95, 37, 89]);
     expect(config.variants.dod).toHaveLength(15);
     expect(config.replicates).toBe(5);
-    expect(plannedLoops(config)).toHaveLength(5 * 2 * (1 + 15 + 16 + 16 + 2) * 5);
+    expect(plannedLoops(config)).toHaveLength(5 * 3 * (1 + 15 + 16 + 16 + 2) * 5);
   });
 });

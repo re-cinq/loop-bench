@@ -9,7 +9,7 @@ import type { BenchRecord, LoopRecord, StationRunRecord } from "./core/records.j
 import { ciFeedbackOf, handoffOf, roundBriefOf, type CheckResult } from "./core/round-brief.js";
 import { diffOf, git } from "./workspace/git.js";
 import { enforce } from "./core/enforce.js";
-import { HarnessSchema, StationSchema, type Harness, type Station } from "./core/harness-names.js";
+import { ContextModeSchema, HarnessSchema, StationSchema, type ContextMode, type Harness, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
 import { breadthFirst } from "./core/order.js";
 import { costOf } from "./core/pricing.js";
@@ -24,7 +24,7 @@ import { runProcess } from "./io/spawn.js";
 import { InfraError, runLoop } from "./run/loop.js";
 import { ancestorInstructionFiles } from "./run/isolation.js";
 import { HarnessLanes } from "./run/harness-lanes.js";
-import { loreServer } from "./run/station.js";
+import { mcpFor } from "./run/station.js";
 import { benchPaths } from "./run/paths.js";
 import { propose, type ProposalEvidence } from "./run/propose.js";
 import { appendRecord, latestLoops, latestStationRuns, readLoopJson, readRecords, writeLoopJson } from "./run/results.js";
@@ -88,7 +88,7 @@ async function main(argv: readonly string[]): Promise<void> {
     case "prepare":
       return prepare(config());
     case "smoke":
-      return smoke(config(), values.harness, values.model, values.context === "lore-mcp");
+      return smoke(config(), values.harness, values.model, ContextModeSchema.parse(values.context ?? "none"));
     case "run":
       return runSelected(config(), breadthFirst(selected()), values.force, values["keep-run"], Number(values.parallel), values["per-harness"] === undefined ? undefined : new HarnessLanes(Number(values["per-harness"])), (values.exclude?.split(",") ?? []).map((harness) => HarnessSchema.parse(harness)));
     case "make-artifact":
@@ -144,7 +144,8 @@ async function prepare(config: ExperimentConfig): Promise<void> {
   }
 }
 
-async function smoke(config: ExperimentConfig, harness: string | undefined, model: string | undefined, withLore: boolean): Promise<void> {
+async function smoke(config: ExperimentConfig, harness: string | undefined, model: string | undefined, context: ContextMode): Promise<void> {
+  const withLore = context !== "none";
   const parsedHarness = HarnessSchema.parse(harness);
 
   enforce(model !== undefined, "smoke needs --model");
@@ -155,11 +156,11 @@ async function smoke(config: ExperimentConfig, harness: string | undefined, mode
   const spec = {
     model,
     prompt: withLore
-      ? "Call the Lore MCP tool lore_list_repos, then try to call lore_write_memory with key loop-bench/smoke-write-probe and value test. Reply with how many repositories lore_list_repos returned and whether the write tool was available, and end with the line: LORE_NODE_RESULT: success"
+      ? "Call the Lore MCP tool lore_search_context with repo re-cinq/HALEngine and query \"afterModelResponse usage across tool rounds\". Reply with the number of results and the source path of the first one, then try to call lore_write_memory with key loop-bench/smoke-write-probe and value test and say whether it was available. End with the line: LORE_NODE_RESULT: success"
       : "Run the shell command `npm test` in this directory, then reply with exactly one line: LORE_NODE_RESULT: success",
     workspaceDir,
     homeDir: join(dir, "home"),
-    mcp: withLore ? loreServer(config) : null,
+    mcp: mcpFor(context, config, paths),
     extraEnv: {},
     gemini: config.gemini ?? null,
     userHome: process.env["HOME"] ?? "",

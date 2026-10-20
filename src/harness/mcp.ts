@@ -35,3 +35,8 @@ export function loreStdioServer(loreDir: string, apiUrl: string, token: string):
     blockedTools: [...LORE_WRITE_TOOLS],
   };
 }
+
+/** Lore's MCP server with every store read pinned to `backend` by a local proxy: the same tools, a different store underneath. */
+export function lorePinnedServer(server: McpStdioServer, proxyPath: string, backend: string): McpStdioServer {
+  return { ...server, command: "node", args: [proxyPath, backend, "--", server.command, ...server.args] };
+}

@@ -13,7 +13,7 @@ import { finalText, parseNodeResult } from "../core/result-line.js";
 import { usageFromStream } from "../core/usage.js";
 import { ADAPTERS } from "../harness/adapters.js";
 import type { InvocationSpec } from "../harness/harness.js";
-import { loreStdioServer } from "../harness/mcp.js";
+import { lorePinnedServer, loreStdioServer } from "../harness/mcp.js";
 import { buildScratchHome } from "../harness/scratch-home.js";
 import { runProcess, type SpawnResult } from "../io/spawn.js";
 import { pushedHead, type RunWorkspace } from "../workspace/prepare.js";
@@ -64,7 +64,7 @@ export async function runStation(plan: StationPlan, deps: StationDeps): Promise<
     prompt: built.prompt,
     workspaceDir: workspace.workspaceDir,
     homeDir: plan.homeDir,
-    mcp: plan.contextMode === "lore-mcp" ? loreServer(config) : null,
+    mcp: mcpFor(plan.contextMode, config, paths),
     extraEnv: plan.station === "tdd-round" ? { LORE_ACCEPTANCE_DOD: join(workspace.targetDir, ".lore", "dod.md") } : {},
     gemini: config.gemini ?? null,
     userHome: process.env["HOME"] ?? "",
@@ -149,7 +149,23 @@ function failureClassOf(result: SpawnResult, hasResultLine: boolean): StationRun
   return "none";
 }
 
-export function loreServer(config: ExperimentConfig) {
+export function mcpFor(contextMode: StationPlan["contextMode"], config: ExperimentConfig, paths: BenchPaths) {
+  if (contextMode === "none") {
+    return null;
+  }
+  if (contextMode === "lore-mcp") {
+    return loreServer(config);
+  }
+  const utopiaLoreDir = config.lore_mcp?.utopia_lore_dir;
+
+  if (!utopiaLoreDir) {
+    throw new Error("context_mode lore-utopia needs lore_mcp.utopia_lore_dir: a Lore build whose store reads take `backend`");
+  }
+
+  return lorePinnedServer(loreServer(config, utopiaLoreDir), join(paths.root, "bin", "mcp-backend-proxy.mjs"), "utopia");
+}
+
+export function loreServer(config: ExperimentConfig, loreDir?: string) {
   const mcp = config.lore_mcp;
 
   if (!mcp) {
@@ -162,7 +178,7 @@ export function loreServer(config: ExperimentConfig) {
     throw new Error(`context_mode lore-mcp needs ${mcp.api_url_env} and ${mcp.token_env} in the environment, or lore.api-url and lore.ingest-token in git config`);
   }
 
-  return loreStdioServer(mcp.lore_dir, apiUrl, token);
+  return loreStdioServer(loreDir ?? mcp.lore_dir, apiUrl, token);
 }
 
 // Where install.sh keeps them.
