@@ -1,0 +1,5 @@
+I have completed the TDD round. I wrote a unit test in `src/orchestration/chatOrchestrator.test.ts` to assert that `onError` receives a wrapped Error object carrying a readable message while the original non-Error rejection value is successfully propagated. I modified `src/orchestration/chatOrchestrator.ts` to implement this logic using a fallback readable message (`JSON.stringify(error) ?? String(error)`). I also verified that existing error tests remain green and updated `CHANGELOG.md` with the new behavior guarantee. 
+
+The round ran no tests here other than the single unit test file I edited (`src/orchestration/chatOrchestrator.test.ts`). There were no red tests of my own or regressions observed during the targeted test run. I did not run the acceptance tests nor the linter, as those will be evaluated by CI.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"In src/orchestration/chatOrchestrator.ts, coerce a caught non-Error rejection to an Error with a readable message","tdd_next":"acceptance green"}}

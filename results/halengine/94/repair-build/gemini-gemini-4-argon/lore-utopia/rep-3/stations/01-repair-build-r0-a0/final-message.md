@@ -1,0 +1,3 @@
+Fixed the `typecheck` and `eslint` (`re-lint/max-expects`) failures in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` by passing `{identity: 'You are HAL.'}` to `PromptBuilder`, consolidating the three `expect` assertions into a single `expect({...}).toEqual({...})` call, and updating the corresponding spec citation anchor in `specs/hal-engine-config-hooks/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed PromptBuilderConfig type error and re-lint/max-expects violation in chatOrchestrator.beforeSession.acceptance.test.ts"}}

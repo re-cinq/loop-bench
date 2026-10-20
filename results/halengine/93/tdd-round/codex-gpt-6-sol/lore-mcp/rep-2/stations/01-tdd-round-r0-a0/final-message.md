@@ -1,0 +1,3 @@
+Committed and pushed the aggregate-usage contract. The new focused test went red, then green; one red test was mine and no regressions were observed. Lore returned 403, so I could not read CI’s verdict. Acceptance tests remain for CI and later rounds.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Sum each token field only for provider rounds that report usage, preserving undefined when none do."}}

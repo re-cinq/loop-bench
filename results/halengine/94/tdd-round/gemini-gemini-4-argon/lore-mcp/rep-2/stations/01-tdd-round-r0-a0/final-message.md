@@ -1,0 +1,5 @@
+Completed the TDD round for ticket #94:
+- **Red / Green**: Added a unit test in `src/orchestration/chatOrchestrator.test.ts` (`runs onError then afterSession when it throws, and still rejects to the caller`), confirmed it failed when `beforeSession` threw above the `try` block (1 red test of mine, 0 regressions), then moved `if (hooks?.beforeSession) await hooks.beforeSession(session);` inside the `try` block in `src/orchestration/chatOrchestrator.ts` and verified `chatOrchestrator.test.ts` is green.
+- **Refactor / Traceability / Docs**: Updated `specs/hal-engine-config-hooks/spec.md` with the normative `beforeSession` error-path guarantee under `Installing hooks through config` (removing it from `Measured semantics — out of scope`), repointed shifted test anchors across specs via `check-spec-anchor-names.mjs --fix`, added the `CHANGELOG.md` entry under `[Unreleased]`, and ticked the completed facets in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document in CHANGELOG.md","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+I reproduced the `eslint` failure in `src/orchestration/onErrorNonError.acceptance.test.ts` where `new Date()` was flagged as non-deterministic. I fixed it by replacing the dynamic timestamp with a fixed ISO string in the test's `sessionWith` helper. I verified that the acceptance tests and the main orchestrator tests pass locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"make session timestamp deterministic in onErrorNonError.acceptance.test.ts"}}

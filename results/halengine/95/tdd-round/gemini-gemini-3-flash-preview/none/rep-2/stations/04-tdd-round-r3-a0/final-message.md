@@ -1,0 +1,5 @@
+I have resolved the ESLint duplication error in `src/orchestration/onErrorNonError.unit.test.ts` by refactoring the test logic into a shared `checkRejection` helper. This consolidation eliminated the 11-line duplication reported by CI while maintaining full coverage for both string and `undefined` rejections. I also updated the validation links in `specs/hal-engine-config-hooks/spec.md` to point to the new line numbers of the refactored tests.
+
+Both the unit tests and the acceptance tests in `src/orchestration/onErrorNonError.acceptance.test.ts` were verified to pass locally. I have updated `target/.lore/dod.md` to mark all facets and acceptance criteria as completed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Refactored unit tests and updated spec links","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+Fixed the lint error `re-lint/require-spec-link` by adding a required test citation for the unit test at `src/orchestration/chatOrchestrator.test.ts#L116` to the corresponding statement in `specs/hal-engine-config-hooks/spec.md`. Verified that the orchestrator implementation correctly invokes `onError` and `afterSession` hooks when `beforeSession` throws by running both unit and acceptance tests. Updated `.lore/dod.md` to mark the acceptance test as passed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"traceability and acceptance check","tdd_next":"acceptance green"}}

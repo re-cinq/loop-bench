@@ -1,0 +1,3 @@
+I’m blocked before the red phase: this session has no `lore_query_trace` or `lore_get_ci_failures` tools, and neither command is installed in the branch. The required coverage check before editing a symbol and CI verdict lookup are therefore unavailable. I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore trace and CI failure tools are unavailable, so I cannot safely begin the test-led round."}}

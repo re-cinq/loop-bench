@@ -1,0 +1,3 @@
+Fixed the `re-lint/no-nondeterministic-tests` ESLint failure in `src/orchestration/onErrorNonError.acceptance.test.ts` by replacing `new Date().toISOString()` with a constant `SENT_AT`, and repointed the corresponding spec anchor line numbers in `specs/hal-engine-config-hooks/spec.md` (0 red tests, 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix re-lint/no-nondeterministic-tests in src/orchestration/onErrorNonError.acceptance.test.ts","tdd_next":"acceptance green"}}

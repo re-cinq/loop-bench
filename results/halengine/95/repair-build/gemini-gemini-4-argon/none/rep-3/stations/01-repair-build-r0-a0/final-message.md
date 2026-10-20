@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` in `src/orchestration/onErrorNonError.acceptance.test.ts` with a fixed ISO timestamp (`'2026-01-01T00:00:00.000Z'`) to satisfy the `re-lint/no-nondeterministic-tests` ESLint rule, formatted with Prettier, and pushed to `origin/loop-bench/95`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced nondeterministic new Date() in src/orchestration/onErrorNonError.acceptance.test.ts with a fixed timestamp string to satisfy re-lint/no-nondeterministic-tests"}}

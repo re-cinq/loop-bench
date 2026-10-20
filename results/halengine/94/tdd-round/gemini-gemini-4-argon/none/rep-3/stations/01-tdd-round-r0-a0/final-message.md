@@ -1,0 +1,6 @@
+Completed the TDD round for Ticket #94:
+
+- **Red → Green → Refactor**: Added unit test `calls onError and afterSession when beforeSession throws` in `src/orchestration/chatOrchestrator.test.ts` (1 red test that was ours, 0 regressions), moved `beforeSession` inside the `try` block in `src/orchestration/chatOrchestrator.ts` so the test passes, updated `specs/hal-engine-config-hooks/spec.md` and repointed spec anchors across `specs/`, documented the consumer-visible change in `CHANGELOG.md`, and updated `.lore/dod.md`.
+- **Unrelated smell noticed (unacted on)**: `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` contains 3 `expect(...)` calls in a single `it(...)` block, which may trigger `re-lint/max-expects` (configured at max 1); left untouched per the rule not to edit acceptance tests.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document in CHANGELOG.md","tdd_next":"acceptance green"}}

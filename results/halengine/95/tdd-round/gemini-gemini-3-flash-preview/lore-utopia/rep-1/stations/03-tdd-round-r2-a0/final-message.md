@@ -1,0 +1,5 @@
+I have refactored the test file `src/orchestration/onErrorNonError.round.test.ts` to eliminate the code duplication that caused the ESLint failure in CI. I introduced a `runTest` helper function that encapsulates the repetitive orchestration and hook setup logic. I also manually updated the `[validated by: ...]` links in `specs/hal-engine-config-hooks/spec.md` to reflect the new line numbers in the refactored test file and updated `.lore/dod.md` to explicitly include the `undefined` rejection case.
+
+I verified the changes by running the refactored test suite with Jest, which passed all three tests (string, object, and undefined rejections), and by confirming that existing `onError` tests in `src/orchestration/chatOrchestrator.test.ts` remain green.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix ESLint duplicate code and update spec links","tdd_next":"acceptance green"}}

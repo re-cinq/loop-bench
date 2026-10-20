@@ -1,0 +1,7 @@
+Completed the TDD round for Ticket #95:
+
+- Added a failing unit test (`wraps a non-Error rejection in an Error whose cause is the original and still rejects the caller with the original`) in `src/orchestration/chatOrchestrator.test.ts` covering string, plain object, and `undefined` rejections (1 red test of ours, 0 regressions).
+- Updated `src/orchestration/chatOrchestrator.ts` to call `hooks.onError` on every rejection, passing `Error` instances through unchanged and wrapping non-`Error` values in `new Error(String(error), {cause: error})` while re-throwing the original rejection to the caller; all 27 tests in `src/orchestration/chatOrchestrator.test.ts` pass with existing `Error`-instance tests unedited.
+- Updated `specs/hal-engine-config-hooks/spec.md`, repointed spec anchor line numbers via `scripts/check-spec-anchor-names.mjs --fix`, added the `CHANGELOG.md` entry under `## [Unreleased]`, ticked the completed facets in `.lore/dod.md`, formatted with Prettier, and pushed `b289796` to `origin/loop-bench/95`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Coerce caught non-Error rejections to Error with readable message and original cause in chatOrchestrator.ts, keep existing Error tests green, and document in CHANGELOG.md","tdd_next":"acceptance green"}}

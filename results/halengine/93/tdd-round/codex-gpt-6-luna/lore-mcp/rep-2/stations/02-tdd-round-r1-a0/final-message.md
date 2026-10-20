@@ -1,0 +1,5 @@
+Added and pushed **fe94a81**. `TotalUsageMetadata` is exported and used by the `afterModelResponse` signature; the spec links, changelog entry, and DoD facet were updated. The branch is up to date with its upstream.
+
+The one focused Jest test passed, but it did not go red first: Jest strips TypeScript types without checking them, so it could not detect the missing type before implementation. Lore’s trace query was also unavailable (HTTP 403: token lacks `read` scope). **Red tests: 0; regressions: 0.** No acceptance tests, typecheck, or lint were run.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Preserve the unchanged no-tool regression guard and complete the hooks spec and CHANGELOG facet."}}

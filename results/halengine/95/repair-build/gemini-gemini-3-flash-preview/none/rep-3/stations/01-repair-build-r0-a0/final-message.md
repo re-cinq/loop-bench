@@ -1,0 +1,3 @@
+I fixed the lint error in `src/orchestration/onErrorNonError.acceptance.test.ts` by replacing the non-deterministic `new Date()` with a constant timestamp. I also expanded the test suite to verify that `onError` correctly handles `undefined` rejections and preserves the original rejection as the `cause` in the wrapped `Error` object, fulfilling the acceptance criteria. Existing unit tests were run to ensure no regressions were introduced to standard `Error` instance handling.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed non-deterministic test lint error and added test coverage for undefined rejections in onError hook."}}

@@ -1,0 +1,6 @@
+Completed one red-green-refactor round for `#94`:
+
+- **Red/Green**: Added a unit test in `src/orchestration/chatOrchestrator.test.ts` (`runs onError then afterSession when it throws, and still rejects to the caller`), verified it failed (1 red test of mine, 0 regressions), then moved `if (hooks?.beforeSession) await hooks.beforeSession(session);` inside the `try` block in `src/orchestration/chatOrchestrator.ts` and verified `chatOrchestrator.test.ts` passed (0 red tests, 0 regressions).
+- **Traceability & Docs**: Updated `specs/hal-engine-config-hooks/spec.md` with the new guarantee for `beforeSession` throwing and repointed spec anchors across affected specs, added the migration note under `## [Unreleased] -> ### Changed` in `CHANGELOG.md`, and checked off the completed facets in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document in CHANGELOG.md","tdd_next":"acceptance green"}}

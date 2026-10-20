@@ -1,0 +1,3 @@
+I’m stuck before editing: no `lore_*` tools are available here, and `lore-query-trace` is not installed in the target checkout. The required coverage query can’t be made, so I can’t safely edit a symbol. I made no changes, ran no tests, and did not commit or push.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore-query-trace coverage query is unavailable in this environment."}}

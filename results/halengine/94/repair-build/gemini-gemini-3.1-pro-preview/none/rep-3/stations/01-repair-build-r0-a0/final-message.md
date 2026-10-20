@@ -1,0 +1,3 @@
+I have addressed the CI issues in `chatOrchestrator.beforeSession.acceptance.test.ts`. Specifically, I fixed the `typecheck` error by passing the correct configuration properties (`identity` instead of `baseSystemPrompt`) to the `PromptBuilder` constructor, and resolved the `eslint` error by consolidating three `expect` assertions into a single `expect({...}).toEqual({...})` assertion. I also ran Prettier to format the file and successfully pushed the changes.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"typecheck and eslint failures in beforeSession acceptance test"}}

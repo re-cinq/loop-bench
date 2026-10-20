@@ -1,0 +1,5 @@
+**Round delivered:** provider usage is summed across reported rounds, and `.lore/dod.md` records that facet as closed. The focused test went red, then green; after the refactor, it passed again. No acceptance tests or other tests were run.
+
+Committed and pushed as `eea56fb`; the branch is up to date with `origin/main` and its upstream. The round had **1 red test of ours** and **0 observed regressions**. Lore could not provide trace coverage or the previous CI verdict because its token returned HTTP 403. No unrelated smells were acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}

@@ -1,0 +1,3 @@
+Resolved the CI ESLint failure (`re-lint/no-nondeterministic-tests` on `new Date()` in `src/orchestration/onErrorNonError.acceptance.test.ts`), expanded the non-`Error` rejection unit test in `src/orchestration/chatOrchestrator.test.ts` to cover string, plain object, and `undefined` rejections with `cause` preserved, and repointed spec anchors. 0 red tests were mine and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace new Date() in onErrorNonError.acceptance.test.ts with a deterministic timestamp and cover string, plain object, and undefined non-Error rejections in chatOrchestrator.test.ts","tdd_next":"acceptance green"}}

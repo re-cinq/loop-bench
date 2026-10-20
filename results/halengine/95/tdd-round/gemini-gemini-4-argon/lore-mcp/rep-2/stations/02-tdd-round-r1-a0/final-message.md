@@ -1,0 +1,3 @@
+Resolved the CI `re-lint/no-nondeterministic-tests` error in `src/orchestration/onErrorNonError.acceptance.test.ts` (line 12) by replacing `new Date().toISOString()` with a fixed ISO timestamp string (`'2026-01-01T00:00:00.000Z'`). 0 red tests were ours and 0 were regressions (only the single ESLint finding was reported by CI).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace new Date() with a fixed timestamp in src/orchestration/onErrorNonError.acceptance.test.ts to satisfy re-lint/no-nondeterministic-tests","tdd_next":"acceptance green"}}

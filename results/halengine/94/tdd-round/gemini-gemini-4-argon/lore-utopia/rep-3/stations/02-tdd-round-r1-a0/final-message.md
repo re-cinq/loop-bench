@@ -1,0 +1,6 @@
+Resolved the two CI failures reported on the previous push in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`:
+- Replaced the invalid `PromptBuilder` constructor options (`baseSystemPrompt`, `systemPromptSuffix`, `contextConfig`) with the shared `writeSignalPromptBuilder` (`PromptBuilderConfig` only accepts `identity`, `domainContext`, `responseGuidelines`, and `toolPreamble`).
+- Consolidated the three `expect(...)` calls into a single `expect({outcome, caughtError, afterSessionRan}).toEqual(...)` assertion to satisfy `re-lint/max-expects`, and re-anchored `specs/hal-engine-config-hooks/spec.md` (`#L14`).
+- Red tests: 0 of ours, 0 regressions (CI failures were typecheck and eslint on the acceptance test file; `src/orchestration/chatOrchestrator.test.ts` passed all 24 tests).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix typecheck (TS2353) and eslint (re-lint/max-expects) failures in chatOrchestrator.beforeSession.acceptance.test.ts and update spec anchor in specs/hal-engine-config-hooks/spec.md","tdd_next":"acceptance green"}}

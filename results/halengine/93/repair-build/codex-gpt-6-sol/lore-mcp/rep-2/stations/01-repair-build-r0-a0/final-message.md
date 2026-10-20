@@ -1,0 +1,3 @@
+Fixed all four reported lint findings: added spec links for the usage helper tests and combined the two assertions in the missing-operand test. Prettier and `git diff --check` passed. The commit is pushed, and the branch is up to date with `main`. CI has not judged the new commit yet; I did not run lint locally, as instructed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Linked usage helper tests to the spec and resolved the two-assertion lint error"}}

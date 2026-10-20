@@ -1,0 +1,3 @@
+I have fixed the ESLint error in `src/orchestration/onErrorNonError.acceptance.test.ts` by replacing the non-deterministic `new Date()` call with a fixed timestamp. I verified that the acceptance tests pass by running them locally with Jest. I also updated `.lore/dod.md` to reflect that all facets and acceptance criteria for this ticket are now met. The implementation in `src/orchestration/chatOrchestrator.ts` correctly coerces non-`Error` rejections into `Error` instances, ensuring the `onError` hook is always called, as verified by the passing tests.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"acceptance green","tdd_next":"acceptance green"}}

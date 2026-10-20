@@ -1,0 +1,5 @@
+I have completed the TDD round. I started by writing a failing unit test in `src/orchestration/chatOrchestrator.test.ts` to verify that `onError` and `afterSession` run when `beforeSession` throws. I then moved the `beforeSession` call inside the `try` block in `src/orchestration/chatOrchestrator.ts` to make the test pass. The acceptance test was not edited.
+
+I also updated `CHANGELOG.md` with the new guarantee as requested by the ticket, formatted the files, and marked the remaining facets as completed in `.lore/dod.md`. The spec update was already present from the previous commit, so I only needed to perform the code implementation and changelog updates. The branch has been pushed. 
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts","tdd_next":"acceptance green"}}

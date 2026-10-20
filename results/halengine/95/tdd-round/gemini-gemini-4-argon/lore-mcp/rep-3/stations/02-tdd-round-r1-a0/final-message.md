@@ -1,0 +1,3 @@
+Resolved the CI `eslint` failure (`re-lint/no-nondeterministic-tests` at `src/orchestration/onErrorNonError.acceptance.test.ts:12:48`) by replacing `new Date().toISOString()` in the `sessionWith` helper with a fixed ISO timestamp string (`'2026-01-01T00:00:00.000Z'`). Zero red tests were ours and zero were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix re-lint/no-nondeterministic-tests error in src/orchestration/onErrorNonError.acceptance.test.ts","tdd_next":"acceptance green"}}

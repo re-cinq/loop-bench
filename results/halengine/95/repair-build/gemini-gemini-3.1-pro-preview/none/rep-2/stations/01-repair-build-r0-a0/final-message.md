@@ -1,0 +1,3 @@
+I have reproduced the eslint failure for `re-lint/no-nondeterministic-tests` caused by `new Date().toISOString()`, fixed it by replacing it with a hardcoded string `2023-01-01T00:00:00.000Z`, formatted the file, committed, and pushed the changes. The build passes locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"fixed re-lint/no-nondeterministic-tests in onErrorNonError.acceptance.test.ts by hardcoding date"}}

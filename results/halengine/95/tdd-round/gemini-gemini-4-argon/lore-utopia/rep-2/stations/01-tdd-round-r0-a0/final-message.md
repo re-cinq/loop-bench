@@ -1,0 +1,7 @@
+Completed one red-green-refactor round for Ticket #95:
+
+- **Red:** Added unit test `wraps string, object, and undefined rejections in an Error with cause while rethrowing the original value` in `src/orchestration/chatOrchestrator.test.ts` and verified it failed against the `error instanceof Error` gate (1 red test ours, 0 regressions).
+- **Green:** Updated `src/orchestration/chatOrchestrator.ts` so `hooks.onError` receives `error instanceof Error ? error : new Error(String(error), {cause: error})` on any turn rejection while rethrowing `error` unchanged; verified all 27 tests in `src/orchestration/chatOrchestrator.test.ts` pass, including the unedited `Error`-instance tests.
+- **Refactor & Traceability:** Updated the `onError` guarantee in `specs/hal-engine-config-hooks/spec.md` with the new test citation, re-anchored shifted citations via `scripts/check-spec-anchor-names.mjs --fix`, added the `CHANGELOG.md` entry under `## [Unreleased]`, and ticked the completed facets in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Coerce caught non-Error rejections to Error with cause for hooks.onError, confirm Error-instance tests stay green, and update spec citations and CHANGELOG.md","tdd_next":"acceptance green"}}

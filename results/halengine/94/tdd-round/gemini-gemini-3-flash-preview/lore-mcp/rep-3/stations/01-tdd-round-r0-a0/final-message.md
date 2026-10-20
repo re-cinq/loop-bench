@@ -1,0 +1,3 @@
+I moved `beforeSession` inside the `try` block in `chatOrchestrator.ts` so that `onError` and `afterSession` hooks now fire when it throws. I verified this with a new unit test in `src/orchestration/chatOrchestrator.test.ts` and updated the `specs/hal-engine-config-hooks/spec.md` guarantee and `CHANGELOG.md` accordingly.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts","tdd_next":"acceptance green"}}

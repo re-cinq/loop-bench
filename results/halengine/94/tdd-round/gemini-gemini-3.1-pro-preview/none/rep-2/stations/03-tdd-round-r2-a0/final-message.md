@@ -1,0 +1,3 @@
+I have successfully fixed the CI lint failure reported in the round brief. The `re-lint/require-spec-link` plugin only processes the *last* parenthetical block on a line, so having two separate parentheticals `([validated by: ...]) ([validated by: ...])` caused the first link to be ignored. I merged both test links into a single trailing parenthetical: `([validated by: ...], [validated by: ...])`. This resolves the ESLint error, and I have committed and pushed the changes. No other regressions were present and the ticket is now ready for its final verification.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix lint failure for spec link","tdd_next":"acceptance green"}}

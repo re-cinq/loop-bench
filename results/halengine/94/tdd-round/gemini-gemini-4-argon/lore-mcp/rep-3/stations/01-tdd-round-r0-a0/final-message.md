@@ -1,0 +1,7 @@
+Completed the TDD round for Ticket #94:
+
+- **Red → Green**: Added a unit test (`runs onError then afterSession when it throws, and still rejects to the caller`) in `src/orchestration/chatOrchestrator.test.ts` (1 red test ours, 0 regressions), then moved the `beforeSession` invocation inside the `try` block in `src/orchestration/chatOrchestrator.ts` so all 24 tests in `src/orchestration/chatOrchestrator.test.ts` pass.
+- **Traceability & Docs**: Moved the `beforeSession` error-path guarantee into the normative `Installing hooks through config` section of `specs/hal-engine-config-hooks/spec.md`, repointed spec line anchors across `specs/`, added the consumer-facing entry to `CHANGELOG.md`, and checked off the facets in `.lore/dod.md`.
+- **Unrelated smells noticed (left untouched)**: `onError` is still gated on `error instanceof Error`, and `afterModelResponse` still receives `lastUsage` rather than a sum across tool rounds (both explicitly out of scope per ticket and spec).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document in CHANGELOG.md","tdd_next":"acceptance green"}}
