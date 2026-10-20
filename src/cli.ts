@@ -378,7 +378,8 @@ function reportInputs(config: ExperimentConfig): ReportInputs {
 
   return {
     records,
-    loops: latestLoops(records),
+    // A loop discarded by removing its cell folder (an infrastructure failure, say) stays in results.jsonl but leaves the report.
+    loops: latestLoops(records).filter((loop) => existsSync(join(paths.resultsDir, loop.cell_path, "loop.json"))),
     experimentDir,
     promptsLoreSha: readFileSync(join(paths.promptsDir, "LORE_SHA"), "utf8").trim(),
     generatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC",
