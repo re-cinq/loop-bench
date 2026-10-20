@@ -33,6 +33,7 @@ describe("isInfraError", () => {
   it("an expired Google login (invalid_rapt) on a nonzero exit is infrastructure, a red test is not", () => {
     expect(isInfraError({ exitCode: 1, stdout: '{"error":"invalid_grant","error_subtype":"invalid_rapt"}', stderr: "" })).toBe(true);
     expect(isInfraError({ exitCode: 1, stdout: "Tests: 1 failed", stderr: "" })).toBe(false);
+    expect(isInfraError({ exitCode: 1, stdout: '{"type":"turn.failed","error":{"message":"You\u2019ve hit your usage limit. Upgrade to Pro"}}', stderr: "" })).toBe(true);
     expect(isInfraError({ exitCode: 0, stdout: "invalid_grant mentioned in a file the agent read", stderr: "" })).toBe(false);
   });
 });
