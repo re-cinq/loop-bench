@@ -1,0 +1,3 @@
+Completed the TDD round for Ticket #95 (1 red test written and made green; 0 regressions; all 27 tests in `src/orchestration/chatOrchestrator.test.ts` pass). Non-`Error` rejections in `src/orchestration/chatOrchestrator.ts` are now wrapped with `new Error(String(error), {cause: error})` for `hooks.onError` while `Error` instances pass through unchanged and the original value is re-thrown to the caller; spec anchors, `CHANGELOG.md`, and `.lore/dod.md` are updated and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Coerce caught non-Error rejections to Error with cause for hooks.onError, confirm existing Error tests pass, and document in CHANGELOG.md","tdd_next":"acceptance green"}}

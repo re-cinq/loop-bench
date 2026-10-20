@@ -1,0 +1,7 @@
+I have fixed the CI failures reported from the previous push. The `new Date()` call in `src/orchestration/onErrorNonError.acceptance.test.ts` has been replaced with a fixed string to resolve the `re-lint/no-nondeterministic-tests` eslint failure. I also repointed the spec anchors for `specs/hal-engine-config-hooks/spec.md` manually (since the anchor set differed from main) and added the missing inline link to `src/orchestration/chatOrchestrator.test.ts#L278` to satisfy the `re-lint/require-spec-link` rule. Finally, I ran `node scripts/repoint-spec-anchors.mjs` to auto-correct the remaining shifted line anchors in `specs/hal-engine-architecture/spec.md` and `specs/hal-engine-tool-input-validation/spec.md`.
+
+All checks for `eslint` and `spec-names` now pass locally. The branch has been committed and pushed, and I have merged `origin/main` to ensure everything is up to date (no merge was needed). No new tests were written this round as all facets in `.lore/dod.md` were already closed by the previous round, and I am relying on the CI build to judge the acceptance tests.
+
+0 red tests were mine and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI reported failures (eslint, spec-names)","tdd_next":"acceptance green"}}

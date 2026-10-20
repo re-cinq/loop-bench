@@ -1,0 +1,5 @@
+I have resolved the `eslint` failure by refactoring the tests to remove code duplication. I extracted the common orchestrator rejection setup and execution logic into a shared `runRejectionTest` helper within `src/orchestration/onErrorNonError.testSupport.ts`. I then updated both `src/orchestration/onErrorNonError.acceptance.test.ts` and `src/orchestration/onErrorNonError.facet.test.ts` to utilize this helper, ensuring consistent behavior while satisfying the linter.
+
+After refactoring, I verified that both test suites remain green by running them with Jest (the project's configured runner). I also manually updated the line-number links in `specs/hal-engine-config-hooks/spec.md` to ensure traceability and verified them using the `scripts/repoint-spec-anchors.mjs` script. All modified files have been formatted with Prettier and pushed to the repository.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"resolved code duplication in tests","tdd_next":"acceptance green"}}

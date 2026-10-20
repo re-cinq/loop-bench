@@ -1,0 +1,3 @@
+I have fixed the ESLint failures in `src/orchestration/onErrorNonError.acceptance.test.ts` by consolidating multiple `expect` calls into single `toMatchObject` assertions, satisfying the `re-lint/max-expects` rule. I also updated the traceability links in `specs/hal-engine-config-hooks/spec.md` to point to the new line numbers for the acceptance tests and verified that the spec anchors remain valid using the `repoint-spec-anchors.mjs` script. All unit and facet tests for non-`Error` rejections pass locally, and the implementation logic for coercing non-`Error` rejections in `ChatOrchestrator` was confirmed to be already in place and correct.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix lint errors in acceptance tests","tdd_next":"acceptance green"}}
