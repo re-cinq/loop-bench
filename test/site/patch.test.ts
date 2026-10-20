@@ -42,7 +42,7 @@ describe("parsePatch", () => {
   it("returns an added file with 2 additions and no deletions", () => {
     expect(parsePatch(ADDED)).toEqual([{
       path: ".lore/dod.md", oldPath: ".lore/dod.md", status: "added", additions: 2, deletions: 0, binary: false,
-      hunks: [{ header: "@@ -0,0 +1,2 @@", lines: [{ kind: "+", text: "# Definition of Done" }, { kind: "+", text: "" }] }],
+      hunks: [{ header: "@@ -0,0 +1,2 @@", lines: [{ kind: "+", text: "# Definition of Done", oldNo: null, newNo: 1 }, { kind: "+", text: "", oldNo: null, newNo: 2 }] }],
     }]);
   });
 
@@ -58,6 +58,12 @@ describe("parsePatch", () => {
 
   it("returns 3 files from three concatenated patches", () => {
     expect(parsePatch(ADDED + RENAMED + TWO_HUNKS).map((file) => file.path)).toEqual([".lore/dod.md", "src/new.ts", "src/chat.ts"]);
+  });
+
+  it("numbers the second hunk's lines from old 40 and new 41", () => {
+    const [file] = parsePatch(TWO_HUNKS);
+
+    expect(file?.hunks[1]?.lines).toEqual([{ kind: "-", text: "const unused = 1;", oldNo: 40, newNo: null }, { kind: " ", text: "done();", oldNo: 41, newNo: 41 }]);
   });
 });
 

@@ -1,6 +1,6 @@
 // Unified `git diff` output split into files and hunks, so two branches' changes can be laid side by side file by file.
 const FILE_HEADER = /^diff --git a\/(.+) b\/(.+)$/;
-const HUNK_HEADER = /^@@ .* @@/;
+const HUNK_HEADER = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
 const TEST_PATH = /(\.(test|spec)\.[cm]?[jt]sx?$)|(^|\/)(test|tests|__tests__)\//;
 
 export const isTestPath = (path) => TEST_PATH.test(path);
@@ -13,6 +13,8 @@ export function parsePatch(text) {
   const files = [];
   let file = null;
   let hunk = null;
+  let oldNo = 0;
+  let newNo = 0;
 
   for (const line of text.split('\n')) {
     const header = line.match(FILE_HEADER);
@@ -23,6 +25,8 @@ export function parsePatch(text) {
     } else if (!file) {
       continue;
     } else if (HUNK_HEADER.test(line)) {
+      const [, oldStart, newStart] = line.match(HUNK_HEADER);
+      [oldNo, newNo] = [Number(oldStart), Number(newStart)];
       hunk = { header: line, lines: [] };
       file.hunks.push(hunk);
     } else if (!hunk) {
@@ -30,13 +34,13 @@ export function parsePatch(text) {
       else if (line.startsWith('deleted file mode')) file.status = 'deleted';
       else if (line.startsWith('Binary files')) file.binary = true;
     } else if (line.startsWith('+')) {
-      hunk.lines.push({ kind: '+', text: line.slice(1) });
+      hunk.lines.push({ kind: '+', text: line.slice(1), oldNo: null, newNo: newNo++ });
       file.additions += 1;
     } else if (line.startsWith('-')) {
-      hunk.lines.push({ kind: '-', text: line.slice(1) });
+      hunk.lines.push({ kind: '-', text: line.slice(1), oldNo: oldNo++, newNo: null });
       file.deletions += 1;
     } else if (line.startsWith(' ')) {
-      hunk.lines.push({ kind: ' ', text: line.slice(1) });
+      hunk.lines.push({ kind: ' ', text: line.slice(1), oldNo: oldNo++, newNo: newNo++ });
     }
   }
   return files;

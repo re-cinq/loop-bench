@@ -110,3 +110,25 @@ export function writeHash(state) {
   const params = new URLSearchParams(Object.entries(state).filter(([, v]) => v != null && v !== ''));
   history.replaceState(null, '', `${location.pathname}${location.search}${params.size ? `#${params}` : ''}`);
 }
+
+/** A round bound for a symmetric scale: the largest |delta| shown, rounded up to 1, 2 or 5 times a power of ten. */
+export function niceBound(deltas) {
+  const largest = Math.max(...deltas.filter((d) => d != null).map(Math.abs), 0);
+  if (largest === 0) return 1;
+  const power = 10 ** Math.floor(Math.log10(largest));
+  return [1, 2, 5, 10].map((step) => step * power).find((bound) => bound >= largest);
+}
+
+/** The change as a dot on a bar centred on zero, coloured by whether it is better on this metric, with the scale's ends and centre beneath. */
+export function deltaBar(metric, delta, bound) {
+  const at = (value) => `${50 + (value / bound) * 50}%`;
+  const ticks = [-1, -0.5, 0.5, 1].map((share) => el('div', { class: 'tick', style: `left: ${at(share * bound)}` }));
+  return el('div', {}, [
+    el('div', { class: 'delta-bar', title: `${signed(delta, metric.format)} (scale ±${metric.format(bound)})` }, [
+      ...ticks,
+      el('div', { class: 'tick center', style: 'left: 50%' }),
+      el('div', { class: `marker ${{ 'delta-pos': 'pos', 'delta-neg': 'neg', 'delta-zero': 'zero' }[deltaClass(metric, delta)]}`, style: `left: ${at(delta)}` }),
+    ]),
+    el('div', { class: 'delta-bar-scale' }, [el('span', {}, `−${metric.format(bound)}`), el('span', {}, '0'), el('span', {}, `+${metric.format(bound)}`)]),
+  ]);
+}

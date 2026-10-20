@@ -1,6 +1,10 @@
 export interface PatchLine {
   kind: " " | "+" | "-";
   text: string;
+  /** Line number before the change; null on an added line. */
+  oldNo: number | null;
+  /** Line number after the change; null on a removed line. */
+  newNo: number | null;
 }
 
 export interface PatchHunk {

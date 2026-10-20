@@ -22,16 +22,23 @@ function initialState() {
   const first = SOURCES.find((source) => source.key.startsWith('loop:'));
   const a = hash.a ?? fromCells[0] ?? first?.key;
   const b = hash.b ?? fromCells[1] ?? (sourceOf(a) ? `pr:${sourceOf(a).ticket}` : undefined);
-  return { a, b, file: hash.file };
+  return { a, b, file: hash.file, raw: hash.raw };
 }
 const state = initialState();
 
 const patches = new Map();
+const fetchText = (url) => fetch(url, { cache: 'no-cache' }).then((res) => (res.ok ? res.text() : null));
+
+/** The patch with formatting noise removed, unless the raw one was asked for or this branch has no normalised copy (no prettier cached for its ticket). */
 function patchOf(source) {
-  if (!patches.has(source.key)) {
-    patches.set(source.key, fetch(source.url, { cache: 'no-cache' }).then((res) => (res.ok ? res.text() : '')).then(parsePatch));
+  const raw = state.raw === 'on';
+  const key = `${source.key}:${raw}`;
+  if (!patches.has(key)) {
+    patches.set(key, (raw ? Promise.resolve(null) : fetchText(source.url.replace(/\.patch$/, '.normalized.patch')))
+      .then((text) => text ?? fetchText(source.url))
+      .then((text) => parsePatch(text ?? '')));
   }
-  return patches.get(source.key);
+  return patches.get(key);
 }
 
 function sidePicker(side) {
@@ -54,12 +61,29 @@ function fileTable(rows) {
   return el('div', { class: 'table-wrap' }, el('table', { class: 'data' }, [el('thead', {}, head), el('tbody', {}, body)]));
 }
 
+const LANGUAGE_BY_EXTENSION = { ts: 'typescript', tsx: 'typescript', mts: 'typescript', cts: 'typescript', js: 'javascript', jsx: 'javascript', mjs: 'javascript', cjs: 'javascript', json: 'json', md: 'markdown', yml: 'yaml', yaml: 'yaml', css: 'css', html: 'xml', sh: 'bash' };
+const KIND_CLASS = { '+': 'add', '-': 'del', ' ': '' };
+
+/** Highlighted HTML for one line when highlight.js loaded and knows the language; plain text otherwise. Lines are highlighted one at a time, so a comment spanning lines loses its colour after the first. */
+function codeNode(text, language) {
+  const node = el('span', { class: 'code' });
+  if (window.hljs && language && window.hljs.getLanguage(language)) node.innerHTML = window.hljs.highlight(text, { language, ignoreIllegals: true }).value;
+  else node.textContent = text;
+  return node;
+}
+
 function hunksNode(file) {
   if (!file) return el('p', { class: 'dim' }, 'This side did not change the file.');
   if (file.binary) return el('p', { class: 'dim' }, 'Binary file.');
-  return el('div', { class: 'diff-code' }, file.hunks.flatMap((hunk) => [
-    el('div', { class: 'diff-line hunk' }, hunk.header),
-    ...hunk.lines.map((line) => el('div', { class: `diff-line ${line.kind === '+' ? 'add' : line.kind === '-' ? 'del' : ''}` }, `${line.kind}${line.text}`)),
+  const language = LANGUAGE_BY_EXTENSION[file.path.split('.').pop()];
+  return el('div', { class: 'code-view' }, file.hunks.flatMap((hunk) => [
+    el('div', { class: 'code-hunk' }, hunk.header),
+    ...hunk.lines.map((line) => el('div', { class: `code-row ${KIND_CLASS[line.kind]}` }, [
+      el('span', { class: 'ln' }, line.oldNo ?? ''),
+      el('span', { class: 'ln' }, line.newNo ?? ''),
+      el('span', { class: 'sign' }, line.kind),
+      codeNode(line.text, language),
+    ])),
   ]));
 }
 
@@ -73,7 +97,10 @@ function sidesNode(row, sources) {
 async function render() {
   writeHash(state);
   const sources = { a: sourceOf(state.a), b: sourceOf(state.b) };
-  const pickers = el('div', { class: 'filters' }, [sidePicker('a'), sidePicker('b'), el('button', { onclick: () => { [state.a, state.b] = [state.b, state.a]; render(); } }, '[swap]')]);
+  const pickers = el('div', { class: 'filters' }, [sidePicker('a'), sidePicker('b'), el('button', { onclick: () => { [state.a, state.b] = [state.b, state.a]; render(); } }, '[swap]'),
+    el('label', { title: 'Both sides of every changed .ts file are run through the repository\'s prettier before they are compared, and blank-line-only changes are dropped.' }, [
+      el('input', { type: 'checkbox', checked: state.raw === 'on', onchange: (e) => { state.raw = e.target.checked ? 'on' : ''; render(); } }), 'show formatting changes (raw patch)',
+    ])]);
   if (!sources.a || !sources.b) {
     mount(app, el('div', { class: 'note' }, 'No finished loop has a diff yet.'));
     return;

@@ -31,6 +31,8 @@ const SubjectSchema = z.object({
   install_command: z.string().default("npm ci"),
   ci_checks: z.array(CiCheckSchema).min(1),
   test_file_pattern: z.string().default("\\.(test|spec)\\.[cm]?[jt]sx?$"),
+  /** Paths the subject formats with prettier; the website formats both sides of these before it diffs them. */
+  format_pattern: z.string().default("^(src|scripts|smoke)/.*\\.ts$"),
 });
 
 const StationMap = <T extends z.ZodTypeAny>(value: T) =>

@@ -1,5 +1,6 @@
 // loop-bench: replay the implementation loop's agent stations across harnesses, models, contexts and prompts.
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { loadExperiment, type ExperimentConfig } from "./config/experiment.js";
@@ -8,6 +9,7 @@ import type { VisitRow } from "./core/station-report.js";
 import type { BenchRecord, LoopRecord, StationRunRecord } from "./core/records.js";
 import { ciFeedbackOf, handoffOf, roundBriefOf, type CheckResult } from "./core/round-brief.js";
 import { diffOf, git } from "./workspace/git.js";
+import { normalizedDiff, prettierBinIn } from "./run/normalize-diff.js";
 import { enforce } from "./core/enforce.js";
 import { ContextModeSchema, HarnessSchema, StationSchema, type ContextMode, type Harness, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
@@ -29,7 +31,7 @@ import { benchPaths } from "./run/paths.js";
 import { propose, type ProposalEvidence } from "./run/propose.js";
 import { appendRecord, latestLoops, latestStationRuns, readLoopJson, readRecords, writeLoopJson } from "./run/results.js";
 import { scoreDod, scoreJudge, withScores } from "./run/score.js";
-import { ensureDepsCache } from "./workspace/deps-cache.js";
+import { cachedNodeModulesDir, ensureDepsCache } from "./workspace/deps-cache.js";
 
 const ROOT = join(import.meta.dirname, "..");
 const paths = benchPaths(ROOT);
@@ -443,19 +445,45 @@ async function writeSiteData(config: ExperimentConfig): Promise<void> {
   log(`[loop-bench] site data written to ${relative(ROOT, dataDir)}: ${data.cells.length} cells, ${data.lorePairs.length} Lore pairs`);
 }
 
-/** Each loop's branch diff and each ticket's merged pull request diff, fetched by the diffs page only when someone opens a comparison. */
+/**
+ * Each loop's branch diff and each ticket's merged pull request diff, raw and with formatting noise removed, fetched by the diffs page only when someone opens a comparison.
+ * A patch already written is kept: a loop's branch and a merged commit never change.
+ */
 async function writeSiteDiffs(config: ExperimentConfig, loops: readonly LoopRecord[], diffsDir: string): Promise<void> {
   mkdirSync(diffsDir, { recursive: true });
-  for (const loop of loops) {
-    const patch = join(paths.resultsDir, loop.cell_path, "diff.patch");
+  for (const ticket of config.tickets) {
+    const prettierBin = prettierBinIn(cachedNodeModulesDir(join(paths.cacheDir, config.id), ticket.base_sha));
+    const ticketLoops = loops.filter((loop) => loop.ticket === ticket.number);
+    const scratch = mkdtempSync(join(tmpdir(), "loop-bench-site-"));
 
-    if (existsSync(patch)) {
-      copyFileSync(patch, join(diffsDir, `${loop.loop_id}.patch`));
+    try {
+      await git(["clone", "--bare", "--quiet", config.subject.mirror_dir, scratch], paths.root);
+      const sources = [
+        { id: `pr-${ticket.number}`, headSha: ticket.merge_sha, rawPatch: null },
+        ...(await Promise.all(ticketLoops.map(async (loop) => {
+          const bundle = join(paths.resultsDir, loop.cell_path, "branch.bundle");
+
+          await git(["fetch", "--quiet", bundle, `refs/heads/loop-bench/${ticket.number}:refs/loops/${loop.loop_id}`], scratch);
+
+          return { id: loop.loop_id, headSha: await git(["rev-parse", `refs/loops/${loop.loop_id}`], scratch), rawPatch: join(paths.resultsDir, loop.cell_path, "diff.patch") };
+        }))),
+      ];
+
+      for (const source of sources) {
+        const raw = join(diffsDir, `${source.id}.patch`);
+        const normalized = join(diffsDir, `${source.id}.normalized.patch`);
+
+        if (!existsSync(raw)) {
+          writeFileSync(raw, source.rawPatch ? readFileSync(source.rawPatch) : `${await diffOf(scratch, ticket.base_sha, source.headSha)}\n`);
+        }
+        if (prettierBin && !existsSync(normalized)) {
+          writeFileSync(normalized, `${await normalizedDiff({ gitDir: scratch, baseSha: ticket.base_sha, headSha: source.headSha, prettierBin, formatPattern: config.subject.format_pattern })}\n`);
+        }
+      }
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
     }
   }
-  await Promise.all(config.tickets.map(async (ticket) =>
-    writeFileSync(join(diffsDir, `pr-${ticket.number}.patch`), `${await diffOf(config.subject.mirror_dir, ticket.base_sha, ticket.merge_sha)}\n`),
-  ));
 }
 
 /** Market prices are applied when the report is written, so a corrected price table reaches every run already recorded. */
