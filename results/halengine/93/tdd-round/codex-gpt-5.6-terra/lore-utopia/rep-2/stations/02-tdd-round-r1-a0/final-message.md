@@ -1,0 +1,3 @@
+Committed and pushed `2ac40a1`. Fixed all reported CI findings, documented aggregate usage, and passed the focused orchestrator usage regression. No acceptance tests, lint, or typecheck were run locally. CI reported 0 red tests: 0 mine, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do","tdd_next":"Preserve the unchanged no-tool regression guard"}}

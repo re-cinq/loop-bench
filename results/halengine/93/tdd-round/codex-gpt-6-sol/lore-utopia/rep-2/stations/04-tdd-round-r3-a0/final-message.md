@@ -1,0 +1,3 @@
+Removed the duplicated tool-round fixture reported by CI, marked that facet complete, and pushed commit `ac2ce9a`. The focused usage test passed. CI has not yet judged the push. The previous red build had two lint findings in our test files, with zero failing tests and zero regressions. No unrelated issues were changed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Remove the remaining duplicated scripted tool-round fixture reported by CI","tdd_next":"acceptance green"}}

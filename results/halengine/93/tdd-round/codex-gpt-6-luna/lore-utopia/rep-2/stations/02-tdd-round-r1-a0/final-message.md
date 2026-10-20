@@ -1,0 +1,5 @@
+Implemented and pushed commit `a19b06c` (`fix(orchestrator): count reported usage rounds`). The focused test passed. I also fixed the missing `UsageMetadata` import, added the missing spec links, updated the hooks spec and changelog, and ticked the closed facets in `.lore/dod.md`. The branch is clean and matches its upstream; `origin/main` was already merged.
+
+I did not run the acceptance tests or broader checks. The previous CI run reported the `optionalPeers` test failure and missing acceptance-test spec links; the import and links are fixed in this push. Lore denied both trace and CI-detail queries for lack of token scope, so the new CI verdict remains pending. The no-tool regression facet is next. This round added one test, which passed; zero tests authored this round failed, and one existing CI test regression was identified and addressed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do; update the hooks spec and CHANGELOG.","tdd_next":"Preserve the unchanged no-tool regression guard"}}

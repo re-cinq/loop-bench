@@ -1,0 +1,3 @@
+Committed and pushed `00abcbc`. The shared usage test setup addresses all six duplicate-code lint findings. The focused test passed; CI has not judged this push yet. CI reported **0 red tests of mine and 0 regressions** on the previous push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Share the usage test harness so the two focused tests do not duplicate provider and hook setup","tdd_next":"acceptance green"}}

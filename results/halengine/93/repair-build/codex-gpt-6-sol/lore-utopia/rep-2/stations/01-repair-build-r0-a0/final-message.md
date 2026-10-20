@@ -1,0 +1,3 @@
+Fixed the four reported ESLint findings by linking the usage tests to the spec and combining the test’s two assertions. Prettier and `git diff --check` passed. I did not run ESLint locally, as instructed; CI will judge the pushed commit. The branch is up to date with `main` and its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Linked usage aggregation tests to the spec and fixed the test assertion count"}}
