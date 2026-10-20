@@ -3,7 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdir
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { loadExperiment, type ExperimentConfig } from "./config/experiment.js";
+import { loadExperiment, subjectEnv, type ExperimentConfig } from "./config/experiment.js";
 import { analyzeTranscript, type TranscriptAnalysis } from "./core/analyze.js";
 import type { VisitRow } from "./core/station-report.js";
 import type { BenchRecord, LoopRecord, StationRunRecord } from "./core/records.js";
@@ -140,7 +140,7 @@ function filterLoops(loops: readonly PlannedLoop[], filters: Filters): PlannedLo
 
 async function prepare(config: ExperimentConfig): Promise<void> {
   for (const ticket of config.tickets) {
-    const dir = await ensureDepsCache({ cacheDir: join(paths.cacheDir, config.id), mirrorDir: config.subject.mirror_dir, baseSha: ticket.base_sha, installCommand: config.subject.install_command });
+    const dir = await ensureDepsCache({ cacheDir: join(paths.cacheDir, config.id), mirrorDir: config.subject.mirror_dir, baseSha: ticket.base_sha, installCommand: config.subject.install_command, layout: config.subject.deps_layout, env: subjectEnv(config) });
 
     log(`[loop-bench] #${ticket.number} dependencies at ${dir}`);
   }

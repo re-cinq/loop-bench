@@ -35,6 +35,12 @@ const SubjectSchema = z.object({
   test_file_pattern: z.string().default("\\.(test|spec)\\.[cm]?[jt]sx?$"),
   /** Paths the subject formats with prettier; the website formats both sides of these before it diffs them. */
   format_pattern: z.string().default("^(src|scripts|smoke)/.*\\.ts$"),
+  /** root: one node_modules at the top; workspace: every package's node_modules (pnpm, yarn and npm workspaces). */
+  deps_layout: z.enum(["root", "workspace"]).default("root"),
+  /** Folders put first on PATH for agents and local CI, such as one holding the subject's package manager. */
+  path_prepend: z.array(z.string()).default([]),
+  /** Environment for agents and local CI, such as COREPACK_HOME. */
+  env: z.record(z.string()).default({}),
 });
 
 const StationMap = <T extends z.ZodTypeAny>(value: T) =>
@@ -64,6 +70,13 @@ export const ExperimentConfigSchema = z.object({
   gemini: z.object({ project: z.string(), location: z.string().default("global") }).optional(),
 });
 export type ExperimentConfig = z.infer<typeof ExperimentConfigSchema>;
+
+/** The subject's environment for an agent or a CI command: its variables, and its folders ahead of the inherited PATH. */
+export function subjectEnv(config: ExperimentConfig): Record<string, string> {
+  const path = [...config.subject.path_prepend, process.env["PATH"] ?? "/usr/local/bin:/usr/bin:/bin"].join(":");
+
+  return { ...config.subject.env, PATH: path };
+}
 
 export function loadExperiment(path: string): ExperimentConfig {
   return ExperimentConfigSchema.parse(parse(readFileSync(path, "utf8")));

@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AgentChoice, ExperimentConfig } from "../config/experiment.js";
+import { subjectEnv, type AgentChoice, type ExperimentConfig } from "../config/experiment.js";
 import type { ContextMode, Station } from "../core/harness-names.js";
 import { effortLabel } from "../core/effort.js";
 import { costOf } from "../core/pricing.js";
@@ -65,7 +65,7 @@ export async function runStation(plan: StationPlan, deps: StationDeps): Promise<
     workspaceDir: workspace.workspaceDir,
     homeDir: plan.homeDir,
     mcp: mcpFor(plan.contextMode, config, paths),
-    extraEnv: plan.station === "tdd-round" ? { LORE_ACCEPTANCE_DOD: join(workspace.targetDir, ".lore", "dod.md") } : {},
+    extraEnv: { ...subjectEnv(config), ...(plan.station === "tdd-round" ? { LORE_ACCEPTANCE_DOD: join(workspace.targetDir, ".lore", "dod.md") } : {}) },
     gemini: config.gemini ?? null,
     userHome: process.env["HOME"] ?? "",
   };

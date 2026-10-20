@@ -10,7 +10,7 @@ import { ADAPTERS } from "../harness/adapters.js";
 import type { InvocationSpec } from "../harness/harness.js";
 import { buildScratchHome } from "../harness/scratch-home.js";
 import { runProcess } from "../io/spawn.js";
-import { cachedNodeModulesDir } from "../workspace/deps-cache.js";
+import { cachedDeps, copyDeps } from "../workspace/deps-cache.js";
 import { changedFiles, diffOf, git } from "../workspace/git.js";
 import type { BenchPaths } from "./paths.js";
 
@@ -67,11 +67,10 @@ export async function scoreDod(input: {
     const support = [...onBranch].filter((path) => isTestSupport(path) && !acceptance.includes(path) && existsSyncAt(repo, "candidate", path));
 
     await git(["checkout", "--quiet", "candidate", "--", ...acceptance, ...support], repo);
-    const nodeModules = cachedNodeModulesDir(join(input.paths.cacheDir, input.config.id), input.ticket.base_sha);
-    const { cpSync } = await import("node:fs");
+    const deps = cachedDeps(join(input.paths.cacheDir, input.config.id), input.ticket.base_sha);
 
-    if (existsSync(nodeModules)) {
-      cpSync(nodeModules, join(repo, "node_modules"), { recursive: true });
+    if (deps) {
+      await copyDeps(deps, repo);
     }
     const run = async (): Promise<{ passed: boolean; tail: string }> => {
       const result = await runProcess({ bin: "sh", args: ["-c", input.testCommand(acceptance)], cwd: repo, env: envOf(), timeoutMs: 10 * 60_000 });

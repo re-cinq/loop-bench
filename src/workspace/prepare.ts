@@ -1,6 +1,7 @@
 // A run's workspace: a bare `origin` whose main is the ticket's base, a clone of it on the ticket branch, the ticket file, and the dependencies copied in. Every git assumption the prompts make (push origin HEAD, fetch origin main, merge) holds offline.
-import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { copyDeps } from "./deps-cache.js";
 import { git } from "./git.js";
 
 export interface WorkspaceInput {
@@ -61,7 +62,7 @@ export async function prepareRunWorkspace(input: WorkspaceInput): Promise<RunWor
     writeFileSync(roundBriefPath, input.roundBrief);
   }
   if (input.nodeModulesDir && existsSync(input.nodeModulesDir)) {
-    cpSync(input.nodeModulesDir, join(targetDir, "node_modules"), { recursive: true });
+    await copyDeps(input.nodeModulesDir, targetDir);
   }
 
   return { workspaceDir, targetDir, originDir, ticketPath, roundBriefPath, branch: input.branch };

@@ -10,7 +10,8 @@ import { ciFeedbackOf, handoffOf, roundBriefOf, type RoundHandoff } from "../cor
 import { initialState, nextStep, type EndReason, type LoopState, type Step } from "../core/routing.js";
 import { EMPTY_USAGE, type Usage } from "../core/usage.js";
 import { runSubjectCi } from "../workspace/ci.js";
-import { cachedNodeModulesDir } from "../workspace/deps-cache.js";
+import { cachedDeps } from "../workspace/deps-cache.js";
+import { subjectEnv } from "../config/experiment.js";
 import { diffOf, git, numstat } from "../workspace/git.js";
 import { prepareRunWorkspace, pushedHead, type RunWorkspace } from "../workspace/prepare.js";
 import { cliVersion } from "./cli-version.js";
@@ -40,7 +41,7 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
   mkdirSync(runDir, { recursive: true });
   mkdirSync(cellDir, { recursive: true });
   const artifact = planned.entry === "dod" ? null : referenceArtifact(paths, config.id, planned.ticket.number, planned.entry);
-  const nodeModules = cachedNodeModulesDir(join(paths.cacheDir, config.id), planned.ticket.base_sha);
+  const nodeModules = cachedDeps(join(paths.cacheDir, config.id), planned.ticket.base_sha) ?? "";
   const workspace = await prepareRunWorkspace({
     runDir,
     mirrorDir: config.subject.mirror_dir,
@@ -103,6 +104,7 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
       checkoutDir: join(runDir, `ci-${visitIndex}`),
       nodeModulesDir: existsSync(nodeModules) ? nodeModules : null,
       checks: config.subject.ci_checks,
+      env: subjectEnv(config),
     });
     const lastVisit = visits.at(-1);
 
