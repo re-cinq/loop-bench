@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-20 01:13 UTC: 71 loops over 47 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-20 02:26 UTC: 91 loops over 58 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -42,19 +42,19 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | repair-build | `gpt-5.6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | repair-build | `gpt-5.6-luna` (codex) | medium (codex default) | without Lore | baseline | 1 | 0/1 | 1.0 | $0.02 | 1.1 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +143/−5 |
-| #93 | repair-build | `gpt-5.6-sol` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | repair-build | `gpt-5.6-sol` (codex) | low (codex default) | without Lore | baseline | 1 | 1/1 | 0.0 | $0.40 | 1.4 min | 4.0 | 4.0 | 4.0 | — | 7 (0.27) | +140/−5 |
-| #93 | repair-build | `gpt-5.6-terra` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | repair-build | `gpt-5.6-terra` (codex) | medium (codex default) | without Lore | baseline | 1 | 0/1 | 1.0 | $0.13 | 0.8 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +143/−5 |
-| #93 | repair-build | `gpt-6-astra` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | repair-build | `gpt-5.6-luna` (codex) | medium (codex default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.04 | 1.2 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +143/−5 |
+| #93 | repair-build | `gpt-5.6-luna` (codex) | medium (codex default) | without Lore | baseline | 2 | 1/2 | 0.5 (0.0–1.0, sd 0.5) | $0.02 ($0.02–$0.02, sd $0.00) | 1.0 min (0.9 min–1.1 min, sd 0.1 min) | 5.0 | 4.0 | 4.0 | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +143/−5 |
+| #93 | repair-build | `gpt-5.6-sol` (codex) | low (codex default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.31 | 1.0 min | 4.0 | 4.0 | 4.0 | — | 7 (0.27) | +144/−5 |
+| #93 | repair-build | `gpt-5.6-sol` (codex) | low (codex default) | without Lore | baseline | 2 | 1/2 | 0.5 (0.0–1.0, sd 0.5) | $0.31 ($0.22–$0.40, sd $0.09) | 1.2 min (1.0 min–1.4 min, sd 0.2 min) | 4.0 | 4.0 | 4.0 | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +142/−5 |
+| #93 | repair-build | `gpt-5.6-terra` (codex) | medium (codex default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.15 | 1.4 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +143/−5 |
+| #93 | repair-build | `gpt-5.6-terra` (codex) | medium (codex default) | without Lore | baseline | 2 | 0/2 | 1.0 (1.0–1.0, sd 0.0) | $0.12 ($0.11–$0.13, sd $0.01) | 1.2 min (0.8 min–1.6 min, sd 0.4 min) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +142/−5 |
+| #93 | repair-build | `gpt-6-astra` (codex) | low (codex default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.40 | 1.0 min | 4.0 | 4.0 | 3.0 | — | 7 (0.27) | +144/−5 |
 | #93 | repair-build | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 1 | 1/1 | 0.0 | $0.49 | 1.8 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +147/−5 |
-| #93 | repair-build | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | repair-build | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.01 | 1.0 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +140/−5 |
 | #93 | repair-build | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 1 | 0/1 | 1.0 | $0.00 | 1.5 min | 4.0 | 4.0 | 3.0 | — | 7 (0.27) | +143/−5 |
-| #93 | repair-build | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | repair-build | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 0.0 | $0.15 | 1.4 min | 4.0 | 4.0 | 3.0 | — | 7 (0.27) | +143/−5 |
-| #93 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | repair-build | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.15 | 1.3 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +145/−5 |
+| #93 | repair-build | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 2 | 1/2 | 0.5 (0.0–1.0, sd 0.5) | $0.13 ($0.12–$0.15, sd $0.01) | 1.4 min (1.3 min–1.4 min, sd 0.0 min) | 4.0 | 4.0 | 3.0 | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +142/−5 |
+| #93 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.11 | 0.9 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +144/−5 |
 | #93 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 1 | 1/1 | 0.0 | $0.06 | 1.5 min | 5.0 | 4.0 | 3.0 | — | 7 (0.27) | +144/−5 |
 | #93 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $1.22 ($0.28–$2.77, sd $1.11) | 3.6 min (3.0 min–4.7 min, sd 0.8 min) | 5.0 (5.0–5.0, sd 0.0) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | — | 14 (9–16, sd 3) (0.39 (0.35–0.45, sd 0.05)) | +192/−39 |
 | #93 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.20 ($0.07–$0.36, sd $0.12) | 2.9 min (1.6 min–4.6 min, sd 1.3 min) | 5.0 (5.0–5.0, sd 0.0) | 4.3 (4.0–5.0, sd 0.5) | 4.3 (4.0–5.0, sd 0.5) | — | 9 (7–14, sd 3) (0.29 (0.27–0.31, sd 0.02)) | +148/−10 |
@@ -75,19 +75,19 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | tdd-round | `gpt-5.6-luna` (codex) | medium (codex default) | with Lore | baseline | 1 | 1/1 | 1.0 | $0.08 | 3.3 min | 5.0 | 5.0 | 4.0 | — | 10 (0.21) | +168/−7 |
-| #93 | tdd-round | `gpt-5.6-luna` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 2.0 | $0.11 | 4.7 min | 4.0 | 5.0 | 4.0 | — | 11 (0.50) | +210/−37 |
+| #93 | tdd-round | `gpt-5.6-luna` (codex) | medium (codex default) | without Lore | baseline | 2 | 2/2 | 1.5 (1.0–2.0, sd 0.5) | $0.11 ($0.11–$0.11, sd $0.00) | 4.1 min (3.6 min–4.7 min, sd 0.5 min) | 4.5 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 11 (11–11, sd 0) (0.50 (0.50–0.50, sd 0.00)) | +212/−37 |
 | #93 | tdd-round | `gpt-5.6-sol` (codex) | low (codex default) | with Lore | baseline | 1 | 1/1 | 1.0 | $1.52 | 4.1 min | 5.0 | 5.0 | 4.0 | — | 7 (0.27) | +202/−6 |
-| #93 | tdd-round | `gpt-5.6-sol` (codex) | low (codex default) | without Lore | baseline | 1 | 1/1 | 1.0 | $1.45 | 4.1 min | 4.0 | 5.0 | 4.0 | — | 9 (0.60) | +184/−16 |
-| #93 | tdd-round | `gpt-5.6-terra` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | tdd-round | `gpt-5.6-sol` (codex) | low (codex default) | without Lore | baseline | 2 | 2/2 | 1.0 (1.0–1.0, sd 0.0) | $1.53 ($1.45–$1.61, sd $0.08) | 4.5 min (4.1 min–4.9 min, sd 0.4 min) | 4.5 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 10 (9–10, sd 1) (0.45 (0.31–0.60, sd 0.15)) | +202/−12 |
+| #93 | tdd-round | `gpt-5.6-terra` (codex) | medium (codex default) | with Lore | baseline | 1 | 1/1 | 2.0 | $1.57 | 11.4 min | 5.0 | 5.0 | 4.0 | — | 11 (0.50) | +198/−32 |
 | #93 | tdd-round | `gpt-5.6-terra` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 2.0 | $1.03 | 4.2 min | 5.0 | 5.0 | 4.0 | — | 10 (0.55) | +208/−42 |
-| #93 | tdd-round | `gpt-6-astra` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | tdd-round | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.79 | 0.7 min | 1.0 | 2.0 | 2.0 | — | 3 (0.11) | +121/−2 |
-| #93 | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 | tdd-round | `gpt-6-astra` (codex) | low (codex default) | with Lore | baseline | 1 | 1/1 | 1.0 | $3.82 | 4.3 min | 4.0 | 4.0 | 4.0 | — | 9 (0.23) | +218/−6 |
+| #93 | tdd-round | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 2 | 0/2 | 0.0 (0.0–0.0, sd 0.0) | $0.97 ($0.79–$1.15, sd $0.18) | 0.9 min (0.7 min–1.1 min, sd 0.2 min) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +121/−2 |
+| #93 | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 1 | 1/1 | 3.0 | $0.06 | 5.6 min | 5.0 | 5.0 | 4.0 | — | 8 (0.25) | +228/−6 |
 | #93 | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 1.0 | $0.03 | 3.7 min | 5.0 | 5.0 | 4.0 | — | 9 (0.23) | +207/−6 |
 | #93 | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 1 | 1/1 | 1.0 | $0.83 | 4.4 min | 5.0 | 5.0 | 4.0 | — | 8 (0.36) | +199/−8 |
-| #93 | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 1.0 | $0.71 | 4.4 min | 5.0 | 5.0 | 4.0 | — | 7 (0.27) | +190/−6 |
-| #93 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.09 | 0.6 min | 1.0 | 2.0 | 2.0 | — | 3 (0.11) | +121/−2 |
+| #93 | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 2 | 2/2 | 1.5 (1.0–2.0, sd 0.5) | $0.91 ($0.71–$1.12, sd $0.20) | 6.0 min (4.4 min–7.7 min, sd 1.7 min) | 5.0 | 5.0 | 4.0 | — | 8 (7–9, sd 1) (0.30 (0.27–0.33, sd 0.03)) | +210/−7 |
+| #93 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 1 | 1/1 | 2.0 | $0.50 | 5.0 min | 4.0 | 4.0 | 4.0 | — | 9 (0.23) | +182/−5 |
+| #93 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 2 | 0/2 | 0.0 (0.0–0.0, sd 0.0) | $0.10 ($0.09–$0.10, sd $0.00) | 0.6 min (0.6 min–0.7 min, sd 0.0 min) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +121/−2 |
 | #93 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 1.0 (1.0–1.0, sd 0.0) | $0.80 ($0.63–$1.12, sd $0.23) | 6.8 min (6.0 min–8.2 min, sd 1.0 min) | 5.0 (5.0–5.0, sd 0.0) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (7–10, sd 1) (0.32 (0.27–0.42, sd 0.07)) | +191/−9 |
 | #93 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 3 | 3/3 | 2.7 (2.0–4.0, sd 0.9) | $1.26 ($0.52–$2.72, sd $1.04) | 10.8 min (7.7 min–17.0 min, sd 4.3 min) | 4.7 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 3.7 (3.0–4.0, sd 0.5) | — | 9 (7–13, sd 3) (0.32 (0.25–0.43, sd 0.08)) | +206/−21 |
 | #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 1.0 (1.0–1.0, sd 0.0) | $2.60 ($1.79–$3.62, sd $0.76) | 13.2 min (10.1 min–17.2 min, sd 2.9 min) | 4.3 (3.0–5.0, sd 0.9) | 4.7 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | — | 25 (6–63, sd 27) (0.23 (0.11–0.30, sd 0.08)) | +403/−205 |
@@ -127,12 +127,19 @@ What the columns mean:
 | #93 | dod | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 | dod | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 | dod | `gemini-4-argon` (gemini) | without Lore | green ×1 |
-| #93 | repair-build | `gpt-5.6-luna` (codex) | without Lore | excluded_harness ×1 |
-| #93 | repair-build | `gpt-5.6-sol` (codex) | without Lore | green ×1 |
-| #93 | repair-build | `gpt-5.6-terra` (codex) | without Lore | excluded_harness ×1 |
+| #93 | repair-build | `gpt-5.6-luna` (codex) | with Lore | excluded_harness ×1 |
+| #93 | repair-build | `gpt-5.6-luna` (codex) | without Lore | excluded_harness ×1, green ×1 |
+| #93 | repair-build | `gpt-5.6-sol` (codex) | with Lore | excluded_harness ×1 |
+| #93 | repair-build | `gpt-5.6-sol` (codex) | without Lore | green ×1, excluded_harness ×1 |
+| #93 | repair-build | `gpt-5.6-terra` (codex) | with Lore | green ×1 |
+| #93 | repair-build | `gpt-5.6-terra` (codex) | without Lore | excluded_harness ×2 |
+| #93 | repair-build | `gpt-6-astra` (codex) | with Lore | green ×1 |
 | #93 | repair-build | `gpt-6-astra` (codex) | without Lore | green ×1 |
+| #93 | repair-build | `gpt-6-luna` (codex) | with Lore | excluded_harness ×1 |
 | #93 | repair-build | `gpt-6-luna` (codex) | without Lore | excluded_harness ×1 |
-| #93 | repair-build | `gpt-6-sol` (codex) | without Lore | green ×1 |
+| #93 | repair-build | `gpt-6-sol` (codex) | with Lore | excluded_harness ×1 |
+| #93 | repair-build | `gpt-6-sol` (codex) | without Lore | green ×1, excluded_harness ×1 |
+| #93 | repair-build | `gpt-6.1-sol` (codex) | with Lore | green ×1 |
 | #93 | repair-build | `gpt-6.1-sol` (codex) | without Lore | green ×1 |
 | #93 | repair-build | `gemini-3-flash-preview` (gemini) | with Lore | green ×3 |
 | #93 | repair-build | `gemini-3-flash-preview` (gemini) | without Lore | green ×3 |
@@ -141,15 +148,19 @@ What the columns mean:
 | #93 | repair-build | `gemini-4-argon` (gemini) | with Lore | green ×3 |
 | #93 | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×3 |
 | #93 | tdd-round | `gpt-5.6-luna` (codex) | with Lore | green ×1 |
-| #93 | tdd-round | `gpt-5.6-luna` (codex) | without Lore | green ×1 |
+| #93 | tdd-round | `gpt-5.6-luna` (codex) | without Lore | green ×2 |
 | #93 | tdd-round | `gpt-5.6-sol` (codex) | with Lore | green ×1 |
-| #93 | tdd-round | `gpt-5.6-sol` (codex) | without Lore | green ×1 |
+| #93 | tdd-round | `gpt-5.6-sol` (codex) | without Lore | green ×2 |
+| #93 | tdd-round | `gpt-5.6-terra` (codex) | with Lore | green ×1 |
 | #93 | tdd-round | `gpt-5.6-terra` (codex) | without Lore | green ×1 |
-| #93 | tdd-round | `gpt-6-astra` (codex) | without Lore | retry_budget ×1 |
+| #93 | tdd-round | `gpt-6-astra` (codex) | with Lore | green ×1 |
+| #93 | tdd-round | `gpt-6-astra` (codex) | without Lore | retry_budget ×2 |
+| #93 | tdd-round | `gpt-6-luna` (codex) | with Lore | green ×1 |
 | #93 | tdd-round | `gpt-6-luna` (codex) | without Lore | green ×1 |
 | #93 | tdd-round | `gpt-6-sol` (codex) | with Lore | green ×1 |
-| #93 | tdd-round | `gpt-6-sol` (codex) | without Lore | green ×1 |
-| #93 | tdd-round | `gpt-6.1-sol` (codex) | without Lore | retry_budget ×1 |
+| #93 | tdd-round | `gpt-6-sol` (codex) | without Lore | green ×2 |
+| #93 | tdd-round | `gpt-6.1-sol` (codex) | with Lore | green ×1 |
+| #93 | tdd-round | `gpt-6.1-sol` (codex) | without Lore | retry_budget ×2 |
 | #93 | tdd-round | `gemini-3-flash-preview` (gemini) | with Lore | green ×3 |
 | #93 | tdd-round | `gemini-3-flash-preview` (gemini) | without Lore | green ×3 |
 | #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | with Lore | green ×3 |

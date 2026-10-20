@@ -1,0 +1,3 @@
+Fixed the two missing spec links and the `max-expects` violation. Formatted the changed files and pushed commit `7fc9aa9`; the branch is up to date with its upstream. I did not run lint, as instructed. The CI lookup for the pushed branch returned 404, so I can’t confirm the new verdict.
+
+LORE_NODE_RESULT: {"outcome":"changes_requested","extras":{"ci_blocked":"Pushed the lint repair in 7fc9aa9; local lint was not run as instructed, and the CI lookup returned 404, so the build verdict is unconfirmed"}}

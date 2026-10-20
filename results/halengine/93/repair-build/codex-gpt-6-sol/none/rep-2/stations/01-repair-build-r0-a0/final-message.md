@@ -1,0 +1,3 @@
+Fixed all four CI lint findings: linked the usage helper tests to the spec and combined the two assertions into one. Prettier and `git diff --check` passed. I did not run lint or the build, as instructed; CI has not yet judged the push. Commit `152b276` is pushed, and the branch is up to date with `origin/main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed missing spec links and the excess assertion in the usage helper tests"}}

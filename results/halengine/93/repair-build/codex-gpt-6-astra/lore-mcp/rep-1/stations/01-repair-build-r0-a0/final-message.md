@@ -1,0 +1,3 @@
+Fixed all four reported lint findings and pushed `5c9d6a2`. Formatted both changed files; spec anchors have no unresolved references. Branch is current with `main` and fully pushed. CI verification remains pending; lint/build were not run locally as instructed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added three missing spec links and combined two assertions without reducing coverage"}}

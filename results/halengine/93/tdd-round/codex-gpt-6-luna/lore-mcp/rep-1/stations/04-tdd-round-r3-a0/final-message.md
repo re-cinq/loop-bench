@@ -1,0 +1,5 @@
+Completed the documentation facet and committed it as `d4e4f2e`. The hooks spec now cites the summation test at its current line and the no-tool test at its correct line; `.lore/dod.md` marks the facet complete. The changelog already described the behavior and consumer impact.
+
+Formatted the changed Markdown. No tests were written or run in this documentation round. The prior CI findings were an ESLint spec-link issue and a stale spec anchor; both are addressed. Red tests: **0 ours, 0 regressions**. The branch is pushed, merged with `origin/main` (already up to date), and not ahead of its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update the hooks spec and CHANGELOG with the aggregate-usage behavior and its impact on existing consumers","tdd_next":"acceptance green"}}

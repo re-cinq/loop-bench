@@ -1,0 +1,3 @@
+Fixed the four CI lint findings by linking the usage helper tests to the spec and consolidating one test’s assertions. Formatted the changed files, committed and pushed `395c9ee`, and confirmed the branch is up to date with `origin/main` and its upstream. CI will verify the push; I did not run lint locally because the ticket forbids it in this pod.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added missing spec links and reduced the helper test to one assertion"}}
