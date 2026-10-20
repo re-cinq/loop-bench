@@ -1,0 +1,3 @@
+I have exported `localLink` from the `@trpc/client` package and implemented full subscription support in the `localLink` implementation. This includes handling both `AsyncIterable` and `Observable` results from procedures, correctly unwrapping `tracked` envelopes, and ensuring that the `AbortSignal` is respected for resource cleanup upon unsubscription. I've also added comprehensive acceptance tests to verify these features, all of which pass locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Exported localLink and implemented subscription support (Observable, AsyncIterable, tracked envelopes, AbortSignal) in localLink.ts."}}

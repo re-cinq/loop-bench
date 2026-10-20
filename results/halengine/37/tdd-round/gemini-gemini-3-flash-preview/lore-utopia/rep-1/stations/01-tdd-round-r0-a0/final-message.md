@@ -1,0 +1,5 @@
+I have completed the TDD round for ticket #37, "Validate tool input against the registered inputSchema". 
+
+In this round, I implemented tool input validation using `ajv`. I updated `ToolRegistry.register` to compile static schemas at registration time and `ToolRegistry.execute` to validate inputs before execution, caching dynamic schemas in a `WeakMap`. Rejection messages now return a `ToolResponse` to the model for potential retry, naming the failing property and constraint without leaking sensitive values. I also updated the system specification, documentation, example tools, and ADRs to reflect these changes. All acceptance tests and a new suite of unit tests are passing.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Acceptance tests for tool input validation","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+I reproduced the `(0 , localLink) is not a function` error and the failure to support subscription procedures in `server/localLink.acceptance.test.ts`. I fixed the missing export in `packages/client/src/links.ts` and added full support for resolving `subscription` operations (handling both iterables and observables and deserializing tracked envelopes) in `packages/client/src/links/localLink.ts`. The `test` step via `pnpm run test -- -t "localLink" --filter=@trpc/tests` now passes locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Exported localLink and implemented subscription handling via AsyncIterable/Observable loops."}}

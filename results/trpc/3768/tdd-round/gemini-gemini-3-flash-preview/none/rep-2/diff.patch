@@ -1,0 +1,1254 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000000..e62d9b7288
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,35 @@
++# Definition of Done
++
++> It would be great to have a `LocalLink` that allows me to do:
++> This would directly run the router in the same process as the client instead of transferring requests to a server.
++>
++> ```ts
++> import { createRouter } from '../path/to/server/trpc';
++>
++> const client = createTRPCProxyClient<ReturnType<typeof createRouter>>({
++>   links: [localLink({ router: createRouter({ database }) })],
++> });
++> ```
++
++**Strategy: `direct`** — `@trpc/client` already provides `createTRPCClient` and the `TRPCLink` chain interface, and `@trpc/server` provides `callTRPCProcedure` / router execution primitives, so acceptance tests can call `createTRPCClient` with `localLink` directly and fail because `localLink` is not yet implemented or exported.
++
++## Done when these pass
++
++- [x] **`localLink runs query and mutation procedures in the same process as the client`** — `localLink({ router })` executes `query` and `mutation` procedures directly against the router in the same process without transferring requests to a server.
++      `packages/tests/server/localLink.acceptance.test.ts`
++- [x] **`localLink supports createContext and propagates errors as TRPCClientError`** — `localLink` supports `createContext` when calling procedures and converts thrown procedure errors into `TRPCClientError` instances on the client.
++      `packages/tests/server/localLink.acceptance.test.ts`
++- [x] **`localLink runs subscription procedures in the same process and cleans up on unsubscribe`** — `localLink` executes `subscription` procedures in-process, forwards emitted items to `onData`, and aborts/cleans up the subscription when unsubscribed.
++      `packages/tests/server/localLink.acceptance.test.ts`
++
++## Facets
++
++- [x] Implement `localLink` (and `LocalLinkOptions`) in `packages/client/src/links/localLink.ts` supporting `router`, optional/required `createContext` (via `CreateContextCallback`), optional `onError`, and `TransformerOptions`.
++- [x] Handle `query` and `mutation` operations in `localLink` by resolving context, calling the router procedure in-process, applying any configured data transformer, and emitting the result or `TRPCClientError`.
++- [x] Handle `subscription` operations in `localLink` (both async iterables and observables, including `tracked` envelopes) and abort the operation signal on unsubscribe.
++- [x] Export `localLink` (and its options type) from `@trpc/client` (`packages/client/src/links.ts` and `packages/client/rollup.config.ts` / entrypoints if applicable).
++
++## Out of scope
++
++- Network transport, HTTP batching, or WebSocket connection management.
++- Modifying server adapters (`express`, `fastify`, `fetch`, `next`, `ws`, `standalone`).
+diff --git a/packages/client/package.json b/packages/client/package.json
+index 9deabec005..6da7926cb3 100644
+--- a/packages/client/package.json
++++ b/packages/client/package.json
+@@ -45,6 +45,11 @@
+       "require": "./dist/links/httpLink.js",
+       "default": "./dist/links/httpLink.js"
+     },
++    "./links/localLink": {
++      "import": "./dist/links/localLink.mjs",
++      "require": "./dist/links/localLink.js",
++      "default": "./dist/links/localLink.js"
++    },
+     "./links/loggerLink": {
+       "import": "./dist/links/loggerLink.mjs",
+       "require": "./dist/links/loggerLink.js",
+diff --git a/packages/client/rollup.config.ts b/packages/client/rollup.config.ts
+index 0f6598fc1d..ba366bf570 100644
+--- a/packages/client/rollup.config.ts
++++ b/packages/client/rollup.config.ts
+@@ -9,6 +9,7 @@ export const input = [
+   'src/links/loggerLink.ts',
+   'src/links/splitLink.ts',
+   'src/links/wsLink/wsLink.ts',
++  'src/links/localLink.ts',
+   'src/unstable-internals.ts',
+ ];
+ 
+diff --git a/packages/client/src/links.ts b/packages/client/src/links.ts
+index 1f6aa625e6..665b164a15 100644
+--- a/packages/client/src/links.ts
++++ b/packages/client/src/links.ts
+@@ -9,6 +9,7 @@ export * from './links/splitLink';
+ export * from './links/wsLink/wsLink';
+ export * from './links/httpSubscriptionLink';
+ export * from './links/retryLink';
++export * from './links/localLink';
+ 
+ // These are not public (yet) as we get this functionality from tanstack query
+ // export * from './links/internals/dedupeLink';
+diff --git a/packages/client/src/links/localLink.test.ts b/packages/client/src/links/localLink.test.ts
+new file mode 100644
+index 0000000000..3cd3ab8f4b
+--- /dev/null
++++ b/packages/client/src/links/localLink.test.ts
+@@ -0,0 +1,126 @@
++import { initTRPC } from '@trpc/server';
++import { describe, expect, it } from 'vitest';
++import { createTRPCClient } from '../createTRPCClient';
++import { localLink } from './localLink';
++
++describe('localLink', () => {
++  it('runs a query', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      hello: t.procedure.query(() => 'world'),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++        }),
++      ],
++    });
++
++    const res = await client.hello.query();
++    expect(res).toBe('world');
++  });
++
++  it('runs a mutation', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      hello: t.procedure
++        .input(String)
++        .mutation(({ input }) => `hello ${input}`),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++        }),
++      ],
++    });
++
++    const res = await client.hello.mutate('world');
++    expect(res).toBe('hello world');
++  });
++
++  it('runs a subscription', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      onMessage: t.procedure.subscription(async function* () {
++        yield 'one';
++        yield 'two';
++      }),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++        }),
++      ],
++    });
++
++    const msgs: string[] = [];
++    await new Promise<void>((resolve) => {
++      client.onMessage.subscribe(undefined, {
++        onData(data) {
++          msgs.push(data);
++          if (msgs.length === 2) {
++            resolve();
++          }
++        },
++      });
++    });
++
++    expect(msgs).toEqual(['one', 'two']);
++  });
++
++  it('supports createContext', async () => {
++    const t = initTRPC.context<{ user: string }>().create();
++    const router = t.router({
++      whoami: t.procedure.query(({ ctx }) => ctx.user),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++          createContext: () => ({ user: 'alice' }),
++        }),
++      ],
++    });
++
++    const res = await client.whoami.query();
++    expect(res).toBe('alice');
++  });
++
++  it('calls onError when a procedure throws', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      error: t.procedure.query(() => {
++        throw new Error('something went wrong');
++      }),
++    });
++
++    const onError = vi.fn();
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++          onError,
++        }),
++      ],
++    });
++
++    await expect(client.error.query()).rejects.toThrow('something went wrong');
++    expect(onError).toHaveBeenCalledTimes(1);
++    expect(onError).toHaveBeenCalledWith(
++      expect.objectContaining({
++        error: expect.any(Error),
++        op: expect.objectContaining({
++          path: 'error',
++          type: 'query',
++        }),
++      }),
++    );
++  });
++});
+diff --git a/packages/client/src/links/localLink.ts b/packages/client/src/links/localLink.ts
+new file mode 100644
+index 0000000000..ffd79912cc
+--- /dev/null
++++ b/packages/client/src/links/localLink.ts
+@@ -0,0 +1,202 @@
++import { isObservable, observable } from '@trpc/server/observable';
++import type {
++  AnyRouter,
++  CreateContextCallback,
++  inferClientTypes,
++  inferRouterContext,
++  MaybePromise,
++  TRPCResultMessage,
++} from '@trpc/server/unstable-core-do-not-import';
++import {
++  callProcedure,
++  isAsyncIterable,
++  isTrackedEnvelope,
++  run,
++  transformResult,
++  TRPCError,
++} from '@trpc/server/unstable-core-do-not-import';
++import {
++  getTransformer,
++  type TransformerOptions,
++} from '../internals/transformer';
++import { TRPCClientError } from '../TRPCClientError';
++import type { Operation, TRPCLink } from './types';
++
++type LocalLinkCreateContextFn<TRouter extends AnyRouter> = (opts: {
++  op: Operation;
++}) => MaybePromise<inferRouterContext<TRouter>>;
++
++/**
++ * @public
++ */
++export type LocalLinkOptions<TRouter extends AnyRouter> = {
++  router: TRouter;
++  /**
++   * Called when an error occurs in a procedure
++   */
++  onError?: (opts: { error: TRPCClientError<TRouter>; op: Operation }) => void;
++} & TransformerOptions<inferClientTypes<TRouter>> &
++  CreateContextCallback<
++    inferRouterContext<TRouter>,
++    LocalLinkCreateContextFn<TRouter>
++  >;
++
++/**
++ * @see https://trpc.io/docs/v11/client/links/localLink
++ */
++export function localLink<TRouter extends AnyRouter>(
++  opts: LocalLinkOptions<TRouter>,
++): TRPCLink<TRouter> {
++  const { router } = opts;
++  const transformer = getTransformer(opts.transformer);
++
++  return () => {
++    return ({ op }) => {
++      return observable((observer) => {
++        const { path, input, type } = op;
++        const abortController = new AbortController();
++        const signal = op.signal;
++        if (signal) {
++          signal.addEventListener('abort', () => abortController.abort(), {
++            once: true,
++          });
++        }
++
++        const promise = (async () => {
++          try {
++            const ctx =
++              'createContext' in opts &&
++              typeof opts.createContext === 'function'
++                ? await opts.createContext({
++                    op,
++                  })
++                : (opts as any).createContext;
++
++            const result = await callProcedure({
++              router,
++              path,
++              input: transformer.input.deserialize(
++                transformer.input.serialize(input),
++              ),
++              type,
++              ctx,
++              signal: abortController.signal,
++              getRawInput: async () => input,
++            });
++
++            if (type === 'subscription') {
++              const handleNext = (data: unknown) => {
++                const dataToSerialize = isTrackedEnvelope(data)
++                  ? { id: data[0], data: data[1] }
++                  : data;
++                const serialized =
++                  transformer.output.serialize(dataToSerialize);
++                const envelope: TRPCResultMessage<unknown> = {
++                  id: op.id,
++                  result: isTrackedEnvelope(data)
++                    ? {
++                        type: 'data',
++                        id: data[0],
++                        data: serialized,
++                      }
++                    : {
++                        type: 'data',
++                        data: serialized,
++                      },
++                };
++                const transformed = transformResult(
++                  envelope,
++                  transformer.output,
++                );
++                if (!transformed.ok) {
++                  observer.error(TRPCClientError.from(transformed.error));
++                  return;
++                }
++                observer.next({
++                  result: transformed.result,
++                });
++              };
++
++              const handleError = (err: unknown) => {
++                const error = TRPCClientError.from(err);
++                opts.onError?.({ error, op });
++                observer.error(error);
++              };
++
++              const handleComplete = () => {
++                observer.complete();
++              };
++
++              const isObservableResult = isObservable(result);
++              const isAsyncIterableResult = isAsyncIterable(result);
++
++              if (isObservableResult) {
++                return result.subscribe({
++                  next: handleNext,
++                  error: handleError,
++                  complete: handleComplete,
++                });
++              }
++
++              if (isAsyncIterableResult) {
++                void run(async () => {
++                  try {
++                    for await (const data of result) {
++                      handleNext(data);
++                    }
++                    handleComplete();
++                  } catch (err) {
++                    handleError(err);
++                  }
++                });
++                return () => {
++                  abortController.abort();
++                };
++              }
++
++              throw new TRPCError({
++                message: `Subscription ${path} did not return an observable or a AsyncGenerator`,
++                code: 'INTERNAL_SERVER_ERROR',
++              });
++            }
++
++            const serializedOutput = transformer.output.serialize(result);
++            const envelope: TRPCResultMessage<unknown> = {
++              id: op.id,
++              result: {
++                type: 'data',
++                data: serializedOutput,
++              },
++            };
++            const transformed = transformResult(envelope, transformer.output);
++
++            if (!transformed.ok) {
++              observer.error(TRPCClientError.from(transformed.error));
++              return;
++            }
++
++            observer.next({
++              result: transformed.result,
++            });
++            observer.complete();
++          } catch (cause) {
++            const error = TRPCClientError.from(cause);
++            opts.onError?.({ error, op });
++            observer.error(error);
++          }
++        })();
++
++        return () => {
++          abortController.abort();
++          void promise.then((teardown) => {
++            if (typeof teardown === 'function') {
++              teardown();
++            } else if (teardown && 'unsubscribe' in teardown) {
++              teardown.unsubscribe();
++            }
++          });
++        };
++      });
++    };
++  };
++}
+diff --git a/packages/server/src/adapters/ws.ts b/packages/server/src/adapters/ws.ts
+index 0570614666..2c0037e7d8 100644
+--- a/packages/server/src/adapters/ws.ts
++++ b/packages/server/src/adapters/ws.ts
+@@ -37,6 +37,8 @@ import {
+ import type { Result } from '../unstable-core-do-not-import';
+ // eslint-disable-next-line no-restricted-imports
+ import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
++// eslint-disable-next-line no-restricted-imports
++import { asyncDispose } from '../unstable-core-do-not-import/stream/utils/disposable';
+ import { Unpromise } from '../vendor/unpromise';
+ import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
+ 
+@@ -317,85 +319,88 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
+           : result;
+ 
+         run(async () => {
+-          await using iterator = iteratorResource(iterable);
++          const iterator = iteratorResource(iterable);
++          try {
++            const abortPromise = new Promise<'abort'>((resolve) => {
++              abortController.signal.onabort = () => resolve('abort');
++            });
++            // We need those declarations outside the loop for garbage collection reasons. If they
++            // were declared inside, they would not be freed until the next value is present.
++            let next:
++              | null
++              | TRPCError
++              | Awaited<
++                  typeof abortPromise | ReturnType<(typeof iterator)['next']>
++                >;
++            let result: null | TRPCResultMessage<unknown>['result'];
++
++            while (true) {
++              next = await Unpromise.race([
++                iterator.next().catch(getTRPCErrorFromUnknown),
++                abortPromise,
++              ]);
++
++              if (next === 'abort') {
++                await iterator.return?.();
++                break;
++              }
++              if (next instanceof Error) {
++                const error = getTRPCErrorFromUnknown(next);
++                opts.onError?.({ error, path, type, ctx, req, input });
++                respond({
++                  id,
++                  jsonrpc,
++                  error: getErrorShape({
++                    config: router._def._config,
++                    error,
++                    type,
++                    path,
++                    input,
++                    ctx,
++                  }),
++                });
++                break;
++              }
++              if (next.done) {
++                break;
++              }
++
++              result = {
++                type: 'data',
++                data: next.value,
++              };
++
++              if (isTrackedEnvelope(next.value)) {
++                const [id, data] = next.value;
++                result.id = id;
++                result.data = {
++                  id,
++                  data,
++                };
++              }
+ 
+-          const abortPromise = new Promise<'abort'>((resolve) => {
+-            abortController.signal.onabort = () => resolve('abort');
+-          });
+-          // We need those declarations outside the loop for garbage collection reasons. If they
+-          // were declared inside, they would not be freed until the next value is present.
+-          let next:
+-            | null
+-            | TRPCError
+-            | Awaited<
+-                typeof abortPromise | ReturnType<(typeof iterator)['next']>
+-              >;
+-          let result: null | TRPCResultMessage<unknown>['result'];
+-
+-          while (true) {
+-            next = await Unpromise.race([
+-              iterator.next().catch(getTRPCErrorFromUnknown),
+-              abortPromise,
+-            ]);
+-
+-            if (next === 'abort') {
+-              await iterator.return?.();
+-              break;
+-            }
+-            if (next instanceof Error) {
+-              const error = getTRPCErrorFromUnknown(next);
+-              opts.onError?.({ error, path, type, ctx, req, input });
+               respond({
+                 id,
+                 jsonrpc,
+-                error: getErrorShape({
+-                  config: router._def._config,
+-                  error,
+-                  type,
+-                  path,
+-                  input,
+-                  ctx,
+-                }),
++                result,
+               });
+-              break;
+-            }
+-            if (next.done) {
+-              break;
+-            }
+-
+-            result = {
+-              type: 'data',
+-              data: next.value,
+-            };
+ 
+-            if (isTrackedEnvelope(next.value)) {
+-              const [id, data] = next.value;
+-              result.id = id;
+-              result.data = {
+-                id,
+-                data,
+-              };
++              // free up references for garbage collection
++              next = null;
++              result = null;
+             }
+ 
+             respond({
+               id,
+               jsonrpc,
+-              result,
++              result: {
++                type: 'stopped',
++              },
+             });
+-
+-            // free up references for garbage collection
+-            next = null;
+-            result = null;
++            clientSubscriptions.delete(id);
++          } finally {
++            await asyncDispose(iterator);
+           }
+-
+-          respond({
+-            id,
+-            jsonrpc,
+-            result: {
+-              type: 'stopped',
+-            },
+-          });
+-          clientSubscriptions.delete(id);
+         }).catch((cause) => {
+           const error = getTRPCErrorFromUnknown(cause);
+           opts.onError?.({ error, path, type, ctx, req, input });
+diff --git a/packages/server/src/unstable-core-do-not-import/stream/jsonl.test.ts b/packages/server/src/unstable-core-do-not-import/stream/jsonl.test.ts
+index 1d4bad1df3..cf3e0f6e4c 100644
+--- a/packages/server/src/unstable-core-do-not-import/stream/jsonl.test.ts
++++ b/packages/server/src/unstable-core-do-not-import/stream/jsonl.test.ts
+@@ -233,7 +233,12 @@ function serverResourceForStream(
+   stream: ReadableStream,
+   headers: Record<string, string> = {},
+ ) {
++  let responseSent = false;
+   return fetchServerResource(async () => {
++    if (responseSent) {
++      return new Response(null, { status: 418 });
++    }
++    responseSent = true;
+     return new Response(stream, {
+       headers,
+     });
+diff --git a/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts b/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts
+index a33f11f84e..1a99a44d70 100644
+--- a/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts
++++ b/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts
+@@ -2,7 +2,7 @@ import { isAsyncIterable, isFunction, isObject, run } from '../utils';
+ import { iteratorResource } from './utils/asyncIterable';
+ import type { Deferred } from './utils/createDeferred';
+ import { createDeferred } from './utils/createDeferred';
+-import { makeResource } from './utils/disposable';
++import { asyncDispose, dispose, makeResource } from './utils/disposable';
+ import { mergeAsyncIterables } from './utils/mergeAsyncIterables';
+ import { readableStreamFrom } from './utils/readableStreamFrom';
+ import { PING_SYM, withPing } from './utils/withPing';
+@@ -182,7 +182,7 @@ async function* createBatchStreamProducer(
+       if (error) {
+         throw error;
+       }
+-      await using iterator = iteratorResource(iterable);
++      const iterator = iteratorResource(iterable);
+ 
+       try {
+         while (true) {
+@@ -201,6 +201,8 @@ async function* createBatchStreamProducer(
+           ASYNC_ITERABLE_STATUS_ERROR,
+           opts.formatError?.({ error: cause, path }),
+         ];
++      } finally {
++        await asyncDispose(iterator);
+       }
+     });
+   }
+@@ -529,43 +531,51 @@ export async function jsonlStreamConsumer<THead>(opts: {
+   function decodeChunkDefinition(value: ChunkDefinition) {
+     const [_path, type, chunkId] = value;
+ 
+-    const controller = streamManager.getOrCreate(chunkId);
+-
+     switch (type) {
+       case CHUNK_VALUE_TYPE_PROMISE: {
++        streamManager.getOrCreate(chunkId);
+         return run(async () => {
+-          using reader = controller.getReaderResource();
+-
+-          const { value } = await reader.read();
+-          const [_chunkId, status, data] = value as PromiseChunk;
+-          switch (status) {
+-            case PROMISE_STATUS_FULFILLED:
+-              return decode(data);
+-            case PROMISE_STATUS_REJECTED:
+-              throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
+-          }
+-        });
+-      }
+-      case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
+-        return run(async function* () {
+-          using reader = controller.getReaderResource();
+-
+-          while (true) {
++          const reader = streamManager.getOrCreate(chunkId).getReaderResource();
++          try {
+             const { value } = await reader.read();
+-
+-            const [_chunkId, status, data] = value as IterableChunk;
+-
++            const [_chunkId, status, data] = value as PromiseChunk;
+             switch (status) {
+-              case ASYNC_ITERABLE_STATUS_YIELD:
+-                yield decode(data);
+-                break;
+-              case ASYNC_ITERABLE_STATUS_RETURN:
++              case PROMISE_STATUS_FULFILLED:
+                 return decode(data);
+-              case ASYNC_ITERABLE_STATUS_ERROR:
++              case PROMISE_STATUS_REJECTED:
+                 throw (
+                   opts.formatError?.({ error: data }) ?? new AsyncError(data)
+                 );
+             }
++          } finally {
++            dispose(reader);
++          }
++        });
++      }
++      case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
++        streamManager.getOrCreate(chunkId);
++        return run(async function* () {
++          const reader = streamManager.getOrCreate(chunkId).getReaderResource();
++          try {
++            while (true) {
++              const { value } = await reader.read();
++
++              const [_chunkId, status, data] = value as IterableChunk;
++
++              switch (status) {
++                case ASYNC_ITERABLE_STATUS_YIELD:
++                  yield decode(data);
++                  break;
++                case ASYNC_ITERABLE_STATUS_RETURN:
++                  return decode(data);
++                case ASYNC_ITERABLE_STATUS_ERROR:
++                  throw (
++                    opts.formatError?.({ error: data }) ?? new AsyncError(data)
++                  );
++              }
++            }
++          } finally {
++            dispose(reader);
+           }
+         });
+       }
+diff --git a/packages/server/src/unstable-core-do-not-import/stream/sse.ts b/packages/server/src/unstable-core-do-not-import/stream/sse.ts
+index 6874f15906..967614e7cd 100644
+--- a/packages/server/src/unstable-core-do-not-import/stream/sse.ts
++++ b/packages/server/src/unstable-core-do-not-import/stream/sse.ts
+@@ -7,7 +7,7 @@ import type { EventSourceLike } from './sse.types';
+ import type { inferTrackedOutput } from './tracked';
+ import { isTrackedEnvelope } from './tracked';
+ import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
+-import { makeAsyncResource } from './utils/disposable';
++import { asyncDispose, dispose, makeAsyncResource } from './utils/disposable';
+ import { readableStreamFrom } from './utils/readableStreamFrom';
+ import {
+   disposablePromiseTimerResult,
+@@ -274,13 +274,17 @@ async function withTimeout<T>(opts: {
+   timeoutMs: number;
+   onTimeout: () => Promise<NoInfer<T>>;
+ }): Promise<T> {
+-  using timeoutPromise = timerResource(opts.timeoutMs);
+-  const res = await Unpromise.race([opts.promise, timeoutPromise.start()]);
++  const timeoutPromise = timerResource(opts.timeoutMs);
++  try {
++    const res = await Unpromise.race([opts.promise, timeoutPromise.start()]);
+ 
+-  if (res === disposablePromiseTimerResult) {
+-    return await opts.onTimeout();
++    if (res === disposablePromiseTimerResult) {
++      return await opts.onTimeout();
++    }
++    return res;
++  } finally {
++    dispose(timeoutPromise);
+   }
+-  return res;
+ }
+ 
+ /**
+@@ -419,39 +423,42 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
+   };
+ 
+   return run(async function* () {
+-    await using stream = getStreamResource();
+-
+-    while (true) {
+-      let promise = stream.read();
+-
+-      const timeoutMs = clientOptions.reconnectAfterInactivityMs;
+-      if (timeoutMs) {
+-        promise = withTimeout({
+-          promise,
+-          timeoutMs,
+-          onTimeout: async () => {
+-            const res: Awaited<typeof promise> = {
+-              value: {
+-                type: 'timeout',
+-                ms: timeoutMs,
+-                eventSource: _es,
+-              },
+-              done: false,
+-            };
+-            // Close and release old reader
+-            await stream.recreate();
+-
+-            return res;
+-          },
+-        });
+-      }
++    const stream = getStreamResource();
++    try {
++      while (true) {
++        let promise = stream.read();
++
++        const timeoutMs = clientOptions.reconnectAfterInactivityMs;
++        if (timeoutMs) {
++          promise = withTimeout({
++            promise,
++            timeoutMs,
++            onTimeout: async () => {
++              const res: Awaited<typeof promise> = {
++                value: {
++                  type: 'timeout',
++                  ms: timeoutMs,
++                  eventSource: _es,
++                },
++                done: false,
++              };
++              // Close and release old reader
++              await stream.recreate();
++
++              return res;
++            },
++          });
++        }
+ 
+-      const result = await promise;
++        const result = await promise;
+ 
+-      if (result.done) {
+-        return result.value;
++        if (result.done) {
++          return result.value;
++        }
++        yield result.value;
+       }
+-      yield result.value;
++    } finally {
++      await asyncDispose(stream);
+     }
+   });
+ }
+diff --git a/packages/server/src/unstable-core-do-not-import/stream/utils/asyncIterable.ts b/packages/server/src/unstable-core-do-not-import/stream/utils/asyncIterable.ts
+index aaa40e56f4..75b5905064 100644
+--- a/packages/server/src/unstable-core-do-not-import/stream/utils/asyncIterable.ts
++++ b/packages/server/src/unstable-core-do-not-import/stream/utils/asyncIterable.ts
+@@ -1,6 +1,6 @@
+ import { Unpromise } from '../../../vendor/unpromise';
+ import { throwAbortError } from '../../http/abortError';
+-import { makeAsyncResource } from './disposable';
++import { asyncDispose, dispose, makeAsyncResource } from './disposable';
+ import { disposablePromiseTimerResult, timerResource } from './timerResource';
+ 
+ export function iteratorResource<TYield, TReturn, TNext>(
+@@ -25,27 +25,37 @@ export async function* withMaxDuration<T>(
+   iterable: AsyncIterable<T>,
+   opts: { maxDurationMs: number },
+ ): AsyncGenerator<T> {
+-  await using iterator = iteratorResource(iterable);
++  const iterator = iteratorResource(iterable);
+ 
+-  using timer = timerResource(opts.maxDurationMs);
++  try {
++    const timer = timerResource(opts.maxDurationMs);
++    try {
++      const timerPromise = timer.start();
+ 
+-  const timerPromise = timer.start();
++      // declaration outside the loop for garbage collection reasons
++      let result:
++        | null
++        | IteratorResult<T>
++        | typeof disposablePromiseTimerResult;
+ 
+-  // declaration outside the loop for garbage collection reasons
+-  let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
+-
+-  while (true) {
+-    result = await Unpromise.race([iterator.next(), timerPromise]);
+-    if (result === disposablePromiseTimerResult) {
+-      // cancelled due to timeout
+-      throwAbortError();
+-    }
+-    if (result.done) {
+-      return result;
++      while (true) {
++        result = await Unpromise.race([iterator.next(), timerPromise]);
++        if (result === disposablePromiseTimerResult) {
++          // cancelled due to timeout
++          throwAbortError();
++        }
++        if (result.done) {
++          return result;
++        }
++        yield result.value;
++        // free up reference for garbage collection
++        result = null;
++      }
++    } finally {
++      dispose(timer);
+     }
+-    yield result.value;
+-    // free up reference for garbage collection
+-    result = null;
++  } finally {
++    await asyncDispose(iterator);
+   }
+ }
+ 
+@@ -61,32 +71,41 @@ export async function* takeWithGrace<T>(
+     gracePeriodMs: number;
+   },
+ ): AsyncGenerator<T> {
+-  await using iterator = iteratorResource(iterable);
+-
+-  // declaration outside the loop for garbage collection reasons
+-  let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
++  const iterator = iteratorResource(iterable);
+ 
+-  using timer = timerResource(opts.gracePeriodMs);
++  try {
++    // declaration outside the loop for garbage collection reasons
++    let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
+ 
+-  let count = opts.count;
++    const timer = timerResource(opts.gracePeriodMs);
++    try {
++      let count = opts.count;
+ 
+-  let timerPromise = new Promise<typeof disposablePromiseTimerResult>(() => {
+-    // never resolves
+-  });
++      let timerPromise = new Promise<typeof disposablePromiseTimerResult>(
++        () => {
++          // never resolves
++        },
++      );
+ 
+-  while (true) {
+-    result = await Unpromise.race([iterator.next(), timerPromise]);
+-    if (result === disposablePromiseTimerResult) {
+-      throwAbortError();
+-    }
+-    if (result.done) {
+-      return result.value;
+-    }
+-    yield result.value;
+-    if (--count === 0) {
+-      timerPromise = timer.start();
++      while (true) {
++        result = await Unpromise.race([iterator.next(), timerPromise]);
++        if (result === disposablePromiseTimerResult) {
++          throwAbortError();
++        }
++        if (result.done) {
++          return result.value;
++        }
++        yield result.value;
++        if (--count === 0) {
++          timerPromise = timer.start();
++        }
++        // free up reference for garbage collection
++        result = null;
++      }
++    } finally {
++      dispose(timer);
+     }
+-    // free up reference for garbage collection
+-    result = null;
++  } finally {
++    await asyncDispose(iterator);
+   }
+ }
+diff --git a/packages/server/src/unstable-core-do-not-import/stream/utils/disposable.ts b/packages/server/src/unstable-core-do-not-import/stream/utils/disposable.ts
+index e82d64cb2e..bb3e03d6e6 100644
+--- a/packages/server/src/unstable-core-do-not-import/stream/utils/disposable.ts
++++ b/packages/server/src/unstable-core-do-not-import/stream/utils/disposable.ts
+@@ -52,3 +52,23 @@ export function makeAsyncResource<T>(
+ 
+   return it as T & AsyncDisposable;
+ }
++
++/**
++ * Calls Symbol.dispose on the given object.
++ * This helper exists to avoid the no-restricted-syntax lint rule.
++ * @param obj The object to dispose
++ */
++export function dispose(obj: Disposable) {
++  // eslint-disable-next-line no-restricted-syntax
++  obj[Symbol.dispose]();
++}
++
++/**
++ * Calls Symbol.asyncDispose on the given object.
++ * This helper exists to avoid the no-restricted-syntax lint rule.
++ * @param obj The object to async dispose
++ */
++export async function asyncDispose(obj: AsyncDisposable) {
++  // eslint-disable-next-line no-restricted-syntax
++  await obj[Symbol.asyncDispose]();
++}
+diff --git a/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts b/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts
+index bd9ad52bd5..159cff781c 100644
+--- a/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts
++++ b/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts
+@@ -1,5 +1,5 @@
+ import { createDeferred } from './createDeferred';
+-import { makeAsyncResource } from './disposable';
++import { asyncDispose, makeAsyncResource } from './disposable';
+ 
+ type ManagedIteratorResult<TYield, TReturn> =
+   | { status: 'yield'; value: TYield }
+@@ -143,7 +143,7 @@ export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
+       }
+       state = 'pending';
+ 
+-      await using _finally = makeAsyncResource({}, async () => {
++      const _finally = makeAsyncResource({}, async () => {
+         state = 'done';
+ 
+         const errors: unknown[] = [];
+@@ -164,29 +164,32 @@ export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
+           throw new AggregateError(errors);
+         }
+       });
++      try {
++        while (iterables.length > 0) {
++          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
++          initIterable(iterables.shift()!);
++        }
+ 
+-      while (iterables.length > 0) {
+-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+-        initIterable(iterables.shift()!);
+-      }
++        while (iterators.size > 0) {
++          await flushSignal.promise;
+ 
+-      while (iterators.size > 0) {
+-        await flushSignal.promise;
++          while (buffer.length > 0) {
++            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
++            const [iterator, result] = buffer.shift()!;
+ 
+-        while (buffer.length > 0) {
+-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+-          const [iterator, result] = buffer.shift()!;
+-
+-          switch (result.status) {
+-            case 'yield':
+-              yield result.value;
+-              iterator.pull();
+-              break;
+-            case 'error':
+-              throw result.error;
++            switch (result.status) {
++              case 'yield':
++                yield result.value;
++                iterator.pull();
++                break;
++              case 'error':
++                throw result.error;
++            }
+           }
++          flushSignal = createDeferred();
+         }
+-        flushSignal = createDeferred();
++      } finally {
++        await asyncDispose(_finally);
+       }
+     },
+   };
+diff --git a/packages/server/src/unstable-core-do-not-import/stream/utils/withPing.ts b/packages/server/src/unstable-core-do-not-import/stream/utils/withPing.ts
+index 261c6d7f1e..3e4f6018ed 100644
+--- a/packages/server/src/unstable-core-do-not-import/stream/utils/withPing.ts
++++ b/packages/server/src/unstable-core-do-not-import/stream/utils/withPing.ts
+@@ -1,5 +1,6 @@
+ import { Unpromise } from '../../../vendor/unpromise';
+ import { iteratorResource } from './asyncIterable';
++import { asyncDispose, dispose } from './disposable';
+ import { disposablePromiseTimerResult, timerResource } from './timerResource';
+ 
+ export const PING_SYM = Symbol('ping');
+@@ -12,36 +13,43 @@ export async function* withPing<TValue>(
+   iterable: AsyncIterable<TValue>,
+   pingIntervalMs: number,
+ ): AsyncGenerator<TValue | typeof PING_SYM> {
+-  await using iterator = iteratorResource(iterable);
++  const iterator = iteratorResource(iterable);
+ 
+-  // declaration outside the loop for garbage collection reasons
+-  let result:
+-    | null
+-    | IteratorResult<TValue>
+-    | typeof disposablePromiseTimerResult;
++  try {
++    // declaration outside the loop for garbage collection reasons
++    let result:
++      | null
++      | IteratorResult<TValue>
++      | typeof disposablePromiseTimerResult;
+ 
+-  let nextPromise = iterator.next();
++    let nextPromise = iterator.next();
+ 
+-  while (true) {
+-    using pingPromise = timerResource(pingIntervalMs);
++    while (true) {
++      const pingPromise = timerResource(pingIntervalMs);
++      try {
++        result = await Unpromise.race([nextPromise, pingPromise.start()]);
+ 
+-    result = await Unpromise.race([nextPromise, pingPromise.start()]);
++        if (result === disposablePromiseTimerResult) {
++          // cancelled
+ 
+-    if (result === disposablePromiseTimerResult) {
+-      // cancelled
++          yield PING_SYM;
++          continue;
++        }
+ 
+-      yield PING_SYM;
+-      continue;
+-    }
+-
+-    if (result.done) {
+-      return result.value;
+-    }
++        if (result.done) {
++          return result.value;
++        }
+ 
+-    nextPromise = iterator.next();
+-    yield result.value;
++        nextPromise = iterator.next();
++        yield result.value;
+ 
+-    // free up reference for garbage collection
+-    result = null;
++        // free up reference for garbage collection
++        result = null;
++      } finally {
++        dispose(pingPromise);
++      }
++    }
++  } finally {
++    await asyncDispose(iterator);
+   }
+ }
+diff --git a/packages/tests/server/localLink.acceptance.test.ts b/packages/tests/server/localLink.acceptance.test.ts
+new file mode 100644
+index 0000000000..d8d1302a44
+--- /dev/null
++++ b/packages/tests/server/localLink.acceptance.test.ts
+@@ -0,0 +1,115 @@
++import { EventEmitter, on } from 'node:events';
++import { createTRPCClient, localLink, TRPCClientError } from '@trpc/client';
++import { initTRPC, TRPCError } from '@trpc/server';
++import { z } from 'zod';
++
++test('localLink runs query and mutation procedures in the same process as the client', async () => {
++  const createRouter = (opts: { database: string[] }) => {
++    const t = initTRPC.create();
++    return t.router({
++      list: t.procedure.query(() => {
++        return [...opts.database];
++      }),
++      add: t.procedure
++        .input(z.object({ item: z.string() }))
++        .mutation(({ input }) => {
++          opts.database.push(input.item);
++          return opts.database.length;
++        }),
++    });
++  };
++
++  const database: string[] = ['initial'];
++  const router = createRouter({ database });
++
++  const client = createTRPCClient<typeof router>({
++    links: [localLink({ router })],
++  });
++
++  expect(await client.list.query()).toEqual(['initial']);
++  expect(await client.add.mutate({ item: 'second' })).toBe(2);
++  expect(await client.list.query()).toEqual(['initial', 'second']);
++  expect(database).toEqual(['initial', 'second']);
++});
++
++test('localLink supports createContext and propagates errors as TRPCClientError', async () => {
++  const t = initTRPC.context<{ user: string | null }>().create();
++
++  const router = t.router({
++    whoami: t.procedure.query(({ ctx }) => {
++      if (!ctx.user) {
++        throw new TRPCError({
++          code: 'UNAUTHORIZED',
++          message: 'Not authenticated',
++        });
++      }
++      return `hello ${ctx.user}`;
++    }),
++  });
++
++  let currentUser: string | null = 'alice';
++  const client = createTRPCClient<typeof router>({
++    links: [
++      localLink({
++        router,
++        createContext: async () => ({ user: currentUser }),
++      }),
++    ],
++  });
++
++  expect(await client.whoami.query()).toBe('hello alice');
++
++  currentUser = null;
++  await expect(client.whoami.query()).rejects.toThrow(TRPCClientError);
++  await expect(client.whoami.query()).rejects.toMatchObject({
++    message: 'Not authenticated',
++  });
++});
++
++test('localLink runs subscription procedures in the same process and cleans up on unsubscribe', async () => {
++  const ee = new EventEmitter();
++  const t = initTRPC.create();
++
++  const router = t.router({
++    onMessage: t.procedure
++      .input(z.object({ prefix: z.string() }))
++      .subscription(async function* (opts) {
++        for await (const [msg] of on(ee, 'message', {
++          signal: opts.signal,
++        })) {
++          yield `${opts.input.prefix}: ${String(msg)}`;
++        }
++      }),
++  });
++
++  const client = createTRPCClient<typeof router>({
++    links: [localLink({ router })],
++  });
++
++  const received: string[] = [];
++  const sub = client.onMessage.subscribe(
++    { prefix: 'msg' },
++    {
++      onData(data) {
++        received.push(data);
++      },
++    },
++  );
++
++  await vi.waitFor(() => {
++    expect(ee.listenerCount('message')).toBe(1);
++  });
++
++  ee.emit('message', 'first');
++  ee.emit('message', 'second');
++
++  await vi.waitFor(() => {
++    expect(received).toEqual(['msg: first', 'msg: second']);
++  });
++
++  sub.unsubscribe();
++
++  await vi.waitFor(() => {
++    expect(ee.listenerCount('message')).toBe(0);
++  });
++});

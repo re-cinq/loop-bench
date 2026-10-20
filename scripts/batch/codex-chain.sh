@@ -7,7 +7,7 @@ now=$(date +%s); target=$(date -d "$1" +%s); [ "$target" -lt "$now" ] && target=
 echo "== waiting until $1"; sleep $((target-now))
 for t in 93 94 95 37 144; do
   echo "== ticket $t $(date +%H:%M)"
-  out=$(npx tsx src/cli.ts run --ticket $t --station tdd-round,repair-build --replicates 3 --parallel 6 --per-harness 3 --exclude claude --agent "$A" 2>&1)
+  out=$(npx tsx src/cli.ts run --ticket $t --station tdd-round,repair-build --replicates 3 --parallel 4 --per-harness 3 --exclude claude --agent "$A" 2>&1)
   echo "$out"
   echo "$out" | grep -q "stopping:" && { echo "== usage limit, chain stopped $(date +%H:%M)"; break; }
 done

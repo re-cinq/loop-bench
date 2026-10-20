@@ -1,0 +1,5 @@
+I have fixed the build failure in `@trpc/server` that was blocking CI from running acceptance tests. The failure was caused by the use of `await using` (Explicit Resource Management) while targeting ES2020, which required `tslib` helpers that were not being correctly resolved during the Rollup build. I updated `packages/server/tsconfig.build.json` to target `esnext`, which allows native support for these features and resolves the `TS2354` build error.
+
+I also verified that the `localLink` unit tests pass in `packages/client`. The implementation of `localLink` and its alias `ssrLink` appears complete, and the acceptance tests are already in place. Once CI processes this push, the acceptance tests should run and, if they pass, the ticket will be ready for completion.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fixed @trpc/server build failure (TS2354)","tdd_next":"acceptance green"}}

@@ -1,0 +1,5 @@
+Completed Round 1 for `#3768`:
+- Added failing tests in `packages/client/src/links/localLink.test.ts` and implemented `localLink` and `LocalLinkOptions` in `packages/client/src/links/localLink.ts` supporting `router`, `CreateContextCallback`, `onError`, and `TransformerOptions`.
+- Red tests from prior round: 0 mine, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Implement localLink (and LocalLinkOptions) in packages/client/src/links/localLink.ts supporting router, optional/required createContext (via CreateContextCallback), optional onError, and TransformerOptions.","tdd_next":"Handle query and mutation operations in localLink by resolving context, calling the router procedure in-process, applying any configured data transformer, and emitting the result or TRPCClientError."}}

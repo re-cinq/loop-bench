@@ -1,0 +1,3 @@
+Exported `localLink` and `LocalLinkOptions` from `@trpc/client` (`packages/client/src/links.ts`) and verified with a unit test in `packages/client/src/links/localLink.test.ts`. In the previous CI verdict, 3 red tests were our acceptance tests (`localLink.acceptance.test.ts` failing because `localLink` was not yet exported from `@trpc/client`) and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Export localLink (and its options type) from @trpc/client (packages/client/src/links.ts and packages/client/rollup.config.ts / entrypoints if applicable).","tdd_next":"acceptance green"}}

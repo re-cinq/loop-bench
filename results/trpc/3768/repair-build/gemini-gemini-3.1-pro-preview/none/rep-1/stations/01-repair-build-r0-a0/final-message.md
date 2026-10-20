@@ -1,0 +1,3 @@
+I have exported `localLink` from `@trpc/client/links`, which resolves the `TypeError: (0 , localLink) is not a function` issue in the tests. Furthermore, I implemented subscription support within `localLink`, handling both async iterables and observables and properly parsing `tracked()` envelopes, which causes the final acceptance test to pass perfectly. The tests run clean locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Exported localLink and correctly implemented subscription handlers and tracked envelopes in it."}}

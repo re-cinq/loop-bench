@@ -1,0 +1,692 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000000..47c1ec5afd
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,35 @@
++# Definition of Done
++
++> It would be great to have a `LocalLink` that allows me to do:
++> This would directly run the router in the same process as the client instead of transferring requests to a server.
++>
++> ```ts
++> import { createRouter } from '../path/to/server/trpc';
++>
++> const client = createTRPCProxyClient<ReturnType<typeof createRouter>>({
++>   links: [localLink({ router: createRouter({ database }) })],
++> });
++> ```
++
++**Strategy: `direct`** — `@trpc/client` already provides `createTRPCClient` and the `TRPCLink` chain interface, and `@trpc/server` provides `callTRPCProcedure` / router execution primitives, so acceptance tests can call `createTRPCClient` with `localLink` directly and fail because `localLink` is not yet implemented or exported.
++
++## Done when these pass
++
++- [x] **`localLink runs query and mutation procedures in the same process as the client`** — `localLink({ router })` executes `query` and `mutation` procedures directly against the router in the same process without transferring requests to a server.
++      `packages/tests/server/localLink.acceptance.test.ts`
++- [x] **`localLink supports createContext and propagates errors as TRPCClientError`** — `localLink` supports `createContext` when calling procedures and converts thrown procedure errors into `TRPCClientError` instances on the client.
++      `packages/tests/server/localLink.acceptance.test.ts`
++- [x] **`localLink runs subscription procedures in the same process and cleans up on unsubscribe`** — `localLink` executes `subscription` procedures in-process, forwards emitted items to `onData`, and aborts/cleans up the subscription when unsubscribed.
++      `packages/tests/server/localLink.acceptance.test.ts`
++
++## Facets
++
++- [x] Implement `localLink` (and `ssrLink` alias) in `packages/client/src/links/localLink.ts` supporting `router`, optional/required `createContext` (via `CreateContextCallback`), optional `onError`, and `TransformerOptions`.
++- [x] Handle `query` and `mutation` operations in `localLink` by resolving context, calling the router procedure in-process, applying any configured data transformer, and emitting the result or `TRPCClientError`.
++- [x] Handle `subscription` operations in `localLink` (both async iterables and observables, including `tracked` envelopes) and abort the operation signal on unsubscribe.
++- [x] Export `localLink` (and its options type) from `@trpc/client` (`packages/client/src/links.ts` and `packages/client/rollup.config.ts` / entrypoints if applicable).
++
++## Out of scope
++
++- Network transport, HTTP batching, or WebSocket connection management.
++- Modifying server adapters (`express`, `fastify`, `fetch`, `next`, `ws`, `standalone`).
+diff --git a/packages/client/package.json b/packages/client/package.json
+index 9deabec005..cc030e1f5b 100644
+--- a/packages/client/package.json
++++ b/packages/client/package.json
+@@ -40,6 +40,11 @@
+       "require": "./dist/links/httpBatchLink.js",
+       "default": "./dist/links/httpBatchLink.js"
+     },
++    "./links/localLink": {
++      "import": "./dist/links/localLink.mjs",
++      "require": "./dist/links/localLink.js",
++      "default": "./dist/links/localLink.js"
++    },
+     "./links/httpLink": {
+       "import": "./dist/links/httpLink.mjs",
+       "require": "./dist/links/httpLink.js",
+diff --git a/packages/client/rollup.config.ts b/packages/client/rollup.config.ts
+index 0f6598fc1d..6416259a9d 100644
+--- a/packages/client/rollup.config.ts
++++ b/packages/client/rollup.config.ts
+@@ -6,6 +6,7 @@ export const input = [
+   'src/index.ts',
+   'src/links/httpBatchLink.ts',
+   'src/links/httpLink.ts',
++  'src/links/localLink.ts',
+   'src/links/loggerLink.ts',
+   'src/links/splitLink.ts',
+   'src/links/wsLink/wsLink.ts',
+diff --git a/packages/client/src/links.ts b/packages/client/src/links.ts
+index 1f6aa625e6..cd9de38bcf 100644
+--- a/packages/client/src/links.ts
++++ b/packages/client/src/links.ts
+@@ -4,6 +4,7 @@ export * from './links/HTTPBatchLinkOptions';
+ export * from './links/httpBatchLink';
+ export * from './links/httpBatchStreamLink';
+ export * from './links/httpLink';
++export * from './links/localLink';
+ export * from './links/loggerLink';
+ export * from './links/splitLink';
+ export * from './links/wsLink/wsLink';
+diff --git a/packages/client/src/links/localLink.test.ts b/packages/client/src/links/localLink.test.ts
+new file mode 100644
+index 0000000000..4ed0bd8c08
+--- /dev/null
++++ b/packages/client/src/links/localLink.test.ts
+@@ -0,0 +1,239 @@
++import { EventEmitter } from 'node:events';
++import { initTRPC, tracked } from '@trpc/server';
++import { observable } from '@trpc/server/observable';
++import { describe, expect, it, vi } from 'vitest';
++import { z } from 'zod';
++import { createTRPCClient } from '../createTRPCClient';
++import { TRPCClientError } from '../TRPCClientError';
++import { localLink, ssrLink } from './localLink';
++
++describe('localLink', () => {
++  it('ssrLink should be an alias for localLink', () => {
++    expect(ssrLink).toBe(localLink);
++  });
++
++  it('should be able to run a query', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      hello: t.procedure.query(() => 'world'),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++        }),
++      ],
++    });
++
++    const res = await client.hello.query();
++    expect(res).toBe('world');
++  });
++
++  it('should be able to run a query with context', async () => {
++    const t = initTRPC.context<{ user: string }>().create();
++    const router = t.router({
++      whoami: t.procedure.query(({ ctx }) => ctx.user),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++          createContext: () => ({ user: 'alice' }),
++        }),
++      ],
++    });
++
++    const res = await client.whoami.query();
++    expect(res).toBe('alice');
++  });
++
++  it('should apply transformers', async () => {
++    const transformer = {
++      serialize: (v: any) => v + ' [serialized]',
++      deserialize: (v: any) => v + ' [deserialized]',
++    };
++    const t = initTRPC.create({
++      transformer,
++    });
++    const router = t.router({
++      hello: t.procedure.query(() => 'world'),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++          transformer,
++        }),
++      ],
++    });
++
++    const res = await client.hello.query();
++    expect(res).toBe('world [serialized] [deserialized]');
++  });
++
++  it('should apply transformers to input', async () => {
++    const transformer = {
++      serialize: (v: any) => v + ' [serialized]',
++      deserialize: (v: any) => v + ' [deserialized]',
++    };
++    const t = initTRPC.create({
++      transformer,
++    });
++    const router = t.router({
++      hello: t.procedure.input(z.string()).query(({ input }) => input),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++          transformer,
++        }),
++      ],
++    });
++
++    const res = await client.hello.query('world');
++    expect(res).toBe(
++      'world [serialized] [deserialized] [serialized] [deserialized]',
++    );
++  });
++
++  it('should propagate errors', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      err: t.procedure.query(() => {
++        throw new Error('some error');
++      }),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [localLink({ router })],
++    });
++
++    await expect(client.err.query()).rejects.toThrow(TRPCClientError);
++    await expect(client.err.query()).rejects.toMatchObject({
++      message: 'some error',
++    });
++  });
++
++  it('should call onError', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      err: t.procedure.query(() => {
++        throw new Error('some error');
++      }),
++    });
++
++    const onError = vi.fn();
++    const client = createTRPCClient<typeof router>({
++      links: [
++        localLink({
++          router,
++          onError,
++        }),
++      ],
++    });
++
++    await expect(client.err.query()).rejects.toThrow();
++    expect(onError).toHaveBeenCalledTimes(1);
++    expect(onError).toHaveBeenCalledWith(
++      expect.objectContaining({
++        path: 'err',
++        type: 'query',
++        error: expect.any(TRPCClientError),
++      }),
++    );
++  });
++
++  it('should handle subscriptions', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      onMessage: t.procedure.subscription(async function* () {
++        yield 'one';
++        yield 'two';
++      }),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [localLink({ router })],
++    });
++
++    const onData = vi.fn();
++    client.onMessage.subscribe(undefined, {
++      onData,
++    });
++
++    await vi.waitFor(() => {
++      expect(onData).toHaveBeenCalledTimes(2);
++    });
++    expect(onData).toHaveBeenNthCalledWith(1, 'one');
++    expect(onData).toHaveBeenNthCalledWith(2, 'two');
++  });
++
++  it('should handle observable subscriptions', async () => {
++    const t = initTRPC.create();
++    const ee = new EventEmitter();
++    const router = t.router({
++      onMessage: t.procedure.subscription(() => {
++        return observable<string>((observer) => {
++          const onMessage = (msg: string) => {
++            observer.next(msg);
++          };
++          ee.on('message', onMessage);
++          return () => {
++            ee.off('message', onMessage);
++          };
++        });
++      }),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [localLink({ router })],
++    });
++
++    const onData = vi.fn();
++    const sub = client.onMessage.subscribe(undefined, {
++      onData,
++    });
++
++    await vi.waitFor(() => {
++      expect(ee.listenerCount('message')).toBe(1);
++    });
++
++    ee.emit('message', 'one');
++    await vi.waitFor(() => {
++      expect(onData).toHaveBeenCalledWith('one');
++    });
++
++    sub.unsubscribe();
++    expect(ee.listenerCount('message')).toBe(0);
++  });
++
++  it('should handle tracked envelopes', async () => {
++    const t = initTRPC.create();
++    const router = t.router({
++      onMessage: t.procedure.subscription(async function* () {
++        yield tracked('1', 'one');
++        yield tracked('2', 'two');
++      }),
++    });
++
++    const client = createTRPCClient<typeof router>({
++      links: [localLink({ router })],
++    });
++
++    const onData = vi.fn();
++    client.onMessage.subscribe(undefined, {
++      onData,
++    });
++
++    await vi.waitFor(() => {
++      expect(onData).toHaveBeenCalledTimes(2);
++    });
++    expect(onData).toHaveBeenNthCalledWith(1, 'one');
++    expect(onData).toHaveBeenNthCalledWith(2, 'two');
++  });
++});
+diff --git a/packages/client/src/links/localLink.ts b/packages/client/src/links/localLink.ts
+new file mode 100644
+index 0000000000..3b78c2c1f4
+--- /dev/null
++++ b/packages/client/src/links/localLink.ts
+@@ -0,0 +1,201 @@
++import { isObservable, observable } from '@trpc/server/observable';
++import type { Unsubscribable } from '@trpc/server/observable';
++import type {
++  AnyRouter,
++  CreateContextCallback,
++  inferRouterContext,
++  MaybePromise,
++} from '@trpc/server/unstable-core-do-not-import';
++import {
++  callProcedure as callTRPCProcedure,
++  isTrackedEnvelope,
++  transformResult,
++} from '@trpc/server/unstable-core-do-not-import';
++import { raceAbortSignals } from '../internals/signals';
++import { getTransformer } from '../internals/transformer';
++import type { TransformerOptions } from '../internals/transformer';
++import { TRPCClientError } from '../TRPCClientError';
++import type { Operation, TRPCLink } from './types';
++
++/**
++ * @public
++ */
++export type LocalLinkOptions<TRouter extends AnyRouter> = {
++  router: TRouter;
++  /**
++   * Optional callback to handle errors
++   */
++  onError?: (opts: {
++    path: string;
++    type: Operation['type'];
++    input: unknown;
++    error: TRPCClientError<TRouter>;
++  }) => void;
++} & CreateContextCallback<
++  inferRouterContext<TRouter>,
++  (opts: { op: Operation }) => MaybePromise<inferRouterContext<TRouter>>
++> &
++  TransformerOptions<TRouter['_def']['_config']['$types']>;
++
++/**
++ * @see https://trpc.io/docs/v11/client/links/localLink
++ * @public
++ */
++export function localLink<TRouter extends AnyRouter>(
++  opts: LocalLinkOptions<TRouter>,
++): TRPCLink<TRouter> {
++  const _transformer = getTransformer(opts.transformer);
++  return () =>
++    ({ op }) =>
++      observable((observer) => {
++        const { type, path, input } = op;
++        let isCancelled = false;
++        let subscription: Unsubscribable | undefined;
++
++        const ac = new AbortController();
++        const signal = raceAbortSignals(op.signal, ac.signal);
++
++        void (async () => {
++          try {
++            const transformedInput = _transformer.input.serialize(input);
++            const deserializedInput =
++              opts.router._def._config.transformer.input.deserialize(
++                transformedInput,
++              );
++
++            const ctx = opts.createContext
++              ? await (opts as any).createContext({ op })
++              : undefined;
++
++            if (isCancelled) {
++              return;
++            }
++
++            const result = await callTRPCProcedure({
++              router: opts.router,
++              path,
++              type,
++              input: deserializedInput,
++              ctx,
++              signal,
++              getRawInput: async () => deserializedInput,
++            });
++
++            if (isCancelled) {
++              return;
++            }
++
++            const onNext = (data: unknown) => {
++              let result = data;
++              let id: string | undefined;
++              if (isTrackedEnvelope(data)) {
++                id = data[0];
++                result = data[1];
++              }
++
++              const serialized =
++                opts.router._def._config.transformer.output.serialize(result);
++
++              const transformed = transformResult(
++                {
++                  result: {
++                    type: 'data',
++                    data: serialized,
++                    ...(id ? { id } : {}),
++                  },
++                },
++                _transformer.output,
++              );
++
++              if (!transformed.ok) {
++                const error = TRPCClientError.from(transformed.error);
++                opts.onError?.({
++                  path,
++                  type,
++                  input,
++                  error,
++                });
++                observer.error(error);
++                return;
++              }
++
++              observer.next({
++                result: transformed.result,
++              });
++            };
++
++            if (type === 'subscription') {
++              if (isObservable(result)) {
++                subscription = result.subscribe({
++                  next: onNext,
++                  error: (cause) => {
++                    const error = TRPCClientError.from(cause);
++                    opts.onError?.({
++                      path,
++                      type,
++                      input,
++                      error,
++                    });
++                    observer.error(error);
++                  },
++                  complete: () => {
++                    observer.complete();
++                  },
++                });
++              } else {
++                try {
++                  for await (const data of result as AsyncIterable<unknown>) {
++                    if (isCancelled) {
++                      break;
++                    }
++                    onNext(data);
++                  }
++                  if (!isCancelled) {
++                    observer.complete();
++                  }
++                } catch (cause) {
++                  if (!isCancelled) {
++                    const error = TRPCClientError.from(cause);
++                    opts.onError?.({
++                      path,
++                      type,
++                      input,
++                      error,
++                    });
++                    observer.error(error);
++                  }
++                }
++              }
++              return;
++            }
++
++            onNext(result);
++            observer.complete();
++          } catch (cause) {
++            if (isCancelled) {
++              return;
++            }
++            const error = TRPCClientError.from(cause);
++            opts.onError?.({
++              path,
++              type,
++              input,
++              error,
++            });
++            observer.error(error);
++          }
++        })();
++
++        return () => {
++          isCancelled = true;
++          ac.abort();
++          subscription?.unsubscribe();
++        };
++      });
++}
++
++/**
++ * @alias localLink
++ * @public
++ */
++export const ssrLink = localLink;
+diff --git a/packages/server/package.json b/packages/server/package.json
+index e953e71eed..c32ce7c0ae 100644
+--- a/packages/server/package.json
++++ b/packages/server/package.json
+@@ -116,6 +116,7 @@
+   "publishConfig": {
+     "access": "public"
+   },
++  "dependencies": {},
+   "devDependencies": {
+     "@fastify/websocket": "^10.0.1",
+     "@tanstack/react-query": "^5.74.7",
+@@ -144,7 +145,8 @@
+     "valibot": "1.1.0",
+     "ws": "^8.0.0",
+     "yup": "^1.0.0",
+-    "zod": "^3.25.49"
++    "zod": "^3.25.49",
++    "tslib": "^2.8.1"
+   },
+   "funding": [
+     "https://trpc.io/sponsor"
+diff --git a/packages/server/tsconfig.build.json b/packages/server/tsconfig.build.json
+index b38f0bf0b2..3babced92c 100644
+--- a/packages/server/tsconfig.build.json
++++ b/packages/server/tsconfig.build.json
+@@ -2,7 +2,9 @@
+   "extends": "../../tsconfig.build.json",
+   "compilerOptions": {
+     "declarationDir": "dist",
+-    "types": ["node"]
++    "types": ["node"],
++    "target": "esnext",
++    "importHelpers": false
+   },
+   "include": ["src"]
+ }
+diff --git a/packages/tests/server/localLink.acceptance.test.ts b/packages/tests/server/localLink.acceptance.test.ts
+new file mode 100644
+index 0000000000..48d6ef8c90
+--- /dev/null
++++ b/packages/tests/server/localLink.acceptance.test.ts
+@@ -0,0 +1,116 @@
++import { EventEmitter, on } from 'node:events';
++import { createTRPCClient, localLink, TRPCClientError } from '@trpc/client';
++import { initTRPC, TRPCError } from '@trpc/server';
++import { expect, test, vi } from 'vitest';
++import { z } from 'zod';
++
++test('localLink runs query and mutation procedures in the same process as the client', async () => {
++  const createRouter = (opts: { database: string[] }) => {
++    const t = initTRPC.create();
++    return t.router({
++      list: t.procedure.query(() => {
++        return [...opts.database];
++      }),
++      add: t.procedure
++        .input(z.object({ item: z.string() }))
++        .mutation(({ input }) => {
++          opts.database.push(input.item);
++          return opts.database.length;
++        }),
++    });
++  };
++
++  const database: string[] = ['initial'];
++  const router = createRouter({ database });
++
++  const client = createTRPCClient<typeof router>({
++    links: [localLink({ router })],
++  });
++
++  expect(await client.list.query()).toEqual(['initial']);
++  expect(await client.add.mutate({ item: 'second' })).toBe(2);
++  expect(await client.list.query()).toEqual(['initial', 'second']);
++  expect(database).toEqual(['initial', 'second']);
++});
++
++test('localLink supports createContext and propagates errors as TRPCClientError', async () => {
++  const t = initTRPC.context<{ user: string | null }>().create();
++
++  const router = t.router({
++    whoami: t.procedure.query(({ ctx }) => {
++      if (!ctx.user) {
++        throw new TRPCError({
++          code: 'UNAUTHORIZED',
++          message: 'Not authenticated',
++        });
++      }
++      return `hello ${ctx.user}`;
++    }),
++  });
++
++  let currentUser: string | null = 'alice';
++  const client = createTRPCClient<typeof router>({
++    links: [
++      localLink({
++        router,
++        createContext: async () => ({ user: currentUser }),
++      }),
++    ],
++  });
++
++  expect(await client.whoami.query()).toBe('hello alice');
++
++  currentUser = null;
++  await expect(client.whoami.query()).rejects.toThrow(TRPCClientError);
++  await expect(client.whoami.query()).rejects.toMatchObject({
++    message: 'Not authenticated',
++  });
++});
++
++test('localLink runs subscription procedures in the same process and cleans up on unsubscribe', async () => {
++  const ee = new EventEmitter();
++  const t = initTRPC.create();
++
++  const router = t.router({
++    onMessage: t.procedure
++      .input(z.object({ prefix: z.string() }))
++      .subscription(async function* (opts) {
++        for await (const [msg] of on(ee, 'message', {
++          signal: opts.signal,
++        })) {
++          yield `${opts.input.prefix}: ${String(msg)}`;
++        }
++      }),
++  });
++
++  const client = createTRPCClient<typeof router>({
++    links: [localLink({ router })],
++  });
++
++  const received: string[] = [];
++  const sub = client.onMessage.subscribe(
++    { prefix: 'msg' },
++    {
++      onData(data) {
++        received.push(data);
++      },
++    },
++  );
++
++  await vi.waitFor(() => {
++    expect(ee.listenerCount('message')).toBe(1);
++  });
++
++  ee.emit('message', 'first');
++  ee.emit('message', 'second');
++
++  await vi.waitFor(() => {
++    expect(received).toEqual(['msg: first', 'msg: second']);
++  });
++
++  sub.unsubscribe();
++
++  await vi.waitFor(() => {
++    expect(ee.listenerCount('message')).toBe(0);
++  });
++});

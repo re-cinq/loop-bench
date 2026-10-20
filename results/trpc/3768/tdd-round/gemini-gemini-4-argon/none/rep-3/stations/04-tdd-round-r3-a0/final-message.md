@@ -1,0 +1,4 @@
+Exported `localLink` and `LocalLinkOptions` from `packages/client/src/links.ts` (and thereby `@trpc/client` via `packages/client/src/index.ts`), verified with a unit test in `packages/client/src/links/localLink.test.ts`, updated `.lore/dod.md`, and pushed the commit.
+3 red acceptance tests in CI were ours (awaiting `localLink` export); 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Export localLink (and its options type) from @trpc/client (packages/client/src/links.ts and packages/client/rollup.config.ts / entrypoints if applicable).","tdd_next":"acceptance green"}}

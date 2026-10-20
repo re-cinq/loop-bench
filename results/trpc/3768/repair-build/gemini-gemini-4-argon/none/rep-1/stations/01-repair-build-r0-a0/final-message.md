@@ -1,0 +1,3 @@
+Implemented subscription support in `localLink` (async iterables, observables, `tracked` envelopes, and aborting the operation signal on unsubscribe) and exported `localLink` from `@trpc/client` (`packages/client/src/links.ts`). All acceptance and unit tests in `packages/tests/server/localLink.acceptance.test.ts` and `packages/client/src/links/localLink.test.ts` pass.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Exported localLink from @trpc/client and implemented subscription handling in localLink"}}

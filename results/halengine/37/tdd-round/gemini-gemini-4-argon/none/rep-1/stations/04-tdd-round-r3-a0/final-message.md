@@ -1,0 +1,6 @@
+Resolved all CI failures from the previous push:
+- Fixed `ajv` default import and `ErrorObject` path extraction (`instancePath` / `dataPath`) in `src/orchestration/tools/registry.ts` so `typecheck` and runtime ESM execution succeed under both CJS `export = ajv` and ESM interop.
+- Fixed the three ESLint findings (`re-lint/max-member-chain` and `re-lint/no-vague-names`) in `src/orchestration/chatOrchestrator.test.ts` and `src/orchestration/tools/registry.test.ts`.
+- Removed blank lines after `<!-- doc-block: ... -->` markers in `README.md`, `docs/adding-a-tool.md`, and `.specify/spec.md`, and aligned `example/weather-tool.ts`, `adrs/ADR-002-response-validation.md`, and `docs/spikes/spike-ai-response-validation.md` with the doc gates (2 red suites from our branch's `ajv` import and 1 regression in `check-doc-gates.test.ts` caused by markdown formatting in the previous round).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve CI typecheck, eslint, and test failures for ToolRegistry inputSchema validation","tdd_next":"acceptance green"}}

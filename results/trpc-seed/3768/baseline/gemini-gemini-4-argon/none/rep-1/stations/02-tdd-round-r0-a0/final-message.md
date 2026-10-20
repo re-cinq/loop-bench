@@ -1,0 +1,3 @@
+Implemented `localLink` and `LocalLinkOptions` in `packages/client/src/links/localLink.ts` with unit test coverage in `packages/client/src/links/localLink.test.ts` for `query` and `mutation` execution, `createContext`, `transformer`, `onError`, and `TRPCClientError` propagation. 0 red tests of mine remain, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Implement localLink (and LocalLinkOptions) in packages/client/src/links/localLink.ts and handle query and mutation operations","tdd_next":"Handle subscription operations in localLink (both async iterables and observables, including tracked envelopes) and abort the operation signal on unsubscribe"}}

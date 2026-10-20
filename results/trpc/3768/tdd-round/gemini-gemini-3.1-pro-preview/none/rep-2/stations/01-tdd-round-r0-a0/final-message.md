@@ -1,0 +1,5 @@
+I successfully added `localLink` and implemented its basic structure, supporting `query` and `mutation` with `createContext`, `onError`, and `TransformerOptions`. I created a unit test `localLink.test.ts` for these scenarios, made them green locally using `npx vitest`, formatted everything with `npx prettier --write`, and pushed to the branch.
+
+Zero regressions reported since this is the first round and there were no previous CI failures.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Implement localLink (and LocalLinkOptions) in packages/client/src/links/localLink.ts supporting router, optional/required createContext (via CreateContextCallback), optional onError, and TransformerOptions.","tdd_next":"Handle subscription operations in localLink (both async iterables and observables, including tracked envelopes) and abort the operation signal on unsubscribe."}}
