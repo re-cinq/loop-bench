@@ -75,7 +75,12 @@ export interface PendingCell {
   status: "running" | "not run yet";
 }
 
-export function renderResultsTable(cells: readonly CellSummary[], pending: readonly PendingCell[] = []): string {
+/** The ticket as a row shows it: its number and, when the experiment names it, its complexity. */
+export type TicketTiers = Readonly<Record<number, string>>;
+
+const ticketLabel = (ticket: number, tiers: TicketTiers): string => (tiers[ticket] ? `#${ticket} ${tiers[ticket]}` : `#${ticket}`);
+
+export function renderResultsTable(cells: readonly CellSummary[], pending: readonly PendingCell[] = [], tiers: TicketTiers = {}): string {
   const header = [
     "| Ticket | Station varied | Model (CLI) | Effort | Lore | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |",
     "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -87,7 +92,7 @@ export function renderResultsTable(cells: readonly CellSummary[], pending: reado
     const structural = loops.flatMap((loop) => (loop.structural ? [loop.structural] : []));
 
     return { ...cell, line: `| ${[
-      `#${cell.ticket}`,
+      ticketLabel(cell.ticket, tiers),
       cell.station,
       agentLabel(cell.agent),
       cell.effort,
@@ -109,13 +114,13 @@ export function renderResultsTable(cells: readonly CellSummary[], pending: reado
 
   const pendingRows = pending.map((cell) => ({
     ...cell,
-    line: `| #${cell.ticket} | ${cell.station} | ${agentLabel(cell.agent)} | ${cell.effort} | ${contextLabel(cell.context)} | ${cell.prompt} | 0 | ${cell.status} | — | — | — | — | — | — | — | — | — |`,
+    line: `| ${ticketLabel(cell.ticket, tiers)} | ${cell.station} | ${agentLabel(cell.agent)} | ${cell.effort} | ${contextLabel(cell.context)} | ${cell.prompt} | 0 | ${cell.status} | — | — | — | — | — | — | — | — | — |`,
   }));
 
   return [...header, ...[...rows, ...pendingRows].sort(compareRows).map((row) => row.line)].join("\n");
 }
 
-export function renderEndReasons(cells: readonly CellSummary[]): string {
+export function renderEndReasons(cells: readonly CellSummary[], tiers: TicketTiers = {}): string {
   const rows = cells.map((cell): string => {
     const reasons = new Map<string, number>();
 
@@ -123,13 +128,13 @@ export function renderEndReasons(cells: readonly CellSummary[]): string {
       reasons.set(loop.end_reason, (reasons.get(loop.end_reason) ?? 0) + 1);
     }
 
-    return `| #${cell.ticket} | ${cell.station} | ${agentLabel(cell.agent)} | ${contextLabel(cell.context)} | ${[...reasons].map(([reason, n]) => `${reason} ×${n}`).join(", ")} |`;
+    return `| ${ticketLabel(cell.ticket, tiers)} | ${cell.station} | ${agentLabel(cell.agent)} | ${contextLabel(cell.context)} | ${[...reasons].map(([reason, n]) => `${reason} ×${n}`).join(", ")} |`;
   });
 
   return ["| Ticket | Station varied | Model (CLI) | Lore | How the loops ended |", "|---|---|---|---|---|", ...rows].join("\n");
 }
 
-export function renderReport(input: { experimentId: string; loops: readonly LoopRecord[]; pending: readonly PendingCell[]; visits: readonly VisitRow[]; promptsLoreSha: string; subjectRepo: string; generatedAt: string; conclusions: string }): string {
+export function renderReport(input: { experimentId: string; loops: readonly LoopRecord[]; pending: readonly PendingCell[]; visits: readonly VisitRow[]; promptsLoreSha: string; subjectRepo: string; generatedAt: string; conclusions: string; tiers?: TicketTiers }): string {
   const cells = cellsOf(input.loops);
 
   return `# Which model runs each implementation-loop station best
@@ -142,9 +147,9 @@ The implementation loop's stations (\`dod\`, \`tdd-round\`, \`repair-build\`) ea
 
 ## Results
 
-Each row is one cell: one station varied against the production baseline, every other station at baseline. Rows are sorted by model name; cells that have not finished a loop yet show as running or not run yet. Values are the mean over the cell's runs, with min–max and standard deviation in parentheses.
+Each row is one cell: one station varied against the production baseline, every other station at baseline. Each ticket carries its complexity: small (the merged change touched 1 production file, under 20 lines), medium (a few files, ~100 lines) or large (many files across modules). Rows are sorted by model name; cells that have not finished a loop yet show as running or not run yet. Values are the mean over the cell's runs, with min–max and standard deviation in parentheses.
 
-${renderResultsTable(cells, input.pending)}
+${renderResultsTable(cells, input.pending, input.tiers ?? {})}
 
 What the columns mean:
 
@@ -158,7 +163,7 @@ What the columns mean:
 
 ### How the loops ended
 
-${renderEndReasons(cells)}
+${renderEndReasons(cells, input.tiers ?? {})}
 
 ## What we read in it
 

@@ -406,6 +406,7 @@ function writeReport(config: ExperimentConfig): string {
   });
   const markdown = renderReport({
     experimentId: config.id,
+    tiers: Object.fromEntries(config.tickets.flatMap((ticket) => (ticket.complexity ? [[ticket.number, ticket.complexity]] : []))),
     loops,
     pending: pendingCells(config, loops),
     visits,

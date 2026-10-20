@@ -21,6 +21,8 @@ export const TicketSchema = z.object({
   reference_pr: z.number().int(),
   merge_sha: z.string().regex(/^[0-9a-f]{12,40}$/),
   base_sha: z.string().regex(/^[0-9a-f]{12,40}$/),
+  /** How big the merged change was: small, medium or large, by production files, lines and modules touched. */
+  complexity: z.enum(["small", "medium", "large"]).optional(),
 });
 export type Ticket = z.infer<typeof TicketSchema>;
 

@@ -32,6 +32,12 @@ const loop = (overrides: Partial<LoopRecord>): LoopRecord => ({
 });
 
 describe("renderResultsTable", () => {
+  it("labels ticket 93 as #93 small when the experiment names its complexity", () => {
+    const row = renderResultsTable(cellsOf([loop({})]), [], { 93: "small" }).split("\n")[2] ?? "";
+
+    expect(row.startsWith("| #93 small | dod |")).toBe(true);
+  });
+
   it("folds two replicates of one cell into 1/2 green, rounds 3.0 (2.0–4.0, sd 1.0), cost $1.50", () => {
     const cells = cellsOf([loop({ replicate: 1 }), loop({ replicate: 2, rounds: 4, total_cost_usd: 2, reached_green: false, end_reason: "round_budget" })]);
 
