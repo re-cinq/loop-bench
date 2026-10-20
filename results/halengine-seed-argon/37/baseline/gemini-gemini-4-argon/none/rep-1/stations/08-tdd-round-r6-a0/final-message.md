@@ -1,0 +1,3 @@
+Resolved the CI `typecheck`, `eslint` (`re-lint/max-member-chain`), and `test` failures in `src/orchestration/tools/registry.ts` by typing the `Ajv` constructor and `SchemaErrorObject` to support both `instancePath` and `dataPath`, splitting the path normalization into two steps, and updating spec anchor line references. All red tests in CI were ours (0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve CI typecheck, max-member-chain lint, and Ajv error path extraction failures in ToolRegistry","tdd_next":"acceptance green"}}
