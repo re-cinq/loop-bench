@@ -1,0 +1,3 @@
+The round is complete. The token usage from all tool loop rounds is now summed and correctly passed down to the `afterModelResponse` hook. A unit test was written to verify that the summing behavior works as intended across multiple provider interactions. The tests passed successfully, and the changes were formatted, committed, and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Update the hooks spec and CHANGELOG with the aggregate-usage behavior and its impact on existing consumers."}}

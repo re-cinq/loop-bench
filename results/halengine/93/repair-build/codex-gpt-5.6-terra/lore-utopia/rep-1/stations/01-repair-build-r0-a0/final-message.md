@@ -1,0 +1,3 @@
+Fixed all four CI-reported eslint findings by linking the helper tests to spec statements and consolidating the duplicate assertion. Formatted changed files, committed, pushed, and confirmed branch is synchronized with origin. I did not run eslint locally per pod constraints.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added traceability links and corrected the helper test assertion shape"}}

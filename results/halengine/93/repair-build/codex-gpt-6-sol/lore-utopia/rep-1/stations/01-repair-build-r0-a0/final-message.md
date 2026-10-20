@@ -1,0 +1,3 @@
+Fixed all four reported lint findings: linked the usage helper tests to the spec and reduced the middle test to one assertion. Prettier passed on the changed files. Commit `9c31b31` is pushed, and the branch is current with `origin/main`. CI has not yet judged this push; I did not run lint locally, as directed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Linked usage helper tests to spec statements and reduced a two-assertion test to one assertion"}}

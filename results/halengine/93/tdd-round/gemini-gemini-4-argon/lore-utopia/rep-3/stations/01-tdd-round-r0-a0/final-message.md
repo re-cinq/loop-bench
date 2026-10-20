@@ -1,0 +1,7 @@
+Completed the TDD round for issue #93:
+
+- **Red/Green/Refactor:** Added the failing unit test `sums the usage of every round, not only the last` in `src/orchestration/chatOrchestrator.test.ts` (1 red test was mine, 0 regressions), then updated `OrchestratorHooks.afterModelResponse` (`totalUsage?: UsageMetadata`) and `createChatOrchestrator` (`addUsage`) in `src/orchestration/chatOrchestrator.ts` to sum `inputTokens`, `outputTokens`, and `totalTokens` across all reporting provider rounds while preserving `undefined` when no round reports usage.
+- **Traceability & Docs:** Linked the new unit test in `specs/hal-engine-architecture/spec.md`, linked the acceptance tests in `specs/hal-engine-config-hooks/spec.md`, updated generated `OrchestratorHooks` doc blocks (`CLAUDE.md` and `specs/hal-engine-architecture/spec.md`), re-anchored `specs/hal-engine-tool-input-validation/spec.md`, and added the `CHANGELOG.md` entry and `.lore/dod.md` checklist updates.
+- **Unrelated smells noticed (unacted on):** None.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit","tdd_next":"acceptance green"}}

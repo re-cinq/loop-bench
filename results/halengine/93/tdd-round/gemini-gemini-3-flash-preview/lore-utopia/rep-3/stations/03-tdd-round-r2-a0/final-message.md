@@ -1,0 +1,3 @@
+I fixed the ESLint error in `src/types/ai.ts` by changing the empty `TurnUsage` interface to a type alias. I also added a new unit test file `src/orchestration/usageAggregation.test.ts` to verify the multi-round usage aggregation logic, which covers both the summed usage across rounds and the correct handling of rounds with missing usage. I updated `.lore/dod.md` to reflect that the facets and acceptance criteria are met, and pushed the changes to the repository.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix ESLint error in src/types/ai.ts where TurnUsage was an empty interface","tdd_next":"acceptance green"}}

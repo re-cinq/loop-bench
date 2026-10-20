@@ -1,0 +1,3 @@
+I have updated the spec and changelog to address the CI failures. The `.lore/dod.md` facet for updating the docs has been checked off. The files were formatted with prettier and pushed to origin. I did not run any tests because my changes this round were strictly documentation and changelog updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update the hooks spec and CHANGELOG with the aggregate-usage behavior and its impact on existing consumers.","tdd_next":"acceptance green"}}

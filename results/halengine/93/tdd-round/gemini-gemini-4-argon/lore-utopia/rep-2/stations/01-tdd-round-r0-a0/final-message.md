@@ -1,0 +1,7 @@
+Completed the red-green-refactor round for ticket #93:
+
+- **Red / Green / Regressions**: 1 red test written and turned green (`sums the usage of every round, not only the last` in `src/orchestration/chatOrchestrator.test.ts`); 0 regressions (`receives collected response text and usage` and all 25 tests in `src/orchestration/chatOrchestrator.test.ts` pass unedited).
+- **Implementation & Traceability**: Updated `OrchestratorHooks.afterModelResponse` to name its third parameter `totalUsage?: UsageMetadata`, accumulated `totalUsage` across provider rounds in `src/orchestration/chatOrchestrator.ts` via `addUsage`, synchronized doc-blocks and spec citations across `CLAUDE.md`, `specs/hal-engine-architecture/spec.md`, `specs/hal-engine-config-hooks/spec.md`, and `specs/hal-engine-tool-input-validation/spec.md`, updated `CHANGELOG.md`, and ticked the completed facets in `.lore/dod.md`.
+- **Unrelated smells noticed (untouched)**: `onError` in `src/orchestration/chatOrchestrator.ts` remains gated on `error instanceof Error`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a totalUsage contract, sum reported round usage while preserving undefined when none report, keep the single-round regression guard unchanged, and update specs and CHANGELOG","tdd_next":"acceptance green"}}

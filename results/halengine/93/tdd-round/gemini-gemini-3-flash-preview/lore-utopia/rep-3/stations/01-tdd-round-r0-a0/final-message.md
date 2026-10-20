@@ -1,0 +1,5 @@
+I have completed the TDD round for ticket #93. I identified that the `afterModelResponse` hook was only reporting usage for the final provider call in a turn, which under-counted expensive multi-round tool interactions.
+
+I implemented a new `TurnUsage` contract in `src/types/ai.ts` that explicitly represents aggregated usage. I updated `chatOrchestrator.ts` to sum token counts across every round in a turn, while preserving `undefined` if no rounds report usage, satisfying the defined facets. I verified these changes with a new unit test suite, `src/orchestration/usageAggregation.test.ts`, covering both the aggregation logic and the edge cases for missing usage. Finally, I updated the public API, all related unit and acceptance tests, and the project documentation (Architecture spec, Tool Budget spec, Config Hooks spec, and CHANGELOG) to reflect the new behavior and type signature.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"acceptance green"}}
