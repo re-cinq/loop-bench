@@ -1,0 +1,3 @@
+I fixed the lint errors reported by CI for ticket #94. Specifically, I combined the multiple `expect` calls in the acceptance test `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` to satisfy the `re-lint/max-expects` rule, and I added the missing spec link in `specs/hal-engine-config-hooks/spec.md` for the unit test in `src/orchestration/chatOrchestrator.test.ts` to satisfy the `re-lint/require-spec-link` rule. I also ran the unit tests locally to ensure they pass and formatted the modified files as required.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"lint errors fixed","tdd_next":"acceptance green"}}

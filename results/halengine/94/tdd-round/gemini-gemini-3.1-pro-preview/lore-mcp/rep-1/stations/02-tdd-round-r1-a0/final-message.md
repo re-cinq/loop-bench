@@ -1,0 +1,3 @@
+I fixed the CI failures from the previous push, which included a TypeScript type error and several ESLint max-expects and missing spec-link errors in the newly added tests. I updated `specs/hal-engine-config-hooks/spec.md` with the new guarantee for `beforeSession`, moving it out of the out-of-scope section since the behaviour has now been changed. I also documented the change in `CHANGELOG.md` for existing consumers and repointed the spec anchors. The round ran no tests here because the hook prevented executing the acceptance test directory. All facets are now ticked, and the typechecker and linter are green locally. 
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update spec guarantee and changelog","tdd_next":"acceptance green"}}

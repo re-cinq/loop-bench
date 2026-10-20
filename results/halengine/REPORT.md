@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-20 07:33 UTC: 126 loops over 78 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-20 10:16 UTC: 185 loops over 96 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -69,15 +69,15 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.11 | 0.9 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +144/−5 |
 | #93 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | Lore on Utopia | baseline | 1 | 1/1 | 0.0 | $0.09 | 1.8 min | 5.0 | 4.0 | 4.0 | — | 7 (0.27) | +144/−5 |
 | #93 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 2 | 2/2 | 0.0 (0.0–0.0, sd 0.0) | $0.07 ($0.06–$0.07, sd $0.00) | 1.4 min (1.2 min–1.5 min, sd 0.1 min) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 3.5 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +144/−5 |
-| #93 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $1.22 ($0.28–$2.77, sd $1.11) | 3.6 min (3.0 min–4.7 min, sd 0.8 min) | 5.0 (5.0–5.0, sd 0.0) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | — | 14 (9–16, sd 3) (0.39 (0.35–0.45, sd 0.05)) | +192/−39 |
-| #93 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 3 | 1/3 | 0.7 (0.0–1.0, sd 0.5) | $0.10 ($0.09–$0.11, sd $0.01) | 1.9 min (1.5 min–2.1 min, sd 0.2 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +142/−5 |
-| #93 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.20 ($0.07–$0.36, sd $0.12) | 2.9 min (1.6 min–4.6 min, sd 1.3 min) | 5.0 (5.0–5.0, sd 0.0) | 4.3 (4.0–5.0, sd 0.5) | 4.3 (4.0–5.0, sd 0.5) | — | 9 (7–14, sd 3) (0.29 (0.27–0.31, sd 0.02)) | +148/−10 |
-| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.58 ($0.49–$0.65, sd $0.07) | 3.3 min (2.9 min–3.6 min, sd 0.3 min) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +147/−5 |
-| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.72 ($0.44–$0.96, sd $0.21) | 6.8 min (3.2 min–11.0 min, sd 3.2 min) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–8, sd 0) (0.30 (0.27–0.36, sd 0.04)) | +149/−5 |
-| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 3 | 2/3 | 0.3 (0.0–1.0, sd 0.5) | $0.72 ($0.46–$1.04, sd $0.24) | 3.3 min (2.5 min–3.9 min, sd 0.6 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.7 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +146/−5 |
-| #93 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.61 ($0.49–$0.80, sd $0.14) | 2.5 min (2.1 min–2.8 min, sd 0.3 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–8, sd 0) (0.30 (0.27–0.36, sd 0.04)) | +144/−5 |
-| #93 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.81 ($0.75–$0.84, sd $0.04) | 7.0 min (4.5 min–8.8 min, sd 1.8 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.7 (3.0–4.0, sd 0.5) | — | 7 (7–8, sd 0) (0.30 (0.27–0.36, sd 0.04)) | +145/−5 |
-| #93 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.51 ($0.47–$0.55, sd $0.03) | 2.5 min (2.2 min–2.7 min, sd 0.2 min) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +142/−5 |
+| #93 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.85 ($0.21–$2.77, sd $0.97) | 3.5 min (3.0 min–4.7 min, sd 0.7 min) | 4.8 (4.0–5.0, sd 0.4) | 4.4 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | — | 11 (7–16, sd 4) (0.34 (0.25–0.45, sd 0.07)) | +175/−26 |
+| #93 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 5 | 2/5 | 0.6 (0.0–1.0, sd 0.5) | $0.34 ($0.09–$1.24, sd $0.45) | 2.3 min (1.5 min–3.5 min, sd 0.7 min) | 4.8 (4.0–5.0, sd 0.4) | 4.2 (4.0–5.0, sd 0.4) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (7–11, sd 2) (0.27 (0.20–0.33, sd 0.04)) | +148/−8 |
+| #93 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.35 ($0.07–$1.09, sd $0.39) | 2.6 min (1.3 min–4.6 min, sd 1.2 min) | 5.0 (5.0–5.0, sd 0.0) | 4.4 (4.0–5.0, sd 0.5) | 4.2 (4.0–5.0, sd 0.4) | — | 8 (7–14, sd 3) (0.28 (0.27–0.31, sd 0.02)) | +147/−8 |
+| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.58 ($0.44–$0.74, sd $0.11) | 3.4 min (2.9 min–3.7 min, sd 0.3 min) | 4.8 (4.0–5.0, sd 0.4) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +146/−5 |
+| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.75 ($0.44–$1.10, sd $0.25) | 5.8 min (3.2 min–11.0 min, sd 2.8 min) | 4.2 (4.0–5.0, sd 0.4) | 4.0 (4.0–4.0, sd 0.0) | 3.8 (3.0–4.0, sd 0.4) | — | 7 (7–8, sd 0) (0.29 (0.27–0.36, sd 0.04)) | +147/−5 |
+| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 5 | 4/5 | 0.2 (0.0–1.0, sd 0.4) | $0.78 ($0.46–$1.04, sd $0.20) | 4.2 min (2.5 min–6.5 min, sd 1.4 min) | 4.6 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.8 (3.0–4.0, sd 0.4) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +147/−5 |
+| #93 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.68 ($0.49–$0.96, sd $0.18) | 4.5 min (2.1 min–10.7 min, sd 3.2 min) | 4.6 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–8, sd 0) (0.29 (0.27–0.36, sd 0.04)) | +144/−5 |
+| #93 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.81 ($0.68–$0.95, sd $0.09) | 6.6 min (3.4 min–8.9 min, sd 2.3 min) | 4.6 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.8 (3.0–4.0, sd 0.4) | — | 7 (7–8, sd 0) (0.29 (0.27–0.36, sd 0.04)) | +145/−5 |
+| #93 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.54 ($0.47–$0.62, sd $0.05) | 3.8 min (2.2 min–7.1 min, sd 1.8 min) | 4.8 (4.0–5.0, sd 0.4) | 4.0 (4.0–4.0, sd 0.0) | 3.8 (3.0–4.0, sd 0.4) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +142/−5 |
 | #93 | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -117,15 +117,111 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 1 | 1/1 | 2.0 | $0.50 | 5.0 min | 4.0 | 4.0 | 4.0 | — | 9 (0.23) | +182/−5 |
 | #93 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | Lore on Utopia | baseline | 1 | 1/1 | 2.0 | $0.58 | 7.5 min | 4.0 | 3.0 | 2.0 | — | 9 (0.23) | +207/−5 |
 | #93 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 2 | 0/2 | 0.0 (0.0–0.0, sd 0.0) | $0.10 ($0.09–$0.10, sd $0.00) | 0.6 min (0.6 min–0.7 min, sd 0.0 min) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +121/−2 |
-| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 1.0 (1.0–1.0, sd 0.0) | $0.80 ($0.63–$1.12, sd $0.23) | 6.8 min (6.0 min–8.2 min, sd 1.0 min) | 5.0 (5.0–5.0, sd 0.0) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (7–10, sd 1) (0.32 (0.27–0.42, sd 0.07)) | +191/−9 |
-| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 3 | 3/3 | 2.7 (2.0–3.0, sd 0.5) | $1.11 ($0.58–$1.39, sd $0.37) | 12.2 min (8.4 min–14.2 min, sd 2.7 min) | 4.7 (4.0–5.0, sd 0.5) | 4.3 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | — | 11 (7–15, sd 3) (0.37 (0.27–0.46, sd 0.08)) | +245/−25 |
-| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 3 | 3/3 | 2.7 (2.0–4.0, sd 0.9) | $1.26 ($0.52–$2.72, sd $1.04) | 10.8 min (7.7 min–17.0 min, sd 4.3 min) | 4.7 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 3.7 (3.0–4.0, sd 0.5) | — | 9 (7–13, sd 3) (0.32 (0.25–0.43, sd 0.08)) | +206/−21 |
-| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 1.0 (1.0–1.0, sd 0.0) | $2.60 ($1.79–$3.62, sd $0.76) | 13.2 min (10.1 min–17.2 min, sd 2.9 min) | 4.3 (3.0–5.0, sd 0.9) | 4.7 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | — | 25 (6–63, sd 27) (0.23 (0.11–0.30, sd 0.08)) | +403/−205 |
-| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 3 | 3/3 | 1.0 (1.0–1.0, sd 0.0) | $2.08 ($1.76–$2.47, sd $0.29) | 12.3 min (11.7 min–12.9 min, sd 0.5 min) | 4.0 (3.0–5.0, sd 0.8) | 4.7 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | — | 8 (5–10, sd 2) (0.38 (0.25–0.55, sd 0.12)) | +175/−12 |
-| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 3 | 3/3 | 1.0 (1.0–1.0, sd 0.0) | $1.68 ($1.38–$2.26, sd $0.41) | 9.4 min (7.6 min–11.3 min, sd 1.5 min) | 3.7 (3.0–4.0, sd 0.5) | 4.7 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | — | 8 (5–9, sd 2) (0.51 (0.33–0.60, sd 0.13)) | +180/−13 |
-| #93 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 0.3 (0.0–1.0, sd 0.5) | $2.22 ($1.59–$3.04, sd $0.61) | 10.8 min (4.9 min–17.7 min, sd 5.3 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.7 (4.0–5.0, sd 0.5) | — | 9 (9–10, sd 0) (0.75 (0.70–0.78, sd 0.04)) | +185/−16 |
-| #93 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $2.95 ($2.12–$4.55, sd $1.13) | 12.1 min (6.1 min–18.7 min, sd 5.1 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 9 (9–9, sd 0) (0.67 (0.45–0.78, sd 0.15)) | +166/−10 |
-| #93 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 3 | 3/3 | 0.3 (0.0–1.0, sd 0.5) | $2.94 ($1.78–$4.09, sd $0.94) | 10.7 min (5.1 min–18.6 min, sd 5.8 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 12 (12–12, sd 0) (0.36 (0.36–0.36, sd 0.00)) | +170/−12 |
+| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 5 | 5/5 | 1.2 (1.0–2.0, sd 0.4) | $0.71 ($0.57–$1.12, sd $0.21) | 7.0 min (6.0 min–8.3 min, sd 1.0 min) | 4.6 (4.0–5.0, sd 0.5) | 4.0 (3.0–5.0, sd 0.9) | 3.4 (2.0–4.0, sd 0.8) | — | 9 (7–11, sd 2) (0.36 (0.27–0.50, sd 0.09)) | +185/−14 |
+| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 5 | 5/5 | 2.2 (1.0–3.0, sd 0.7) | $0.91 ($0.58–$1.39, sd $0.38) | 10.9 min (6.9 min–14.2 min, sd 2.9 min) | 4.8 (4.0–5.0, sd 0.4) | 4.6 (4.0–5.0, sd 0.5) | 3.8 (3.0–4.0, sd 0.4) | — | 10 (7–15, sd 3) (0.37 (0.25–0.50, sd 0.10)) | +213/−20 |
+| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 5 | 5/5 | 2.4 (1.0–4.0, sd 1.0) | $1.26 ($0.52–$2.72, sd $0.82) | 10.6 min (6.2 min–17.0 min, sd 4.3 min) | 4.8 (4.0–5.0, sd 0.4) | 4.8 (4.0–5.0, sd 0.4) | 3.8 (3.0–4.0, sd 0.4) | — | 10 (7–13, sd 2) (0.33 (0.25–0.43, sd 0.07)) | +204/−20 |
+| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 5 | 5/5 | 1.0 (1.0–1.0, sd 0.0) | $2.15 ($1.17–$3.62, sd $0.83) | 11.8 min (7.7 min–17.2 min, sd 3.1 min) | 4.4 (3.0–5.0, sd 0.8) | 4.8 (4.0–5.0, sd 0.4) | 3.8 (3.0–4.0, sd 0.4) | — | 18 (6–63, sd 22) (0.31 (0.11–0.60, sd 0.16)) | +309/−129 |
+| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 5 | 5/5 | 1.0 (1.0–1.0, sd 0.0) | $1.90 ($1.59–$2.47, sd $0.31) | 10.8 min (8.0 min–12.9 min, sd 1.9 min) | 4.0 (3.0–5.0, sd 0.9) | 4.6 (4.0–5.0, sd 0.5) | 3.4 (2.0–4.0, sd 0.8) | — | 18 (5–61, sd 21) (0.37 (0.08–0.67, sd 0.21)) | +310/−127 |
+| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 5 | 5/5 | 1.0 (1.0–1.0, sd 0.0) | $1.98 ($1.38–$2.92, sd $0.58) | 11.5 min (7.6 min–17.4 min, sd 3.3 min) | 4.2 (3.0–5.0, sd 0.7) | 4.8 (4.0–5.0, sd 0.4) | 3.8 (3.0–4.0, sd 0.4) | — | 8 (5–9, sd 1) (0.46 (0.27–0.60, sd 0.14)) | +176/−11 |
+| #93 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 5 | 5/5 | 0.4 (0.0–1.0, sd 0.5) | $2.48 ($1.59–$3.14, sd $0.59) | 10.4 min (4.9 min–17.7 min, sd 4.3 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.6 (4.0–5.0, sd 0.5) | — | 9 (8–10, sd 1) (0.74 (0.67–0.78, sd 0.05)) | +177/−13 |
+| #93 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $3.20 ($1.49–$5.66, sd $1.61) | 12.4 min (6.1 min–18.7 min, sd 5.5 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.2 (4.0–5.0, sd 0.4) | — | 9 (9–9, sd 0) (0.65 (0.45–0.78, sd 0.16)) | +173/−15 |
+| #93 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 5/5 | 0.2 (0.0–1.0, sd 0.4) | $2.36 ($0.91–$4.09, sd $1.08) | 10.1 min (4.4 min–18.6 min, sd 5.4 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 11 (9–12, sd 1) (0.44 (0.36–0.78, sd 0.17)) | +170/−12 |
+| #94 | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-luna` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-sol` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-sol` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-sol` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-terra` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-terra` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-5.6-terra` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-astra` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.27 | 3.4 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +141/−27 |
+| #94 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 1.0 | $0.10 | 2.0 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +145/−27 |
+| #94 | repair-build | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 2 | 2/2 | 0.0 (0.0–0.0, sd 0.0) | $0.11 ($0.10–$0.12, sd $0.01) | 2.0 min (1.9 min–2.1 min, sd 0.1 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +140/−27 |
+| #94 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.31 | 1.9 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +145/−27 |
+| #94 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 1.0 | $0.21 | 1.7 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +145/−27 |
+| #94 | repair-build | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 2 | 0/2 | 1.0 (1.0–1.0, sd 0.0) | $0.32 ($0.29–$0.35, sd $0.03) | 2.1 min (2.0 min–2.3 min, sd 0.2 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +146/−27 |
+| #94 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.46 | 2.4 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +115/−27 |
+| #94 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 0.0 | $0.56 | 3.7 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +139/−27 |
+| #94 | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 2 | 2/2 | 0.0 (0.0–0.0, sd 0.0) | $0.75 ($0.51–$1.00, sd $0.25) | 3.5 min (3.0 min–4.0 min, sd 0.5 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +140/−27 |
+| #94 | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-luna` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-sol` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-sol` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-sol` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-terra` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-terra` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-5.6-terra` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-astra` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 1.0 | $0.40 | 4.4 min | 5.0 | 5.0 | 4.0 | — | 5 (0.38) | +97/−4 |
+| #94 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 2.0 | $0.88 | 5.5 min | 4.0 | 5.0 | 4.0 | — | 6 (0.33) | +154/−3 |
+| #94 | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 2 | 2/2 | 1.5 (1.0–2.0, sd 0.5) | $0.33 ($0.21–$0.44, sd $0.12) | 6.1 min (3.9 min–8.3 min, sd 2.2 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (5–8, sd 2) (0.56 (0.38–0.75, sd 0.19)) | +120/−18 |
+| #94 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 1.0 | $1.58 | 9.0 min | 5.0 | 5.0 | 4.0 | — | 8 (0.75) | +147/−27 |
+| #94 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 1.0 | $1.75 | 8.4 min | 5.0 | 5.0 | 4.0 | — | 8 (0.75) | +149/−27 |
+| #94 | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 1.0 | $1.64 | 14.5 min | 5.0 | 5.0 | 4.0 | — | 8 (0.75) | +142/−27 |
+| #94 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 2.0 | $2.66 | 15.1 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +126/−27 |
+| #94 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 2.0 | $3.32 | 21.3 min | 4.0 | 5.0 | 4.0 | — | 8 (0.75) | +159/−40 |
+| #94 | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 2 | 2/2 | 1.0 (1.0–1.0, sd 0.0) | $2.86 ($1.88–$3.84, sd $0.98) | 17.4 min (11.4 min–23.5 min, sd 6.1 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (6–8, sd 1) (0.63 (0.50–0.75, sd 0.13)) | +135/−15 |
 
 What the columns mean:
 
@@ -180,15 +276,15 @@ What the columns mean:
 | #93 | repair-build | `gpt-6.1-sol` (codex) | with Lore | green ×1 |
 | #93 | repair-build | `gpt-6.1-sol` (codex) | Lore on Utopia | green ×1 |
 | #93 | repair-build | `gpt-6.1-sol` (codex) | without Lore | green ×2 |
-| #93 | repair-build | `gemini-3-flash-preview` (gemini) | with Lore | green ×3 |
-| #93 | repair-build | `gemini-3-flash-preview` (gemini) | Lore on Utopia | green ×1, excluded_harness ×2 |
-| #93 | repair-build | `gemini-3-flash-preview` (gemini) | without Lore | green ×3 |
-| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | with Lore | green ×3 |
-| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | Lore on Utopia | green ×3 |
-| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×2, excluded_harness ×1 |
-| #93 | repair-build | `gemini-4-argon` (gemini) | with Lore | green ×3 |
-| #93 | repair-build | `gemini-4-argon` (gemini) | Lore on Utopia | green ×3 |
-| #93 | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×3 |
+| #93 | repair-build | `gemini-3-flash-preview` (gemini) | with Lore | green ×5 |
+| #93 | repair-build | `gemini-3-flash-preview` (gemini) | Lore on Utopia | green ×2, excluded_harness ×3 |
+| #93 | repair-build | `gemini-3-flash-preview` (gemini) | without Lore | green ×5 |
+| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | with Lore | green ×5 |
+| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | Lore on Utopia | green ×5 |
+| #93 | repair-build | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×4, excluded_harness ×1 |
+| #93 | repair-build | `gemini-4-argon` (gemini) | with Lore | green ×5 |
+| #93 | repair-build | `gemini-4-argon` (gemini) | Lore on Utopia | green ×5 |
+| #93 | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×5 |
 | #93 | tdd-round | `gpt-5.6-luna` (codex) | with Lore | green ×1 |
 | #93 | tdd-round | `gpt-5.6-luna` (codex) | Lore on Utopia | green ×1 |
 | #93 | tdd-round | `gpt-5.6-luna` (codex) | without Lore | green ×2 |
@@ -210,15 +306,33 @@ What the columns mean:
 | #93 | tdd-round | `gpt-6.1-sol` (codex) | with Lore | green ×1 |
 | #93 | tdd-round | `gpt-6.1-sol` (codex) | Lore on Utopia | green ×1 |
 | #93 | tdd-round | `gpt-6.1-sol` (codex) | without Lore | retry_budget ×2 |
-| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | with Lore | green ×3 |
-| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | Lore on Utopia | green ×3 |
-| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | without Lore | green ×3 |
-| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | with Lore | green ×3 |
-| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | Lore on Utopia | green ×3 |
-| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×3 |
-| #93 | tdd-round | `gemini-4-argon` (gemini) | with Lore | green ×3 |
-| #93 | tdd-round | `gemini-4-argon` (gemini) | Lore on Utopia | green ×3 |
-| #93 | tdd-round | `gemini-4-argon` (gemini) | without Lore | green ×3 |
+| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | with Lore | green ×5 |
+| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | Lore on Utopia | green ×5 |
+| #93 | tdd-round | `gemini-3-flash-preview` (gemini) | without Lore | green ×5 |
+| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | with Lore | green ×5 |
+| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | Lore on Utopia | green ×5 |
+| #93 | tdd-round | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×5 |
+| #93 | tdd-round | `gemini-4-argon` (gemini) | with Lore | green ×5 |
+| #93 | tdd-round | `gemini-4-argon` (gemini) | Lore on Utopia | green ×5 |
+| #93 | tdd-round | `gemini-4-argon` (gemini) | without Lore | green ×5 |
+| #94 | repair-build | `gemini-3-flash-preview` (gemini) | with Lore | green ×1 |
+| #94 | repair-build | `gemini-3-flash-preview` (gemini) | Lore on Utopia | excluded_harness ×1 |
+| #94 | repair-build | `gemini-3-flash-preview` (gemini) | without Lore | green ×2 |
+| #94 | repair-build | `gemini-3.1-pro-preview` (gemini) | with Lore | excluded_harness ×1 |
+| #94 | repair-build | `gemini-3.1-pro-preview` (gemini) | Lore on Utopia | excluded_harness ×1 |
+| #94 | repair-build | `gemini-3.1-pro-preview` (gemini) | without Lore | excluded_harness ×2 |
+| #94 | repair-build | `gemini-4-argon` (gemini) | with Lore | green ×1 |
+| #94 | repair-build | `gemini-4-argon` (gemini) | Lore on Utopia | green ×1 |
+| #94 | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×2 |
+| #94 | tdd-round | `gemini-3-flash-preview` (gemini) | with Lore | green ×1 |
+| #94 | tdd-round | `gemini-3-flash-preview` (gemini) | Lore on Utopia | green ×1 |
+| #94 | tdd-round | `gemini-3-flash-preview` (gemini) | without Lore | green ×2 |
+| #94 | tdd-round | `gemini-3.1-pro-preview` (gemini) | with Lore | green ×1 |
+| #94 | tdd-round | `gemini-3.1-pro-preview` (gemini) | Lore on Utopia | green ×1 |
+| #94 | tdd-round | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
+| #94 | tdd-round | `gemini-4-argon` (gemini) | with Lore | green ×1 |
+| #94 | tdd-round | `gemini-4-argon` (gemini) | Lore on Utopia | green ×1 |
+| #94 | tdd-round | `gemini-4-argon` (gemini) | without Lore | green ×2 |
 
 ## What we read in it
 
@@ -236,21 +350,16 @@ _First clean reading, 2026-10-20 01:30: ticket #93, the dod station varied, no L
 
 **Production defects found along the way:** re-cinq/lore#2834 (the tdd-round prompt makes Lore tools mandatory; two Codex models refused to work without them) and re-cinq/ai-agent-subsystem#241 (skills reach Claude pods only).
 
-**tdd-round and repair-build, Gemini models** (ticket #93, three runs per cell, with and without Lore; tdd-round starts from gpt-5.6-terra's clean dod, repair-build from the first red build of the clean Gemini 4 Argon loop):
+**tdd-round and repair-build, Gemini models, five runs per cell** (ticket #93, all three context settings; tdd-round starts from gpt-5.6-terra's clean dod, repair-build from the first red build of the clean Gemini 4 Argon loop):
 
-- **All three Gemini models finish the implementation every time.** 18 of 18 tdd-round loops reached a green build, in 0 to 4 extra rounds.
-- **Gemini 4 Argon writes the best code; Gemini 3 Flash is the cheap option.** Argon: judge 5 / 5 / 4-5 in every run, $2.22 to $2.94 a loop. Flash: 4.7-5 / 5 / 4, $0.80 to $1.26. Gemini 3.1 Pro: 3.7-4.3 / 4.7 / 3.7 at $1.68 to $2.60, below both. For scale, production's Sonnet 4.6 took the same terra dod to green for about $1.70 in the clean wave 1 (one run).
-- **Repairs are cheap and mostly succeed.** A Gemini repair costs $0.20 to $1.22 and takes 2.5 to 3.6 minutes; 17 of 18 repairs left the build green. The one that did not was Gemini 3.1 Pro, the production repair model, without Lore.
-- **Lore makes no consistent difference here.** With Lore, Flash's tdd rounds got cheaper ($0.80 against $1.26) and Argon's too ($2.22 against $2.94), but Gemini 3.1 Pro's got dearer ($2.60 against $1.68), and Flash's repairs cost six times more with Lore ($1.22 against $0.20). With three runs per cell and spreads of $0.40 to $1.10, none of these differences is clear of the noise.
+- **Every Gemini model finishes the implementation every time.** 45 of 45 tdd-round loops reached a green build.
+- **Gemini 4 Argon writes the best code, Gemini 3 Flash is the cheapest, Gemini 3.1 Pro sits below both.** Argon scored 5 for correctness and completeness in all 15 runs, at $2.36–3.20 a loop, with the fewest extra rounds (0–0.4). Flash scored 4.6–4.8 / 4.0–4.8 at $0.71–1.26, needing 1–2.4 extra rounds. 3.1 Pro scored 4.0–4.4 / 4.6–4.8 at $1.90–2.15. For scale, production's Sonnet 4.6 took the same dod to green for about $1.70 in one clean run.
+- **Repairs are cheap and almost always work:** $0.34–0.85, 2.5–6.5 minutes, and 41 of 45 left the build green. The exceptions: Gemini 3 Flash on Lore-on-Utopia (2 of 5) and Gemini 3.1 Pro, the production repair model, without Lore (4 of 5).
+- **Context makes no consistent difference on these two stations.** Across the three settings the means sit inside each other's spread for every model: Argon's tdd-round costs $2.36 without Lore, $2.48 with Lore, $3.20 with Lore on Utopia, with standard deviations of $0.59–1.61. Flash is the one model whose tdd rounds are cheaper with Lore ($0.71 against $1.26 without, fewer extra rounds), but its spread without Lore ($0.52–2.72) covers that.
+- **Lore on Utopia** gives the agent only spec statements and ADRs today (memory, episodes, code and the graph return "no Utopia reader yet"), so it measures Lore switched to Utopia as it stands. It is no worse than the other settings on the tdd round, slower on repairs (5.8–6.6 minutes against 2.6–4.5), and Flash's repairs fail more often on it (3 of 5 left red).
+- **Reading:** on this ticket the branch and the round brief carry what these stations need; neither store measurably helps. Whether context matters is a question for the dod station and for larger tickets, both still to be run.
 
 **Codex models: pending.** The ChatGPT account hit its usage limit at about 02:30, so 67 Codex loops failed in seconds; they were discarded and rerun from 04:05, when the limit reset.
-
-**Lore on Utopia, Gemini models** (the same tdd-round and repair-build cells, three runs each, with Lore's MCP reading Utopia's stores instead of Lore's):
-
-- **What the agent gets from Utopia today is thin.** Through Lore, Utopia answers only `lore_assemble_context`, and only with spec statements and ADRs; memory, episodes, code, the graph, rules and incidents return "no Utopia reader yet", and `lore_search_memory` / `lore_search_context` return nothing. This arm measures Lore switched to Utopia as it stands, not Utopia's potential. The agents still called the Lore tools that read neither store (`lore-query-trace`, `lore_get_ci_failures`) as often as in the Lore arm.
-- **Results are within the noise of the other two settings for the tdd round.** Every tdd-round loop went green (9 of 9). Argon cost $2.95 against $2.94 without Lore and $2.22 with Lore; Gemini 3.1 Pro $2.08 against $1.68 and $2.60; Flash $1.11 against $1.26 and $0.80. Judge scores matched.
-- **One repair cell did worse:** Gemini 3 Flash's repair left the build red in 2 of 3 runs on Utopia, against 0 of 3 in both other settings; its repairs were also cheaper ($0.10), so it gave up sooner rather than tried harder. Argon and 3.1 Pro repaired every time, at about $0.70–0.80 and twice the time of the other settings (7 minutes against 2.5–3.5).
-- **Reading:** on this ticket, Lore's own stores do not measurably help the Gemini models either; the context these stations need is mostly in the branch and the round brief. The stations where context should matter most (dod, on tickets that touch more of the codebase) are still to be run with Lore on Utopia.
 
 ## What would improve it
 

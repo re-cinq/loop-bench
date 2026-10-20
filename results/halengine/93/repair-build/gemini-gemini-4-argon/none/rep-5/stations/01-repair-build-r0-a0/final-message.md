@@ -1,0 +1,3 @@
+Fixed the four `eslint` findings in `src/orchestration/orchestratorHelpers.test.ts`: combined the two `expect` calls in `returns the defined side when one operand is undefined` into a single object assertion (`re-lint/max-expects`) and added `[validated by: ...]` citations for all three `accumulateUsage` unit tests in `specs/hal-engine-config-hooks/spec.md` (`re-lint/require-spec-link`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"cited accumulateUsage tests in specs/hal-engine-config-hooks/spec.md and combined duplicate expect calls in orchestratorHelpers.test.ts"}}

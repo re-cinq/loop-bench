@@ -1,0 +1,3 @@
+I fixed the type error and linting violations in the acceptance test for the `beforeSession` hook. Specifically, I corrected the `PromptBuilder` initialization by using the `identity` property instead of the non-existent `baseSystemPrompt` and consolidated multiple `expect` calls into a single assertion to satisfy the `re-lint/max-expects` rule. I also updated the test citation line number in the `specs/hal-engine-config-hooks/spec.md` file to reflect the refactored test. Local execution of the relevant tests confirmed the fixes.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed PromptBuilder initialization type error and reduced expect calls in acceptance test to satisfy linting rules."}}

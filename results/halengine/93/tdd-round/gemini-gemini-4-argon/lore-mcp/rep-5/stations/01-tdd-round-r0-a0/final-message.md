@@ -1,0 +1,3 @@
+Completed one red-green-refactor round for the first facet in `.lore/dod.md`: replaced `lastUsage` retention with `totalUsage` in `OrchestratorHooks.afterModelResponse` and `chatOrchestrator.ts`, verified with `sums the usage of every round, not only the last` in `src/orchestration/chatOrchestrator.test.ts` (1 red test written and turned green, 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Sum each token field only for provider rounds that report usage, preserving undefined when none do."}}

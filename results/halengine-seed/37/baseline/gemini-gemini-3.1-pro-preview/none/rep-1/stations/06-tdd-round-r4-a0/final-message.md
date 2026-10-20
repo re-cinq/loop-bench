@@ -1,0 +1,3 @@
+Resolved both ESLint errors reported by CI (`re-lint/no-nested-if` in `src/orchestration/chatOrchestrator.test.ts` and `re-lint/declare-near-use` in `src/orchestration/tools/registry.test.ts`), updated the spec anchor line numbers in `specs/hal-engine-tool-input-validation/spec.md`, verified unit tests pass (0 red tests, 0 regressions), formatted, committed, and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve CI eslint errors in chatOrchestrator.test.ts and registry.test.ts and update spec anchor lines","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+Fixed the three ESLint findings reported by CI in `src/orchestration/chatOrchestrator.acceptance.test.ts` (`re-lint/callee-below-caller` and `re-lint/no-vague-names`) and updated the corresponding spec anchor line numbers in `specs/hal-engine-config-hooks/spec.md`. 0 red tests were mine and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve CI ESLint findings in chatOrchestrator.acceptance.test.ts and update spec anchor lines","tdd_next":"acceptance green"}}

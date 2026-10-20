@@ -1,0 +1,3 @@
+I fixed the ESLint errors in `src/orchestration/chatOrchestratorUsage.test.ts` and `src/types/ai.ts` reported by CI. Specifically, I changed the `AggregateUsage` interface to a type alias to avoid the `@typescript-eslint/no-empty-object-type` error and removed an explicit `any` in the usage tests. I also updated the documentation in `specs/hal-engine-architecture/spec.md` and `CLAUDE.md`, and ensured consistency in `src/orchestration/toolBudget.test.ts` and `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` by using the `AggregateUsage` type. All unit tests in the affected files pass locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix lint errors and update usage types","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+Fixed the TypeScript error (`TS2353` on `PromptBuilderConfig`) and ESLint error (`re-lint/max-expects`) in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`, and updated the corresponding spec anchor line number in `specs/hal-engine-config-hooks/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed PromptBuilderConfig property and combined 3 expect calls into 1 in chatOrchestrator.beforeSession.acceptance.test.ts"}}

@@ -1,0 +1,3 @@
+Fixed the four `eslint` findings on `src/orchestration/orchestratorHelpers.test.ts` by combining the two assertions on line 35 into a single object `toEqual` check (`re-lint/max-expects`) and adding the three `[validated by: ...]` spec links to `specs/hal-engine-config-hooks/spec.md` (`re-lint/require-spec-link`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"src/orchestration/orchestratorHelpers.test.ts failed eslint on 3 missing spec links (re-lint/require-spec-link) and 2 expect calls in one test (re-lint/max-expects)"}}

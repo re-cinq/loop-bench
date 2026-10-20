@@ -1,0 +1,7 @@
+Completed one red-green-refactor round for #95:
+
+- **Red → Green**: Added `wraps non-Error rejections with cause preserved while rethrowing the original value` in `src/orchestration/chatOrchestrator.test.ts` (1 red test of ours in the red phase, 0 regressions; all 27 tests in `src/orchestration/chatOrchestrator.test.ts` pass in the green phase while existing `Error`-instance tests remain unedited).
+- **Implementation & Traceability**: Updated `src/orchestration/chatOrchestrator.ts` to call `hooks.onError` on every rejection (`error instanceof Error ? error : new Error(String(error), {cause: error})`), updated `specs/hal-engine-config-hooks/spec.md` and repointed spec anchors, added the `CHANGELOG.md` entry under `## [Unreleased]`, and ticked the facets in `.lore/dod.md`.
+- **Unrelated smell noticed (not acted on)**: `src/orchestration/onErrorNonError.acceptance.test.ts` uses `new Date().toISOString()` on line 12, which may be flagged by `re-lint/no-nondeterministic-tests` in CI.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Coerce caught non-Error rejections to Error with cause preserved for hooks.onError, confirm existing Error-instance tests stay green unedited, and document the change in spec and CHANGELOG.md","tdd_next":"acceptance green"}}

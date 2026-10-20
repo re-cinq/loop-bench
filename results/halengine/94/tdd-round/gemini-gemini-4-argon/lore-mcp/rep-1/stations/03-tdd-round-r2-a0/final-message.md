@@ -1,0 +1,3 @@
+Resolved the two `re-lint/no-duplicate-code` ESLint findings between `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` and `src/orchestration/chatOrchestrator.test.ts` by reusing `answering` and `writeSignalPromptBuilder` from `src/infrastructure/writeSignalTestSupport.ts`, and updated the spec anchor in `specs/hal-engine-config-hooks/spec.md` to `#L7`. 0 red tests were ours and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Remove duplicate test setup between chatOrchestrator.beforeSession.acceptance.test.ts and chatOrchestrator.test.ts and update spec anchor","tdd_next":"acceptance green"}}

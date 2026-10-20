@@ -1,0 +1,3 @@
+Completed the TDD round for wrapping non-`Error` rejections in `chatOrchestrator.ts` so `hooks.onError` receives an `Error` with `cause` set to the raw value while re-throwing the original rejection unchanged (0 regressions, 1 new unit test now green).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Wrap non-Errors in chatOrchestrator.ts catch block to invoke onError with cause while still re-throwing the raw value","tdd_next":"Replace the flaw documentation in specs/hal-engine-config-hooks/spec.md with the new guarantee"}}

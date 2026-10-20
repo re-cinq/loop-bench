@@ -1,0 +1,3 @@
+Resolved all CI findings (`re-lint/max-member-chain` in `src/providers/vertex/vertexProvider.acceptance.test.ts` and `src/providers/vertex/vertexProvider.test.ts`, `re-lint/require-spec-link` / `spec:names` line anchor in `specs/hal-engine-providers/spec.md`, and `CHANGELOG.md` entry), updated the Vertex configuration example and prose in `specs/hal-engine-providers/spec.md`, and bumped the package version MINOR to `0.4.0` in `package.json`. 0 red tests were mine and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update the Vertex configuration example and prose in specs/hal-engine-providers/spec.md, bump the package version MINOR in package.json (0.4.0), and add a CHANGELOG.md entry","tdd_next":"acceptance green"}}

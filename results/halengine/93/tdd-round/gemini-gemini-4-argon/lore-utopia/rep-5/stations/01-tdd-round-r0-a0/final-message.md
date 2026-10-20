@@ -1,0 +1,6 @@
+Completed the red-green-refactor round for aggregating provider usage across tool rounds:
+
+- **Red/Green**: Added a unit test for `accumulateUsage` in `src/orchestration/orchestratorHelpers.test.ts` (1 red test authored, 0 regressions), implemented `accumulateUsage` in `src/orchestration/orchestratorHelpers.ts`, and replaced `lastUsage` in `src/orchestration/chatOrchestrator.ts` with `totalUsage` (including updating `OrchestratorHooks.afterModelResponse`'s parameter name to `totalUsage`).
+- **Traceability & Docs**: Linked the new test and acceptance test in `specs/hal-engine-config-hooks/spec.md`, updated generated doc blocks in `CLAUDE.md` and `specs/hal-engine-architecture/spec.md`, added the migration note in `CHANGELOG.md`, and checked off the completed facets in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with totalUsage and accumulateUsage across reporting rounds; update hooks spec and CHANGELOG","tdd_next":"acceptance green"}}

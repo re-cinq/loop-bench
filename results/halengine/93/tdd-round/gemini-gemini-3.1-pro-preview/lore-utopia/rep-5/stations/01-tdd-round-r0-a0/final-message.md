@@ -1,0 +1,3 @@
+I have completed the single `red-green-refactor` round for the `direct` strategy by adding a failing unit test that checks whether usages across all rounds are summed up when `afterModelResponse` hook is invoked, writing the required code to compute the accumulated token amounts instead of using the last round's `lastUsage`, and verifying the test suite passes on the modified code.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Sum each token field only for provider rounds that report usage, preserving `undefined` when none do."}}

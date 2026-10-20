@@ -1,0 +1,3 @@
+The round ran tests using `npm run test -- src/orchestration/chatOrchestrator.test.ts` to implement the unit test for summing usage across provider calls in a multi-round turn. The acceptance tests were not run as they are judged by CI. 0 red tests were mine (after the fix), and there were 0 regressions. 
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Update the hooks spec and CHANGELOG with the aggregate-usage behavior and its impact on existing consumers."}}

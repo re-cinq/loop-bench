@@ -1,0 +1,7 @@
+Completed one TDD round for the first facet in `.lore/dod.md`:
+
+- **Red**: Added `forwards apiEndpoint to VertexAI when set and omits it when absent` in `src/providers/vertex/vertexProvider.test.ts` and verified it failed (1 red test of mine, 0 regressions).
+- **Green**: Added `apiEndpoint?: string` with its single-line JSDoc to `VertexConfig` and passed `apiEndpoint` to `new VertexAI({...})` when configured in `src/providers/vertex/vertexProvider.ts`, making the unit test pass.
+- **Traceability & Delivery**: Cited the new test in `specs/hal-engine-providers/spec.md`, ticked the first facet in `.lore/dod.md`, ran Prettier, and committed and pushed to `origin/loop-bench/89`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add apiEndpoint?: string to VertexConfig in src/providers/vertex/vertexProvider.ts with JSDoc naming the EU multi-region host as its motivating case, and pass apiEndpoint through to new VertexAI({...}) with no hardcoded hostname in runtime code.","tdd_next":"Update the Vertex configuration example and prose in specs/hal-engine-providers/spec.md (which replaced docs/providers.md) to show apiEndpoint, state that location alone cannot reach the eu multi-region endpoint, and note that apiEndpoint decides where the request goes while location decides what the request claims."}}

@@ -1,0 +1,3 @@
+Moved `hooks.beforeSession` inside the `try` block in `src/orchestration/chatOrchestrator.ts` after adding a failing unit test in `src/orchestration/chatOrchestrator.test.ts` (1 red test written this round, now green; 0 regressions), and updated `specs/hal-engine-config-hooks/spec.md`, `CHANGELOG.md`, and `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts and update spec and CHANGELOG","tdd_next":"acceptance green"}}

@@ -1,0 +1,7 @@
+The round is complete. I read the definition of done and started with the first facet: replacing final-round retention with an explicit `AggregateUsage` contract.
+
+I implemented a failing unit test in `src/orchestration/chatOrchestrator.test.ts` to assert that usage is summed across multiple tool rounds. To make the test pass, I added the `AggregateUsage` interface in `src/types/ai.ts`, updated the `afterModelResponse` hook signature to use it, and introduced aggregation logic inside `processMessageStream`.
+
+After verifying the test was green, I formatted the files, ran the spec anchor repointing script, ticked the facet in `.lore/dod.md`, and committed and pushed the changes. The next round can handle the edge case of preserving `undefined` when no rounds report usage (the second facet), as my current implementation ensures a basic sum but relies on the next facet's test to harden the `undefined` preservation.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Sum each token field only for provider rounds that report usage, preserving `undefined` when none do."}}

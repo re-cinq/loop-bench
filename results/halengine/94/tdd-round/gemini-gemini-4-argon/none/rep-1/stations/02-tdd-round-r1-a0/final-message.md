@@ -1,0 +1,3 @@
+Resolved both CI failures reported on `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (`PromptBuilderConfig` property `identity` for `typecheck` and combining the assertions into one `expect` for `re-lint/max-expects`), updated the shifted line anchor in `specs/hal-engine-config-hooks/spec.md`, formatted with Prettier, verified `src/orchestration/chatOrchestrator.test.ts` and spec link checks, and pushed. 0 red tests were regressions; the 2 CI check failures (`typecheck` and `eslint`) were in our branch's acceptance test.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix typecheck and eslint max-expects failures in chatOrchestrator.beforeSession.acceptance.test.ts","tdd_next":"acceptance green"}}

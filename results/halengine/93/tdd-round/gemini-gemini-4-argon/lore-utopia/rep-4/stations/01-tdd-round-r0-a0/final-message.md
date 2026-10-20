@@ -1,0 +1,3 @@
+Completed the TDD round for accumulating `totalUsage` across every provider call in a turn and passing the summed total (or `undefined` when no round reports usage) to `afterModelResponse` (1 red test written and turned green; 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with totalUsage accumulation across reporting provider rounds and update hooks spec and CHANGELOG","tdd_next":"acceptance green"}}

@@ -1,0 +1,6 @@
+Completed the remaining facets and resolved the `eslint` and `changelog` CI failures:
+- Replaced the measured-semantics flaw in `specs/hal-engine-config-hooks/spec.md` with the new `onError` wrapping guarantee and linked all three acceptance tests, re-anchoring shifted citations in `specs/hal-engine-architecture/spec.md` and `specs/hal-engine-tool-input-validation/spec.md`.
+- Refactored `src/orchestration/chatOrchestrator.acceptance.test.ts` to extract `runRejectingTurn` so each acceptance test has a single `expect`, no duplicate code, and no bare `eslint-disable`, and strengthened `src/orchestration/chatOrchestrator.test.ts` to verify `Error` pass-through without re-wrapping (`cause` undefined) and wrapped `Error` `message`/`stack`/`cause`.
+- Added the `CHANGELOG.md` entry under `## [Unreleased]` / `### Fixed` and ticked all facets in `.lore/dod.md` (0 red tests of ours, 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace the flaw documentation in specs/hal-engine-config-hooks/spec.md with the new guarantee and add CHANGELOG entry","tdd_next":"acceptance green"}}

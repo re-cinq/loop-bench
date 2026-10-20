@@ -1,0 +1,6 @@
+Completed one red-green-refactor round for ticket #94:
+- Added a unit test in `src/orchestration/chatOrchestrator.test.ts` (`runs onError then afterSession when it throws, and still rejects to the caller`), verified it failed (1 red test of ours, 0 regressions), then moved `hooks?.beforeSession(session)` inside the `try` block in `src/orchestration/chatOrchestrator.ts` and verified the test passed.
+- Updated `specs/hal-engine-config-hooks/spec.md` to promote the `beforeSession` error-handling guarantee under `Installing hooks through config` (recording what `afterSession` can assume about the aborted turn), removed the old flaw from `Measured semantics — out of scope`, and repointed spec anchors across affected specs.
+- Added the `### Fixed` entry and migration note under `## [Unreleased]` in `CHANGELOG.md` and ticked the completed facets in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document in CHANGELOG","tdd_next":"acceptance green"}}

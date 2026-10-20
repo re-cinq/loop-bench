@@ -1,0 +1,3 @@
+I have fixed the lint errors. The multi-expect test was split into two separate assertions, and the corresponding spec statements were updated to correctly include inline validation links for each test case by combining them into a single comma-separated block.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"added missing spec links to accumulateUsage tests and fixed max-expects rule"}}

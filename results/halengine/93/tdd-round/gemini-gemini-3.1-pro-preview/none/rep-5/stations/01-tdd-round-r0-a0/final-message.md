@@ -1,0 +1,3 @@
+I have completed the TDD round for aggregating usage metadata across tool rounds. I introduced the `aggregateProviderUsage` helper and the `AggregateUsage` contract to fulfill the summation and type definition facets, then wired them into `chatOrchestrator.ts`. I also updated `CHANGELOG.md` to note the changes for existing consumers (the hooks spec was already correctly phrased from a prior commit in this branch). The `dod.md` checklist has been updated, formatted, and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"acceptance green"}}

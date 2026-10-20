@@ -1,0 +1,3 @@
+I have fixed the linting and spec coverage link issues. The `accumulateUsage` test with multiple `expect` calls was split into two tests as required by the `max-expects` rule. The corresponding spec links were added to `specs/hal-engine-config-hooks/spec.md`, correctly linking all four test cases, and placed within a single trailing parenthetical block.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"eslint require-spec-link and max-expects on accumulateUsage"}}

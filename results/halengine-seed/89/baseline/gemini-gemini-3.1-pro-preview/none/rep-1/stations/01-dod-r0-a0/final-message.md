@@ -1,0 +1,7 @@
+The ticket explicitly demands an acceptance test that asserts the `apiEndpoint` value reaches a mocked SDK constructor, and that the exact value `aiplatform.eu.rep.googleapis.com` is used. However, the non-negotiable rules for this environment forbid the use of mocks and stubs, requiring all acceptance tests to exercise real values.
+
+When using real values, the Google Vertex API returns an identical 403 `PERMISSION_DENIED` error whether the request is routed to the default single-region endpoint or the `aiplatform.eu.rep.googleapis.com` multi-region endpoint. Without mocking the SDK or intercepting network requests, it is impossible to observe which endpoint the SDK actually attempted to reach.
+
+Since the ticket asks for something that is unobservable under the required testing constraints (no mocks), I am parking the ticket for a human to adjust the acceptance criteria.
+
+LORE_NODE_RESULT: {"outcome":"changes_requested","extras":{"dod_blocked":"The ticket requires asserting against a mocked SDK constructor and observing 'aiplatform.eu.rep.googleapis.com', but acceptance tests must exercise real values without mocks; since the real API returns identical 403 errors for both endpoints, this is unobservable. Please allow testing via a dummy host that produces distinct network errors, or extract the SDK into an observable seam."}}

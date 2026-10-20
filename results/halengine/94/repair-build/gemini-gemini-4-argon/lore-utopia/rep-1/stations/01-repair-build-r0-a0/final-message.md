@@ -1,0 +1,3 @@
+Fixed the `typecheck` and `eslint` failures in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` by replacing invalid `PromptBuilderConfig` properties with `identity` and `responseGuidelines`, consolidating the 3 `expect` calls into a single `toEqual` assertion to satisfy `re-lint/max-expects`, and updating the corresponding test citation anchor in `specs/hal-engine-config-hooks/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced invalid PromptBuilderConfig properties and combined three expects into one in chatOrchestrator.beforeSession.acceptance.test.ts"}}
