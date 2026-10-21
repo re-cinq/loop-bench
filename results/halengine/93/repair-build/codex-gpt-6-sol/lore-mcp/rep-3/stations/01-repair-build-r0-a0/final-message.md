@@ -1,0 +1,3 @@
+Fixed the four CI-reported lint findings by linking the usage helper tests to the spec and combining the test’s two assertions. Prettier passed for the changed files. Commit `d70998b` is pushed, and the branch is up to date with `origin/main`. CI has not yet judged this push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed missing spec links and the excess assertion in usage helper tests"}}
