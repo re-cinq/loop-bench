@@ -496,7 +496,7 @@ async function writeTicketDiffs(config: ExperimentConfig, ticket: ExperimentConf
       ...(await Promise.all(ticketLoops.map(async (loop) => {
         const bundle = join(paths.resultsDir, loop.cell_path, "branch.bundle");
 
-        await git(["fetch", "--quiet", bundle, `refs/heads/loop-bench/${ticket.number}:refs/loops/${loop.loop_id}`], scratch);
+        await git(["-c", "gc.auto=0", "-c", "maintenance.auto=false", "fetch", "--quiet", bundle, `refs/heads/loop-bench/${ticket.number}:refs/loops/${loop.loop_id}`], scratch);
 
         return { id: loop.loop_id, headSha: await git(["rev-parse", `refs/loops/${loop.loop_id}`], scratch), rawPatch: join(paths.resultsDir, loop.cell_path, "diff.patch") };
       }))),
@@ -514,7 +514,8 @@ async function writeTicketDiffs(config: ExperimentConfig, ticket: ExperimentConf
       }
     }
   } finally {
-    rmSync(scratch, { recursive: true, force: true });
+    // A fetch may leave git's own background housekeeping writing into the scratch repo for a moment.
+    rmSync(scratch, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }
 
