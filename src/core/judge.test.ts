@@ -29,4 +29,11 @@ describe("buildJudgePrompt", () => {
     expect(prompt).toContain(`${"r".repeat(10)}\n...(truncated 10 characters)`);
     expect(prompt).not.toContain("definition of done");
   });
+
+  it("writes a hunk header and a decorator without an at sign, which gemini-cli would read as a file", () => {
+    const prompt = buildJudgePrompt({ ticket: "t", referenceDiff: "@@ -1 +1 @@\n@Injectable()", candidateDiff: "c", dodMarkdown: null, diffCapChars: 100 });
+
+    expect(prompt).toContain("## -1 +1 ##\n(at)Injectable()");
+    expect(prompt).not.toContain("@");
+  });
 });

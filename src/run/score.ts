@@ -118,7 +118,7 @@ export async function scoreJudge(input: { config: ExperimentConfig; paths: Bench
     diffCapChars: input.config.judge.diff_cap_chars,
   });
   const judge = input.config.judge;
-  const homeDir = join(input.paths.runsDir, `judge-home-${Date.now()}`);
+  const homeDir = join(input.paths.runsDir, `judge-home-${process.pid}-${Date.now()}`);
   const workspaceDir = join(homeDir, "empty");
 
   mkdirSync(workspaceDir, { recursive: true });

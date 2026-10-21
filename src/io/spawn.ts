@@ -24,7 +24,17 @@ export interface SpawnResult {
 export function runProcess(spec: SpawnSpec): Promise<SpawnResult> {
   return new Promise((resolve) => {
     const startedAt = Date.now();
-    const child = spawn(spec.bin, spec.args, { cwd: spec.cwd, env: spec.env, stdio: ["pipe", "pipe", "pipe"] });
+    // Its own process group, so a timeout can end everything the CLI started: gemini relaunches itself as a child that outlives a killed launcher, at several GB.
+    const child = spawn(spec.bin, spec.args, { cwd: spec.cwd, env: spec.env, stdio: ["pipe", "pipe", "pipe"], detached: true });
+    const killGroup = (signal: NodeJS.Signals): void => {
+      try {
+        if (child.pid !== undefined) {
+          process.kill(-child.pid, signal);
+        }
+      } catch {
+        // the group is already gone
+      }
+    };
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
     const stdoutFile = spec.stdoutPath ? createWriteStream(spec.stdoutPath) : null;
@@ -32,8 +42,8 @@ export function runProcess(spec: SpawnSpec): Promise<SpawnResult> {
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill("SIGTERM");
-      setTimeout(() => child.kill("SIGKILL"), 10_000).unref();
+      killGroup("SIGTERM");
+      setTimeout(() => killGroup("SIGKILL"), 10_000).unref();
     }, spec.timeoutMs);
 
     child.stdout.on("data", (chunk: Buffer) => {
@@ -50,6 +60,7 @@ export function runProcess(spec: SpawnSpec): Promise<SpawnResult> {
     });
     child.on("close", (code) => {
       clearTimeout(timer);
+      killGroup("SIGKILL");
       stdoutFile?.end();
       stderrFile?.end();
       resolve({ exitCode: code, timedOut, stdout: Buffer.concat(stdout).toString(), stderr: Buffer.concat(stderr).toString(), wallMs: Date.now() - startedAt });

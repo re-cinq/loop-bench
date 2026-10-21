@@ -11,6 +11,7 @@ import { ciFeedbackOf, handoffOf, roundBriefOf, type CheckResult } from "./core/
 import { diffOf, git } from "./workspace/git.js";
 import { normalizedDiff, prettierBinIn } from "./run/normalize-diff.js";
 import { ensureSitePrettier } from "./run/site-deps.js";
+import { finishedLoopsOnDisk, parseShard, toJudge } from "./run/score-missing.js";
 import { enforce } from "./core/enforce.js";
 import { ContextModeSchema, HarnessSchema, StationSchema, type ContextMode, type Harness, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
@@ -46,6 +47,7 @@ const USAGE = `loop-bench <command> [options]
   run         --experiment <file> [filters]   run loops; skips cells whose loop.json exists (use --force)
   make-artifact --experiment <file> --ticket <n> --kind dod|red --from-cell <dir>
   score       --experiment <file> [filters]   dod red/green check + judge on finished loops
+  score --missing [--shard i/n]               judge only the finished loops that have no judge score, found on disk
   analyze     --experiment <file>             transcript metrics per station visit -> analysis.json
   propose     --experiment <file> --station <s> [--worst 5]
   report      --experiment <file>             rewrite results/<experiment>/REPORT.md and print it
@@ -81,6 +83,8 @@ async function main(argv: readonly string[]): Promise<void> {
       parallel: { type: "string", default: "1" },
       "per-harness": { type: "string" },
       exclude: { type: "string" },
+      missing: { type: "boolean", default: false },
+      shard: { type: "string" },
     },
   });
   const config = (): ExperimentConfig => loadExperiment(values.experiment);
@@ -98,7 +102,7 @@ async function main(argv: readonly string[]): Promise<void> {
     case "make-artifact":
       return makeArtifact(config(), values.ticket, values.kind, values["from-cell"]);
     case "score":
-      return scoreSelected(config(), selected());
+      return values.missing ? scoreMissingJudges(config(), values.shard) : scoreSelected(config(), selected());
     case "analyze":
       return void analyzeAll(config());
     case "propose":
@@ -304,24 +308,44 @@ function redCut(visits: readonly Visit[]): { sha: string; brief: string } | null
   return null;
 }
 
+async function scoreOne(config: ExperimentConfig, ticket: { number: number; title: string; ticket_file: string; base_sha: string; merge_sha: string; reference_pr: number }, cellDir: string, record: LoopRecord, onlyJudge: boolean): Promise<void> {
+  const ranDod = record.mode !== "ofat" || record.varied_station === "dod";
+  const dodCheck =
+    ranDod && !(onlyJudge && record.dod_check !== null)
+      ? await scoreDod({ config, paths, ticket, cellDir, testCommand: (files) => `node --experimental-vm-modules node_modules/jest/bin/jest.js --runTestsByPath ${files.map((file) => `'${file}'`).join(" ")}` })
+      : null;
+  const judge = await scoreJudge({ config, paths, ticket, cellDir });
+  const scored = withScores(record, dodCheck, judge);
+
+  writeLoopJson(cellDir, scored);
+  appendRecord(paths.resultsDir, config.id, scored);
+  log(`[loop-bench] scored ${relative(paths.resultsDir, cellDir)}: dod ${dodCheck ? `red=${dodCheck.red_on_base} green=${dodCheck.green_with_reference}` : "kept"}, judge ${judge ? `${judge.correctness}/${judge.completeness_vs_ticket}/${judge.closeness_to_reference}` : "—"}`);
+}
+
 async function scoreSelected(config: ExperimentConfig, loops: readonly PlannedLoop[]): Promise<void> {
   for (const loop of loops) {
     const cellDir = join(paths.resultsDir, cellPath(loop));
     const record = readLoopJson(cellDir);
 
-    if (!record) {
+    if (record) {
+      await scoreOne(config, loop.ticket, cellDir, record, false);
+    }
+  }
+}
+
+/** Judges every finished loop that has no judge score, found on disk, optionally one shard of them: for loops that finished while a login was out or came from another machine. */
+async function scoreMissingJudges(config: ExperimentConfig, shardText: string | undefined): Promise<void> {
+  const todo = toJudge(finishedLoopsOnDisk(paths.resultsDir, config.id), parseShard(shardText));
+
+  log(`[loop-bench] ${todo.length} loops without a judge score in this shard`);
+  for (const { cellDir, record } of todo) {
+    const ticket = config.tickets.find((candidate) => candidate.number === record.ticket);
+
+    if (!ticket) {
+      log(`[loop-bench] no ticket #${record.ticket} in the experiment, skipping ${relative(paths.resultsDir, cellDir)}`);
       continue;
     }
-    const ranDod = record.mode !== "ofat" || record.varied_station === "dod";
-    const dodCheck = ranDod
-      ? await scoreDod({ config, paths, ticket: loop.ticket, cellDir, testCommand: (files) => `node --experimental-vm-modules node_modules/jest/bin/jest.js --runTestsByPath ${files.map((file) => `'${file}'`).join(" ")}` })
-      : null;
-    const judge = await scoreJudge({ config, paths, ticket: loop.ticket, cellDir });
-    const scored = withScores(record, dodCheck, judge);
-
-    writeLoopJson(cellDir, scored);
-    appendRecord(paths.resultsDir, config.id, scored);
-    log(`[loop-bench] scored ${cellPath(loop)}: dod ${dodCheck ? `red=${dodCheck.red_on_base} green=${dodCheck.green_with_reference}` : "—"}, judge ${judge ? `${judge.correctness}/${judge.completeness_vs_ticket}/${judge.closeness_to_reference}` : "—"}`);
+    await scoreOne(config, ticket, cellDir, record, true);
   }
 }
 

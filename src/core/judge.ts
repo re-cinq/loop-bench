@@ -13,7 +13,7 @@ export interface JudgeInput {
 }
 
 export function buildJudgePrompt(input: JudgeInput): string {
-  return `You are grading an attempt to implement a GitHub issue. You see the issue, the diff of the pull request a human team merged for it (the reference), and the diff an automated agent produced on the same base commit (the candidate). Grade the candidate, not the reference.
+  return withoutFileReferences(`You are grading an attempt to implement a GitHub issue. You see the issue, the diff of the pull request a human team merged for it (the reference), and the diff an automated agent produced on the same base commit (the candidate). Grade the candidate, not the reference.
 
 Score each criterion 1 to 5:
 - correctness: does the candidate's code do what it claims without bugs, regressions or broken tests? 5 = would merge as is; 1 = wrong or broken.
@@ -38,7 +38,12 @@ ${cap(input.referenceDiff, input.diffCapChars)}
 \`\`\`diff
 ${cap(input.candidateDiff, input.diffCapChars)}
 \`\`\`
-${input.dodMarkdown ? `\n## The candidate's own definition of done (.lore/dod.md)\n\n${cap(input.dodMarkdown, 8000)}\n` : ""}`;
+${input.dodMarkdown ? `\n## The candidate's own definition of done (.lore/dod.md)\n\n${cap(input.dodMarkdown, 8000)}\n` : ""}`);
+}
+
+/** gemini-cli reads every `@path` in a prompt as a file to include, and hangs on the hundreds a diff's `@@` hunk headers and decorators make. */
+function withoutFileReferences(prompt: string): string {
+  return prompt.replaceAll("@@", "##").replaceAll("@", "(at)");
 }
 
 function cap(text: string, max: number): string {
