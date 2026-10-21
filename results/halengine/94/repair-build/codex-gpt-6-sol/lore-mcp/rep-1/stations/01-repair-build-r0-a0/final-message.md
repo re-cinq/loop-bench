@@ -1,0 +1,3 @@
+Fixed both reported CI findings in the acceptance test: the prompt config now uses `identity`, and one assertion checks the rejection, `onError`, and `afterSession`. Formatted the file, committed and pushed the fix. The branch is up to date with `main` and its remote; CI has not judged the new commit yet. I did not run the typecheck or linter locally, as instructed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed the acceptance test’s invalid prompt config and lint-rejected assertions"}}

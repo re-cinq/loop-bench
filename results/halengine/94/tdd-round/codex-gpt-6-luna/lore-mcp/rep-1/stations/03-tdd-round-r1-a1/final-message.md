@@ -1,0 +1,5 @@
+I’m blocked before editing. The CI report says the acceptance test does not typecheck: its `PromptBuilder` config includes `baseSystemPrompt`, which is not a valid `PromptBuilderConfig` field. The instructions say not to edit an acceptance test to make it pass and to stop if it is wrong. I also couldn’t get the required coverage trace: Lore returned 403 for the trace query.
+
+I made no changes and ran no tests. The previous CI report also lists lint, spec-name, and changelog failures, but its lint details are truncated in `round-brief.md`, and Lore could not provide the full report. I can’t safely complete this round with those findings unresolved.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test has an invalid PromptBuilder config and must not be edited; Lore also denied the required trace query (403)."}}
