@@ -1,0 +1,3 @@
+Fixed both reported findings and updated the spec’s test link. The targeted acceptance test passes; changed files are formatted. Pushed `4eaf370`, confirmed main is merged and the branch is fully pushed. CI will verify lint and types.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Corrected unsupported prompt configuration and consolidated acceptance assertions; targeted test passes"}}

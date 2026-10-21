@@ -1,0 +1,3 @@
+Fixed both CI findings in the acceptance test: the `PromptBuilder` config now uses `identity`, and one assertion checks the rejection and both hooks. Prettier and `git diff --check` passed. I did not run typecheck or ESLint, as instructed; CI will verify the push. Commit `a8e705f` is pushed, the branch is up to date with `origin/main`, and the working tree is clean.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Acceptance test used unsupported PromptBuilder fields and exceeded the one-assertion lint limit"}}

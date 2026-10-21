@@ -1,0 +1,3 @@
+Fixed all four reported lint findings: linked the three usage helper tests to the spec and combined the two assertions flagged by CI. Formatted the changed files, committed, and pushed the branch. It is up to date with `origin/main` and its upstream. CI has not judged the new commit yet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Usage helper tests now have spec links and the flagged test has one assertion"}}

@@ -1,0 +1,3 @@
+This round is blocked by the acceptance test. It constructs `PromptBuilder` with fields its `PromptBuilderConfig` does not accept, so CI cannot typecheck it. Correcting the fixture would require editing an acceptance test, which the ticket explicitly forbids. I made no changes and ran no tests. CI also reported two lint findings and a missing changelog entry; those remain unresolved. Red tests this round: 0 mine, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test uses invalid PromptBuilderConfig fields; correcting it requires editing the acceptance test, which the ticket forbids."}}

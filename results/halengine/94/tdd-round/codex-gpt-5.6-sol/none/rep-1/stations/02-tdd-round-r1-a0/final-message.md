@@ -1,0 +1,3 @@
+Blocked before editing: the acceptance test itself violates the repository’s required API and lint contract (`PromptBuilderConfig` and one-expect maximum). The instructions prohibit editing an acceptance test and require stopping when it is wrong. No local tests ran; no commit or push was made. Red tests this round: 0 ours, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test is invalid under the repository's TypeScript and ESLint contracts, but editing acceptance tests is prohibited."}}
