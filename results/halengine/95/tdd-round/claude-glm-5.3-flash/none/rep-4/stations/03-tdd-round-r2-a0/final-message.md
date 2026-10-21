@@ -1,0 +1,13 @@
+Round delivered. Both commits are pushed and the branch is in sync with its upstream.
+
+**Done this round**
+1. **CI finding owed first** — `re-lint/callee-below-caller` on ba941a4: `stringifyOrNull` moved below its caller `readableMessage` (`src/orchestration/chatOrchestrator.ts:337`), a pure code move. Verified behaviour-preserving with the unit suite that covers the edited file: `chatOrchestrator.test.ts` — **27 passed**.
+2. **Facet closed** — acceptance coverage for a rejection with `undefined` (ticket criterion 2): `calls onError with an Error carrying a readable message when the stream rejects with undefined` in `src/orchestration/onErrorNonError.acceptance.test.ts:75`, mirroring its plain-object sibling (`onError` once with an `Error` carrying a readable `message`, `afterSession` after, caller still receives the `undefined` rejection). The spec statement now names `undefined` and cites it; the new `it(` sits at L75, and every other anchor is unchanged (repoint run: 601 up to date, 0 unresolved). dod.md: both "Done when these pass" boxes ticked (CI's Test job passed them at ba941a4 — the round brief named only eslint), the `undefined` facet ticked, and a new unchecked facet records the CI-gates verdict this push owes.
+
+**Red tests:** 0 mine, 0 regressions — the round brief's verdict named only the eslint error, no failing tests.
+
+**Test honesty:** this pod ran no acceptance test — the guard holds the dod-listed file for CI, and I did not evade it. The new test was born green by construction: the behaviour shipped in an earlier round and is pinned at unit level by the `nothing: await turn(undefined)` case inside the 27 passing unit tests. CI is the judge of the acceptance file on this push.
+
+**Out-of-scope smells noticed, not acted on:** `saveSession` (end of `chatOrchestrator.ts`) still coerces with its own `error instanceof Error ? error.message : String(error)` now that `asError`/`readableMessage` exist — unifying them is a behaviour change in a log line, own round. The `turnOutcome` helper and `chatOrchestrator.test.ts`'s `turn` closure project the same observation shape — a third case would justify promoting it into `rejectingProviderTestSupport.ts`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"acceptance coverage for a rejection with undefined (criterion 2) + the owed eslint callee-below-caller repair","tdd_next":"CI gates green on this push (build/typecheck/eslint/prettier:check); if green, acceptance green"}}

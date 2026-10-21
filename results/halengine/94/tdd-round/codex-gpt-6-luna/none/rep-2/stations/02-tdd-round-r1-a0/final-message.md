@@ -1,0 +1,3 @@
+I made no changes and ran no tests. The CI verdict reports a type error in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`: its `PromptBuilder` config uses `baseSystemPrompt`, which `PromptBuilderConfig` does not define. The ticket says to stop if an acceptance test is wrong, and forbids editing acceptance tests. I also could not run the required `lore-query-trace` because no lore tools are available in this session. I did not commit or push.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The listed acceptance test has an invalid PromptBuilder config, but the ticket forbids editing acceptance tests."}}

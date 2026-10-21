@@ -1,0 +1,1 @@
+I’ll read the round brief first if present, then the branch’s DoD and ticket, and follow the listed strategy exactly.

@@ -1,0 +1,3 @@
+I’m blocked before the round can proceed. The required `lore-query-trace` and `lore_get_ci_failures` tools aren’t available in this session, and `lore-query-trace` isn’t installed in the checkout. I can’t perform the required coverage check before editing or retrieve the missing `test` and `spec-names` failure details from CI. I made no changes, ran no tests, and did not commit or push.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore trace and CI failure details are unavailable; cannot safely start the one-round change or repair all reported CI findings."}}

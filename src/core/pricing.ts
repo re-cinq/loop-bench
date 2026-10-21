@@ -3,6 +3,7 @@
 //   Anthropic: the Claude API model table (claude.com pricing).
 //   Google: https://ai.google.dev/gemini-api/docs/pricing (gemini-4-argon at its price from 2026-12-01, not the launch price).
 //   OpenAI: https://developers.openai.com/api/docs/pricing, Standard tier, <=272K input (gpt-5.6-sol at its pre-promotion $5/$30, not the promotion running through 2026-11-21).
+//   Z.ai: https://docs.z.ai/guides/overview/pricing, read 2026-10-20 (cached input storage is free for a limited time; the bench sees no cache writes from GLM).
 import type { Harness } from "./harness-names.js";
 import type { Usage } from "./usage.js";
 
@@ -25,6 +26,9 @@ export const MARKET_PRICES: Record<Harness, Record<string, PricePerMillion>> = {
     "claude-haiku-5-5": anthropic(0.5, 2.5, 0.05),
     "claude-sonnet-4-6": anthropic(3, 15, 0.3),
     "claude-haiku-4-5-20251001": anthropic(1, 5, 0.1),
+    // GLM runs through the claude CLI pointed at z.ai's Anthropic-compatible endpoint.
+    "glm-5.3": { input: 1.4, output: 4.4, cacheRead: 0.26 },
+    "glm-5.3-flash": { input: 0.15, output: 0.5, cacheRead: 0.03 },
   },
   gemini: {
     "gemini-4-argon": { input: 4, output: 20, cacheRead: 0.2 },

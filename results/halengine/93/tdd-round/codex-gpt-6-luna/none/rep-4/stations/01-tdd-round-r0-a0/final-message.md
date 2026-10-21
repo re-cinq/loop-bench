@@ -1,0 +1,3 @@
+I’m blocked before the red phase: the required `lore-query-trace` call (and `lore_get_ci_failures`, since there is no round brief) is unavailable in this environment. I made no edits and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required Lore trace and CI verdict tools are unavailable, so I cannot check existing coverage or the previous push’s failures before editing."}}

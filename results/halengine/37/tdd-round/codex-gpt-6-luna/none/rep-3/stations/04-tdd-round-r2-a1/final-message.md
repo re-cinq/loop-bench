@@ -1,0 +1,5 @@
+Added and pushed **`throws unchanged for an unknown tool name`**, with a spec link and DoD update. The single test passed; formatting completed. Commit: `1b32760`. The branch is synced with `origin`, and `main` was already up to date.
+
+This round added a green characterization test; it did not have a red phase or require a production change. The Lore trace query was unavailable. CI’s failure brief was truncated before the failing test details, so I couldn’t determine whether those failures were regressions. **Tests written this round: 1; regressions identified: unknown.** The remaining registry/orchestrator tests and documentation work stay open.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Pin unchanged Unknown tool error contract with a registry unit test and spec link","tdd_next":"remaining registry and orchestrator tests, documentation updates, and spec links"}}

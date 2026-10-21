@@ -1,0 +1,5 @@
+Added Ajv validation before tool execution. Missing required properties now return a sanitized `ToolResponse` without calling the executor. The new focused test passed; formatting was applied, and commit `419c9e0` was pushed. The branch is up to date with `origin/main`.
+
+This round’s test result: **1 authored test passed; 0 regressions were run or reported.** CI acceptance tests were not run here. Remaining facets include compile caching, broader tests, docs, and release updates. Lore tracing tools were unavailable, so I could not query existing coverage. No unrelated smells were acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Return a required-property schema rejection without invoking the executor","tdd_next":"Compile and cache static and function-valued tool schema validators"}}

@@ -1,0 +1,3 @@
+Fixed both stale spec citation line numbers reported by CI. The repair is committed as `7df5828`, pushed, and the branch is up to date with its upstream. No tests were run in this round; the repair only changes documentation links. No regressions were reported in the brief, and I wrote no tests.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair the two stale spec citation anchors reported by CI","tdd_next":"acceptance green"}}

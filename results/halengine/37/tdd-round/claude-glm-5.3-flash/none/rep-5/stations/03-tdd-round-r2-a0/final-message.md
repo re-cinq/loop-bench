@@ -1,0 +1,13 @@
+The round is pushed. Summary:
+
+**What this round did** (commit `5a81c44`, pushed, branch clean and up to date with its base — origin/main hasn't moved, merge was a no-op):
+
+- **CI findings from `0e881a8`**: the typecheck errors and the jest `does not provide an export named 'Ajv'` failure both trace to how `registry.ts` took its `ajv` dependency. I could not reproduce either against the committed tree (both `import {Ajv}` and `import Ajv` typecheck here, and the suite passes under this pod's jest), so I made the module immune to both failure modes: ajv now loads through `createRequire` behind local structural types, and the error formatter reads both ajv-8 (`instancePath`) and ajv-6 (`dataPath`) shapes. Also caught while re-reading: a stale `ValidateFunction` annotation the import removal orphaned — exactly the class of error only CI's build would have named. The eslint duplicate-code finding is fixed by extracting a registration helper in `registry.test.ts`.
+- **The facet**: added the unknown-tool, compile-once (post-register schema mutation, ten `execute` calls) and per-call-schema unit tests, plus the `chatOrchestrator.test.ts` rejection-retry loop test; linked the three previously uncited spec statements and a new orchestrator-loop statement, and set the spec to `Shipped`. Docs done: `example/weather-tool.ts` (no more casts-and-'Unknown'), `docs/adding-a-tool.md` (block regenerated, executor guidance rewritten), `README.md`, `.specify/spec.md`, ADR-002. `.lore/dod.md` facet ticked. The no-value-leak check stays with the acceptance suite, which already asserts it — no duplicate unit test added.
+- **Tests I wrote, run by file**: `registry.test.ts` 5/5 green, `chatOrchestrator.test.ts` 23/23 green. No acceptance test was run or edited.
+
+**Red tests**: 0 of the CI-named failures were in tests I wrote; 0 regressions from my diff that I could observe. One CI finding I could not act on: `providerFactory.test.ts:48` — the `new VertexAI({project: 'p', ...})` throw. The exact call constructs fine in this pod with the same lockfile, and this branch touches nothing under `src/providers`. If the next verdict still names it, it needs CI-side evidence.
+
+**Unrelated smells noticed, not acted on**: the Vertex arm's unit test constructs a real SDK client (environment-coupled, and `@google-cloud/vertexai` prints a June-2026 deprecation warning on every construction — the newer `@google/genai` provider branch supersedes it); and `registry.test.ts`'s rejection tests emit warn-level log lines to console because they don't install a quiet logger.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"facet 4: remaining unit tests, spec links and docs for tool input validation","tdd_next":"acceptance green"}}

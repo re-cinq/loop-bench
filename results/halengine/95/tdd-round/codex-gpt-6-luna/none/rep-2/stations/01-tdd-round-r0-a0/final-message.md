@@ -1,0 +1,3 @@
+I’m stuck before the red phase: `lore-query-trace` and `lore_get_ci_failures` aren’t available in this environment, and there’s no `lore` CLI. The required coverage and previous CI verdict are unknown, so I can’t safely edit the symbol or claim a completed round. I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore-query-trace and lore_get_ci_failures interfaces are unavailable, so I cannot check existing coverage or the previous CI verdict before editing."}}

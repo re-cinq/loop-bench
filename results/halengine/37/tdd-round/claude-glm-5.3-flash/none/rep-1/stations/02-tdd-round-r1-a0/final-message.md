@@ -1,0 +1,13 @@
+Round complete and pushed. Summary:
+
+**Round brief findings (all four red checks repaired, committed as `f08994c`):**
+- **typecheck** — `new Ajv(...)` wasn't constructable under `NodeNext` with ajv's ESM-style declarations; fixed by importing the class as a named binding (`import {Ajv} from 'ajv'`). `npx tsc --noEmit` now exits 0 on this tree (sanctioned: typecheck was a named failed step; it ran in seconds).
+- **eslint (8 findings)** — helpers reordered caller-first, the nested `required`-property guard flattened into a named predicate, `{cause}` attached to the schema-compile throw, the acceptance test's provider loop restructured to guard clauses (assertions untouched), and the acceptance/unit duplication dissolved by rewriting the unit file. A scoped eslint run (one attempt; no OOM here) caught 6 further problems my restructures would have caused — the one-expect-per-test house rule and a fresh cross-file clone — all fixed before push; it now exits 0 on every changed file.
+- **test** — the truncated CI frame pointed into `registry.ts`'s error formatting, which this round rewrites. All 30 tests across `registry.test.ts` and `chatOrchestrator.test.ts` pass locally; the acceptance file is CI's to judge. **0 red tests are mine; 0 regressions** (the existing `chatOrchestrator` suite, 22 tests, stays green).
+- **changelog** — entry added under `[Unreleased]`; `scripts/check-changelog.sh` passes post-commit.
+
+**Facet 4 closed (the round's own work):** the seven remaining `registry.test.ts` unit tests (pass-through, wrong-type without value leak, register-time throw, per-call schema for function sources, compile-once, `Unknown tool` pin, plus the rewritten missing-required test) and the `chatOrchestrator.test.ts` rejected-call→corrected-retry test; README, `.specify/spec.md`, `docs/adding-a-tool.md`, the weather example, and ADR-002 updated to the enforced-schema contract; the spec now cites all eight statements and reads `Shipped`. Anchors repointed; all spec gates green. `origin/main` merged (no drift); both commits pushed and confirmed upstream.
+
+Named, not acted on: `docs:check-paths` reports 3 pre-existing unresolved doc paths (report-only), and CI's reported ajv errors (`strict`/`instancePath`) never reproduced against the lockfile's ajv 8.20.0 — the fix addresses the reproducible form, and CI's verdict on this push settles it.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"dod facet 4: registry.test.ts unit tests, chatOrchestrator retry test, docs/README/.specify/ADR-002/CHANGELOG, spec cited to Shipped — plus all four red CI checks from the round brief repaired","tdd_next":"acceptance green (CI verdict on this push)"}}

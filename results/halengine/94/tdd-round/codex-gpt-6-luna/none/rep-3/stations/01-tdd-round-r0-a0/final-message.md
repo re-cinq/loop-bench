@@ -1,0 +1,5 @@
+Moved `beforeSession` inside the existing `try` block. The spec now records that its original error still reaches the caller, `onError` runs, and `afterSession` may run even if setup failed. The CHANGELOG facet remains for the next round.
+
+My test failed before the change and passed afterward. That was 1 red test I wrote; 0 regression tests were run. No round brief or Lore tools were available to check the previous CI verdict or graph coverage. I formatted the changed files, committed as `2c51c44`, pushed, merged `origin/main` (already up to date), and confirmed the branch is even with its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside try and document the lifecycle failure guarantee","tdd_next":"Document the consumer-visible change in CHANGELOG.md"}}

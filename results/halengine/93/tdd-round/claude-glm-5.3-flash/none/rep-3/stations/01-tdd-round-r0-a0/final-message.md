@@ -1,0 +1,15 @@
+Round complete and pushed (`436df92`), branch up to date with its upstream and merging `origin/main` cleanly.
+
+**The facet closed:** final-round retention replaced by a deliberate total-usage contract. `chatOrchestrator.ts` now collects every round's usage and hands `afterModelResponse` a `TurnUsageTotal` — a named public type (alias of `UsageMetadata`, exported from the root) whose name and one-line JSDoc say it is the sum over every provider call in the turn. The pure fold `totalReportedUsage` lives in `orchestratorHelpers.ts` beside `extractUsage`: a round that reported nothing contributes nothing, and a turn where nothing reported stays `undefined`, so a no-tool turn reports exactly what it did before. This is facets 1 and 2 of `.lore/dod.md` — one edit, the sum and the type that names it — plus facet 3 verified.
+
+**Test:** one new test, `totals the rounds that reported usage and leaves a turn where none reported undefined` in `src/orchestration/orchestratorHelpers.test.ts`. Ran it by file, from the repo root: red first (`does not provide an export named 'totalReportedUsage'` — the behaviour absent), then green, 5/5. The regression guard file `chatOrchestrator.test.ts` (unedited) also runs green, 24/24, including `receives collected response text and usage` and the earlier-round-usage case, which aggregation preserves.
+
+**CI:** no round brief exists and this pod exposes no `lore_*` tools, so I had no verdict to read; the previous push carried only tests and docs, no production code. Red tests of mine: 0. Regressions: 0 in what I could run — CI judges the push.
+
+**Traceability:** the summed-usage spec statement in `specs/hal-engine-config-hooks/spec.md` now cites my unit test beside the acceptance test; the `chatOrchestrator.ts#L150` anchor my insertions shifted was hand-repointed to `#L154`; `repoint-spec-anchors.mjs` reports the other 589 anchors up to date. The `OrchestratorHooks` doc-blocks in `CLAUDE.md` and the architecture spec were regenerated from source (`check-doc-blocks --fix`, 2 blocks). Prettier passes on every changed `.ts` file (markdown is not prettier-gated here and was already non-conforming on main). Not run in this pod, per contract: eslint, typecheck, build, and the acceptance tests, which CI runs.
+
+**Smells noticed, not acted on:** `AIProviderResponse` in `src/types/ai.ts` is exported but referenced by no code — a dead public type; and the pure-function list in `docs/coding-practices.md` now omits three of `orchestratorHelpers`' exports (it already omitted several before this change).
+
+**Next round takes facet 4:** the CHANGELOG entry stating what an existing consumer's numbers will do (MINOR-bump behaviour change), and the ticket's record of why the pass-both-shapes alternative was rejected — the spec statement itself is already in place and cited.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"final-round retention replaced by a named TurnUsageTotal summed across reporting rounds (facets 1+2), guard preserved (facet 3)","tdd_next":"CHANGELOG entry for the consumer-visible behaviour change and the rejected pass-both-shapes rationale (facet 4)"}}

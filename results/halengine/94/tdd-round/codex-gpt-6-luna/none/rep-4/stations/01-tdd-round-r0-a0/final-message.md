@@ -1,0 +1,3 @@
+I’m blocked before the edit: the required `lore-query-trace` and `lore_get_ci_failures` calls aren’t available in this session, and the instructions require both coverage context before changing `chatOrchestrator.ts` and a CI verdict when no round brief exists. I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required Lore coverage and CI failure tools are unavailable in this session"}}

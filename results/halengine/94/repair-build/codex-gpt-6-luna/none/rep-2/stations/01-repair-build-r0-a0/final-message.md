@@ -1,0 +1,3 @@
+Updated the acceptance test to use the current `PromptBuilder` config and combined its hook assertions to satisfy ESLint’s one-expect rule. Formatted the changed file, committed as `0162871`, and pushed; the branch is clean and up to date with its upstream. I did not run typecheck or ESLint locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Corrected the acceptance test’s PromptBuilder config and consolidated its assertions"}}

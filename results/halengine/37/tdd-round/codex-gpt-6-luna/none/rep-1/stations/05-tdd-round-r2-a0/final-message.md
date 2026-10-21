@@ -1,0 +1,3 @@
+I’m blocked before starting the red phase: this environment has no `lore-query-trace` or `lore_get_ci_failures` tool, and the round brief truncates the failing CI test before naming it. I can’t check existing coverage or identify the required CI repair, so I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore trace and CI failure details are unavailable; the round brief truncates the failing test summary."}}

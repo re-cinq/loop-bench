@@ -1,0 +1,5 @@
+Committed and pushed `2089096`. The targeted `registry.test.ts` passed; no acceptance tests or other checks were run. The previous CI report named one ticket test failure and one non-ticket failure in `providerFactory.test.ts`; I did not rerun either. The branch is up to date with its upstream.
+
+This round added and checked the pass-through facet. Remaining work includes the other registry and orchestrator tests, traceability, and documentation updates. I could not query the Lore coverage graph because no `lore-query-trace` tool was available.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Valid input with an undeclared property passes through unchanged and invokes the executor once","tdd_next":"Complete remaining registry and orchestrator tests, traceability, and documentation updates"}}

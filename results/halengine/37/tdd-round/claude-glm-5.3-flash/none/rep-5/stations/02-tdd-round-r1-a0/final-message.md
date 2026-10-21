@@ -1,0 +1,14 @@
+The round is committed and pushed. Here is what it did:
+
+**CI findings owed (all from the round brief, all fixed):**
+- **typecheck (5 errors)** — root cause was `import Ajv from 'ajv'`: under this repo's NodeNext/ESM setup the default import is not constructable (I reproduced it locally as `TS2351` on exactly that line; CI's log variant matches the tree where ajv 6.15.0 was still hoisted at root before the lockfile update — its error signature is ajv 6's typings verbatim). Fixed with the named class import `import {Ajv} from 'ajv'` — verified constructable in the types and a real named export in ajv's CJS runtime. `npm run typecheck` (the failed step, run per the brief) is now clean.
+- **eslint (4 errors)** — `registry.ts`: member chain in `describeSchemaError` split into two hops, and `cause` attached to the register-time throw. Acceptance test: the provider stub's round-2 `if` flipped into a tail guard (`if (round !== 2)`) and `lastContent` extracted — structure only, assertions and control flow byte-for-byte equivalent in behaviour.
+- **test crash** — `Cannot read properties of undefined (reading 'split')` in `rejectionFor` was the same ajv-shaped problem; the validated path now runs green through my unit test file.
+
+**This round's facet:** the passthrough unit test in `src/orchestration/tools/registry.test.ts:34` — valid input carrying an unlisted extra property reaches the executor unchanged (`toEqual`, so any added default or coerced value fails) and exactly once. Cited at the spec's passthrough statement in `specs/hal-engine-tool-input-validation/spec.md#L15`. Both tests in the file pass; prettier clean; `.lore/dod.md` updated.
+
+**Test accounting:** red tests written by me: 0 (mine passed on first run). Regressions: 0 — every red test in CI's verdict is this ticket's own acceptance test, failing on this ticket's code.
+
+**Left for the next round** (recorded in `.lore/dod.md`): the unknown-tool, compile-once, per-call-schema and no-value-leak unit tests, the `chatOrchestrator.test.ts` rejection-retry loop test, the remaining spec statement links, and the four docs plus ADR-002. Not run here per pod rules: eslint (the four lint fixes were derived from the rule sources themselves) and `check:spec-links` (the new link follows the four working sibling links' exact form). One smell noticed, not acted on: the `String(...)` wrappers around `error.params.*` are redundant under ajv 8's typing.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"red build repaired (ajv named import, cause on throw, member chains, guard-clause restructure) plus the passthrough unit test","tdd_next":"remaining registry.test.ts unit tests (unknown tool, compile-once, per-call schema, no value leak) and the chatOrchestrator rejection-retry test, then the four docs and ADR-002"}}
