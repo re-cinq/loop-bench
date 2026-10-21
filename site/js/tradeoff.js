@@ -1,6 +1,6 @@
 // Cost against quality per cell: the top-left corner is cheap and well judged, and the dashed line joins the cells nothing beats.
 import { mountChrome } from './chrome.js';
-import { el, header, isDone, markOf, loadBench, meanOf, minutes, money, one, panel, readHash, svg, unique, writeHash, mount } from './lib.js';
+import { el, contextLabel, header, isDone, markOf, loadBench, meanOf, minutes, money, one, panel, readHash, svg, unique, writeHash, mount } from './lib.js';
 import { extent, point, scale, xAxis, yAxis } from './plot.js';
 
 const WIDTH = 860;
@@ -44,23 +44,23 @@ function scatter(cells, axis) {
     xAxis({ x, domain: xDomain, top: MARGIN.top, bottom: HEIGHT - MARGIN.bottom, format: axis.format, label: axis.label, right: WIDTH - MARGIN.right }),
     svg('polyline', { points: front.map((p) => `${x(p.xv)},${y(p.judge)}`).join(' '), fill: 'none', stroke: 'var(--accent)', 'stroke-dasharray': '4 3', opacity: 0.7 }),
     ...points.map((p) => point({
-      cx: x(p.xv), cy: y(p.judge), harness: markOf(p.cell), hollow: !p.cell.lore,
-      title: `${p.cell.model} · ${p.cell.station} · ${p.cell.lore ? 'with' : 'no'} Lore\n${axis.label} ${axis.format(p.xv)} · judge ${one(p.judge)}`,
+      cx: x(p.xv), cy: y(p.judge), harness: markOf(p.cell), context: p.cell.context,
+      title: `${p.cell.model} · ${p.cell.station} · ${contextLabel(p.cell)}\n${axis.label} ${axis.format(p.xv)} · judge ${one(p.judge)}`,
     })),
     ...front.map((p) => svg('text', { x: x(p.xv) + 8, y: y(p.judge) - 6 }, p.cell.model)),
   ]);
 }
 
 function legend() {
-  const item = (harness, hollow, text) => el('span', { class: 'legend-item' }, [
-    svg('svg', { width: 14, height: 14, viewBox: '0 0 14 14', class: 'plot' }, point({ cx: 7, cy: 7, harness, hollow, r: 4.5 })), text,
+  const item = (harness, context, text) => el('span', { class: 'legend-item' }, [
+    svg('svg', { width: 14, height: 14, viewBox: '0 0 14 14', class: 'plot' }, point({ cx: 7, cy: 7, harness, context, r: 4.5 })), text,
   ]);
-  return el('div', { class: 'legend' }, [item('claude', false, 'claude'), item('codex', false, 'codex'), item('gemini', false, 'gemini'), item('glm', false, 'glm (claude CLI)'), item('codex', true, 'hollow = no Lore'), el('span', { class: 'legend-item accent' }, '- - - nothing beats these')]);
+  return el('div', { class: 'legend' }, [item('claude', 'lore-mcp', 'claude'), item('codex', 'lore-mcp', 'codex'), item('gemini', 'lore-mcp', 'gemini'), item('glm', 'lore-mcp', 'glm (claude CLI)'), item('codex', 'none', 'hollow = no KB'), item('codex', 'lore-mcp', 'solid = Lore'), item('codex', 'lore-utopia', 'faded = Lore on Utopia'), el('span', { class: 'legend-item accent' }, '- - - nothing beats these')]);
 }
 
 function render() {
   writeHash(state);
-  const cells = bench.cells.filter(isDone).filter((cell) => (!state.station || cell.station === state.station) && (!state.lore || String(cell.lore) === state.lore));
+  const cells = bench.cells.filter(isDone).filter((cell) => (!state.station || cell.station === state.station) && (!state.context || cell.context === state.context));
   const select = (key, label, options) => el('label', {}, [label, el('select', { onchange: (e) => { state[key] = e.target.value; render(); } },
     options.map(([value, text]) => el('option', { value, selected: (state[key] ?? '') === value }, text)))]);
 
@@ -70,7 +70,7 @@ function render() {
       el('div', { class: 'filters' }, [
         select('x', 'x axis', Object.entries(X_AXES).map(([key, axis]) => [key, axis.label])),
         select('station', 'station', [['', 'all'], ...unique(bench.cells.map((c) => c.station)).map((s) => [s, s])]),
-        select('lore', 'lore', [['', 'both'], ['true', 'with'], ['false', 'without']]),
+        select('context', 'knowledge base', [['', 'all'], ['none', 'no KB'], ['lore-mcp', 'Lore'], ['lore-utopia', 'Lore on Utopia']]),
       ]),
       scatter(cells, X_AXES[state.x] ?? X_AXES.cost),
       legend()),

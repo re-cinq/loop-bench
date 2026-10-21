@@ -10,7 +10,7 @@ export interface SiteCell {
   harness: string;
   model: string;
   effort: string;
-  lore: boolean;
+  context: SiteContext;
   prompt: string;
   status: "done" | "running" | "not run yet";
   /** One per finished replicate, in replicate order; `diffs/<loop id>.patch` holds that loop's branch diff. */
@@ -34,6 +34,9 @@ export interface SiteCell {
   dominated: boolean;
 }
 
+/** The knowledge base an agent had: none, the Lore MCP server on its own store, or the same server on Utopia. */
+export type SiteContext = "none" | "lore-mcp" | "lore-utopia";
+
 export interface LorePair {
   ticket: number;
   station: string;
@@ -41,14 +44,15 @@ export interface LorePair {
   model: string;
   prompt: string;
   without: string;
-  with: string;
+  lore: string | null;
+  utopia: string | null;
 }
 
 export interface StationSpend {
   station: string;
   harness: string;
   model: string;
-  lore: boolean;
+  context: SiteContext;
   visits: number;
   costUsd: Spread | null;
   minutes: Spread | null;
@@ -98,7 +102,7 @@ export function siteDataOf(input: SiteInput): SiteData {
   };
 }
 
-const LORE_CONTEXT = "lore-mcp";
+const siteContextOf = (context: string): SiteContext => (context === "lore-mcp" || context === "lore-utopia" ? context : "none");
 const minutesOf = (ms: number): number => ms / 60_000;
 const meanOf = (spread: Spread | null): number | null => spread?.mean ?? null;
 
@@ -129,7 +133,7 @@ function finishedCell(cell: CellSummary): SiteCell {
     station: cell.station,
     ...splitAgent(cell.agent),
     effort: cell.effort,
-    lore: cell.context === LORE_CONTEXT,
+    context: siteContextOf(cell.context),
     prompt: cell.prompt,
     status: "done",
     loopIds: [...loops].sort((a, b) => a.replicate - b.replicate).map((loop) => loop.loop_id),
@@ -159,7 +163,7 @@ function pendingCell(cell: PendingCell): SiteCell {
     station: cell.station,
     ...splitAgent(cell.agent),
     effort: cell.effort,
-    lore: cell.context === LORE_CONTEXT,
+    context: siteContextOf(cell.context),
     prompt: cell.prompt,
     status: cell.status,
     loopIds: [],
@@ -214,11 +218,12 @@ function withDominance(cells: readonly SiteCell[]): SiteCell[] {
 function lorePairsOf(cells: readonly SiteCell[]): LorePair[] {
   const pairKey = (cell: SiteCell): string => [cell.ticket, cell.station, cell.harness, cell.model, cell.effort, cell.prompt].join("|");
   const finished = cells.filter((cell) => cell.status === "done");
-  const withLore = new Map(finished.filter((cell) => cell.lore).map((cell) => [pairKey(cell), cell]));
+  const idOf = (context: SiteContext): Map<string, string> => new Map(finished.filter((cell) => cell.context === context).map((cell) => [pairKey(cell), cell.id]));
+  const [lore, utopia] = [idOf("lore-mcp"), idOf("lore-utopia")];
 
   return finished
-    .filter((cell) => !cell.lore && withLore.has(pairKey(cell)))
-    .map((without) => ({ ticket: without.ticket, station: without.station, harness: without.harness, model: without.model, prompt: without.prompt, without: without.id, with: withLore.get(pairKey(without))?.id ?? "" }));
+    .filter((cell) => cell.context === "none" && (lore.has(pairKey(cell)) || utopia.has(pairKey(cell))))
+    .map((without) => ({ ticket: without.ticket, station: without.station, harness: without.harness, model: without.model, prompt: without.prompt, without: without.id, lore: lore.get(pairKey(without)) ?? null, utopia: utopia.get(pairKey(without)) ?? null }));
 }
 
 function stationSpendOf(runs: readonly StationRunRecord[]): StationSpend[] {
@@ -241,7 +246,7 @@ function stationSpendOf(runs: readonly StationRunRecord[]): StationSpend[] {
       station,
       harness,
       model,
-      lore: context === LORE_CONTEXT,
+      context: siteContextOf(context),
       visits: group.length,
       costUsd: spreadOf(group.map((run) => run.cost_usd)),
       minutes: spreadOf(group.map((run) => minutesOf(run.wall_ms))),
@@ -249,5 +254,5 @@ function stationSpendOf(runs: readonly StationRunRecord[]): StationSpend[] {
       toolCalls: spreadOf(group.flatMap((run) => (run.usage.tool_calls === null ? [] : [run.usage.tool_calls]))),
       failures,
     };
-  }).sort((a, b) => a.station.localeCompare(b.station) || a.model.localeCompare(b.model) || Number(a.lore) - Number(b.lore));
+  }).sort((a, b) => a.station.localeCompare(b.station) || a.model.localeCompare(b.model) || a.context.localeCompare(b.context));
 }

@@ -7,10 +7,10 @@ document.getElementById('header').append(header('STATION VISITS'));
 const app = document.getElementById('app');
 
 function stationTable(rows) {
-  const head = el('tr', {}, ['model', 'lore', 'visits', 'cost / visit', 'time / visit', 'output tokens', 'tool calls', 'failures'].map((label, i) => el('th', { class: i >= 2 && i < 7 ? 'num' : '' }, label)));
+  const head = el('tr', {}, ['model', 'knowledge base', 'visits', 'cost / visit', 'time / visit', 'output tokens', 'tool calls', 'failures'].map((label, i) => el('th', { class: i >= 2 && i < 7 ? 'num' : '' }, label)));
   const body = rows.map((row) => el('tr', {}, [
     el('td', { class: 'nowrap' }, [harnessMark(markOf(row)), row.model, el('span', { class: 'dim' }, ` (${row.harness})`)]),
-    el('td', {}, loreTag(row.lore)),
+    el('td', {}, loreTag(row)),
     el('td', { class: 'num' }, row.visits),
     el('td', { class: 'num' }, spreadNode(row.costUsd, money)),
     el('td', { class: 'num' }, spreadNode(row.minutes, minutes)),

@@ -40,9 +40,9 @@ export function xAxis({ x, domain, top, bottom, format, label, right }) {
   ]);
 }
 
-/** Claude a square, Codex a circle, Gemini a diamond, GLM a triangle; hollow when the run had no Lore. */
-export function point({ cx, cy, harness, hollow, r = 5, title }) {
-  const cls = `pt-${harness} ${hollow ? 'hollow' : ''}`;
+/** Claude a square, Codex a circle, Gemini a diamond, GLM a triangle; hollow with no KB, solid with Lore, faded with Lore on Utopia. */
+export function point({ cx, cy, harness, context = 'lore-mcp', r = 5, title }) {
+  const cls = `pt-${harness} kb-${context}`;
   const shape = harness === 'claude'
     ? svg('rect', { class: cls, x: cx - r, y: cy - r, width: r * 2, height: r * 2 })
     : harness === 'gemini'

@@ -4,7 +4,7 @@ import { el, money } from './lib.js';
 const PAGES = [
   { href: 'index.html', label: 'summary' },
   { href: 'results.html', label: 'results' },
-  { href: 'lore.html', label: 'lore on/off' },
+  { href: 'lore.html', label: 'knowledge base' },
   { href: 'tradeoff.html', label: 'cost vs quality' },
   { href: 'diff.html', label: 'diffs' },
   { href: 'stations.html', label: 'stations' },

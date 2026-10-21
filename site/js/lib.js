@@ -66,13 +66,16 @@ export function spreadNode(spread, format) {
 /** GLM runs through the claude CLI, so the harness alone would draw it as Claude; the mark follows the model family. */
 export const markOf = (item) => (/^glm/i.test(item.model) ? 'glm' : item.harness);
 export const harnessMark = (harness) => el('span', { class: `harness harness-${harness}`, title: harness, 'aria-hidden': 'true' });
-export const loreTag = (lore) => el('span', { class: `lore-tag ${lore ? 'on' : ''}` }, lore ? 'with Lore' : 'no Lore');
+/** What the agent could consult: nothing, the Lore MCP server, or the same server on Utopia. */
+export const CONTEXT_LABEL = { none: 'no KB', 'lore-mcp': 'Lore', 'lore-utopia': 'Lore on Utopia' };
+export const contextLabel = (cell) => CONTEXT_LABEL[cell.context] ?? cell.context;
+export const loreTag = (cell) => el('span', { class: `lore-tag ${cell.context === 'none' ? '' : 'on'}` }, contextLabel(cell));
 
 export function modelCell(cell) {
   return el('span', { class: 'nowrap' }, [harnessMark(markOf(cell)), cell.model, el('span', { class: 'dim' }, ` (${cell.harness})`)]);
 }
 
-export const cellName = (cell) => `${cell.model} · ${cell.station} · ${cell.lore ? 'with Lore' : 'no Lore'}${cell.prompt === 'baseline' ? '' : ` · ${cell.prompt}`}`;
+export const cellName = (cell) => `${cell.model} · ${cell.station} · ${contextLabel(cell)}${cell.prompt === 'baseline' ? '' : ` · ${cell.prompt}`}`;
 export const isDone = (cell) => cell.status === 'done';
 export const unique = (values) => [...new Set(values)].sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
 export const meanOf = (spread) => spread?.mean ?? null;

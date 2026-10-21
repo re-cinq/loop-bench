@@ -80,7 +80,13 @@ describe("siteDataOf", () => {
   it("returns two runs of one cell as cost 3–5 with 1/2 reached green and loop ids a, b in replicate order", () => {
     const data = siteDataOf(input({ loops: [loop({ loop_id: "b", replicate: 2, total_cost_usd: 3 }), loop({ loop_id: "a", total_cost_usd: 5, reached_green: false, end_reason: "round_budget" })] }));
 
-    expect(data.cells).toMatchObject([{ harness: "claude", model: "opus", lore: false, loopIds: ["a", "b"], runs: 2, reachedGreen: 1, costUsd: { mean: 4, min: 3, max: 5 }, minutes: { mean: 10 }, judgeMean: 4, endReasons: { green: 1, round_budget: 1 } }]);
+    expect(data.cells).toMatchObject([{ harness: "claude", model: "opus", context: "none", loopIds: ["a", "b"], runs: 2, reachedGreen: 1, costUsd: { mean: 4, min: 3, max: 5 }, minutes: { mean: 10 }, judgeMean: 4, endReasons: { green: 1, round_budget: 1 } }]);
+  });
+
+  it("leaves a model with only a Utopia cell paired against no KB, Lore empty", () => {
+    const data = siteDataOf(input({ loops: [loop({}), loop({ context_mode: "lore-utopia" })] }));
+
+    expect(data.lorePairs).toMatchObject([{ lore: null, utopia: data.cells.find((cell) => cell.context === "lore-utopia")?.id }]);
   });
 
   it("marks a cell dominated when a rival is cheaper, as fast and as well judged", () => {
@@ -90,21 +96,22 @@ describe("siteDataOf", () => {
     expect(data.cells.map((cell) => [cell.model, cell.dominated])).toEqual([["opus", true], ["luna", false]]);
   });
 
-  it("pairs the with-Lore and without-Lore cells of one model", () => {
-    const data = siteDataOf(input({ loops: [loop({}), loop({ context_mode: "lore-mcp" })] }));
+  it("pairs a model's no-KB cell with its Lore cell and its Lore-on-Utopia cell", () => {
+    const data = siteDataOf(input({ loops: [loop({}), loop({ context_mode: "lore-mcp" }), loop({ context_mode: "lore-utopia" })] }));
+    const idOf = (context: string): string | undefined => data.cells.find((cell) => cell.context === context)?.id;
 
-    expect(data.lorePairs).toEqual([{ ticket: 93, station: "dod", harness: "claude", model: "opus", prompt: "baseline", without: data.cells.find((cell) => !cell.lore)?.id, with: data.cells.find((cell) => cell.lore)?.id }]);
+    expect(data.lorePairs).toEqual([{ ticket: 93, station: "dod", harness: "claude", model: "opus", prompt: "baseline", without: idOf("none"), lore: idOf("lore-mcp"), utopia: idOf("lore-utopia") }]);
   });
 
   it("lists a pending cell as not run yet with no numbers", () => {
     const data = siteDataOf(input({ pending: [{ ticket: 93, station: "dod", agent: "codex/luna", effort: "medium", context: "lore-mcp", prompt: "baseline", status: "not run yet" }] }));
 
-    expect(data.cells).toMatchObject([{ model: "luna", lore: true, status: "not run yet", loopIds: [], runs: 0, costUsd: null, dominated: false }]);
+    expect(data.cells).toMatchObject([{ model: "luna", context: "lore-mcp", status: "not run yet", loopIds: [], runs: 0, costUsd: null, dominated: false }]);
   });
 
   it("returns station spend of two visits as cost 1–3 with one timeout", () => {
     const data = siteDataOf(input({ stationRuns: [stationRun({}), stationRun({ cost_usd: 3, failure_class: "timeout" })] }));
 
-    expect(data.stations).toEqual([{ station: "dod", harness: "codex", model: "luna", lore: false, visits: 2, costUsd: { n: 2, mean: 2, min: 1, max: 3, sd: 1 }, minutes: { n: 2, mean: 2, min: 2, max: 2, sd: 0 }, outputTokens: { n: 2, mean: 1000, min: 1000, max: 1000, sd: 0 }, toolCalls: { n: 2, mean: 10, min: 10, max: 10, sd: 0 }, failures: { timeout: 1 } }]);
+    expect(data.stations).toEqual([{ station: "dod", harness: "codex", model: "luna", context: "none", visits: 2, costUsd: { n: 2, mean: 2, min: 1, max: 3, sd: 1 }, minutes: { n: 2, mean: 2, min: 2, max: 2, sd: 0 }, outputTokens: { n: 2, mean: 1000, min: 1000, max: 1000, sd: 0 }, toolCalls: { n: 2, mean: 10, min: 10, max: 10, sd: 0 }, failures: { timeout: 1 } }]);
   });
 });

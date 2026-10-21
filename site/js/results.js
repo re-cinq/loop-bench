@@ -1,6 +1,6 @@
 // The full matrix: filter by any facet, sort by any metric, tick 2–4 cells to compare them side by side.
 import { mountChrome } from './chrome.js';
-import { cellName, deltaBar, deltaClass, el, harnessMark, markOf, header, isDone, loadBench, meanOf, METRICS, metricNode, modelCell, mount, niceBound, one, panel, readHash, signed, spreadNode, two, unique, whole, writeHash } from './lib.js';
+import { cellName, contextLabel, deltaBar, deltaClass, el, harnessMark, markOf, header, isDone, loadBench, meanOf, METRICS, metricNode, modelCell, mount, niceBound, one, panel, readHash, signed, spreadNode, two, unique, whole, writeHash } from './lib.js';
 
 const MAX_COMPARED = 4;
 const effortLevel = (cell) => cell.effort.replace(/ \(.*\)$/, '');
@@ -8,7 +8,7 @@ const FACETS = [
   { key: 'ticket', label: 'ticket', of: (c) => `#${c.ticket}` },
   { key: 'station', label: 'station', of: (c) => c.station },
   { key: 'harness', label: 'harness', of: (c) => c.harness },
-  { key: 'lore', label: 'lore', of: (c) => (c.lore ? 'with' : 'without') },
+  { key: 'context', label: 'knowledge base', of: (c) => contextLabel(c) },
   { key: 'effort', label: 'effort', of: (c) => effortLevel(c) },
   { key: 'prompt', label: 'prompt', of: (c) => c.prompt },
 ];
@@ -17,7 +17,7 @@ const DESCRIBED = [
   { key: 'station', of: (c) => c.station },
   { key: 'effort', of: (c) => `${effortLevel(c)} effort` },
   { key: 'prompt', of: (c) => `${c.prompt} prompt` },
-  { key: 'lore', of: (c) => (c.lore ? 'with Lore' : 'no Lore') },
+  { key: 'context', of: (c) => contextLabel(c) },
   { key: 'runs', of: (c) => (isDone(c) ? `${c.runs} run${c.runs === 1 ? '' : 's'}` : c.status) },
 ];
 const metric = (key) => METRICS.find((m) => m.key === key);
@@ -118,7 +118,7 @@ function comparePanel() {
     return el('div', { class: 'compare-bar' }, [el('span', { class: 'dim' }, `Tick ${cells.length ? 'one more cell' : '2 to 4 cells'} to compare them side by side.`)]);
   }
   const [reference] = cells;
-  const head = el('tr', {}, [el('th', {}, 'metric'), ...cells.map((cell, i) => el('th', { class: 'num' }, [modelCell(cell), el('div', { class: 'dim' }, `${cell.station} · ${cell.lore ? 'with' : 'no'} Lore${i === 0 ? ' · reference' : ''}`)]))]);
+  const head = el('tr', {}, [el('th', {}, 'metric'), ...cells.map((cell, i) => el('th', { class: 'num' }, [modelCell(cell), el('div', { class: 'dim' }, `${cell.station} · ${contextLabel(cell)}${i === 0 ? ' · reference' : ''}`)]))]);
   const deltaOf = (metric, cell) => (metric.value(cell) != null && metric.value(reference) != null ? metric.value(cell) - metric.value(reference) : null);
   const rows = METRICS.map((metric) => {
     const bound = niceBound(cells.slice(1).map((cell) => deltaOf(metric, cell)));

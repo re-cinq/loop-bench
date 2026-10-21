@@ -21,8 +21,8 @@ conclusions.innerHTML = mdToHtml(bench.conclusions);
 
 const front = done.filter((cell) => !cell.dominated && cell.judgeMean != null).sort((a, b) => a.station.localeCompare(b.station) || meanOf(a.costUsd) - meanOf(b.costUsd));
 const frontTable = el('div', { class: 'table-wrap' }, el('table', { class: 'data' }, [
-  el('thead', {}, el('tr', {}, [el('th', {}, 'station'), el('th', {}, 'model'), el('th', {}, 'lore'), ...FRONT_METRICS.map((m) => el('th', { class: 'num' }, m.label))])),
-  el('tbody', {}, front.map((cell) => el('tr', {}, [el('td', {}, cell.station), el('td', {}, modelCell(cell)), el('td', {}, loreTag(cell.lore)), ...FRONT_METRICS.map((m) => el('td', { class: 'num' }, metricNode(m, cell)))]))),
+  el('thead', {}, el('tr', {}, [el('th', {}, 'station'), el('th', {}, 'model'), el('th', {}, 'knowledge base'), ...FRONT_METRICS.map((m) => el('th', { class: 'num' }, m.label))])),
+  el('tbody', {}, front.map((cell) => el('tr', {}, [el('td', {}, cell.station), el('td', {}, modelCell(cell)), el('td', {}, loreTag(cell)), ...FRONT_METRICS.map((m) => el('td', { class: 'num' }, metricNode(m, cell)))]))),
 ]));
 
 mount(app,
