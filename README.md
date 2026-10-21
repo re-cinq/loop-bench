@@ -81,7 +81,8 @@ A cell whose `loop.json` exists is skipped, so rerunning the same command resume
 
 ### Publishing the results
 
-`npm run site` rewrites `site/data/` and the diff patches. It needs the mirror and the prepared dependency cache, so it runs on your machine, not in CI. Commit the result and push to `main`: the **Publish website** workflow deploys `site/` to GitHub Pages, and **CI** runs the typecheck and tests.
+The website rebuilds itself: the **Publish website** workflow runs on every push to `main` that touches `results/`, `site/`, `src/` or `experiments/`. It clones the subject repository, installs the prettier each ticket pins (`site-deps`), runs `site` and deploys the result to GitHub Pages, so a results commit is enough. **CI** runs the typecheck and tests.
+`npm run site` does the same locally and writes `site/data/`, which you can commit as a fallback. Locally it uses the prettier in the dependency cache; `npm run bench -- site-deps` installs the missing ones.
 
 ## Adding more
 

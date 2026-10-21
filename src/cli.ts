@@ -10,6 +10,7 @@ import type { BenchRecord, LoopRecord, StationRunRecord } from "./core/records.j
 import { ciFeedbackOf, handoffOf, roundBriefOf, type CheckResult } from "./core/round-brief.js";
 import { diffOf, git } from "./workspace/git.js";
 import { normalizedDiff, prettierBinIn } from "./run/normalize-diff.js";
+import { ensureSitePrettier } from "./run/site-deps.js";
 import { enforce } from "./core/enforce.js";
 import { ContextModeSchema, HarnessSchema, StationSchema, type ContextMode, type Harness, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
@@ -49,6 +50,7 @@ const USAGE = `loop-bench <command> [options]
   propose     --experiment <file> --station <s> [--worst 5]
   report      --experiment <file>             rewrite results/<experiment>/REPORT.md and print it
   site        --experiment <file>             write the results website's data to site/data/
+  site-deps   --experiment <file>             install the prettier each ticket's base commit pins (what CI needs for the site)
   run ... --parallel <n>                      run n loops at a time (default 1)
   run ... --per-harness <n>                   at most n agent runs per CLI at a time, across all loops
   run ... --exclude claude[,gemini]          end a loop before any step assigned to these CLIs
@@ -105,6 +107,8 @@ async function main(argv: readonly string[]): Promise<void> {
       return void process.stdout.write(writeReport(config()));
     case "site":
       return writeSiteData(config());
+    case "site-deps":
+      return void (await ensureSitePrettier(config(), paths.cacheDir)).forEach((result) => log(`[loop-bench] #${result.ticket} prettier: ${result.status}${result.version ? ` ${result.version}` : ""}`));
     default:
       process.stdout.write(`${USAGE}\n`);
   }
