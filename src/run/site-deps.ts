@@ -1,6 +1,6 @@
 // The website's diff pages format both sides of a diff with the prettier the subject pinned at each ticket's base commit.
 // A machine that has run the benchmark has it in the dependency cache; a CI runner installs just that one package.
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import type { ExperimentConfig } from "../config/experiment.js";
@@ -44,16 +44,20 @@ export async function ensureSitePrettier(config: ExperimentConfig, cacheDir: str
       results.push({ ticket: ticket.number, baseSha: ticket.base_sha, status: "no-prettier-pinned", version: null });
       continue;
     }
+    const prefix = join(experimentCache, ticket.base_sha);
+
+    // A fresh runner has no cache folder at all.
+    mkdirSync(prefix, { recursive: true });
     const install = await runProcess({
       bin: "npm",
-      args: ["install", "--prefix", join(experimentCache, ticket.base_sha), "--no-save", "--ignore-scripts", "--no-audit", "--no-fund", `prettier@${version}`],
-      cwd: cacheDir,
+      args: ["install", "--prefix", prefix, "--no-save", "--ignore-scripts", "--no-audit", "--no-fund", `prettier@${version}`],
+      cwd: prefix,
       env: { PATH: process.env["PATH"] ?? "/usr/bin:/bin", HOME: process.env["HOME"] ?? "/tmp" },
       timeoutMs: 5 * 60_000,
     });
 
     if (install.exitCode !== 0) {
-      throw new Error(`installing prettier@${version} for #${ticket.number} failed: ${install.stderr.slice(-500)}`);
+      throw new Error(`installing prettier@${version} for #${ticket.number} failed (exit ${install.exitCode}): ${`${install.stderr}\n${install.stdout}`.slice(-600)}`);
     }
     results.push({ ticket: ticket.number, baseSha: ticket.base_sha, status: "installed", version });
   }
