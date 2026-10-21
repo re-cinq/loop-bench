@@ -40,14 +40,16 @@ export function xAxis({ x, domain, top, bottom, format, label, right }) {
   ]);
 }
 
-/** Claude a square, Codex a circle, Gemini a diamond; hollow when the run had no Lore. */
+/** Claude a square, Codex a circle, Gemini a diamond, GLM a triangle; hollow when the run had no Lore. */
 export function point({ cx, cy, harness, hollow, r = 5, title }) {
   const cls = `pt-${harness} ${hollow ? 'hollow' : ''}`;
   const shape = harness === 'claude'
     ? svg('rect', { class: cls, x: cx - r, y: cy - r, width: r * 2, height: r * 2 })
     : harness === 'gemini'
       ? svg('polygon', { class: cls, points: `${cx},${cy - r * 1.3} ${cx + r * 1.3},${cy} ${cx},${cy + r * 1.3} ${cx - r * 1.3},${cy}` })
-      : svg('circle', { class: cls, cx, cy, r });
+      : harness === 'glm'
+        ? svg('polygon', { class: cls, points: `${cx},${cy - r * 1.3} ${cx + r * 1.2},${cy + r} ${cx - r * 1.2},${cy + r}` })
+        : svg('circle', { class: cls, cx, cy, r });
   if (title) shape.append(svg('title', {}, title));
   return shape;
 }

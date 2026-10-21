@@ -1,6 +1,6 @@
 // With vs without Lore: one slope per model and metric, then the paired deltas as a table.
 import { mountChrome } from './chrome.js';
-import { deltaBar, deltaClass, el, header, harnessMark, loadBench, METRICS, metricNode, niceBound, panel, readHash, signed, svg, unique, writeHash, mount } from './lib.js';
+import { deltaBar, deltaClass, el, header, harnessMark, markOf, loadBench, METRICS, metricNode, niceBound, panel, readHash, signed, svg, unique, writeHash, mount } from './lib.js';
 import { extent, point, scale, yAxis } from './plot.js';
 
 const SLOPE_METRICS = ['cost', 'time', 'rounds', 'correct', 'complete', 'close'].map((key) => METRICS.find((m) => m.key === key));
@@ -58,8 +58,8 @@ function slopeChart(metric, pairs) {
       return svg('g', { class: 'model' }, [
         svg('title', {}, title),
         svg('line', { class: `slope pt-${pair.harness}`, x1: xOff, y1: y(off), x2: xOn, y2: y(on) }),
-        point({ cx: xOff, cy: y(off), harness: pair.harness, hollow: true, r: 4.5 }),
-        point({ cx: xOn, cy: y(on), harness: pair.harness, hollow: false, r: 4.5 }),
+        point({ cx: xOff, cy: y(off), harness: markOf(pair), hollow: true, r: 4.5 }),
+        point({ cx: xOn, cy: y(on), harness: markOf(pair), hollow: false, r: 4.5 }),
         Math.abs(ly - y(on)) > 1 ? svg('line', { class: 'leader', x1: xOn + 6, y1: y(on), x2: xOn + 14, y2: ly }) : null,
         svg('text', { class: 'slope-label', x: xOn + 16, y: ly + 4 }, [
           `${nameOf(pair)}  ${metric.format(on)} `,
@@ -89,7 +89,7 @@ function deltaTable(pairs) {
   };
   const bounds = new Map(SLOPE_METRICS.map((metric) => [metric.key, niceBound(pairs.map((pair) => deltaOf(metric, pair)))]));
   const rows = pairs.map((pair) => el('tr', {}, [
-    el('td', { class: 'nowrap' }, [harnessMark(pair.harness), pair.model]),
+    el('td', { class: 'nowrap' }, [harnessMark(markOf(pair)), pair.model]),
     el('td', {}, pair.station),
     ...SLOPE_METRICS.map((metric) => {
       const delta = deltaOf(metric, pair);

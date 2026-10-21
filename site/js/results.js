@@ -1,6 +1,6 @@
 // The full matrix: filter by any facet, sort by any metric, tick 2–4 cells to compare them side by side.
 import { mountChrome } from './chrome.js';
-import { cellName, deltaBar, deltaClass, el, harnessMark, header, isDone, loadBench, meanOf, METRICS, metricNode, modelCell, mount, niceBound, one, panel, readHash, signed, spreadNode, two, unique, whole, writeHash } from './lib.js';
+import { cellName, deltaBar, deltaClass, el, harnessMark, markOf, header, isDone, loadBench, meanOf, METRICS, metricNode, modelCell, mount, niceBound, one, panel, readHash, signed, spreadNode, two, unique, whole, writeHash } from './lib.js';
 
 const MAX_COMPARED = 4;
 const effortLevel = (cell) => cell.effort.replace(/ \(.*\)$/, '');
@@ -103,7 +103,7 @@ function matrixTable(rows, varying) {
   const body = rows.map((cell) => el('tr', { class: [cell.dominated ? 'dominated' : '', isDone(cell) ? '' : 'pending', picked.includes(cell.id) ? 'row-sel' : ''].join(' ').trim(), title: cell.dominated ? 'dominated: another cell of this station is as cheap, as fast and as well judged, and better on one' : '' }, [
     el('td', {}, isDone(cell) ? el('input', { type: 'checkbox', 'aria-label': `compare ${cellName(cell)}`, checked: picked.includes(cell.id), onchange: () => toggleSelected(cell.id) }) : ''),
     el('td', { class: 'cell-col' }, [
-      el('span', { class: 'nowrap' }, [harnessMark(cell.harness), cell.model]),
+      el('span', { class: 'nowrap' }, [harnessMark(markOf(cell)), cell.model]),
       isDone(cell) && cell.loopIds.length ? el('a', { class: 'row-link', href: `diff.html#a=loop:${cell.loopIds[0]}&b=pr:${cell.ticket}`, title: 'files and diff against the merged PR' }, 'diff') : null,
       el('span', { class: 'spread', title: cell.effort }, [cell.harness, ...varying.map((facet) => facet.of(cell))].join(' · ')),
     ]),

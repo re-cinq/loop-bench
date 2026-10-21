@@ -1,6 +1,6 @@
 // Spend per station visit: where a loop's money and time go, and which runs failed how.
 import { mountChrome } from './chrome.js';
-import { el, harnessMark, header, loadBench, loreTag, minutes, money, panel, spreadNode, unique, whole, mount } from './lib.js';
+import { el, harnessMark, markOf, header, loadBench, loreTag, minutes, money, panel, spreadNode, unique, whole, mount } from './lib.js';
 
 const bench = await mountChrome(loadBench);
 document.getElementById('header').append(header('STATION VISITS'));
@@ -9,7 +9,7 @@ const app = document.getElementById('app');
 function stationTable(rows) {
   const head = el('tr', {}, ['model', 'lore', 'visits', 'cost / visit', 'time / visit', 'output tokens', 'tool calls', 'failures'].map((label, i) => el('th', { class: i >= 2 && i < 7 ? 'num' : '' }, label)));
   const body = rows.map((row) => el('tr', {}, [
-    el('td', { class: 'nowrap' }, [harnessMark(row.harness), row.model, el('span', { class: 'dim' }, ` (${row.harness})`)]),
+    el('td', { class: 'nowrap' }, [harnessMark(markOf(row)), row.model, el('span', { class: 'dim' }, ` (${row.harness})`)]),
     el('td', {}, loreTag(row.lore)),
     el('td', { class: 'num' }, row.visits),
     el('td', { class: 'num' }, spreadNode(row.costUsd, money)),
