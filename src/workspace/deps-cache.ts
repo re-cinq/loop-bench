@@ -21,7 +21,11 @@ export function cachedDeps(cacheDir: string, baseSha: string): string | null {
   const tree = cachedDepsTree(cacheDir, baseSha);
   const root = cachedNodeModulesDir(cacheDir, baseSha);
 
-  return existsSync(tree) ? tree : existsSync(root) ? root : null;
+  if (existsSync(tree)) {
+    return tree;
+  }
+
+  return existsSync(root) ? root : null;
 }
 
 /** Every node_modules folder under dir, not descending into one. */
@@ -71,19 +75,24 @@ export async function ensureDepsCache(input: { cacheDir: string; mirrorDir: stri
   });
 
   enforce(result.exitCode === 0, `install failed for ${input.baseSha}: ${result.stderr.slice(-2000)}`);
-  if ((input.layout ?? "root") === "root") {
-    renameSync(join(checkout, "node_modules"), cachedNodeModulesDir(input.cacheDir, input.baseSha));
-  } else {
-    const tree = cachedDepsTree(input.cacheDir, input.baseSha);
-
-    for (const folder of nodeModulesFolders(checkout)) {
-      const to = join(tree, relative(checkout, folder));
-
-      mkdirSync(dirname(to), { recursive: true });
-      renameSync(folder, to);
-    }
-  }
+  moveInstalledDeps(checkout, input);
   rmSync(checkout, { recursive: true, force: true });
 
   return cachedDeps(input.cacheDir, input.baseSha) ?? "";
+}
+
+function moveInstalledDeps(checkout: string, input: { cacheDir: string; baseSha: string; layout?: string | undefined }): void {
+  if ((input.layout ?? "root") === "root") {
+    renameSync(join(checkout, "node_modules"), cachedNodeModulesDir(input.cacheDir, input.baseSha));
+
+    return;
+  }
+  const tree = cachedDepsTree(input.cacheDir, input.baseSha);
+
+  for (const folder of nodeModulesFolders(checkout)) {
+    const to = join(tree, relative(checkout, folder));
+
+    mkdirSync(dirname(to), { recursive: true });
+    renameSync(folder, to);
+  }
 }

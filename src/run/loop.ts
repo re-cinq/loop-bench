@@ -90,9 +90,7 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
 
       visits.push(record);
       appendRecord(paths.resultsDir, config.id, record);
-      if (record.failure_class === "infra") {
-        throw new InfraError(`${station} on ${plan.choice.harness}/${plan.choice.model} hit an infrastructure error; see ${plan.visitDir}/stderr.log. The cell is left unrun.`);
-      }
+      stopOnInfraError(record.failure_class, `${station} on ${plan.choice.harness}/${plan.choice.model}`, plan.visitDir);
       handoff = handoffOf(record.extras) ?? handoff;
       log(`[${planned.loop_id}]   -> ${record.outcome} (${record.failure_class}) $${record.cost_usd.toFixed(3)} ${Math.round(record.wall_ms / 1000)}s pushed=${record.pushed}`);
       ({ state, step } = nextStep(state, { kind: "agent", station, outcome: record.outcome }));
@@ -117,10 +115,9 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
     log(`[${planned.loop_id}]   CI on ${verdict.headSha.slice(0, 8)}: ${verdict.green ? "green" : `red (${verdict.checks.filter((c) => !c.passed).map((c) => c.name).join(", ")})`}`);
     const feedback = ciFeedbackOf(verdict.headSha, verdict.checks);
 
+    rmSync(workspace.roundBriefPath, { force: true });
     if (feedback) {
       writeFileSync(workspace.roundBriefPath, roundBriefOf({ feedback, handoff }));
-    } else {
-      rmSync(workspace.roundBriefPath, { force: true });
     }
     ({ state, step } = nextStep(state, { kind: "ci", green: verdict.green, headSha: verdict.headSha }));
   }
@@ -231,3 +228,9 @@ export function referenceArtifact(paths: BenchPaths, experimentId: string, ticke
 }
 
 export class InfraError extends Error {}
+
+function stopOnInfraError(failureClass: string, who: string, visitDir: string): void {
+  if (failureClass === "infra") {
+    throw new InfraError(`${who} hit an infrastructure error; see ${visitDir}/stderr.log. The cell is left unrun.`);
+  }
+}

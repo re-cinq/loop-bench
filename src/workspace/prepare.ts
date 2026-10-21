@@ -48,10 +48,8 @@ export async function prepareRunWorkspace(input: WorkspaceInput): Promise<RunWor
 
   if (input.branchBundle) {
     await git(["fetch", "--quiet", input.branchBundle, `refs/heads/${input.branch}:refs/heads/${input.branch}`], targetDir);
-    await git(["checkout", "--quiet", input.branch], targetDir);
-  } else {
-    await git(["checkout", "--quiet", "-b", input.branch], targetDir);
   }
+  await git(input.branchBundle ? ["checkout", "--quiet", input.branch] : ["checkout", "--quiet", "-b", input.branch], targetDir);
   await git(["push", "--quiet", "-u", "origin", input.branch], targetDir);
 
   const ticketPath = join(workspaceDir, "ticket.md");

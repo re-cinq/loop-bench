@@ -481,37 +481,40 @@ async function writeSiteData(config: ExperimentConfig): Promise<void> {
 async function writeSiteDiffs(config: ExperimentConfig, loops: readonly LoopRecord[], diffsDir: string): Promise<void> {
   mkdirSync(diffsDir, { recursive: true });
   for (const ticket of config.tickets) {
-    const prettierBin = prettierBinIn(cachedNodeModulesDir(join(paths.cacheDir, config.id), ticket.base_sha));
-    const ticketLoops = loops.filter((loop) => loop.ticket === ticket.number);
-    const scratch = mkdtempSync(join(tmpdir(), "loop-bench-site-"));
+    await writeTicketDiffs(config, ticket, loops.filter((loop) => loop.ticket === ticket.number), diffsDir);
+  }
+}
 
-    try {
-      await git(["clone", "--bare", "--quiet", config.subject.mirror_dir, scratch], paths.root);
-      const sources = [
-        { id: `pr-${ticket.number}`, headSha: ticket.merge_sha, rawPatch: null },
-        ...(await Promise.all(ticketLoops.map(async (loop) => {
-          const bundle = join(paths.resultsDir, loop.cell_path, "branch.bundle");
+async function writeTicketDiffs(config: ExperimentConfig, ticket: ExperimentConfig["tickets"][number], ticketLoops: readonly LoopRecord[], diffsDir: string): Promise<void> {
+  const prettierBin = prettierBinIn(cachedNodeModulesDir(join(paths.cacheDir, config.id), ticket.base_sha));
+  const scratch = mkdtempSync(join(tmpdir(), "loop-bench-site-"));
 
-          await git(["fetch", "--quiet", bundle, `refs/heads/loop-bench/${ticket.number}:refs/loops/${loop.loop_id}`], scratch);
+  try {
+    await git(["clone", "--bare", "--quiet", config.subject.mirror_dir, scratch], paths.root);
+    const sources = [
+      { id: `pr-${ticket.number}`, headSha: ticket.merge_sha, rawPatch: null },
+      ...(await Promise.all(ticketLoops.map(async (loop) => {
+        const bundle = join(paths.resultsDir, loop.cell_path, "branch.bundle");
 
-          return { id: loop.loop_id, headSha: await git(["rev-parse", `refs/loops/${loop.loop_id}`], scratch), rawPatch: join(paths.resultsDir, loop.cell_path, "diff.patch") };
-        }))),
-      ];
+        await git(["fetch", "--quiet", bundle, `refs/heads/loop-bench/${ticket.number}:refs/loops/${loop.loop_id}`], scratch);
 
-      for (const source of sources) {
-        const raw = join(diffsDir, `${source.id}.patch`);
-        const normalized = join(diffsDir, `${source.id}.normalized.patch`);
+        return { id: loop.loop_id, headSha: await git(["rev-parse", `refs/loops/${loop.loop_id}`], scratch), rawPatch: join(paths.resultsDir, loop.cell_path, "diff.patch") };
+      }))),
+    ];
 
-        if (!existsSync(raw)) {
-          writeFileSync(raw, source.rawPatch ? readFileSync(source.rawPatch) : `${await diffOf(scratch, ticket.base_sha, source.headSha)}\n`);
-        }
-        if (prettierBin && !existsSync(normalized)) {
-          writeFileSync(normalized, `${await normalizedDiff({ gitDir: scratch, baseSha: ticket.base_sha, headSha: source.headSha, prettierBin, formatPattern: config.subject.format_pattern })}\n`);
-        }
+    for (const source of sources) {
+      const raw = join(diffsDir, `${source.id}.patch`);
+      const normalized = join(diffsDir, `${source.id}.normalized.patch`);
+
+      if (!existsSync(raw)) {
+        writeFileSync(raw, source.rawPatch ? readFileSync(source.rawPatch) : `${await diffOf(scratch, ticket.base_sha, source.headSha)}\n`);
       }
-    } finally {
-      rmSync(scratch, { recursive: true, force: true });
+      if (prettierBin && !existsSync(normalized)) {
+        writeFileSync(normalized, `${await normalizedDiff({ gitDir: scratch, baseSha: ticket.base_sha, headSha: source.headSha, prettierBin, formatPattern: config.subject.format_pattern })}\n`);
+      }
     }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
   }
 }
 

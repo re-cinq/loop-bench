@@ -1,6 +1,5 @@
 // The local stand-in for the pull request's CI: the subject's check commands run against the pushed head in a clean checkout.
 import { mkdirSync } from "node:fs";
-import { join } from "node:path";
 import type { CiCheck } from "../config/experiment.js";
 import type { CheckResult } from "../core/round-brief.js";
 import { runProcess } from "../io/spawn.js";

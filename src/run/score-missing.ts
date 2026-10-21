@@ -15,7 +15,9 @@ export function parseShard(text: string | undefined): Shard {
   const match = /^(\d+)\/(\d+)$/.exec(text);
   const [index, count] = [Number(match?.[1]), Number(match?.[2])];
 
-  if (!match || count < 1 || index < 0 || index >= count) {
+  const isShard = match !== null && index >= 0 && index < count;
+
+  if (!isShard) {
     throw new Error(`--shard takes i/n with 0 <= i < n, got "${text}"`);
   }
 

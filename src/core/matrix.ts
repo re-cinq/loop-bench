@@ -18,13 +18,13 @@ export interface PlannedLoop {
 }
 
 export function plannedLoops(config: ExperimentConfig): PlannedLoop[] {
-  return config.tickets.flatMap((ticket) =>
-    config.context_modes.flatMap((context) =>
-      cellsOf(config).flatMap((cell) =>
-        replicates(config.replicates).map((replicate) => withId({ ...cell, experiment_id: config.id, ticket, context_mode: context, replicate })),
-      ),
-    ),
-  );
+  const cells = cellsOf(config);
+  const repeats = replicates(config.replicates);
+
+  const planFor = (ticket: ExperimentConfig["tickets"][number], context: ExperimentConfig["context_modes"][number]) =>
+    cells.flatMap((cell) => repeats.map((replicate) => withId({ ...cell, experiment_id: config.id, ticket, context_mode: context, replicate })));
+
+  return config.tickets.flatMap((ticket) => config.context_modes.flatMap((context) => planFor(ticket, context)));
 }
 
 type Cell = Pick<PlannedLoop, "mode" | "varied_station" | "assignments" | "prompt_variant" | "entry">;
