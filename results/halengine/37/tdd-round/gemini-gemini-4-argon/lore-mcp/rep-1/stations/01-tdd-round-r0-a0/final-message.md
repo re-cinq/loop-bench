@@ -1,0 +1,6 @@
+Completed one red-green-refactor round:
+- **Red**: Added `src/orchestration/tools/registry.test.ts` testing that `ToolRegistry.register` throws synchronously naming the tool when given an uncompilable static `inputSchema` (1 red test of ours, 0 regressions).
+- **Green**: Added `ajv` (`^6.15.0`) to `dependencies` in `package.json` and `package-lock.json`, bumped the package version to `0.4.0`, and implemented static `inputSchema` compilation in `ToolRegistry.register` in `src/orchestration/tools/registry.ts`.
+- **Refactor**: Linked the test in `specs/hal-engine-tool-input-validation/spec.md`, updated `.lore/dod.md` and `CHANGELOG.md`, formatted with Prettier, committed, and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv to dependencies and compile static ToolDefinition.inputSchema at ToolRegistry.register time (throwing an error naming the tool on invalid schemas)","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor, returning a ToolResponse ({result}) that names failing field paths and expected types/required fields without echoing or logging offending values"}}

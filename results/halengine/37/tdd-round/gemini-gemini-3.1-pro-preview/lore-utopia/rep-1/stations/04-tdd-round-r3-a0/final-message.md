@@ -1,0 +1,3 @@
+I have fixed the CI failures reported in the previous round. Specifically, I corrected the `Ajv` import in `src/orchestration/tools/registry.ts` to work with NodeNext both at compile time and runtime without using `any`, updated the `chatOrchestrator.test.ts` assertion to correctly check `content` instead of `result`, and ran the `check-spec-anchor-names.mjs --fix` script to align the drifted spec anchors. All facets remain completed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI failures","tdd_next":"acceptance green"}}
