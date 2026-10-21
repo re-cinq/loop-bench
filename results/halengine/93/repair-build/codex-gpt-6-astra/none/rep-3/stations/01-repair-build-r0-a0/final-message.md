@@ -1,0 +1,3 @@
+Pushed `bf43319`, fixing all four reported lint findings. Both changed files are formatted; the branch includes `origin/main` and is clean and fully pushed. CI verification remains pending; lint was not rerun as instructed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added three missing spec citations and consolidated two expectations into one assertion without reducing coverage"}}

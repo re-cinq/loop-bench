@@ -1,0 +1,5 @@
+Committed and pushed one red-green-refactor round. The new test first showed that a two-tool-round turn reported only the final provider call’s usage; it now passes with the sum of all three calls. The hook exposes the result as `TotalUsage`, and the spec and changelog describe the change.
+
+The focused test passed after refactoring. I did not run acceptance tests. This round had **1 red test of mine and 0 known regressions**; Lore’s CI lookup returned HTTP 403, so its verdict was unavailable. The branch is merged with `origin/main` and is not ahead of its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit","tdd_next":"Sum each token field only for provider rounds that report usage, preserving undefined when none do"}}

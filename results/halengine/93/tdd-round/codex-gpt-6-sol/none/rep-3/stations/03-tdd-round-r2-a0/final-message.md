@@ -1,0 +1,3 @@
+Committed and pushed `5c6681f`. This round fixed the reported lint and spec-link findings. The focused Jest test passed; no acceptance tests or broader checks were run here. CI will judge the push. Red test assertions: 0 written this round, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair missing-usage test traceability and assertion shape","tdd_next":"acceptance green"}}

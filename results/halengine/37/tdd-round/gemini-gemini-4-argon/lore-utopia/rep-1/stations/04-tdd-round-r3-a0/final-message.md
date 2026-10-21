@@ -1,0 +1,3 @@
+Refactored `src/orchestration/tools/registry.test.ts` to eliminate the four `re-lint/no-duplicate-code` findings reported by CI (extracting `LOCATION_REQUIRED_SCHEMA` and `captureLoggerOutput`), and updated the corresponding `#Lnn` test anchor links in `specs/hal-engine-tool-input-validation/spec.md`. All 7 unit tests in `src/orchestration/tools/registry.test.ts` pass; 0 red tests were mine and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve re-lint/no-duplicate-code findings in src/orchestration/tools/registry.test.ts and update spec anchor links","tdd_next":"acceptance green"}}

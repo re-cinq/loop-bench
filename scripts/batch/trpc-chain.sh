@@ -8,7 +8,7 @@ S=results/trpc-seed/3768/baseline/gemini-gemini-4-argon/none/rep-1
 for kind in dod red; do [ -f artifacts/trpc/3768/$kind/branch.bundle ] || npx tsx src/cli.ts make-artifact --experiment experiments/trpc.yaml --ticket 3768 --kind $kind --from-cell "$S" 2>&1 | tail -1; done
 if [ -f artifacts/trpc/3768/dod/branch.bundle ] && [ -f artifacts/trpc/3768/red/branch.bundle ]; then
   echo "== cells $(date +%H:%M)"
-  npx tsx src/cli.ts run --experiment experiments/trpc.yaml --station tdd-round,repair-build --replicates 3 --parallel 5 --per-harness 4 --exclude claude --agent "$G" 2>&1
+  npx tsx src/cli.ts run --experiment experiments/trpc.yaml --station tdd-round,repair-build --replicates 3 --parallel 3 --per-harness 2 --exclude claude --agent "$G" 2>&1
 else
   echo "== no starting branches for trpc #3768, cells not started"
 fi

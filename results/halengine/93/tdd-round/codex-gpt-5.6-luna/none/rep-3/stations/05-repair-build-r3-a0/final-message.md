@@ -1,0 +1,1 @@
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"fixed eslint no-empty-object-type, repointed spec anchor, and moved spec citations inside trailing parenthesis"}}
