@@ -1,0 +1,197 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..5716c92
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,25 @@
++# Definition of Done
++
++> The orchestrator's `catch` gates `onError` on `error instanceof Error`. A rejection that is not an `Error` — a thrown string, a plain object, a response body rejected directly by an HTTP client — bypasses `onError` entirely while still propagating to the caller.
++
++**Strategy: `direct`** — the seam already exists. `createChatOrchestrator` returns an orchestrator whose `processMessage` and `processMessageStream` invoke the installed `OrchestratorHooks`. A test can drive `processMessage` with a provider that throws a string or a plain object and observe that `onError` is bypassed today because of the `error instanceof Error` gate in the `catch` block.
++
++## Done when these pass
++
++- [ ] **calls onError with an Error carrying the thrown string and runs afterSession while rethrowing** — when a turn rejects with a string (`'string boom'`), `onError` is called once with an `Error` instance whose `message` is `'string boom'`, `afterSession` runs after `onError`, and the rejection still propagates to the caller. Fails today because `onError` is skipped (`callOrder` is `['afterSession']` and `isError` is `false`).
++      `src/orchestration/onErrorNonError.acceptance.test.ts`
++
++- [ ] **calls onError with an Error carrying a readable message when the stream rejects with a plain object** — when a turn rejects with a plain object (`{code: 503, detail: 'upstream down'}`), `onError` is called once with an `Error` instance carrying a non-empty `message`, `afterSession` runs after `onError`, and the rejection still propagates to the caller. Fails today because `onError` is skipped (`callOrder` is `['afterSession']` and `isError` is `false`).
++      `src/orchestration/onErrorNonError.acceptance.test.ts`
++
++## Facets
++
++- [x] In `src/orchestration/chatOrchestrator.ts`, coerce a caught non-`Error` rejection to an `Error` with a readable `message` (while passing an `Error` instance through unchanged) so `hooks.onError` always fires on any rejection inside the `try` block.
++- [x] Confirm existing `Error`-instance tests in `src/orchestration/chatOrchestrator.test.ts` (`called with session and error when stream fails`, `error still propagates after onError hook`, `error path calls onError then afterSession`) remain green without modification.
++- [x] Add a `CHANGELOG.md` entry under `## [Unreleased]` describing the behaviour change for existing consumers.
++
++## Out of scope
++
++- `beforeSession` escaping the `try` block (resolved separately in HALEngine#94).
++- Usage accounting across tool rounds (resolved separately in HALEngine#93).
++- Widening the `onError` hook parameter type away from `Error` (the ticket keeps `(session: ChatSession, error: Error) => Promise<void>`).
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index eab0af2..f843bfe 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -18,6 +18,8 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Changed
+ 
++- Any rejection inside the turn (such as a provider throwing a string or plain object) now calls the `onError` hook with an `Error` wrapping the thrown value, rather than bypassing the hook. The original thrown value still propagates to the caller exactly as before, so downstream error handling is unchanged, but the `onError` hook now observes all turn failures instead of only those thrown as `Error` instances.
++
+ - Every `SessionStore` member is now `Awaitable<T>` (`T | Promise<T>`) rather than a bare `T`, so a store backed by a database is expressible for the first time. `Awaitable` is exported from the package root. **A synchronous implementation needs no change** — `T` is assignable to `T | Promise<T>` in a return position — and `InMemorySessionStore` is unedited. The WebSocket connection handler now awaits `create` and the release that follows a close: it pauses the socket across the await so a frame sent before `connected` arrives is buffered rather than dropped, attaches its `close` listener before the await so a socket that closes mid-create leaves no session behind, and catches a rejection from either call so one store failure closes one socket instead of ending the process with an unhandled rejection. **Migration note**: the `connected` frame now arrives one tick later, after the awaited `create`, so a client that waits for it (as the protocol already requires) sees no difference; only code that assumed the frame was emitted synchronously with the upgrade does.
+ - **The engine no longer erases a conversation when its socket closes.** The WebSocket close handler called `sessionStore.delete(sessionId)` unconditionally, which meant that behind a durable store every conversation was written and then destroyed the moment the customer closed their tab — the opposite of what this engine's own documentation promised. `SessionStore.delete` now has no engine-internal caller at all and is purely your erasure primitive. The credentials the socket carried are cleared from the session on close, since they were issued for a request that is over; the entries are untouched. **Migration note**: to restore the old behaviour exactly, pass `onDisconnect: sessionId => store.delete(sessionId)` — that one line is the whole migration. If you rely on the default store not growing, note that it is now bounded by `maxAgeMs` (eight hours) rather than by the close handler; that is a memory bound, not a retention policy, and the retention decision remains yours.
+ - The `afterModelResponse` hook now receives the accumulated usage across every provider call in the turn, not only the last one. Existing consumers that use this hook for billing or audit will see larger totals for turns that called tools — this is the correct number. A turn with no tool calls is unchanged.
+@@ -46,6 +48,8 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Changed
+ 
++- Any rejection inside the turn (such as a provider throwing a string or plain object) now calls the `onError` hook with an `Error` wrapping the thrown value, rather than bypassing the hook. The original thrown value still propagates to the caller exactly as before, so downstream error handling is unchanged, but the `onError` hook now observes all turn failures instead of only those thrown as `Error` instances.
++
+ - Every `user_message` now ends in exactly one `stream_end`, including a run that fails and a message that fails validation; the `error` frame is advisory rather than terminal. Unparseable JSON remains the one frame answered with `INVALID_FORMAT` and no `stream_end`. **Migration note**: `stream_end` may now follow an `error` frame, so treat `stream_end` (or the socket closing) as the only end of a run. The one live consumer handles the two frame types independently, and both clear its processing state, so it keeps working unchanged and no deprecation period is served by delaying.
+ - Every assistant and thinking entry a run opens is now committed when the run ends, however it ends: a provider that throws mid-stream, or a round that ends on a tool call with no `stop`, no longer leaves an entry with `isStreaming: true` in the session. The partial content is kept exactly as streamed, and on a throw its `entry_commit` arrives before the `error` frame. **Migration note**: `entry_commit` now arrives on paths that previously sent none, so a client counting commit frames sees more of them. No wire type changes, and a client that already stops streaming on `stream_end` renders the same result.
+ - `maxToolRounds` now bounds the tool rounds that are actually executed: at most `maxToolRounds` rounds run, and the provider is called at most `maxToolRounds + 1` times. Previously the loop ran one extra round whose tool results no provider call ever read, so the default of 5 executed 6 rounds; it now executes 5, and the sixth provider call still reads the fifth round's results. `maxToolRounds: 0` now means one provider call and no tool execution, a negative value behaves as 0, and a non-finite value falls back to the default. When the budget runs out, the engine logs one `warn` (`tool budget exhausted`) naming the tools it did not run. **Migration note**: no exported type or signature changes, but a tool with a side effect in that final, unread round no longer runs there; to restore the old count, raise `maxToolRounds` by one.
+@@ -73,6 +77,8 @@ path from `0.1.0` on the registry — only from the git specifier.
+ 
+ ### Changed
+ 
++- Any rejection inside the turn (such as a provider throwing a string or plain object) now calls the `onError` hook with an `Error` wrapping the thrown value, rather than bypassing the hook. The original thrown value still propagates to the caller exactly as before, so downstream error handling is unchanged, but the `onError` hook now observes all turn failures instead of only those thrown as `Error` instances.
++
+ - The published package carries no source maps. `files` is `["dist"]`, so every `.js.map` and `.d.ts.map`
+   named a `../src/*.ts` the tarball did not contain and carried no inlined sources — 98 files that resolved
+   to nothing in a debugger. Dropping them halves the file count. Step through the source from a checkout
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 66ff9d3..4d44dc6 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -16,13 +16,8 @@
+ - For a session that completes without error the hooks fire in the order `beforeSession` → `beforeUserInput` → `afterUserInput` → `beforeModelResponse` → `afterModelResponse` → `afterSession` ([validated by: fires the lifecycle hooks in documented order for a session that completes without error](../../src/config.test.ts#L153)).
+ - A `beforeSession` that throws reaches the caller as a rejection, and also runs `onError` with the thrown error and then `afterSession`, because the call sits inside the same `try`/`finally` as the rest of the turn. An `afterSession` hook called under this condition can infer the session never advanced past `beforeSession`: no user-input hooks ran, no model response was generated, and no tool rounds were started — a cleanup hook that allocates in `beforeSession` and frees in `afterSession` will therefore always see the allocation and the release on the same error path ([validated by: runs onError then afterSession when it throws, and still rejects to the caller](../../src/orchestration/chatOrchestrator.test.ts#L116)).
+ - `afterModelResponse` is called once per user message after the round loop exits and is passed `totalUsage` — the sum of the usage every provider call in the turn reported, not the last round alone ([validated by: sums the usage of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L555)).
++- Any rejection inside the turn calls `onError` with an `Error` — passed through when the thrown value is already an `Error`, or wrapped with a readable `message` when a string or object is thrown — and then runs `afterSession` while still propagating the rejection to the caller ([validated by: calls onError with an Error carrying the thrown string and runs afterSession while rethrowing](../../src/orchestration/onErrorNonError.acceptance.test.ts#L53), [validated by: calls onError with an Error carrying a readable message when the stream rejects with a plain object](../../src/orchestration/onErrorNonError.acceptance.test.ts#L64)).
+ 
+ ## Engine startup
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L195)).
+-
+-## Measured semantics — out of scope
+-
+-This property of `src/orchestration/chatOrchestrator.ts` is recorded so the hook features that follow specify against real behaviour. This issue does not change it; that is a separate, out-of-scope change owned by no issue in this epic.
+-
+-- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+diff --git a/src/orchestration/chatOrchestrator.test.ts b/src/orchestration/chatOrchestrator.test.ts
+index 0124d8c..2428da7 100644
+--- a/src/orchestration/chatOrchestrator.test.ts
++++ b/src/orchestration/chatOrchestrator.test.ts
+@@ -36,7 +36,7 @@ function createMockProvider(response: string, usage?: UsageMetadata): AIProvider
+   };
+ }
+ 
+-function createErrorProvider(error: Error): AIProvider {
++function createErrorProvider(error: unknown): AIProvider {
+   return {
+     // eslint-disable-next-line require-yield
+     async *sendMessage(): AsyncGenerator<MessageChunk> {
+diff --git a/src/orchestration/chatOrchestrator.ts b/src/orchestration/chatOrchestrator.ts
+index 8defbd2..b94d270 100644
+--- a/src/orchestration/chatOrchestrator.ts
++++ b/src/orchestration/chatOrchestrator.ts
+@@ -147,8 +147,9 @@ export function createChatOrchestrator(
+ 
+         if (hooks?.afterModelResponse) await hooks.afterModelResponse(session, responseText, totalUsage);
+       } catch (error) {
+-        if (hooks?.onError && error instanceof Error) {
+-          await hooks.onError(session, error);
++        if (hooks?.onError) {
++          const errorInstance = error instanceof Error ? error : new Error(String(error), {cause: error});
++          await hooks.onError(session, errorInstance);
+         }
+         throw error;
+       } finally {
+diff --git a/src/orchestration/onErrorNonError.acceptance.test.ts b/src/orchestration/onErrorNonError.acceptance.test.ts
+new file mode 100644
+index 0000000..e8b2223
+--- /dev/null
++++ b/src/orchestration/onErrorNonError.acceptance.test.ts
+@@ -0,0 +1,81 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++const sessionWith = (content: string): ChatSession => ({
++  sessionId: 'test-session',
++  userId: 'user-1',
++  entries: [{role: 'user', content, timestamp: '2024-01-01T00:00:00.000Z'}],
++});
++
++const rejectingWith = (reason: unknown): AIProvider => ({
++  // eslint-disable-next-line require-yield
++  async *sendMessage(): AsyncGenerator<MessageChunk> {
++    throw reason;
++  },
++  async generateStructured<T>(): Promise<T> {
++    return {} as T;
++  },
++});
++
++const turnOutcome = async (reason: unknown) => {
++  const callOrder: string[] = [];
++  let seenError: Error | undefined;
++  const hooks: OrchestratorHooks = {
++    onError: async (_session, error) => {
++      callOrder.push('onError');
++      seenError = error;
++    },
++    afterSession: async () => {
++      callOrder.push('afterSession');
++    },
++  };
++
++  const orchestrator = createChatOrchestrator(rejectingWith(reason), promptBuilder, undefined, {hooks});
++  const outcome = await orchestrator.processMessage(sessionWith('hello')).then(
++    value => ({rejected: false, reason: value as unknown}),
++    (thrown: unknown) => ({rejected: true, reason: thrown})
++  );
++
++  return {
++    outcome,
++    callOrder,
++    isError: seenError instanceof Error,
++    message: seenError?.message,
++  };
++};
++
++describe('ChatOrchestrator onError on non-Error rejections', () => {
++  it('calls onError with an Error carrying the thrown string and runs afterSession while rethrowing', async () => {
++    const result = await turnOutcome('string boom');
++
++    expect(result).toEqual({
++      outcome: {rejected: true, reason: 'string boom'},
++      callOrder: ['onError', 'afterSession'],
++      isError: true,
++      message: 'string boom',
++    });
++  });
++
++  it('calls onError with an Error carrying a readable message when the stream rejects with a plain object', async () => {
++    const reason = {code: 503, detail: 'upstream down'};
++
++    const result = await turnOutcome(reason);
++
++    expect({
++      outcome: result.outcome,
++      callOrder: result.callOrder,
++      isError: result.isError,
++      hasMessage: typeof result.message === 'string' && result.message.length > 0,
++    }).toEqual({
++      outcome: {rejected: true, reason},
++      callOrder: ['onError', 'afterSession'],
++      isError: true,
++      hasMessage: true,
++    });
++  });
++});

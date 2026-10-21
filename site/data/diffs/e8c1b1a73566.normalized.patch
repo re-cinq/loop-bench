@@ -1,0 +1,430 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..d7e6679
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,28 @@
++# Definition of Done
++
++> The orchestrator's `catch` gates `onError` on `error instanceof Error`. A rejection that is not an `Error` — a thrown string, a plain object, a response body rejected directly by an HTTP client — bypasses `onError` entirely while still propagating to the caller.
++
++**Strategy: `direct`** — the seam already exists. `createChatOrchestrator` returns an orchestrator whose `processMessage` and `processMessageStream` invoke the installed `OrchestratorHooks`. A test can drive `processMessage` with a provider that throws a string or a plain object and observe that `onError` is bypassed today because of the `error instanceof Error` gate in the `catch` block.
++
++## Done when these pass
++
++- [x] **calls onError with an Error carrying the thrown string and runs afterSession while rethrowing** — when a turn rejects with a string (`'string boom'`), `onError` is called once with an `Error` instance whose `message` is `'string boom'`, `afterSession` runs after `onError`, and the rejection still propagates to the caller. Fails today because `onError` is skipped (`callOrder` is `['afterSession']` and `isError` is `false`).
++      `src/orchestration/onErrorNonError.acceptance.test.ts`
++
++- [x] **calls onError with an Error carrying a readable message when the stream rejects with a plain object** — when a turn rejects with a plain object (`{code: 503, detail: 'upstream down'}`), `onError` is called once with an `Error` instance carrying a non-empty `message`, `afterSession` runs after `onError`, and the rejection still propagates to the caller. Fails today because `onError` is skipped (`callOrder` is `['afterSession']` and `isError` is `false`).
++      `src/orchestration/onErrorNonError.acceptance.test.ts`
++
++## Facets
++
++- [x] In `src/orchestration/chatOrchestrator.ts`, coerce a caught non-`Error` rejection to an `Error` with a readable `message` (while passing an `Error` instance through unchanged) so `hooks.onError` always fires on any rejection inside the `try` block.
++- [x] Confirm existing `Error`-instance tests in `src/orchestration/chatOrchestrator.test.ts` (`called with session and error when stream fails`, `error still propagates after onError hook`, `error path calls onError then afterSession`) remain green without modification.
++- [x] Add a `CHANGELOG.md` entry under `## [Unreleased]` describing the behaviour change for existing consumers.
++- [x] Unit-level pin of the coercion contract in `src/orchestration/chatOrchestrator.test.ts` (`wraps a rejection that is not an Error so onError still fires, while an Error passes through unchanged`), cited from `specs/hal-engine-config-hooks/spec.md` — written red, then green this round.
++- [x] Acceptance coverage for a rejection with `undefined` (ticket criterion 2): the acceptance file pins string and plain object only; the unit test above pins `undefined` in the meantime. Closed as `calls onError with an Error carrying a readable message when the stream rejects with undefined`, cited from `specs/hal-engine-config-hooks/spec.md`.
++- [ ] CI gates green on the pushed head: `npm run build`, `npm run typecheck`, `npm run eslint` (`--max-warnings 0`) and `npm run prettier:check` (ticket criterion 5). The eslint findings on e20e70e (54-token clone between the plain-object and `undefined` acceptance cases) are fixed by extracting the shared assertion into `expectTurnRejectedThroughOnError`, with the spec's `#Lnn` anchors repointed by name; the gates remain CI's verdict on this push, since this pod cannot run them.
++
++## Out of scope
++
++- `beforeSession` escaping the `try` block (resolved separately in HALEngine#94).
++- Usage accounting across tool rounds (resolved separately in HALEngine#93).
++- Widening the `onError` hook parameter type away from `Error` (the ticket keeps `(session: ChatSession, error: Error) => Promise<void>`).
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index eab0af2..a089a1a 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -24,6 +24,7 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Fixed
+ 
++- `onError` now fires for every rejection inside a turn, not only for rejections carrying an `Error`. A provider (or a hook inside the `try`) that throws a string, a plain object or `undefined` used to bypass `onError` entirely while the rejection still reached the caller, so a hook counting failures or paging on them saw a clean turn for exactly the failures it existed to report. Such a value now reaches the hook wrapped in an `Error` with a readable `message` and the original preserved as `cause`, so a hook typed against `Error` keeps compiling and one that wants the raw value can still reach it. The rejection the caller receives is unchanged — the original value is re-thrown exactly as before. **Migration note**: an `onError` hook that records incidents will now also record these rejections, so failure counts can rise for turns that previously looked clean; that is the undercount being corrected.
+ - `onError` and `afterSession` hooks now fire when `beforeSession` throws, matching the guarantee the hook names imply. Previously, a throw from `beforeSession` escaped the `try`/`finally` block entirely, so neither hook ran. **Migration note**: if your `afterSession` hook assumed it would only be called after a full session turn, it will now also be called when `beforeSession` itself fails — the hook can inspect the session to detect this case (no entries beyond the initial user message will have been processed).
+ 
+ ## [0.3.0] - 2026-09-29
+diff --git a/specs/hal-engine-architecture/spec.md b/specs/hal-engine-architecture/spec.md
+index ac0215c..4c60d28 100644
+--- a/specs/hal-engine-architecture/spec.md
++++ b/specs/hal-engine-architecture/spec.md
+@@ -186,9 +193,10 @@ interface PromptBuilderConfig {
+ 
+ ### OrchestratorHooks
+ 
+-Async lifecycle hooks for customizing the orchestration flow. Every hook is optional and receives the current session, and an orchestrator built with none behaves exactly as one built with an empty set ([validated by: works without any hooks configured](../../src/orchestration/chatOrchestrator.test.ts#L386)). Install hooks through `HalEngineConfig.orchestrator.hooks`; `createHalEngine` forwards the set to the orchestrator ([validated by: forwards an orchestrator hook, so one passed through the config actually fires](../../src/config.test.ts#L19)).
++Async lifecycle hooks for customizing the orchestration flow. Every hook is optional and receives the current session, and an orchestrator built with none behaves exactly as one built with an empty set ([validated by: works without any hooks configured](../../src/orchestration/chatOrchestrator.test.ts#L465)). Install hooks through `HalEngineConfig.orchestrator.hooks`; `createHalEngine` forwards the set to the orchestrator ([validated by: forwards an orchestrator hook, so one passed through the config actually fires](../../src/config.test.ts#L19)).
+ 
+ <!-- doc-block: src/orchestration/chatOrchestrator.ts#OrchestratorHooks -->
++
+ ```typescript
+ interface OrchestratorHooks {
+   beforeSession?: (session: ChatSession) => Promise<void>;
+@@ -211,20 +219,20 @@ The hooks fire in this order:
+ beforeSession → beforeUserInput → afterUserInput → beforeModelResponse → ...streaming (beforeToolCall × each tool call, each round)... → onToolBudgetExhausted (only on an exhausted budget) → afterModelResponse → afterSession
+ ```
+ 
+-- The order above holds for a successful pass ([validated by: calls all hooks in correct order](../../src/orchestration/chatOrchestrator.test.ts#L313)).
+-- When the stream fails, `afterModelResponse` is skipped and the tail becomes `onError` then `afterSession` ([validated by: error path calls onError then afterSession](../../src/orchestration/chatOrchestrator.test.ts#L353)).
+-- `beforeSession` runs before any other hook ([validated by: called before anything else](../../src/orchestration/chatOrchestrator.test.ts#L106)).
+-- `beforeUserInput` receives the content of the last user message ([validated by: receives the last user message content](../../src/orchestration/chatOrchestrator.test.ts#L174)).
+-- `beforeUserInput` can modify that message by returning a different string ([validated by: modifies user message when returning different value](../../src/orchestration/chatOrchestrator.test.ts#L189)).
+-- `afterUserInput` receives the message as `beforeUserInput` left it, not as the client sent it ([validated by: receives user message after any beforeUserInput modification](../../src/orchestration/chatOrchestrator.test.ts#L204)).
+-- `beforeModelResponse` can replace the system prompt, for example loading it from a `PromptStore` ([validated by: replaces system prompt with returned value](../../src/orchestration/chatOrchestrator.test.ts#L221)).
+-- `afterModelResponse` receives the collected response text and the usage the provider reported ([validated by: receives collected response text and usage](../../src/orchestration/chatOrchestrator.test.ts#L236)).
+-- `afterModelResponse` does not run when the stream throws, so it never reports a response that was not delivered ([validated by: not called when stream throws](../../src/orchestration/chatOrchestrator.test.ts#L256)).
+-- `onError` receives the session and the error ([validated by: called with session and error when stream fails](../../src/orchestration/chatOrchestrator.test.ts#L278)).
+-- `onError` observes rather than handles: the error still propagates to the caller after it returns ([validated by: error still propagates after onError hook](../../src/orchestration/chatOrchestrator.test.ts#L300)).
++- The order above holds for a successful pass ([validated by: calls all hooks in correct order](../../src/orchestration/chatOrchestrator.test.ts#L392)).
++- When the stream fails, `afterModelResponse` is skipped and the tail becomes `onError` then `afterSession` ([validated by: error path calls onError then afterSession](../../src/orchestration/chatOrchestrator.test.ts#L432)).
++- `beforeSession` runs before any other hook ([validated by: called before anything else](../../src/orchestration/chatOrchestrator.test.ts#L107)).
++- `beforeUserInput` receives the content of the last user message ([validated by: receives the last user message content](../../src/orchestration/chatOrchestrator.test.ts#L175)).
++- `beforeUserInput` can modify that message by returning a different string ([validated by: modifies user message when returning different value](../../src/orchestration/chatOrchestrator.test.ts#L190)).
++- `afterUserInput` receives the message as `beforeUserInput` left it, not as the client sent it ([validated by: receives user message after any beforeUserInput modification](../../src/orchestration/chatOrchestrator.test.ts#L205)).
++- `beforeModelResponse` can replace the system prompt, for example loading it from a `PromptStore` ([validated by: replaces system prompt with returned value](../../src/orchestration/chatOrchestrator.test.ts#L222)).
++- `afterModelResponse` receives the collected response text and the usage the provider reported ([validated by: receives collected response text and usage](../../src/orchestration/chatOrchestrator.test.ts#L237)).
++- `afterModelResponse` does not run when the stream throws, so it never reports a response that was not delivered ([validated by: not called when stream throws](../../src/orchestration/chatOrchestrator.test.ts#L257)).
++- `onError` receives the session and the error ([validated by: called with session and error when stream fails](../../src/orchestration/chatOrchestrator.test.ts#L279)).
++- `onError` observes rather than handles: the error still propagates to the caller after it returns ([validated by: error still propagates after onError hook](../../src/orchestration/chatOrchestrator.test.ts#L301)).
+ - `onToolBudgetExhausted` fires only when the model asks for a tool round the budget refuses: after the last provider call and before `afterModelResponse`, which then receives the hook's sentence at the end of the response text ([validated by: hands afterModelResponse text ending in the sentence, and the usage of a run without the hook](../../src/orchestration/toolBudget.test.ts#L214)).
+-- `afterSession` runs after everything else completes ([validated by: called after everything completes](../../src/orchestration/chatOrchestrator.test.ts#L145)).
+-- `afterSession` fires even on error ([validated by: called even when an error occurs](../../src/orchestration/chatOrchestrator.test.ts#L155)).
++- `afterSession` runs after everything else completes ([validated by: called after everything completes](../../src/orchestration/chatOrchestrator.test.ts#L146)).
++- `afterSession` fires even on error ([validated by: called even when an error occurs](../../src/orchestration/chatOrchestrator.test.ts#L156)).
+ 
+ A hook receives the full `session` object, so it has access to `session.authHeaders?.authorization` (the caller's bearer token forwarded from the WebSocket upgrade request) and every user message verbatim through `session.entries`; the engine redacts nothing before calling a hook. Anything a hook persists becomes the deployer's own data-retention obligation.
+ 
+@@ -330,10 +338,10 @@ Here is what the message handler does when a tool call comes through:
+ 2. The handler creates a `ToolEntry` and sends it to the client via `entry_upsert`
+ 3. The orchestrator executes the tool (via `ToolRegistry.execute()`)
+ 4. Tool results get added to the conversation as a `tool_result` message
+-5. If the tool returned `clientMessages`, they are forwarded to the frontend as-is, in one `tool_result` chunk ([validated by: forwards the client messages a tool returned as one tool_result chunk](../../src/orchestration/chatOrchestrator.test.ts#L463))
+-6. If the tool set `suppressAssistantResponse`, the AI's next reply is kept in session context but hidden from the frontend ([validated by: asks for suppression when the tool says the reply is already handled](../../src/orchestration/chatOrchestrator.test.ts#L493))
+-7. The orchestrator re-queries the AI provider with the updated messages, and the chunks of every round reach the client in order ([validated by: runs another round after a tool call and streams both rounds in order](../../src/orchestration/chatOrchestrator.test.ts#L428))
+-8. This repeats until the budget is spent: at most `maxToolRounds` tool rounds are executed, and the provider is called at most `maxToolRounds + 1` times, so the default of 5 executes five rounds and makes six model calls, the last of which reads the fifth round's results. A round requested after that is not executed; see [the tool budget spec](../hal-engine-tool-budget/spec.md) ([validated by: executes 5 tool rounds and makes 6 provider calls at the default budget](../../src/orchestration/toolBudget.test.ts#L95), [validated by: stops asking for tools once maxToolRounds is spent](../../src/orchestration/chatOrchestrator.test.ts#L449))
++5. If the tool returned `clientMessages`, they are forwarded to the frontend as-is, in one `tool_result` chunk ([validated by: forwards the client messages a tool returned as one tool_result chunk](../../src/orchestration/chatOrchestrator.test.ts#L542))
++6. If the tool set `suppressAssistantResponse`, the AI's next reply is kept in session context but hidden from the frontend ([validated by: asks for suppression when the tool says the reply is already handled](../../src/orchestration/chatOrchestrator.test.ts#L572))
++7. The orchestrator re-queries the AI provider with the updated messages, and the chunks of every round reach the client in order ([validated by: runs another round after a tool call and streams both rounds in order](../../src/orchestration/chatOrchestrator.test.ts#L507))
++8. This repeats until the budget is spent: at most `maxToolRounds` tool rounds are executed, and the provider is called at most `maxToolRounds + 1` times, so the default of 5 executes five rounds and makes six model calls, the last of which reads the fifth round's results. A round requested after that is not executed; see [the tool budget spec](../hal-engine-tool-budget/spec.md) ([validated by: executes 5 tool rounds and makes 6 provider calls at the default budget](../../src/orchestration/toolBudget.test.ts#L95), [validated by: stops asking for tools once maxToolRounds is spent](../../src/orchestration/chatOrchestrator.test.ts#L528))
+ 
+ ### Whether a round continues
+ 
+@@ -344,12 +352,12 @@ Here is what the message handler does when a tool call comes through:
+ 
+ ### Across rounds
+ 
+-- The loop ends as soon as a round stops with `end_turn`, and nothing further is asked of the provider ([validated by: stops after one round when nothing asked for a tool](../../src/orchestration/chatOrchestrator.test.ts#L440)).
+-- An `entry_upsert` a tool returns is appended to the session and its index rewritten to the position it actually landed in, because a tool cannot know how long the session already is ([validated by: appends an upserted entry to the session and rewrites its index to match](../../src/orchestration/chatOrchestrator.test.ts#L476)).
+-- The response text a hook sees is the text of every round joined, not only the last ([validated by: joins the text of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L505)).
+-- Usage an earlier round reported is kept when a later round reports none, so a tool round does not erase the token count ([validated by: keeps the usage an earlier round reported when a later round reports none](../../src/orchestration/chatOrchestrator.test.ts#L537)).
+-- The usage `afterModelResponse` receives is `totalUsage`: the sum of what every provider call in the turn reported, so a turn that ran tools counts every round rather than the last one alone ([validated by: sums the usage of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L555)).
+-- A round that reports no usage drops out of the sum rather than voiding it: the rounds that did report are still counted, and a turn where nothing reported reports nothing ([validated by: counts every reporting round even when a round between them reports none](../../src/orchestration/chatOrchestrator.test.ts#L577)).
++- The loop ends as soon as a round stops with `end_turn`, and nothing further is asked of the provider ([validated by: stops after one round when nothing asked for a tool](../../src/orchestration/chatOrchestrator.test.ts#L519)).
++- An `entry_upsert` a tool returns is appended to the session and its index rewritten to the position it actually landed in, because a tool cannot know how long the session already is ([validated by: appends an upserted entry to the session and rewrites its index to match](../../src/orchestration/chatOrchestrator.test.ts#L555)).
++- The response text a hook sees is the text of every round joined, not only the last ([validated by: joins the text of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L584)).
++- Usage an earlier round reported is kept when a later round reports none, so a tool round does not erase the token count ([validated by: keeps the usage an earlier round reported when a later round reports none](../../src/orchestration/chatOrchestrator.test.ts#L616)).
++- The usage `afterModelResponse` receives is `totalUsage`: the sum of what every provider call in the turn reported, so a turn that ran tools counts every round rather than the last one alone ([validated by: sums the usage of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L634)).
++- A round that reports no usage drops out of the sum rather than voiding it: the rounds that did report are still counted, and a turn where nothing reported reports nothing ([validated by: counts every reporting round even when a round between them reports none](../../src/orchestration/chatOrchestrator.test.ts#L656)).
+ 
+ The frontend shows a spinner on the last tool entry while the stream is still processing (`isProcessing` is `true`). The `stream_end` message clears the processing state, which hides the spinner. This works correctly even when tool suppression prevents assistant entries from reaching the frontend. See [tool-responses.md](../hal-engine-tool-responses/spec.md) for details on client messages and suppression.
+ 
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 66ff9d3..0a2caa9 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -12,17 +12,12 @@
+ - A hook passed through `orchestrator.hooks` is forwarded to the orchestrator and fires ([validated by: forwards an orchestrator hook, so one passed through the config actually fires](../../src/config.test.ts#L19)).
+ - An engine built with no `orchestrator` key at all still processes a message, so the field is optional in fact and not only in the type ([validated by: processes a message when the config declares no orchestrator key at all](../../src/config.test.ts#L95)).
+ - A `beforeModelResponse` hook installed through config is handed the base system prompt built from `prompt`, proving the hook reaches the orchestrator and is wired into the prompt pipeline rather than only being stored on the config ([validated by: hands a config-installed beforeModelResponse hook the built base system prompt, not merely storing it](../../src/config.test.ts#L129)).
+-- The value the hook returns then replaces the system prompt the provider receives; this is exercised at the orchestrator layer because `HalEngineConfig.provider` takes a `ProviderConfig` and offers no seam to inject a recording provider through config ([validated by: replaces system prompt with returned value](../../src/orchestration/chatOrchestrator.test.ts#L221)).
++- The value the hook returns then replaces the system prompt the provider receives; this is exercised at the orchestrator layer because `HalEngineConfig.provider` takes a `ProviderConfig` and offers no seam to inject a recording provider through config ([validated by: replaces system prompt with returned value](../../src/orchestration/chatOrchestrator.test.ts#L222)).
+ - For a session that completes without error the hooks fire in the order `beforeSession` → `beforeUserInput` → `afterUserInput` → `beforeModelResponse` → `afterModelResponse` → `afterSession` ([validated by: fires the lifecycle hooks in documented order for a session that completes without error](../../src/config.test.ts#L153)).
+-- A `beforeSession` that throws reaches the caller as a rejection, and also runs `onError` with the thrown error and then `afterSession`, because the call sits inside the same `try`/`finally` as the rest of the turn. An `afterSession` hook called under this condition can infer the session never advanced past `beforeSession`: no user-input hooks ran, no model response was generated, and no tool rounds were started — a cleanup hook that allocates in `beforeSession` and frees in `afterSession` will therefore always see the allocation and the release on the same error path ([validated by: runs onError then afterSession when it throws, and still rejects to the caller](../../src/orchestration/chatOrchestrator.test.ts#L116)).
+-- `afterModelResponse` is called once per user message after the round loop exits and is passed `totalUsage` — the sum of the usage every provider call in the turn reported, not the last round alone ([validated by: sums the usage of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L555)).
++- A `beforeSession` that throws reaches the caller as a rejection, and also runs `onError` with the thrown error and then `afterSession`, because the call sits inside the same `try`/`finally` as the rest of the turn. An `afterSession` hook called under this condition can infer the session never advanced past `beforeSession`: no user-input hooks ran, no model response was generated, and no tool rounds were started — a cleanup hook that allocates in `beforeSession` and frees in `afterSession` will therefore always see the allocation and the release on the same error path ([validated by: runs onError then afterSession when it throws, and still rejects to the caller](../../src/orchestration/chatOrchestrator.test.ts#L117)).
++- `afterModelResponse` is called once per user message after the round loop exits and is passed `totalUsage` — the sum of the usage every provider call in the turn reported, not the last round alone ([validated by: sums the usage of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L634)).
++- Any rejection inside the turn calls `onError` with an `Error` — passed through when the thrown value is already an `Error`, or wrapped with a readable `message` when a string, object or `undefined` is thrown — and then runs `afterSession` while still propagating the rejection to the caller ([validated by: calls onError with an Error carrying the thrown string and runs afterSession while rethrowing](../../src/orchestration/onErrorNonError.acceptance.test.ts#L63), [validated by: calls onError with an Error carrying a readable message when the stream rejects with a plain object](../../src/orchestration/onErrorNonError.acceptance.test.ts#L74), [validated by: calls onError with an Error carrying a readable message when the stream rejects with undefined](../../src/orchestration/onErrorNonError.acceptance.test.ts#L78), [validated by: wraps a rejection that is not an Error so onError still fires, while an Error passes through unchanged](../../src/orchestration/chatOrchestrator.test.ts#L312)).
+ 
+ ## Engine startup
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L195)).
+-
+-## Measured semantics — out of scope
+-
+-This property of `src/orchestration/chatOrchestrator.ts` is recorded so the hook features that follow specify against real behaviour. This issue does not change it; that is a separate, out-of-scope change owned by no issue in this epic.
+-
+-- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+index 48f427f..7c88f84 100644
+--- a/specs/hal-engine-tool-input-validation/spec.md
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -22,7 +22,7 @@
+ 
+ ## Orchestrator integration
+ 
+-- A validation failure becomes a tool result (not a thrown error), so the orchestrator delivers the rejection text to the model and the model can attempt a corrected call; `DEFAULT_MAX_TOOL_ROUNDS = 5` is the bound that stops a retry cycle from spinning ([validated by: resolves processMessage and makes the validation-rejection text visible to the provider on the next round](../../src/orchestration/chatOrchestrator.test.ts#L600)).
++- A validation failure becomes a tool result (not a thrown error), so the orchestrator delivers the rejection text to the model and the model can attempt a corrected call; `DEFAULT_MAX_TOOL_ROUNDS = 5` is the bound that stops a retry cycle from spinning ([validated by: resolves processMessage and makes the validation-rejection text visible to the provider on the next round](../../src/orchestration/chatOrchestrator.test.ts#L679)).
+ 
+ ## Out of scope
+ 
+diff --git a/src/orchestration/chatOrchestrator.test.ts b/src/orchestration/chatOrchestrator.test.ts
+index 0124d8c..e1924ef 100644
+--- a/src/orchestration/chatOrchestrator.test.ts
++++ b/src/orchestration/chatOrchestrator.test.ts
+@@ -6,6 +6,7 @@ import type {ChatSession} from '../types/session.js';
+ import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
+ import {ToolRegistry} from './tools/registry.js';
+ import type {ToolResponse} from './tools/registry.js';
++import {rejectingWith} from './rejectingProviderTestSupport.js';
+ import type {OutgoingMessage} from '../types/messages.js';
+ import type {SessionEntry} from '../types/session.js';
+ 
+@@ -307,6 +308,84 @@ describe('ChatOrchestrator hooks', () => {
+       });
+       await expect(orchestrator.processMessage(createSession('hello'))).rejects.toThrow('boom');
+     });
++
++    it('wraps a rejection that is not an Error so onError still fires, while an Error passes through unchanged', async () => {
++      const callOrder: string[] = [];
++      const receivedByHook: Error[] = [];
++      const hooks: OrchestratorHooks = {
++        onError: async (_session, error) => {
++          callOrder.push('onError');
++          receivedByHook.push(error);
++        },
++        afterSession: async () => void callOrder.push('afterSession'),
++      };
++
++      const turn = async (reason: unknown) => {
++        callOrder.length = 0;
++        receivedByHook.length = 0;
++        const outcome = await createChatOrchestrator(rejectingWith(reason), promptBuilder, undefined, {hooks})
++          .processMessage(createSession('hello'))
++          .then(
++            () => ({rejected: false, value: undefined as unknown}),
++            (thrown: unknown) => ({rejected: true, value: thrown})
++          );
++        const received = receivedByHook.at(0);
++
++        return {
++          outcome,
++          callOrder: [...callOrder],
++          isError: received instanceof Error,
++          message: received?.message,
++          cause: received?.cause,
++          hookGotOriginal: received === reason,
++          callerGotOriginal: outcome.value === reason,
++        };
++      };
++
++      const alreadyError = new AIError('rate limited', 'RATE_LIMITED');
++
++      expect({
++        string: await turn('string boom'),
++        object: await turn({code: 503, detail: 'upstream down'}),
++        nothing: await turn(undefined),
++        error: await turn(alreadyError),
++      }).toEqual({
++        string: {
++          outcome: {rejected: true, value: 'string boom'},
++          callOrder: ['onError', 'afterSession'],
++          isError: true,
++          message: 'string boom',
++          cause: 'string boom',
++          hookGotOriginal: false,
++          callerGotOriginal: true,
++        },
++        object: {
++          outcome: {rejected: true, value: {code: 503, detail: 'upstream down'}},
++          callOrder: ['onError', 'afterSession'],
++          isError: true,
++          message: expect.stringMatching(/\S/),
++          cause: {code: 503, detail: 'upstream down'},
++          hookGotOriginal: false,
++          callerGotOriginal: true,
++        },
++        nothing: {
++          outcome: {rejected: true, value: undefined},
++          callOrder: ['onError', 'afterSession'],
++          isError: true,
++          message: expect.stringMatching(/\S/),
++          hookGotOriginal: false,
++          callerGotOriginal: true,
++        },
++        error: {
++          outcome: {rejected: true, value: alreadyError},
++          callOrder: ['onError', 'afterSession'],
++          isError: true,
++          message: 'rate limited',
++          hookGotOriginal: true,
++          callerGotOriginal: true,
++        },
++      });
++    });
+   });
+ 
+   describe('full lifecycle order', () => {
+diff --git a/src/orchestration/chatOrchestrator.ts b/src/orchestration/chatOrchestrator.ts
+index 8defbd2..fb1e8c0 100644
+--- a/src/orchestration/chatOrchestrator.ts
++++ b/src/orchestration/chatOrchestrator.ts
+@@ -147,9 +147,8 @@ export function createChatOrchestrator(
+ 
+         if (hooks?.afterModelResponse) await hooks.afterModelResponse(session, responseText, totalUsage);
+       } catch (error) {
+-        if (hooks?.onError && error instanceof Error) {
+-          await hooks.onError(session, error);
+-        }
++        // The failure seam must hear about every rejection, so a non-Error is wrapped rather than dropped.
++        if (hooks?.onError) await hooks.onError(session, asError(error));
+         throw error;
+       } finally {
+         // Before both: a provider that threw mid-stream leaves an entry open, and nothing should persist it that way.
+@@ -332,6 +331,27 @@ function accumulateUsage(acc: UsageMetadata | undefined, next: UsageMetadata | u
+   };
+ }
+ 
++// The hook is typed against Error, so a rejection that is not one is wrapped with the original kept as `cause`.
++function asError(error: unknown): Error {
++  if (error instanceof Error) return error;
++  return new Error(readableMessage(error), {cause: error});
++}
++
++// A string stands alone; every other shape gets the best rendering JSON or String can give.
++function readableMessage(error: unknown): string {
++  if (typeof error === 'string') return error;
++  return stringifyOrNull(error) ?? String(error);
++}
++
++// JSON.stringify names an object's shape; null means it refused the value and String must render it instead.
++function stringifyOrNull(value: unknown): string | null {
++  try {
++    return JSON.stringify(value);
++  } catch {
++    return null;
++  }
++}
++
+ // A store outage is not a reason to fail the turn the customer already received.
+ async function saveSession(store: SessionStore | undefined, session: ChatSession): Promise<void> {
+   if (!store?.save) return;
+diff --git a/src/orchestration/onErrorNonError.acceptance.test.ts b/src/orchestration/onErrorNonError.acceptance.test.ts
+new file mode 100644
+index 0000000..255b4d1
+--- /dev/null
++++ b/src/orchestration/onErrorNonError.acceptance.test.ts
+@@ -0,0 +1,81 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {rejectingWith} from './rejectingProviderTestSupport.js';
++
++// Fixed: nothing asserts on it, and new Date() would tie the run to the clock.
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++const sessionWith = (content: string): ChatSession => ({
++  sessionId: 'test-session',
++  userId: 'user-1',
++  entries: [{role: 'user', content, timestamp: SENT_AT}],
++});
++
++const turnOutcome = async (reason: unknown) => {
++  const callOrder: string[] = [];
++  let seenError: Error | undefined;
++  const hooks: OrchestratorHooks = {
++    onError: async (_session, error) => {
++      callOrder.push('onError');
++      seenError = error;
++    },
++    afterSession: async () => {
++      callOrder.push('afterSession');
++    },
++  };
++
++  const orchestrator = createChatOrchestrator(rejectingWith(reason), promptBuilder, undefined, {hooks});
++  const outcome = await orchestrator.processMessage(sessionWith('hello')).then(
++    value => ({rejected: false, reason: value as unknown}),
++    (thrown: unknown) => ({rejected: true, reason: thrown})
++  );
++
++  return {
++    outcome,
++    callOrder,
++    isError: seenError instanceof Error,
++    message: seenError?.message,
++  };
++};
++
++// One shared assertion for every non-Error shape: onError first, then afterSession, reason passed through.
++const expectTurnRejectedThroughOnError = async (reason: unknown) => {
++  const result = await turnOutcome(reason);
++
++  expect({
++    outcome: result.outcome,
++    callOrder: result.callOrder,
++    isError: result.isError,
++    hasMessage: typeof result.message === 'string' && result.message.length > 0,
++  }).toEqual({
++    outcome: {rejected: true, reason},
++    callOrder: ['onError', 'afterSession'],
++    isError: true,
++    hasMessage: true,
++  });
++};
++
++describe('ChatOrchestrator onError on non-Error rejections', () => {
++  it('calls onError with an Error carrying the thrown string and runs afterSession while rethrowing', async () => {
++    const result = await turnOutcome('string boom');
++
++    expect(result).toEqual({
++      outcome: {rejected: true, reason: 'string boom'},
++      callOrder: ['onError', 'afterSession'],
++      isError: true,
++      message: 'string boom',
++    });
++  });
++
++  it('calls onError with an Error carrying a readable message when the stream rejects with a plain object', async () => {
++    await expectTurnRejectedThroughOnError({code: 503, detail: 'upstream down'});
++  });
++
++  it('calls onError with an Error carrying a readable message when the stream rejects with undefined', async () => {
++    await expectTurnRejectedThroughOnError(undefined);
++  });
++});
+diff --git a/src/orchestration/rejectingProviderTestSupport.ts b/src/orchestration/rejectingProviderTestSupport.ts
+new file mode 100644
+index 0000000..0d41022
+--- /dev/null
++++ b/src/orchestration/rejectingProviderTestSupport.ts
+@@ -0,0 +1,15 @@
++import type {AIProvider, MessageChunk} from '../types/ai.js';
++
++// Shared by the orchestrator suites pinning the onError seam against arbitrary rejections.
++/** An AIProvider whose stream rejects with whatever the test hands it, Error or not. */
++export function rejectingWith(reason: unknown): AIProvider {
++  return {
++    // eslint-disable-next-line require-yield
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      throw reason;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
+diff --git a/tsconfig.build.json b/tsconfig.build.json
+index 2314da4..0ba9301 100644
+--- a/tsconfig.build.json
++++ b/tsconfig.build.json
+@@ -13,6 +13,7 @@
+     "smoke",
+     "**/*.test.ts",
+     "src/providers/providerTestSupport.ts",
++    "src/orchestration/rejectingProviderTestSupport.ts",
+     "src/infrastructure/writeSignalTestSupport.ts",
+     "src/infrastructure/stores/mongo/mongoTestSupport.ts",
+     "src/shared/logCaptureTestSupport.ts",
