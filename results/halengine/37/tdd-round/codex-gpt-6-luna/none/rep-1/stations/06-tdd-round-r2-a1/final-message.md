@@ -1,0 +1,3 @@
+I couldn’t complete a TDD round. The required `lore-query-trace` and `lore_get_ci_failures` tools are unavailable here, and the brief truncates the failed CI test log before showing its failure details. I made no edits, ran no tests, and did not commit or push.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore trace and CI failure tools are unavailable, and the round brief truncates the CI failure details needed to proceed safely."}}

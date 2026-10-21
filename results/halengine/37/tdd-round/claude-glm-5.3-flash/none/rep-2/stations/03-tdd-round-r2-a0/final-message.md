@@ -1,0 +1,13 @@
+The round is delivered. Summary of what the three CI findings turned out to be and what I did:
+
+**eslint — 5 × `re-lint/max-expects` (real, fixed):** folded each flagged test's assertions into a single `toEqual` object (one root `expect()` per test, the rule's own suggested shape), preserving every fact the ticket's acceptance criteria name — executor call counts, the rejection message naming `location`/`query` and the expected type, the no-value-echo check, the ten-call compile-once check, and the orchestrator rejection→retry flow. Assertion-object shapes stay distinct from the acceptance fixture so `no-duplicate-code` stays quiet.
+
+**test step (root-caused, fixed):** the visible `providerFactory.test.ts` block in the log is jest attributing the VertexAI deprecation `console.warn` — that suite passes. The real failure is the committed coverage ratchet: `src/orchestration/tools/` functions measured **68.75% vs the 71.42% floor** (`get`, `has`, `getPromptInstructions`, `getExamplePrompts` are covered by no suite; jest prints threshold failures at the very end of the log, where the brief truncates). Per the ratchet's own rule I added three tests for those public methods, specified by a new `specs/hal-engine-tool-registry/spec.md`; the path now measures 93.5% statements / 100% functions / 88.5% branches / 95.2% lines, all above their floors.
+
+**typecheck TS2693 (not reproducible, no edit):** the named-export `Ajv` import compiles clean — verified with a targeted probe of four import forms plus the full-src program under the repo tsconfig and lockfile-pinned versions (0 diagnostics). Default/namespace forms fail `TS2351`, so the current code stands. I also re-anchored the five spec links my edits shifted and verified all 14 citations resolve to their named tests; `spec:names`, `check:spec-links` and `check:spec-status` all pass.
+
+Committed `d9e05da`, pushed; `origin/main` is already merged (no drift), branch not ahead of upstream. Tests I left red: 0 (32 tests green). Regressions caused: 0. Unrelated smells noticed, acted on none: `normalizeToolResponse`'s executor-reference-equality makes `get`'s executor identity observable but unused by consumers; the `Unknown tool:` throw remains intentionally out of scope per the ticket.
+
+Facet closed: repair of the 509f419 CI findings (max-expects + coverage ratchet). Next: acceptance green — all four acceptance tests read green against the implementation, and CI re-judges on this push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"repair of 509f419 CI findings: max-expects single-assertion rewrites and tools-group function coverage lifted over its ratchet via get/has/prompt-metadata tests + specs/hal-engine-tool-registry","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+I’m blocked before editing. The required `lore-query-trace` and `lore_get_ci_failures` tools aren’t available in this session, and the round brief is absent. Since I can’t check existing coverage or the previous CI verdict, I can’t safely start the required red phase.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore-query-trace and lore_get_ci_failures tools are unavailable, and no round brief exists."}}

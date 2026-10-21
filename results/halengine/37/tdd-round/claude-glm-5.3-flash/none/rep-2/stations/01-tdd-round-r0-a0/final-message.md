@@ -1,0 +1,14 @@
+Round complete and pushed. Summary:
+
+**What this round did** (one red-green-refactor cycle, `direct` strategy):
+- **Red**: new `src/orchestration/tools/registry.test.ts` — registers a tool requiring a `location` string, calls `execute` with `{}`, asserts the result names `location` as required with executor call count 0. Failed as expected (executor ran once, result was `'sunny'`).
+- **Green**: added `ajv@^8.20.0` to `dependencies` (with lockfile), and `ToolRegistry.execute` now validates input against the resolved definition's `inputSchema` before the executor, returning `{result: 'Tool input rejected: …'}` built from ajv's non-verbose error text — property paths and constraints only, never values. My test passes.
+- **Refactor**: static schemas compile once at `register` (throwing synchronously with the tool's name on an uncompilable schema), function-valued sources resolve per call with validators cached by schema object in a `WeakMap`; `execute` carries the required one-line doc comment pointing at `specs/hal-engine-tool-input-validation/spec.md`. A two-line `//` comment of mine was collapsed to one line for `re-lint/max-comment-lines`.
+
+**Traceability & delivery**: spec statement now also cites the new test (anchor hand-verified on the `it(` line since the spec is branch-introduced; repo's `check-spec-anchor-names` and `check-spec-links` both pass: 399 citations named, 0 misplaced). `CHANGELOG.md` gained an Unreleased entry (CI's changelog gate fires on any non-test `src/` change), version bumped MINOR 0.3.0 → 0.4.0 with the lockfile synced. `.lore/dod.md` ticks facets 1–3. Prettier ran on both TS files. Pushed as `81b09b0`; `origin/main` is an ancestor, so no merge was needed; `git status` confirms the branch is level with its upstream.
+
+**Tests run here**: only my one test file. I ran no acceptance tests, lint, typecheck, or build — CI judges those on the push. Red tests of mine outstanding: none. Regressions: none observed (the wider suite was not run here).
+
+**Unrelated smells noticed, not acted on**: `ToolRegistry.get`/`getDefinitions` resolve function-valued definitions on every call with no caching outside `execute`; `npm audit` prints fix advice for pre-existing dev-dependency advisories.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"validate input in ToolRegistry.execute against the registered inputSchema (ajv dep, register-time compile, WeakMap cache, rejection ToolResponse)","tdd_next":"facet 4 — remaining unit tests in registry.test.ts and chatOrchestrator.test.ts, link spec statements L14/L15/L20/L21, and update example/weather-tool.ts, docs/adding-a-tool.md, README.md, .specify/spec.md, adrs/ADR-002-response-validation.md"}}

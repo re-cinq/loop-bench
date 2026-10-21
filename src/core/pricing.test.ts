@@ -21,6 +21,10 @@ describe("costOf", () => {
     expect(costOf("codex", "gpt-5.6-sol", { ...EMPTY_USAGE, input_tokens: million, reasoning_tokens: million }).usd).toBeCloseTo(35, 9);
   });
 
+  it("glm-5.3 through the claude CLI: 1M uncached input, 1M cache reads and 1M output is $6.06", () => {
+    expect(costOf("claude", "glm-5.3", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(6.06, 9);
+  });
+
   it("an unknown model costs 0 with basis unknown-model", () => {
     expect(costOf("gemini", "gemini-9", { ...EMPTY_USAGE, input_tokens: 10 })).toEqual({ usd: 0, basis: "unknown-model" });
   });

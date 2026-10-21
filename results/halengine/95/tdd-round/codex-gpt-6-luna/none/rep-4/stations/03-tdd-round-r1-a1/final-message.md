@@ -1,0 +1,3 @@
+I’m blocked because `lore-query-trace` is unavailable in this environment, and the required coverage query must happen before I edit the orchestrator. I made no changes. The remaining facets are confirming the existing `Error`-instance behavior and adding the Unreleased changelog entry; CI also reports lint, spec-anchor, and changelog failures to resolve.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The required lore-query-trace coverage tool is unavailable, so I cannot query existing coverage before editing the orchestrator."}}

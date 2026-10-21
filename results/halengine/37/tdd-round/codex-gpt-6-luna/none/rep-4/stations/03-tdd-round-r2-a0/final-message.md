@@ -1,0 +1,5 @@
+Committed and pushed `8b580e0` (`Test tool input passthrough`). The branch is up to date with its upstream, and `origin/main` merged cleanly.
+
+The new focused test passed. It was already green before any implementation change, so this round did not achieve the requested red phase. I also fixed the reported TypeScript and ESLint findings and repaired the spec test links. The DoD facet remains open because its documentation and orchestrator test work is still outstanding. I could not query the trace graph because Lore tools were unavailable in this session. No unrelated issues were acted on. Red tests written this round: 0; regressions: 0.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Valid input with an undeclared property passes through unchanged and invokes the executor once","tdd_next":"Complete remaining unit tests and documentation updates"}}

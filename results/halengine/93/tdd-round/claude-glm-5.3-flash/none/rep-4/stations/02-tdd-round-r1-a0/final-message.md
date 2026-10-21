@@ -1,0 +1,11 @@
+Round complete. Summary:
+
+**CI findings (the owed work) — all four cleared.** The previous push's Lint step failed on 4 `re-lint/require-spec-link` errors: the `addRoundUsage` tests at `src/orchestration/orchestratorHelpers.test.ts:32,36,40,44` had no spec link. I cited each from `specs/hal-engine-architecture/spec.md`'s "Across rounds" section — the section that already states the loop's per-round accumulation and already cites this same test file's `shouldContinueToolLoop` tests. Each citation carries the test's exact name and lands on its `it(` line; I verified with the rule's own link index that all 8 tests in that file are now cited, and that the spec's status math still computes `In Progress` (no tier regression, all four new statements linked).
+
+**Not done, deliberately.** The two "Done when these pass" boxes stay unticked: the verify job short-circuits at the failed Lint step, so CI has never been seen to pass the acceptance tests — the next round's brief confirms or corrects. I also wrote no new test this round: the deliverable is the citation diff, and inventing a test for it would leave the strategy. No local test run, no lint/typecheck/build in this pod; formatter check passes over the repo's prettier scope (my changed files are markdown, which that scope excludes). Zero red tests of mine, zero regressions.
+
+**Smells noticed, not acted on:** `specs/hal-engine-config-hooks/spec.md:27` cites `chatOrchestrator.ts#L151` mid-statement and at source rather than a test (the backlog `require-statement-links` mirror flags it; it predates this branch); that spec's lead still reads "issue #93 defines the aggregate usage", now stale. Named, untouched.
+
+Pushed `ebff922`, branch up to date with `origin/loop-bench/93` and `origin/main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"cite the four addRoundUsage unit tests so re-lint/require-spec-link passes","tdd_next":"tick the two acceptance Done boxes once CI's Test step is seen green, else acceptance green"}}

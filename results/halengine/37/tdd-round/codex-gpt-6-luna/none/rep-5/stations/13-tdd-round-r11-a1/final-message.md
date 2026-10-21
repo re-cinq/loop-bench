@@ -1,0 +1,3 @@
+I’m blocked from completing a valid round: the previous CI test failure is truncated in `round-brief.md`, and no `lore_get_ci_failures` or `lore-query-trace` capability is available here. The existing working-tree diff only addresses three lint findings; `registry.ts` still has the reported early-return finding. I can’t identify the test failure or check coverage before editing, and I won’t guess at a facet or claim a red-green round without its required failing test.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The CI test failure details and required lore trace query are unavailable, so I cannot safely choose and complete the required single red-green round."}}

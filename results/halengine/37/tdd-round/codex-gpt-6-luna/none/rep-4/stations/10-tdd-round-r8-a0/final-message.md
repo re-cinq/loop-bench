@@ -1,0 +1,3 @@
+I fixed the five stale spec anchors and refactored the legacy error-path normalization. I couldn’t complete the required TDD round: the available tools expose no `lore-query-trace`, and the remaining validation behaviors I inspected are already covered by the current implementation, so I found no new failing behavioral test to write. The changes are uncommitted and unpushed; the documentation and changelog facet remains open.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"No lore-query-trace interface is available, and no uncovered behavior was found that would yield a failing test for this round."}}

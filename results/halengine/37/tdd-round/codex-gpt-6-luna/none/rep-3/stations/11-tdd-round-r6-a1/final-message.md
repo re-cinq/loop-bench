@@ -1,0 +1,3 @@
+I’m blocked before the round can proceed: this session has no `lore_query_trace` or `lore_get_ci_failures` tool, so I can’t check existing coverage or recover the actual CI failure. The brief’s test log is truncated before the failing test is identified. I made no edits and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The required Lore coverage and CI failure details are unavailable in this session."}}

@@ -1,0 +1,3 @@
+I’m blocked before the required edits: `lore-query-trace` is not available among this session’s tools, so I couldn’t check existing coverage before changing `chatOrchestrator.ts`. I made no changes, ran no tests, and made no commit or push. The round’s CI brief lists four lint findings, two stale spec anchors, and a missing changelog entry; none were fixed. Red tests: 0 of mine, 0 regressions assessed.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The required lore-query-trace tool is unavailable, so I cannot check coverage before editing the orchestrator."}}

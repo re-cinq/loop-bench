@@ -1,0 +1,5 @@
+Committed and pushed `429f8b1` (`test: cover required tool input rejection`); the branch is up to date with its upstream. The new registry test and spec link are in place, and the single-file test passed: **0 red tests of mine, 0 local regressions**.
+
+The test was already green before implementation, so this round didn’t demonstrate a red-to-green behavior change. I left the broader DoD facet open. The previous CI brief reports a failed test step, but its log is truncated before identifying the failure; I couldn’t retrieve more detail because Lore tools aren’t available in this session.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Required-property rejection regression test and spec link","tdd_next":"Remaining registry and orchestrator tests, documentation updates, and spec links"}}

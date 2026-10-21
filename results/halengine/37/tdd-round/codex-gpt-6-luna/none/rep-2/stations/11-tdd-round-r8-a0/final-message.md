@@ -1,0 +1,5 @@
+Added a nested wrong-type field-path test, linked it to the spec, and updated the DoD. The registry test file passed. The CI findings weren’t reproducible in this checkout: its nested required and wrong-type paths and top-level field paths all pass locally, so this round changed no implementation code. The coverage graph tool wasn’t available, and the anchor re-pointer skipped this spec because it isn’t on `origin/main`; I verified and updated the affected links manually.
+
+Committed and pushed as `5f0f7ff`; the branch is up to date with its upstream. **Red tests written this round: 0. Regressions confirmed: 0.** Remaining facets include the MINOR version bump and registry/orchestrator coverage and documentation updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"nested wrong-type field-path coverage","tdd_next":"remaining registry and orchestrator unit coverage"}}

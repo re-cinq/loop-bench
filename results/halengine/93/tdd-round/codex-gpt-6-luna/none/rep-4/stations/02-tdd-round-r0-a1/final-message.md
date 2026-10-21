@@ -1,0 +1,3 @@
+I’m blocked before the red phase: the required `lore-query-trace` call is unavailable here. I checked the exposed tools and `command -v lore-query-trace` returned no command, so I can’t check coverage before editing a symbol as required. I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The required lore-query-trace coverage query is unavailable in this environment."}}

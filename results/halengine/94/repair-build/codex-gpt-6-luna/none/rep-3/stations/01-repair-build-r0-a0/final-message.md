@@ -1,0 +1,3 @@
+Fixed both reported typecheck and lint findings in the acceptance test. Prettier and `git diff --check` passed; I did not run typecheck or lint in this pod. The change is committed and pushed, and the branch is up to date with `origin/main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Updated the prompt builder fixture to its current config and combined assertions to satisfy lint"}}
