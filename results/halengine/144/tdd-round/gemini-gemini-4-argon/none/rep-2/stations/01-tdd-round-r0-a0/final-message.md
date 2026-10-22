@@ -1,0 +1,6 @@
+Completed one red-green-refactor round for `list_sessions` message types and frame validation:
+
+- **Red:** Added a failing unit test in `src/transport/ws/validation.test.ts` covering `list_sessions` validation (optional non-negative integer `limit`, optional `before` cursor with 1–128 char `sessionId` and finite-date string/number `updatedAt`, stripping unknown fields such as `userId`, and rejecting malformed frames). (1 red test was ours; 0 regressions.)
+- **Green & Refactor:** Added `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` to `src/types/messages.ts` (included in `IncomingMessage` and `OutgoingMessage`) and re-exported them from `src/index.ts`, implemented `validateListSessionsMessage` in `src/transport/ws/validation.ts`, linked the test in `specs/hal-engine-conversation-list/spec.md`, ticked the closed facets in `.lore/dod.md`, formatted with Prettier, and pushed to `origin`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts, re-export them from src/index.ts, and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler (optional parameter so existing 1-arg and 2-arg callers keep working) and wire it in src/transport/createServer.ts."}}

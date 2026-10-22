@@ -1,0 +1,5 @@
+I have completed the TDD round for the first facet. 
+
+I wrote and ran `src/types/messages.test.ts` to pin the message literals, which passed successfully (0 red tests of mine, 0 regressions). I formatted the changed files using `prettier` and pushed the commit to the `loop-bench/144` branch. The acceptance tests were not run locally as they are for CI to execute. There were no prior CI failures to fix since this is the first round and `round-brief.md` did not exist.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts, include them in IncomingMessage and OutgoingMessage, and re-export them from src/index.ts.","tdd_next":"Validate list_sessions frames in src/transport/ws/validation.ts (optional non-negative integer limit; optional before object with 1–128 char sessionId and finite-date updatedAt string or number; strip unknown fields like userId)."}}

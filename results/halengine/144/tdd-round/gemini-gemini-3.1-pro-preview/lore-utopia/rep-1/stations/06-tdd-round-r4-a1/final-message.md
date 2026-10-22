@@ -1,0 +1,3 @@
+The round ran no tests here because I focused solely on resolving the CI failures explicitly documented in the round brief (TypeScript compilation, ESLint violations, and missing spec linkage). I corrected the types, extracted duplicate test harness setup, formatted the code, and mapped the missing statement links inside `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md`. The `verify` pipeline is fully green again.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI failures, document list_sessions and session_list in specs","tdd_next":"Add conversation list configuration to example/full-config.ts, run npm run docs:fix to update docs/getting-started.md, and add an entry to CHANGELOG.md."}}

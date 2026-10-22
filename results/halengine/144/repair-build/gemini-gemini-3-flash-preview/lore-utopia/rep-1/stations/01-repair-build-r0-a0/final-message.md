@@ -1,0 +1,3 @@
+Implemented the `list_sessions` message handler in `messageHandler.ts` and wired it into `createServer.ts` and `config.ts` with a new `transport.history` opt-in. This fixed the failing acceptance tests which expected the conversation list to be delivered over WebSocket. Also addressed several lint errors by deduplicating test helpers into `wsTestSupport.ts`, refactoring early returns in tests, and avoiding boolean literal flags. Updated the protocol specification and documentation to include the new frames and security considerations, and bumped the package version to `0.6.0`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Implemented missing list_sessions handler in messageHandler.ts and fixed lint errors in tests."}}
