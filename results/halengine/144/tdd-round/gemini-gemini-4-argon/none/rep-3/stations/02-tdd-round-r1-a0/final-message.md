@@ -1,0 +1,9 @@
+Completed the TDD round for handling `list_sessions` over WebSocket and resolved the CI lint findings:
+
+- Added a unit test in `src/transport/ws/messageHandler.test.ts` covering `list_sessions` dispatch (forwarding `session.userId` and `{limit, before}` to `sessionStore.listFor`, serialising `createdAt`/`updatedAt` to ISO-8601 strings in `session_list`, answering `{type: 'session_list', sessions: []}` when `listFor` is absent, and answering `SERVER_ERROR` with a `'ws'` error log when `listFor` rejects).
+- Added `sendSessionList` to `src/transport/ws/sender.ts`, threaded `sessionStore` into `createMessageHandler` in `src/transport/ws/messageHandler.ts` and `src/transport/createServer.ts`, and implemented `handleListSessions`.
+- Resolved all 8 `eslint` findings reported by CI (`re-lint/no-flag-params` in `src/transport/ws/validation.test.ts`, `re-lint/prefer-early-return` in `src/transport/conversationList.acceptance.test.ts`, and `re-lint/no-duplicate-code` across `src/transport/conversationList.acceptance.test.ts` and `src/transport/sessionResume.test.ts` via `src/transport/wsTestSupport.ts`).
+- Documented `list_sessions` (§ 4.3) and `session_list` (§ 5.9) in `specs/hal-engine-websocket-protocol/spec.md` and repointed all `#Lnn` spec citations.
+- Red tests from previous CI: 3 acceptance tests (0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Thread sessionStore into createMessageHandler, handle list_sessions in src/transport/ws/messageHandler.ts, document list_sessions and session_list in specs, and fix CI lint findings","tdd_next":"acceptance green"}}

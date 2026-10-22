@@ -1,0 +1,3 @@
+Completed one red-green-refactor round for `list_sessions` / `session_list` message types and WebSocket frame validation (`src/types/messages.ts`, `src/types/index.ts`, `src/index.ts`, `src/transport/ws/validation.ts`, and `src/transport/ws/validation.test.ts`). 1 red test was mine (now green) and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler and handle list_sessions in src/transport/ws/messageHandler.ts"}}

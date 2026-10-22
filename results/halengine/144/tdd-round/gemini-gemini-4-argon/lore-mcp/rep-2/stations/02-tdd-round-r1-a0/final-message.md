@@ -1,0 +1,6 @@
+Completed the round:
+
+- **Red tests**: 3 red acceptance tests in `src/transport/conversationList.acceptance.test.ts` on the previous push were ours (0 regressions).
+- **Done**: Added a unit test in `src/transport/ws/messageHandler.test.ts` for `list_sessions`, threaded `sessionStore` into `createMessageHandler` and wired it in `src/transport/createServer.ts`, handled `list_sessions` in `src/transport/ws/messageHandler.ts` with `sendSessionList` in `src/transport/ws/sender.ts`, documented `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md`, added the `CHANGELOG.md` entry, and resolved all `eslint` findings from the previous CI run.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Thread sessionStore into createMessageHandler, wire it in createServer.ts, handle list_sessions in messageHandler.ts and sender.ts, document in specs, and resolve CI lint and changelog failures","tdd_next":"acceptance green"}}

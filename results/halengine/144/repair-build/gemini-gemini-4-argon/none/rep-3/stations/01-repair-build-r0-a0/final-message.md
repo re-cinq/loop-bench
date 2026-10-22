@@ -1,0 +1,3 @@
+Implemented `list_sessions` handling in `src/transport/ws/messageHandler.ts` and `src/transport/createServer.ts`, resolved the eslint errors in `src/transport/conversationList.acceptance.test.ts` and `src/transport/ws/validation.test.ts`, and updated the WebSocket protocol spec and citations.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"handled list_sessions frames in messageHandler and fixed eslint duplicate-code, prefer-early-return, and no-flag-params errors in test files"}}

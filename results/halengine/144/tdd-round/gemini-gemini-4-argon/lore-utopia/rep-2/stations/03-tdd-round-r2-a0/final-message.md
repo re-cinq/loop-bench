@@ -1,0 +1,3 @@
+Resolved all CI `typecheck` and `eslint` findings across `src/transport/ws/validation.test.ts`, `src/transport/ws/messageHandler.test.ts`, and `src/transport/conversationList.acceptance.test.ts`, extracted the shared `baseSessionStore` helper into `src/transport/wsTestSupport.ts`, and updated shifted spec citation line numbers. 0 red tests were mine and 0 were regressions (all unit tests pass; CI findings were typecheck and lint errors on the branch's new test files).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve CI typecheck and eslint failures in list_sessions tests","tdd_next":"acceptance green"}}

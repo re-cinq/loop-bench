@@ -1,0 +1,5 @@
+I have resolved the ESLint failures reported in the previous round by refactoring the log-capturing logic into a shared helper in `src/transport/wsTestSupport.ts`. This addressed the code duplication between `conversationList.acceptance.test.ts` and `listSessionsError.test.ts`. Additionally, I combined the multiple assertions in `listSessionsError.test.ts` to satisfy the `max-expects` rule and fixed a missing `jest` import. 
+
+I also updated the `validated by` links in `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md` to reflect the new line numbers in the refactored test files and moved the status of the WebSocket protocol specification to `Shipped`. Both affected test files were verified to pass using the project's Jest runner.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Include sessionId in list_sessions error logs","tdd_next":"acceptance green"}}

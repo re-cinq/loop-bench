@@ -1,0 +1,5 @@
+Completed the TDD round for `list_sessions` / `session_list` message types and `list_sessions` frame validation:
+- Added a failing test in `src/transport/ws/validation.test.ts` (1 red test of ours, 0 regressions), then added `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` to `src/types/messages.ts` (and re-exported them from `src/types/index.ts` and `src/index.ts`) and implemented `validateListSessionsMessage` in `src/transport/ws/validation.ts` to turn it green.
+- Updated spec citations, repointed spec anchors, ticked the completed facets in `.lore/dod.md`, and pushed `2770426` to `origin/loop-bench/144`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts and src/index.ts, and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler (optional parameter so existing 1-arg and 2-arg callers keep working) and wire it in src/transport/createServer.ts"}}

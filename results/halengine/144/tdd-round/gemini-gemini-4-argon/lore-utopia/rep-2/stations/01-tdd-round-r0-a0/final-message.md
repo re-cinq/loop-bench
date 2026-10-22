@@ -1,0 +1,5 @@
+Completed one red-green-refactor round (1 red test of ours turned green, 0 regressions):
+- Added a unit test in `src/transport/ws/validation.test.ts` validating `list_sessions` frames (optional non-negative integer `limit`, optional `before` cursor with 1–128 char `sessionId` and finite-date `updatedAt`, stripping unknown fields like `userId`) and verifying the exported `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` types.
+- Implemented the types in `src/types/messages.ts` (re-exported from `src/types/index.ts` and `src/index.ts`) and frame validation in `src/transport/ws/validation.ts`, updated `.lore/dod.md`, `CHANGELOG.md`, and spec citations, and pushed to `origin`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts (re-exported from src/index.ts) and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler and handle list_sessions in src/transport/ws/messageHandler.ts"}}
