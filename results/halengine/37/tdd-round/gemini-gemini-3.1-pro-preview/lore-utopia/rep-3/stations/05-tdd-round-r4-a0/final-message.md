@@ -1,0 +1,3 @@
+I have fixed the eslint error in `src/orchestration/tools/registry.ts` and completed the final facet by adding the missing unit tests for the schema validation loop logic to `chatOrchestrator.test.ts` and `registry.test.ts`. I also updated all relevant documentation files, specs, and the ADR to reflect that tool inputs are now being strictly enforced via `ajv` schemas. The updated branch has been pushed, and the test I wrote this round passes locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"returns a schema rejection as a tool_result in the orchestrator loop so the model can correct the call on the next round","tdd_next":"acceptance green"}}

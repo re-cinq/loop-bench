@@ -1,0 +1,7 @@
+Fixed all CI failures on branch `loop-bench/37`:
+
+1. **`typecheck` & `test` (Ajv ESM/NodeNext import)**: Changed `import {Ajv} from 'ajv'` in `src/orchestration/tools/registry.ts` to default-import the CommonJS module (`import AjvPackage from 'ajv'; const Ajv = AjvPackage.default;`), satisfying both `NodeNext` type checking and Node ESM (`--experimental-vm-modules`) execution.
+2. **`eslint`**: Preserved `{cause: error}` when re-throwing in `compileSchema` (`preserve-caught-error`), and flattened the `sendMessage` generator and member access in `src/orchestration/tools/registry.acceptance.test.ts` (`re-lint/prefer-early-return` and `re-lint/max-member-chain`).
+3. **`test` & spec coverage**: Implemented `ToolRegistry.execute` input validation against the registered `inputSchema` (reusing precompiled validators for static tools and `WeakMap`-cached validators for dynamic `ToolDefinitionSource` functions, returning a `ToolResponse` without leaking offending values), added unit tests in `src/orchestration/tools/registry.test.ts`, and linked all statements in `specs/hal-engine-tool-input-validation/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed Ajv NodeNext default import, ESLint violations in registry.ts and registry.acceptance.test.ts, and implemented ToolRegistry.execute inputSchema validation with full test and spec coverage"}}

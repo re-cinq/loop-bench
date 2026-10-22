@@ -1,0 +1,3 @@
+The round successfully fixed the TS errors (`TS2693: 'Ajv' only refers to a type, but is being used as a value here`) caused by incorrectly using a named import for `Ajv` which is only exported as a default value by `ajv` in its TS declarations. This was fixed by using the default import `import Ajv from 'ajv'`. Fixing this TS error also resolves the test coverage failures that occurred because `ts-jest` crashed parsing the test file due to the type error, preventing the suite from running and dropping the coverage. The changes were formatted and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix typecheck and test suite crash from Ajv import","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+I fixed the `TS2693: 'Ajv' only refers to a type, but is being used as a value here` typecheck failure by correcting the import to use the default export `import Ajv from 'ajv'`. This same issue was causing a runtime `TypeError: Ajv is not a constructor` during initialization, which crashed the tests when hooks failed. The changes have been formatted, committed, and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix typecheck and runtime test failures from Ajv import","tdd_next":"acceptance green"}}

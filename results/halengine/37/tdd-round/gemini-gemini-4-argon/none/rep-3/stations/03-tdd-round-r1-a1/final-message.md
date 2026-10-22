@@ -1,0 +1,7 @@
+Completed the final facet of Ticket #37:
+- Added unit tests in `src/orchestration/tools/registry.test.ts` and `src/orchestration/chatOrchestrator.test.ts` covering missing required properties, extra-property pass-through, wrong-typed properties without leaking values, unknown tools, static schema compilation once across ten executions, function-valued schema resolution/caching, and orchestrator `tool_result` recovery.
+- Linked all remaining statements in `specs/hal-engine-tool-input-validation/spec.md` and updated its status to `Shipped`.
+- Updated `example/weather-tool.ts`, `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `adrs/ADR-002-response-validation.md`, `docs/spikes/spike-ai-response-validation.md`, and ticked the final facet in `.lore/dod.md`.
+- Red tests from previous CI verdict: 3 acceptance tests (yours, now resolved by `ToolRegistry.execute` validation), 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add remaining unit tests in src/orchestration/tools/registry.test.ts and src/orchestration/chatOrchestrator.test.ts, link the remaining statements in specs/hal-engine-tool-input-validation/spec.md, and update example/weather-tool.ts, docs/adding-a-tool.md, README.md, .specify/spec.md, adrs/ADR-002-response-validation.md, and CHANGELOG.md","tdd_next":"acceptance green"}}

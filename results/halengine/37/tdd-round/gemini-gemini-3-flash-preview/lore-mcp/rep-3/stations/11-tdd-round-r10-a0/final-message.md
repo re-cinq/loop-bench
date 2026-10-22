@@ -1,0 +1,3 @@
+I have fixed the CI-reported type errors in `src/orchestration/tools/registry.ts` and `src/orchestration/tools/registry.test.ts`. Specifically, I corrected the `Ajv` import to properly reference the constructor, ensured that the `validate` function is always defined before invocation, and addressed the `instancePath` type error using a safe cast. I also verified that the relevant unit tests, including `registry.test.ts` and `chatOrchestrator.test.ts`, pass locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI findings (type errors in registry.ts and registry.test.ts)","tdd_next":"acceptance green"}}

@@ -1,0 +1,7 @@
+Resolved all CI failures reported in `round-brief.md` (`typecheck`, `eslint`, and `test`; 0 regressions in existing tests, 1 red unit/acceptance suite failure on our branch caused by Ajv v6/v8 type/error-shape differences and ESLint rules) and completed the final facet in `.lore/dod.md`:
+
+- Updated `src/orchestration/tools/registry.ts` to use version-agnostic schema compiler/error interfaces, attach `{cause: error}` on invalid schema errors (`preserve-caught-error`), and normalize both `instancePath` and `dataPath` within a 2-hop member chain (`re-lint/max-member-chain`).
+- Added the remaining unit tests in `src/orchestration/tools/registry.test.ts` and `src/orchestration/chatOrchestrator.test.ts` and fixed the ESLint findings in `src/orchestration/tools/registry.acceptance.test.ts`.
+- Cited all statements in `specs/hal-engine-tool-input-validation/spec.md` (updating its `Status` to `Shipped`) and updated `example/weather-tool.ts`, `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `adrs/ADR-002-response-validation.md`, and `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add unit tests in src/orchestration/tools/registry.test.ts and src/orchestration/chatOrchestrator.test.ts, link remaining statements in specs/hal-engine-tool-input-validation/spec.md, and update example/weather-tool.ts, docs/adding-a-tool.md, README.md, .specify/spec.md, adrs/ADR-002-response-validation.md, and CHANGELOG.md","tdd_next":"acceptance green"}}

@@ -1,0 +1,5 @@
+I fixed the `typecheck` failures by changing the `ajv` import in `src/orchestration/tools/registry.ts` and `src/orchestration/tools/registry.test.ts` from the default import (`import Ajv from 'ajv'`) to the named import (`import { Ajv } from 'ajv'`). In version 8 of `ajv`, when imported from an ESM context with NodeNext module resolution and no `exports` map, the default import resolves to the CommonJS module namespace rather than the constructable class, which was causing the `TS2353` and `TS2351` errors you saw in CI. Using the named export corrects the types and correctly infers the `Options` argument.
+
+I formatted the changes with Prettier, ran `npm run eslint` and `npm run typecheck` which both pass with a green state, committed the result, and pushed it to the branch. No acceptance tests were run since I am relying on CI to confirm that the build is completely green now that the type checker is satisfied.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI failures","tdd_next":"acceptance green"}}

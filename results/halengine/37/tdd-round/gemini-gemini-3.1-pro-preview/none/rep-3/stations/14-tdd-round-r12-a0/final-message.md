@@ -1,0 +1,3 @@
+I have fixed the `typecheck` failure that was introduced when the previous round changed the import of `Ajv` from a named import (`import {Ajv}`) to a default import (`import Ajv`). That change caused TypeScript to infer `Ajv` as the entire module namespace, resulting in the `strict` option being unrecognized in the options type, and the `prototype` property being missing when tests tried to spy on `Ajv.prototype.compile`. I restored the named import and verified that `npm run typecheck` and the test file both compile and run successfully.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix typecheck from Ajv default import regression","tdd_next":"acceptance green"}}

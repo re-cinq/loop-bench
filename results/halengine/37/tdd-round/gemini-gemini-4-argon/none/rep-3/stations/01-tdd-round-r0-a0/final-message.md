@@ -1,0 +1,7 @@
+Completed one red-green-refactor round:
+
+- **Red:** Added `throws at register time naming the tool when inputSchema is invalid JSON Schema` in `src/orchestration/tools/registry.test.ts` (cited in `specs/hal-engine-tool-input-validation/spec.md`) and verified it failed before implementation (1 red test of ours, 0 regressions).
+- **Green:** Added `ajv` (`^6.15.0`) to `dependencies` in `package.json` and `package-lock.json`, bumped the package version to `0.4.0`, and compiled static `ToolDefinition.inputSchema` in `ToolRegistry.register` so invalid schemas throw synchronously naming the tool.
+- **Refactor & Delivery:** Added the `CHANGELOG.md` entry, updated `.lore/dod.md`, formatted with Prettier, committed, synced with `origin/main`, and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Compile static ToolDefinition.inputSchema at ToolRegistry.register time (throwing an error naming the tool on invalid schemas) and add ajv to dependencies with MINOR version bump","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor (caching compiled validators for function-valued ToolDefinitionSource schemas by schema object reference via WeakMap), returning a ToolResponse ({result}) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at specs/hal-engine-tool-input-validation/spec.md"}}

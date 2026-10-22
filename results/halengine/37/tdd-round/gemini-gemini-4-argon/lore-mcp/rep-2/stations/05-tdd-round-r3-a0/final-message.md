@@ -1,0 +1,3 @@
+Fixed the CI `re-lint/max-member-chain` error in `src/orchestration/tools/registry.test.ts` (replacing `executor.mock.calls.length` with `executor.mock.calls`) and updated the shifted spec line anchors in `specs/hal-engine-tool-input-validation/spec.md`. Zero red tests were ours and zero were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve re-lint/max-member-chain finding in src/orchestration/tools/registry.test.ts and update spec line anchors","tdd_next":"acceptance green"}}

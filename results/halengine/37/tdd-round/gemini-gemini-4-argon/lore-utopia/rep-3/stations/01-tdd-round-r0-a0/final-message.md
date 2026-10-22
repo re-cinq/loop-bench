@@ -1,0 +1,8 @@
+Completed one red-green-refactor round:
+
+- **Red → Green**: Added `src/orchestration/tools/registry.test.ts` testing that a static `ToolDefinition.inputSchema` is compiled once at `ToolRegistry.register` time (without re-reading `definition.inputSchema` across ten `execute` calls) and throws synchronously naming the tool when the schema cannot be compiled (1 red test written this round, now green; 0 regressions).
+- **Implementation**: Added `ajv` (`^6.15.0`) to `dependencies` in `package.json` and `package-lock.json` with a minor version bump (`0.4.0`), compiled static `ToolDefinition.inputSchema` at `ToolRegistry.register` time, and cached compiled validators for function-valued `ToolDefinitionSource` schemas by schema object reference (`WeakMap`) in `src/orchestration/tools/registry.ts`.
+- **Traceability & Checklist**: Linked the statement in `specs/hal-engine-tool-input-validation/spec.md`, ticked the closed facets in `.lore/dod.md`, and pushed `a0f86e6` to `origin/loop-bench/37`.
+- **Unrelated smells noticed**: None acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Compile static ToolDefinition.inputSchema at ToolRegistry.register time (throwing an error naming the tool on invalid schemas) and cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap).","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor, returning a ToolResponse ({result}) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at specs/hal-engine-tool-input-validation/spec.md."}}

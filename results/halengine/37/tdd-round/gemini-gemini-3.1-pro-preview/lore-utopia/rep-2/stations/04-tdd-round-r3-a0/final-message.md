@@ -1,0 +1,3 @@
+I have completed the task and updated all files as requested. The TS error was fixed by casting via `unknown` rather than treating the `ErrorObject` as `Record<string, string>`. I have also added the missing tool loop test in `chatOrchestrator.test.ts`, updated all documentation, ADRs and specs, run the formatter, updated spec anchors, and finally pushed all the changes.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add unit tests in src/orchestration/chatOrchestrator.test.ts, link the remaining statements in specs/hal-engine-tool-input-validation/spec.md, and update example/weather-tool.ts, docs/adding-a-tool.md, README.md, .specify/spec.md, adrs/ADR-002-response-validation.md, and CHANGELOG.md.","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+I have fixed the TypeScript compilation errors in `src/orchestration/tools/registry.ts` caused by incorrect `Ajv` 8 imports and type usage. I also added three missing unit tests to `src/orchestration/tools/registry.test.ts` to cover the remaining acceptance criteria for tool input validation (missing required properties, wrong-typed properties, and invalid schema registration). I verified that all tests in `registry.test.ts` pass. Finally, I updated the traceability links in `specs/hal-engine-tool-input-validation/spec.md` to reflect the new test line numbers.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add unit tests and fix CI type errors","tdd_next":"acceptance green"}}

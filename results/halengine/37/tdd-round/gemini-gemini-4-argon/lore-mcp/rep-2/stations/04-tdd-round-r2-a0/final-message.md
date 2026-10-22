@@ -1,0 +1,3 @@
+Refactored the duplicate test setup blocks in `src/orchestration/tools/registry.test.ts` that triggered `re-lint/no-duplicate-code` against `src/orchestration/tools/registry.acceptance.test.ts`, and updated the corresponding `#Lnn` anchors in `specs/hal-engine-tool-input-validation/spec.md`. Zero red tests were ours and zero were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve re-lint/no-duplicate-code findings in src/orchestration/tools/registry.test.ts and update spec line anchors","tdd_next":"acceptance green"}}

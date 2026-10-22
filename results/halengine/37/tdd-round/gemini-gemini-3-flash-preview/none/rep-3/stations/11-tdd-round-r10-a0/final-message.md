@@ -1,0 +1,3 @@
+I fixed the ESLint error in `src/orchestration/tools/registry.ts` where an `any` cast was used for Ajv's `ErrorObject`. I also added a unit test for `enum` validation in `src/orchestration/tools/registry.test.ts` to ensure full coverage of the mandated validation constraints (`required`, `type`, and `enum`), and updated the corresponding specification in `specs/hal-engine-tool-input-validation/spec.md` with a traceability link. Finally, I verified the changes with the unit tests, formatted the files, and repointed the spec anchors.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"enum validation test","tdd_next":"acceptance green"}}

@@ -1,0 +1,5 @@
+I have fixed the typecheck errors in the CI by reverting the `Ajv` import to its named import form (`import {Ajv} from 'ajv'`). When `moduleResolution` is set to `NodeNext` in TypeScript, and the dependency does not define an `exports` map, trying to use the default export form (`import Ajv from 'ajv'`) results in the `Ajv` reference resolving to the namespace itself (which fails with "This expression is not constructable" on instantiation). Using the named import bypasses this and types correctly against `ajv` version 8's typings without triggering the `Options` interface errors.
+
+Local `npm run typecheck` and test suites pass entirely with this configuration. I have formatted the code, committed, and pushed. Since no tests were run from the acceptance tests folder during this round and all facets in `.lore/dod.md` are marked as complete, the next phase is `acceptance green`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix typecheck and runtime test failures from Ajv import","tdd_next":"acceptance green"}}

@@ -1,0 +1,8 @@
+All CI failures reported on `f2df6d1` (11 red tests — 10 ours across `registry.test.ts`, `registry.acceptance.test.ts`, and `chatOrchestrator.test.ts` plus 1 regression in `registry.test.ts` caused by `new Ajv` failing at module/instance construction against CommonJS `ajv@6.15.0` in CI's `node_modules` — along with the `typecheck` and `eslint` findings) have been resolved:
+
+- `src/orchestration/tools/registry.ts`: resolved `Ajv` constructor (`ajv.default ?? ajv.Ajv ?? ajv`), options (`strict: false`, `validateFormats: false`, `format: false`, `allErrors: true`, `logger: false`), and error path formatting (`instancePath ?? dataPath`) to type-check and run cleanly across both Ajv v6 and v8 while splitting `.slice(1)` and `.replaceAll('/', '.')` to satisfy `re-lint/max-member-chain`.
+- `src/orchestration/tools/registry.test.ts`: eliminated the duplicated logger-setup block (`re-lint/no-duplicate-code`), renamed `postal_code` to `postalCode` (`camelcase`), and extracted intermediate variables to satisfy `re-lint/max-member-chain`.
+- `src/orchestration/chatOrchestrator.test.ts`: moved `executedInputs` declaration immediately before `registry.register` (`re-lint/declare-near-use`) and split `seenParams[1]?.messages.at(-1)?.content` into intermediate variables (`re-lint/max-member-chain`).
+- `specs/hal-engine-tool-input-validation/spec.md` & `specs/hal-engine-tool-responses/spec.md`: updated `#Lnn` test citations after the line shifts in `registry.test.ts`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI typecheck, eslint, and Ajv CJS/ESM constructor/path findings across registry.ts, registry.test.ts, and chatOrchestrator.test.ts","tdd_next":"acceptance green"}}
