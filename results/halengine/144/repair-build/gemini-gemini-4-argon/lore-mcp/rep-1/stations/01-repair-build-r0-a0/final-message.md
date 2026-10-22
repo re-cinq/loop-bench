@@ -1,0 +1,3 @@
+Fixed the `list_sessions` WebSocket message handler in `src/transport/ws/messageHandler.ts` and `src/transport/createServer.ts`, resolved the 8 ESLint findings across `src/transport/conversationList.acceptance.test.ts` and `src/transport/ws/validation.test.ts`, and updated the spec anchor line numbers in `specs/hal-engine-conversation-list/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Handled list_sessions frames in messageHandler/createServer and resolved all 8 ESLint errors in conversationList.acceptance.test.ts and validation.test.ts"}}

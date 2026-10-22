@@ -1,0 +1,3 @@
+Completed one red-green-refactor round: added `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` to `src/types/messages.ts` (and re-exported from `src/index.ts`), and implemented `list_sessions` frame validation in `src/transport/ws/validation.ts` with unit test coverage in `src/transport/ws/validation.test.ts` (1 red test written and turned green; 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts and src/index.ts, and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler and handle list_sessions in src/transport/ws/messageHandler.ts"}}

@@ -1,0 +1,7 @@
+I reproduced the failures named in the CI verdict. First, I resolved the lint errors by extracting duplicated helper functions (`startEngineWith`, `stopEngines`, `eventually` and `delegatingTo`) into `wsTestSupport.ts` and adopting them inside `conversationList.acceptance.test.ts` and `sessionResume.test.ts`. I also corrected a `no-flag-params` error in `validation.test.ts` by using an empty array instead of `true`, and I refactored the message loop in `conversationList.acceptance.test.ts` to satisfy `prefer-early-return`.
+
+For the test failure about `list_sessions`, I updated `createMessageHandler` in `createServer.ts` and `messageHandler.ts` to optionally receive `sessionStore`. I then successfully implemented the WebSocket handling for `list_sessions` frames within `messageHandler.ts`'s `answerFrame` method, properly translating the raw `limit`/`before` cursor arguments to queries, mapping timestamps to ISO strings, mapping entry counts, and sending the exact `session_list` or responding with a standard error along with `ws` server logs whenever `listFor` threw an error. 
+
+Finally, I ran the `prettier` formatter on all edited files and verified the tests pass successfully locally. The changes have been pushed to the PR's remote branch.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"list_sessions test failures and ESLint duplicating/prefer-early-return errors"}}

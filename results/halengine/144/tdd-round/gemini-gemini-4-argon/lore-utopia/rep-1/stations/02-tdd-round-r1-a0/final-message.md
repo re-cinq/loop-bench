@@ -1,0 +1,7 @@
+Completed the round:
+- Fixed the ESLint findings reported by CI (`sonarjs/no-identical-functions` in `src/transport/conversationList.acceptance.test.ts` by moving `eventually` and `delegatingTo` into `src/transport/wsTestSupport.ts`, and `re-lint/prefer-polymorphism` + `max-statements` in `src/transport/ws/validation.ts`).
+- Added a unit test in `src/transport/ws/messageHandler.test.ts` covering `list_sessions` handling, implemented `sendSessionList` in `src/transport/ws/sender.ts` and `handleListSessions` in `src/transport/ws/messageHandler.ts`, and wired `options.sessionStore` in `src/transport/createServer.ts`.
+- Updated `specs/hal-engine-websocket-protocol/spec.md`, `specs/hal-engine-conversation-list/spec.md`, `docs/session-stores.md`, and `.lore/dod.md`, and repointed spec anchors.
+- On the previous CI push, 2 red tests in `src/transport/conversationList.acceptance.test.ts` were acceptance tests for this ticket and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Thread sessionStore into createMessageHandler, handle list_sessions in messageHandler.ts and createServer.ts, and document list_sessions and session_list in the specs","tdd_next":"acceptance green"}}

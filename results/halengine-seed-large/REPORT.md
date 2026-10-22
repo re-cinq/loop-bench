@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine-seed-large` as of 2026-10-20 12:43 UTC: 1 loops over 1 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine-seed-large` as of 2026-10-22 06:41 UTC: 1 loops over 1 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -12,7 +12,7 @@ Each row is one cell: one station varied against the production baseline, every 
 
 | Ticket | Station varied | Model (CLI) | Effort | Lore | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| #144 | baseline | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 2.0 | $10.36 | 57.6 min | — | — | — | — | — | — |
+| #144 | baseline | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 3.0 | $18.75 | 33.0 min | 2.0 | 2.0 | 2.0 | 0/1 | 13 (0.32) | +505/−19 |
 
 What the columns mean:
 
@@ -28,7 +28,7 @@ What the columns mean:
 
 | Ticket | Station varied | Model (CLI) | Lore | How the loops ended |
 |---|---|---|---|---|
-| #144 | baseline | `gemini-4-argon` (gemini) | without Lore | retry_budget ×1 |
+| #144 | baseline | `gemini-4-argon` (gemini) | without Lore | green ×1 |
 
 ## What we read in it
 

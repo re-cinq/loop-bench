@@ -1,0 +1,3 @@
+Fixed all 14 ESLint findings reported by CI across `src/transport/conversationList.acceptance.test.ts`, `src/transport/ws/messageHandler.test.ts`, `src/transport/ws/validation.test.ts`, and `src/transport/ws/validation.ts`, and documented `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md` with repointed spec anchors. 0 red tests were mine and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix all 14 eslint CI findings and document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md","tdd_next":"acceptance green"}}

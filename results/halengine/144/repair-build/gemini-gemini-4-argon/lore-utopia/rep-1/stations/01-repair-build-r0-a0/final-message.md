@@ -1,0 +1,7 @@
+Fixed the CI failures on `loop-bench/144`:
+
+1. **`test` (`src/transport/conversationList.acceptance.test.ts`):** Wired `options.sessionStore` into `createMessageHandler` in `src/transport/createServer.ts`, added `sendSessionList` in `src/transport/ws/sender.ts`, and handled `list_sessions` frames in `src/transport/ws/messageHandler.ts` outside the per-session lock (serialising `createdAt`/`updatedAt` as ISO-8601 strings, returning `{type: 'session_list', sessions: []}` when `listFor` is absent, and logging on `ws` with `{type: 'error', code: 'SERVER_ERROR'}` when `listFor` throws).
+2. **`eslint` (`src/transport/conversationList.acceptance.test.ts`, `src/transport/sessionResume.test.ts`, `src/transport/ws/validation.test.ts`):** Refactored `conversationList.acceptance.test.ts` to use shared helpers from `./wsTestSupport.js`, `../shared/logCaptureTestSupport.js`, and `../infrastructure/stores/sessionStoreTestSupport.js` (resolving duplicate code, `callee-below-caller`, `declare-near-use`, and `no-vague-names` errors), and moved `beforeIso` adjacent to its first use in `validation.test.ts`.
+3. **Specs & Docs:** Documented `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md` and `docs/session-stores.md`, and repointed test anchor line numbers in `specs/hal-engine-conversation-list/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Handled list_sessions frames in messageHandler/createServer and resolved ESLint findings in conversationList.acceptance.test.ts and validation.test.ts"}}

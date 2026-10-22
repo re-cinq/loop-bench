@@ -1,0 +1,3 @@
+Fixed the two `re-lint/declare-near-use` ESLint errors in `src/transport/ws/messageHandler.test.ts` (lines 874–875) by moving the `ws` and `session` declarations immediately above `await withList(...)`, verified the test passes, formatted with Prettier, and pushed to `origin`. No red tests or test regressions were reported by CI (only the 2 lint findings on our test).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI re-lint/declare-near-use findings in src/transport/ws/messageHandler.test.ts","tdd_next":"acceptance green"}}

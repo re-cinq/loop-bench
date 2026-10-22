@@ -1,0 +1,3 @@
+Replaced the `validators` object literal in `src/transport/ws/validation.ts` with a `Map` keyed by string literals (`'user_message'`, `'ping'`, `'list_sessions'`) to resolve the two ESLint `camelcase` findings reported by CI (0 red tests, 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix the two eslint camelcase findings in src/transport/ws/validation.ts","tdd_next":"acceptance green"}}

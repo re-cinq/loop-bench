@@ -1,0 +1,5 @@
+Resolved the 2 `typecheck` errors (`TS7006` implicit `any` on `userId` and `options` in `src/transport/ws/messageHandler.test.ts`) and 7 `eslint` findings (`re-lint/no-duplicate-code`, `re-lint/prefer-early-return`, `re-lint/no-cross-layer-import`, and `re-lint/no-flag-params` across `src/transport/conversationList.acceptance.test.ts`, `src/transport/sessionResume.test.ts`, `src/transport/wsTestSupport.ts`, and `src/transport/ws/validation.test.ts`), re-anchored affected spec citations, formatted with Prettier, and pushed to `origin`.
+
+0 red tests were ours and 0 were regressions (all failures on the previous push were `typecheck` and `eslint` findings).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI typecheck and eslint findings in messageHandler.test.ts, validation.test.ts, conversationList.acceptance.test.ts, sessionResume.test.ts, and wsTestSupport.ts","tdd_next":"acceptance green"}}

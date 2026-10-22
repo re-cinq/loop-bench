@@ -1,0 +1,3 @@
+Fixed the CI `re-lint/declare-near-use` finding on `before` in `src/transport/ws/messageHandler.test.ts:875`, verified `src/transport/ws/messageHandler.test.ts` passes (0 red tests of ours, 0 regressions), formatted with Prettier, and pushed to `origin`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI re-lint/declare-near-use finding on before in src/transport/ws/messageHandler.test.ts","tdd_next":"acceptance green"}}

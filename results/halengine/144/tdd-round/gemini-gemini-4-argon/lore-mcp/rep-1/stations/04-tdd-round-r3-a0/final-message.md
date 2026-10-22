@@ -1,0 +1,3 @@
+Resolved the two `camelcase` ESLint errors reported by CI in `src/transport/ws/validation.ts` by replacing the `Record` object literal with a `Map<string, FrameValidator>` keyed by string literals. Zero red tests were ours and zero were regressions (`src/transport/ws/validation.test.ts` passed).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve CI camelcase eslint errors in src/transport/ws/validation.ts","tdd_next":"acceptance green"}}

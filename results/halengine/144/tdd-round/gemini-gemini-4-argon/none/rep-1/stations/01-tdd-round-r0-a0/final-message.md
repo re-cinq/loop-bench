@@ -1,0 +1,5 @@
+Completed one TDD round:
+- Added a failing test in `src/transport/ws/validation.test.ts` (1 red test of ours, 0 regressions) and turned it green by defining `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` in `src/types/messages.ts` (re-exported from `src/types/index.ts` and `src/index.ts`) and validating `list_sessions` frames in `src/transport/ws/validation.ts`.
+- Linked the new test in `specs/hal-engine-conversation-list/spec.md`, updated `CHANGELOG.md` and `.lore/dod.md`, formatted, committed, and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler and handle list_sessions in src/transport/ws/messageHandler.ts"}}

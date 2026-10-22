@@ -1,0 +1,3 @@
+Added `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` to `src/types/messages.ts` (re-exported from `src/index.ts` and `src/types/index.ts`), implemented `list_sessions` validation in `src/transport/ws/validation.ts`, and verified with a unit test in `src/transport/ws/validation.test.ts` (0 red tests remain in `src/transport/ws/validation.test.ts`, 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts, re-export from src/index.ts, and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler and handle list_sessions in src/transport/ws/messageHandler.ts"}}

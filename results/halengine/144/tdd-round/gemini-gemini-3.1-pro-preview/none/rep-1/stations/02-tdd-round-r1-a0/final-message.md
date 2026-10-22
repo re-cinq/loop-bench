@@ -1,0 +1,5 @@
+I have fixed the `eslint`, `spec-names`, and `changelog` issues reported by CI and documented `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md`. The duplicate code in tests has been extracted to `wsTestSupport.ts`, the validation tests refactored into a map assert, and `any` usage in `messageHandler.ts` replaced with an inline object interface. The updated anchor lines have been automatically correctly repointed using `spec:names:fix`. 
+
+There were no other facets remaining, so I am reporting the last documentation facet closed and proceeding to wait for a green CI. No tests were executed locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Document `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md`.","tdd_next":"acceptance green"}}
