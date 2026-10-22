@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-22 12:13 UTC: 516 loops over 188 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-22 13:16 UTC: 517 loops over 189 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -574,7 +574,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 7.0 | $4.48 | 37.9 min | — | — | — | — | 22 (0.39) | +874/−142 |
-| #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 12.0 | $11.25 | 134.4 min | — | — | — | — | 67 (0.18) | +1770/−1067 |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 12.0 | $10.56 | 78.6 min | — | — | — | — | 39 (0.31) | +1099/−301 |
 | #144 large | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 6.0 | $13.04 | 61.6 min | — | — | — | — | 22 (0.28) | +669/−214 |
 | #144 large | tdd-round | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 4.0 | $8.21 | 50.4 min | — | — | — | — | 20 (0.26) | +624/−134 |
@@ -778,6 +778,7 @@ What the columns mean:
 | #144 large | repair-build | `gemini-4-argon` (gemini) | Lore on Utopia | excluded_harness ×1 |
 | #144 large | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×1 |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | with Lore | green ×1 |
+| #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | Lore on Utopia | round_budget ×1 |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | without Lore | green ×1 |
 | #144 large | tdd-round | `gemini-3.1-pro-preview` (gemini) | with Lore | retry_budget ×1 |
 | #144 large | tdd-round | `gemini-3.1-pro-preview` (gemini) | Lore on Utopia | green ×1 |
