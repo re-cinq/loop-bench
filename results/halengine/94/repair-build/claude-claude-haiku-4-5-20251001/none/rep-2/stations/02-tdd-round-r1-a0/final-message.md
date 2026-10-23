@@ -1,0 +1,3 @@
+The fix is pushed. The CI failure was a stale spec anchor — the test `it('runs onError and afterSession when beforeSession throws', ...)` lives at line 34 of the acceptance test file, but the spec cited `#L40`. Updated to `#L34`. All facets in `.lore/dod.md` were already ticked; this was the only remaining red build finding.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec-names: reanchor acceptance test link from #L40 to #L34","tdd_next":"acceptance green"}}

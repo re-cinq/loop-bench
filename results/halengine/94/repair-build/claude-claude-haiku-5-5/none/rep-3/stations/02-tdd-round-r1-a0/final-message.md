@@ -1,0 +1,3 @@
+The branch is pushed and up to date. The fix was straightforward: the spec file had `#L40` for the acceptance test anchor but the test "runs onError and afterSession when beforeSession throws" is actually at line 32 of `chatOrchestrator.beforeSession.acceptance.test.ts`. All three facets in `.lore/dod.md` are already ticked.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec anchor line number for beforeSession acceptance test","tdd_next":"acceptance green"}}

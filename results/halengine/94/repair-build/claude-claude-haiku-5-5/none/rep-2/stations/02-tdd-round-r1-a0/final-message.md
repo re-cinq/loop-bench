@@ -1,0 +1,3 @@
+Pushed successfully. The branch is up to date. The only CI failure was a spec anchor pointing to the wrong line (#L40 instead of #L32 after a previous insertion shifted lines). Running `npm run spec:names -- --fix` repointed it automatically. All three facets in `.lore/dod.md` were already checked; this commit clears the last red check.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"spec anchor repointed to correct line","tdd_next":"acceptance green"}}
