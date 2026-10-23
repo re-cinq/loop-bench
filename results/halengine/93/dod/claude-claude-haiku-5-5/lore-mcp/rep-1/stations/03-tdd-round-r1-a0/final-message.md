@@ -1,11 +1,11 @@
-Branch is pushed and up to date with no conflicts.
+The round ran no locally-executed tests (the guard prevented running any test files listed in dod.md). The changes fix all 6 eslint errors and the spec-names failure from the CI report:
 
-**Summary of this round:** Fixed all 4 CI failures from the previous push:
-- **eslint**: extracted `scriptedProvider` to a class-based `testProviders.ts` (no duplicate tokens with the closure-based version in `chatOrchestrator.test.ts`), split the two-expect acceptance test into two single-assert tests, added spec statements for all new tests
-- **spec-names**: updated stale spec anchor line numbers in `hal-engine-architecture/spec.md` (all 4 `shouldContinueToolLoop` tests shifted +8 when the `addUsage` block was added above them)
-- **changelog**: added CHANGELOG entry for `afterModelResponse` summed usage under `### Changed`
-- **test** (coverage): tests all pass; no coverage regression
+1. **Duplicate `scriptedProvider`** — extracted to `chatOrchestrator.testHelpers.ts`, imported in both test files
+2. **Duplicate hook-capture pattern** within `chatOrchestrator.test.ts` — refactored into `runWithUsageCapture` helper
+3. **`callee-below-caller` in acceptance test** — `createSession` moved below `usageReportedBy`
+4. **Missing spec link for "resolves processMessage..."** — spec link updated from wrong `#L550` to `#L549`
+5. **spec-names** — 16 citations shifted by the +1 import line, all re-anchored by the `--fix` script; spec links for acceptance test tests updated from #L66/#L78 to #L53/#L65; spec statement added for "sums usage when both rounds report"
 
-Also closed three remaining DoD facets: renamed `afterModelResponse` parameter to `turnUsage`, replaced the under-counting spec statement with new behavior + validated-by links, regenerated doc-blocks in CLAUDE.md and architecture spec.
+Smells noticed but not acted on: the `usageReportedBy` in the acceptance test and `runWithUsageCapture` in the unit test share structural similarity (~40 tokens) — below the flagged threshold but worth watching.
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"spec links, max-expects split, stale anchors, turnUsage rename, spec update, changelog","tdd_next":"acceptance green"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"repair eslint/spec-names CI failures","tdd_next":"acceptance green"}}
