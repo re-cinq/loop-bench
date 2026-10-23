@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
-# Haiku cells for every ticket, station and replicate in the experiment. A pass that stops on an infrastructure error (a usage limit or a login that ran out) deletes the Haiku cells it cut short, waits an hour and runs again, until a pass ends without one. Detached from any Claude Code session.
+# Haiku cells for every ticket, station and replicate in the experiment. A pass that stops on an infrastructure error (a usage limit or a login that ran out) archives the Haiku cells it cut short, waits an hour and runs again, until a pass ends without one. Detached from any Claude Code session.
 cd "$(dirname "$0")/../.."
 # Node's compile cache and Jest's cache grow by GBs per run; /tmp is a 16 GB RAM disk.
 export TMPDIR=/var/tmp/loop-bench/tmp; mkdir -p "$TMPDIR"
 H=claude/claude-haiku-5-5,claude/claude-haiku-4-5-20251001
-
-# Only Haiku folders: another chain running beside this one owns its own unfinished cells.
-drop_cut_short_cells() {
-  find results/halengine -type d -path '*/claude-claude-haiku-*/rep-*' -name 'rep-*' | while read -r d; do [ -f "$d/loop.json" ] || rm -rf "$d"; done
-}
 
 for attempt in $(seq 1 48); do
   stopped=""
@@ -19,7 +14,7 @@ for attempt in $(seq 1 48); do
     echo "$out" | grep -q "stopping:" && { stopped=1; break; }
   done
   [ -z "$stopped" ] && { echo "== haiku chain done $(date +%H:%M)"; exit 0; }
-  drop_cut_short_cells
+  scripts/batch/archive-cut-short-cells.sh 'claude-claude-haiku-*'
   echo "== stopped on an infrastructure error $(date +%H:%M), trying again in an hour"
   sleep 3600
 done

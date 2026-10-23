@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Codex cells for every ticket in order, from a given time. On a usage-limit stop it deletes the cells that stop cut short, waits for the reset time the message names, and starts again, until no ticket has a loop left to run. Detached from any Claude Code session.
+# Codex cells for every ticket in order, from a given time. On a usage-limit stop it archives the cells that stop cut short, waits for the reset time the message names, and starts again, until no ticket has a loop left to run. Detached from any Claude Code session.
 # Usage: codex-chain.sh HH:MM|now
 cd "$(dirname "$0")/../.."
 # Node's compile cache and Jest's cache grow by GBs per run; /tmp is a 16 GB RAM disk.
@@ -20,11 +20,6 @@ reset_time_of() {
   grep -ho "try again at [^\"\\.]*[AP]M" "$stopped_dir"/stdout.jsonl 2>/dev/null | head -1 | sed -E 's/try again at //; s/([0-9])(st|nd|rd|th),/\1,/'
 }
 
-# Only Codex folders: another chain running beside this one owns its own unfinished cells.
-drop_cut_short_cells() {
-  find results/halengine -type d -path '*/codex-*/rep-*' -name 'rep-*' | while read -r d; do [ -f "$d/loop.json" ] || rm -rf "$d"; done
-}
-
 sleep_until "$1"
 while true; do
   left=0; stopped=""
@@ -36,7 +31,7 @@ while true; do
   done
   [ -z "$stopped" ] && { echo "== codex chain done $(date +%H:%M)"; break; }
   reset=$(reset_time_of "$stopped")
-  drop_cut_short_cells
+  scripts/batch/archive-cut-short-cells.sh 'codex-*'
   [ -z "$reset" ] && { echo "== usage limit with no reset time in the transcript, chain stopped $(date +%H:%M)"; break; }
   echo "== usage limit $(date +%H:%M), resuming at $reset + 5 min"
   target=$(date -d "$reset + 5 minutes" +%s); now=$(date +%s)
