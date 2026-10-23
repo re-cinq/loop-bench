@@ -1,0 +1,3 @@
+Branch is up to date. The fix adds the four missing spec backlinks to `specs/hal-engine-config-hooks/spec.md` — one on the "summed usage" statement pointing to `orchestratorHelpers.test.ts#L30`, and three on the "partial/no usage" statement pointing to L37, L43, L49. This resolves all four `re-lint/require-spec-link` ESLint errors from the previous CI run. All three DoD facets remain checked; this was a pure ESLint traceability fix.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"spec backlinks for accumulateUsage helper tests (ESLint re-lint/require-spec-link fix)","tdd_next":"acceptance green"}}

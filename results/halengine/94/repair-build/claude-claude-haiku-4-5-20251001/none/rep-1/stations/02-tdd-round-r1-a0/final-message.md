@@ -1,0 +1,3 @@
+The branch is up to date. The fix was straightforward: the CI `spec-names` check reported that the spec citation for "runs onError and afterSession when beforeSession throws" pointed at `#L40` but the test is at `#L34`. Updated the anchor and verified the check passes (589 citations, 0 findings). All three DoD facets were already ticked; this was the last remaining CI failure.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix stale spec anchor (#L40 → #L34) to clear spec-names CI failure","tdd_next":"acceptance green"}}

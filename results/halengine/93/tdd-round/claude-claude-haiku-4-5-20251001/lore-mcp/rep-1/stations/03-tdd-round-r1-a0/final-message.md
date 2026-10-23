@@ -1,0 +1,1 @@
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"update specs and CHANGELOG with aggregate-usage behavior","tdd_next":"acceptance green"}}

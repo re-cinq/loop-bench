@@ -1,0 +1,5 @@
+The DoD already has all three facets checked. The fix resolved the CI spec-names failure — the 4 findings in the round brief are now cleared. No new facets are needed.
+
+**Round summary:** Fixed the spec-names CI failure by removing `([validated by]...)` inline suffixes from the 4 `accumulateUsage` test names in `orchestratorHelpers.test.ts`. The `check-spec-anchor-names.mjs` script does an exact string match between the spec's `[validated by: NAME]` labels and the test declarations — the suffixes added in the previous round caused mismatches. 0 regressions introduced, 0 new tests written (regression fix only).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec-names CI failure: remove inline spec-back-link suffixes from accumulateUsage test names","tdd_next":"acceptance green"}}

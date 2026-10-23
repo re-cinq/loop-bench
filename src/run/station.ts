@@ -129,7 +129,7 @@ export async function runStation(plan: StationPlan, deps: StationDeps): Promise<
 }
 
 // Credentials, quota or the vendor's API failing: not the model's doing, so the loop stops and the cell stays unrun.
-const INFRA_ERROR = /hit your usage limit|usage limit reached|rate_limit_exceeded|invalid_grant|invalid_rapt|reauth|API key not valid|invalid_api_key|401 Unauthorized|RESOURCE_EXHAUSTED|429 Too Many Requests|requires a newer version of Codex|Credit balance is too low|authentication_error/;
+const INFRA_ERROR = /hit your usage limit|usage limit reached|rate_limit_exceeded|invalid_grant|invalid_rapt|reauth|API key not valid|invalid_api_key|401 Unauthorized|RESOURCE_EXHAUSTED|429 Too Many Requests|requires a newer version of Codex|Credit balance is too low|authentication_error|Failed to authenticate|OAuth token revoked|OAuth session expired/;
 
 export function isInfraError(result: Pick<SpawnResult, "stdout" | "stderr" | "exitCode">): boolean {
   return result.exitCode !== 0 && INFRA_ERROR.test(`${result.stdout.slice(-20_000)}\n${result.stderr.slice(-20_000)}`);
