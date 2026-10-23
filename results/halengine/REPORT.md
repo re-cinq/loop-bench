@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-23 22:07 UTC: 615 loops over 216 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-23 23:47 UTC: 617 loops over 217 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -131,11 +131,11 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 1 | 1/1 | 2.0 | $7.72 | 23.7 min | 4.0 | 4.0 | 4.0 | 1/1 | 13 (0.54) | +229/−62 |
 | #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 1 | 1/1 | 3.0 | $5.02 | 34.7 min | — | — | — | 1/1 | 10 (0.55) | +231/−18 |
-| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 1 | 1/1 | 2.0 | $5.30 | 27.9 min | — | — | — | 1/1 | 11 (0.50) | +221/−38 |
 | #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 1 | 1/1 | 3.0 | $8.48 | 67.3 min | 5.0 | 4.0 | 4.0 | 1/1 | 11 (0.50) | +224/−41 |
 | #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 1/1 | 1.0 | $16.25 | 26.7 min | — | — | — | 1/1 | 11 (0.50) | +202/−56 |
 | #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 1 | 1/1 | 1.0 | $2.13 | 12.8 min | — | — | — | 1/1 | 8 (0.25) | +158/−7 |
-| #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 1 | 1/1 | 6.0 | $7.21 | 68.5 min | 4.0 | 4.0 | 3.0 | 1/1 | 15 (0.38) | +256/−61 |
+| #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 2 | 2/2 | 3.5 (1.0–6.0, sd 2.5) | $4.38 ($1.56–$7.21, sd $2.83) | 39.0 min (9.4 min–68.5 min, sd 29.5 min) | 4.0 | 4.0 | 3.0 | 2/2 | 11 (7–15, sd 4) (0.32 (0.27–0.38, sd 0.05)) | +201/−33 |
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 1 | 1/1 | 2.0 | $5.77 | 24.0 min | 4.0 | 4.0 | 4.0 | 1/1 | 9 (0.45) | +172/−20 |
@@ -656,10 +656,11 @@ What the columns mean:
 | #93 small | baseline | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 small | dod | `claude-fable-5-1` (claude) | without Lore | green ×1 |
 | #93 small | dod | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×1 |
+| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×1 |
 | #93 small | dod | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×1 |
 | #93 small | dod | `claude-haiku-5-5` (claude) | with Lore | green ×1 |
 | #93 small | dod | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×1 |
-| #93 small | dod | `claude-haiku-5-5` (claude) | without Lore | green ×1 |
+| #93 small | dod | `claude-haiku-5-5` (claude) | without Lore | green ×2 |
 | #93 small | dod | `claude-opus-5-5` (claude) | without Lore | green ×1 |
 | #93 small | dod | `claude-sonnet-4-6` (claude) | without Lore | green ×1 |
 | #93 small | dod | `claude-sonnet-5-5` (claude) | without Lore | green ×1 |
