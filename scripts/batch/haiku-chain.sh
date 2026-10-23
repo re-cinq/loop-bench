@@ -11,7 +11,7 @@ for attempt in $(seq 1 48); do
   stopped=""
   for t in 93 94; do
     echo "== attempt $attempt, ticket $t $(date +%H:%M)"
-    out=$(npx tsx src/cli.ts run --ticket $t --station tdd-round,repair-build --replicates 3 --parallel 3 --per-harness 3 --agent "$H" 2>&1)
+    out=$(npx tsx src/cli.ts run --ticket $t --station tdd-round,repair-build --replicates 3 --parallel 1 --per-harness 1 --agent "$H" 2>&1)
     echo "$out"
     echo "$out" | grep -q "stopping:" && { stopped=1; break; }
   done
