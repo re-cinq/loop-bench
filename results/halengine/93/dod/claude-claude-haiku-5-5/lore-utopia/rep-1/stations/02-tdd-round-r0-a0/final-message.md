@@ -1,0 +1,3 @@
+Branch is pushed and up to date. 0 regressions (all 24 pre-existing `chatOrchestrator.test.ts` tests pass, all 7 `orchestratorHelpers.test.ts` tests pass including 3 new ones). Unrelated smell noticed but not acted on: the `UsageMetadata` import is shared between the hook signature and the local variable — no change needed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"accumulate usage across all provider calls (addUsage helper + chatOrchestrator loop)","tdd_next":"make the hook's usage type say it is a turn total (named type or doc on afterModelResponse parameter)"}}
