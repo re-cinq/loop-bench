@@ -20,8 +20,9 @@ reset_time_of() {
   grep -ho "try again at [^\"\\.]*[AP]M" "$stopped_dir"/stdout.jsonl 2>/dev/null | head -1 | sed -E 's/try again at //; s/([0-9])(st|nd|rd|th),/\1,/'
 }
 
+# Only Codex folders: another chain running beside this one owns its own unfinished cells.
 drop_cut_short_cells() {
-  find results/halengine -type d -name 'rep-*' | while read -r d; do [ -f "$d/loop.json" ] || rm -rf "$d"; done
+  find results/halengine -type d -path '*/codex-*/rep-*' -name 'rep-*' | while read -r d; do [ -f "$d/loop.json" ] || rm -rf "$d"; done
 }
 
 sleep_until "$1"
