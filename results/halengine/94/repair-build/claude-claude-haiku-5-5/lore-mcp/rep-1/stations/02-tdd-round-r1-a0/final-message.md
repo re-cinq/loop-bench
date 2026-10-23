@@ -1,0 +1,3 @@
+The branch is up to date. Fixed the broken spec anchor link in `specs/hal-engine-config-hooks/spec.md` — changed `#L40` to `#L32` to match where the acceptance test actually lives. The spec-names check now passes locally (589 citations named correctly). All facets in `.lore/dod.md` were already ticked before this round; this round fixed the CI breakage from an incorrect line anchor.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix broken spec anchor pointing to #L40 instead of #L32","tdd_next":"acceptance green"}}
