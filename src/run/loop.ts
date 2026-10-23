@@ -16,7 +16,7 @@ import { diffOf, git, numstat } from "../workspace/git.js";
 import { prepareRunWorkspace, pushedHead, type RunWorkspace } from "../workspace/prepare.js";
 import { cliVersion } from "./cli-version.js";
 import type { BenchPaths } from "./paths.js";
-import { appendRecord, writeLoopJson } from "./results.js";
+import { appendRecord, archiveReplacedCell, writeLoopJson } from "./results.js";
 import { HarnessLanes, UNLIMITED } from "./harness-lanes.js";
 import { runStation, type StationPlan } from "./station.js";
 
@@ -39,6 +39,10 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
 
   rmSync(runDir, { recursive: true, force: true });
   mkdirSync(runDir, { recursive: true });
+  const replaced = archiveReplacedCell(paths, cellPath(planned), startedAt);
+  if (replaced) {
+    log(`[loop-bench] kept what an earlier run left in ${cellPath(planned)} at ${replaced}`);
+  }
   mkdirSync(cellDir, { recursive: true });
   const artifact = planned.entry === "dod" ? null : referenceArtifact(paths, config.id, planned.ticket.number, planned.entry);
   const nodeModules = cachedDeps(join(paths.cacheDir, config.id), planned.ticket.base_sha) ?? "";

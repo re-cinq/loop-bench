@@ -77,7 +77,7 @@ npm run bench -- run --ticket 93 --station dod --parallel 6 --per-harness 3
 
 `--parallel` is how many loops run at a time. `--per-harness` caps agent runs per CLI across all loops, which is what keeps one provider's rate limit from sinking the batch. Cells are started breadth-first, so an interrupted batch has covered every model once before it repeats any.
 
-A cell whose `loop.json` exists is skipped, so rerunning the same command resumes. `--force` reruns it, and `--keep-run` keeps the run's working folder under `/var/tmp` for inspection.
+A cell whose `loop.json` exists is skipped, so rerunning the same command resumes. `--force` reruns it, and `--keep-run` keeps the run's working folder under `/var/tmp` for inspection. A run never writes over a cell folder: whatever an earlier run left there, a cut-short loop or a forced cell, moves to `artifacts/replaced/<cell>/<timestamp>` first, so nothing paid for is deleted.
 
 ### Publishing the results
 

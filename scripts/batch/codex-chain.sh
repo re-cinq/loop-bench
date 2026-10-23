@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Codex cells for every ticket in order, from a given time. On a usage-limit stop it archives the cells that stop cut short, waits for the reset time the message names, and starts again, until no ticket has a loop left to run. Detached from any Claude Code session.
+# Codex cells for every ticket in order, from a given time. On a usage-limit stop it waits for the reset time the message names and starts again (the rerun keeps what a cut-short cell left under artifacts/replaced), until no ticket has a loop left to run. Detached from any Claude Code session.
 # Usage: codex-chain.sh HH:MM|now
 cd "$(dirname "$0")/../.."
 # Node's compile cache and Jest's cache grow by GBs per run; /tmp is a 16 GB RAM disk.
@@ -31,7 +31,6 @@ while true; do
   done
   [ -z "$stopped" ] && { echo "== codex chain done $(date +%H:%M)"; break; }
   reset=$(reset_time_of "$stopped")
-  scripts/batch/archive-cut-short-cells.sh 'codex-*'
   [ -z "$reset" ] && { echo "== usage limit with no reset time in the transcript, chain stopped $(date +%H:%M)"; break; }
   echo "== usage limit $(date +%H:%M), resuming at $reset + 5 min"
   target=$(date -d "$reset + 5 minutes" +%s); now=$(date +%s)
