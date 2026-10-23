@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-23 07:45 UTC: 585 loops over 210 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-23 08:00 UTC: 586 loops over 210 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -310,11 +310,11 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 1 | 1/1 | 3.0 | $0.71 | 8.7 min | — | — | — | — | 8 (0.75) | +153/−29 |
-| #94 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #94 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 1 | 1/1 | 2.0 | $0.91 | 5.3 min | — | — | — | — | 5 (0.38) | +91/−4 |
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.17 | 2.0 min | — | — | — | — | 5 (0.38) | +93/−3 |
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 1 | 0/1 | 1.0 | $0.21 | 2.9 min | — | — | — | — | 8 (0.75) | +130/−16 |
-| #94 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 1 | 0/1 | 1.0 | $0.13 | 2.1 min | 5.0 | 5.0 | 4.0 | — | 5 (0.38) | +98/−4 |
+| #94 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 2 | 1/2 | 1.0 (1.0–1.0, sd 0.0) | $0.16 ($0.13–$0.18, sd $0.02) | 2.5 min (2.1 min–2.8 min, sd 0.3 min) | 5.0 | 5.0 | 4.0 | — | 5 (5–5, sd 0) (0.38 (0.38–0.38, sd 0.00)) | +92/−4 |
 | #94 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -742,7 +742,7 @@ What the columns mean:
 | #94 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×1 |
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | with Lore | retry_budget ×1 |
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | Lore on Utopia | retry_budget ×1 |
-| #94 small | tdd-round | `claude-haiku-5-5` (claude) | without Lore | retry_budget ×1 |
+| #94 small | tdd-round | `claude-haiku-5-5` (claude) | without Lore | retry_budget ×1, green ×1 |
 | #94 small | tdd-round | `glm-5.3-flash` (claude) | without Lore | green ×5 |
 | #94 small | tdd-round | `gpt-5.6-luna` (codex) | with Lore | green ×1 |
 | #94 small | tdd-round | `gpt-5.6-luna` (codex) | without Lore | green ×1 |

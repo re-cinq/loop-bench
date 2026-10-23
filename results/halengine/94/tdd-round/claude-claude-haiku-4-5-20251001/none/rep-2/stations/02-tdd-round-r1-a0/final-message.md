@@ -1,0 +1,1 @@
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI failures from spec links and test errors","tdd_next":"Document in the CHANGELOG what changes for an existing consumer"}}
