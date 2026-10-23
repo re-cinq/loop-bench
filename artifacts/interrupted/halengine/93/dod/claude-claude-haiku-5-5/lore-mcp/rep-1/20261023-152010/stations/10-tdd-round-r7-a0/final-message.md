@@ -1,0 +1,3 @@
+Branch is pushed and up to date. The fix adds `testTimeout: 30_000` to `jest.config.js` so individual mongo test operations and the `afterAll(() => harness.stop())` hook (which had no custom timeout) both get 30s instead of the default 5s. This addresses the "Exceeded timeout of 5000 ms for a test" and "Exceeded timeout of 5000 ms for a hook" failures in `mongoRedaction.test.ts`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"testTimeout raised to 30s for slow CI mongo ops","tdd_next":"acceptance green"}}
