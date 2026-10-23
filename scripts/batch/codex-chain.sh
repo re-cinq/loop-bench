@@ -2,6 +2,8 @@
 # Codex cells for every ticket in order, from a given time. On a usage-limit stop it deletes the cells that stop cut short, waits for the reset time the message names, and starts again, until no ticket has a loop left to run. Detached from any Claude Code session.
 # Usage: codex-chain.sh HH:MM|now
 cd "$(dirname "$0")/../.."
+# Node's compile cache and Jest's cache grow by GBs per run; /tmp is a 16 GB RAM disk.
+export TMPDIR=/var/tmp/loop-bench/tmp; mkdir -p "$TMPDIR"
 A=codex/gpt-5.6-terra,codex/gpt-5.6-sol,codex/gpt-5.6-luna,codex/gpt-6-sol,codex/gpt-6-astra,codex/gpt-6-luna,codex/gpt-6.1-sol
 
 sleep_until() {

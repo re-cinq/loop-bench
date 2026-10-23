@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # trpc #3768: dependencies, the Gemini seed loop, its starting branches, then the Gemini tdd-round and repair-build cells. Detached from any Claude Code session.
 cd "$(dirname "$0")/../.."
+# Node's compile cache and Jest's cache grow by GBs per run; /tmp is a 16 GB RAM disk.
+export TMPDIR=/var/tmp/loop-bench/tmp; mkdir -p "$TMPDIR"
 G=gemini/gemini-4-argon,gemini/gemini-3-flash-preview,gemini/gemini-3.1-pro-preview
 echo "== prepare $(date +%H:%M)"; npx tsx src/cli.ts prepare --experiment experiments/trpc.yaml 2>&1 | tail -2
 S=results/trpc-seed/3768/baseline/gemini-gemini-4-argon/none/rep-1

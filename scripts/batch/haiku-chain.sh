@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Haiku cells for tickets 93 and 94. A pass that stops on an infrastructure error (a usage limit or a login that ran out) deletes the cells it cut short, waits an hour and runs again, until a pass ends without one. Detached from any Claude Code session.
 cd "$(dirname "$0")/../.."
+# Node's compile cache and Jest's cache grow by GBs per run; /tmp is a 16 GB RAM disk.
+export TMPDIR=/var/tmp/loop-bench/tmp; mkdir -p "$TMPDIR"
 H=claude/claude-haiku-5-5,claude/claude-haiku-4-5-20251001
 
 drop_cut_short_cells() {

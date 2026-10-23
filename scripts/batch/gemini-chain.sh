@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Gemini cells for #37, then the #144 seed, its starting branches and its cells. Detached from any Claude Code session.
 cd "$(dirname "$0")/../.."
+# Node's compile cache and Jest's cache grow by GBs per run; /tmp is a 16 GB RAM disk.
+export TMPDIR=/var/tmp/loop-bench/tmp; mkdir -p "$TMPDIR"
 G=gemini/gemini-4-argon,gemini/gemini-3-flash-preview,gemini/gemini-3.1-pro-preview
 echo "== ticket 37 $(date +%H:%M)"
 npx tsx src/cli.ts run --ticket 37 --station tdd-round,repair-build --replicates 3 --parallel 3 --per-harness 2 --exclude claude --agent "$G" 2>&1
