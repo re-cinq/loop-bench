@@ -1,0 +1,3 @@
+Branch is pushed and up to date. The CI failure was a missing spec link for the "rejects when beforeSession throws" test at line 35 — the `re-lint/require-spec-link` rule required an inline `[validated by ...]` link in the spec file pointing to that test. I added it to the existing spec statement in `specs/hal-engine-config-hooks/spec.md` that describes the `beforeSession` guarantee.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint spec-link for rejects-when-beforeSession-throws test","tdd_next":"acceptance green"}}
