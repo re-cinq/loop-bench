@@ -1,0 +1,5 @@
+All facets in `.lore/dod.md` are already ticked from the previous round. This round fixed CI quality failures (lint/prettier), which weren't tracked as facets. No dod.md update needed.
+
+This round ran no tests here (the guard blocks acceptance tests, which are CI's to run). The changes made: moved shared test helpers to `chatOrchestratorTestSupport.ts` to fix `no-duplicate-code` lint errors, refactored acceptance test with `captureUsage()`/`makeOrchestrator()` helpers to eliminate internal duplication, set spec status to "In Progress" to satisfy `require-status-matches-coverage`, ran prettier, and ran the reanchor script to fix spec link line numbers across all affected specs.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint no-duplicate-code and prettier failures from CI","tdd_next":"acceptance green"}}

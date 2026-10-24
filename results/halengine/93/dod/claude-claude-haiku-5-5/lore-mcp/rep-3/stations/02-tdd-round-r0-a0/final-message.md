@@ -1,0 +1,6 @@
+Branch is up to date. The push landed. 0 regressions — the 24 existing orchestrator tests all stayed green.
+
+Unrelated smells noticed but not acted on:
+- The `chatOrchestrator.test.ts` test "keeps the usage an earlier round reported when a later round reports none" (line 527) now tests the new accumulation behavior incidentally — its expected value `{inputTokens: 11, outputTokens: 3, totalTokens: 14}` happens to be the same whether you keep-last or accumulate (only one round has usage). The test name still reads "keeps the usage an earlier round reported when a later round reports none" which describes the old behavior; it's now a correct characterization of the accumulation behavior too, but the phrasing is slightly misleading.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Accumulate usage across every provider call in processMessageStream","tdd_next":"Say in the type that the hook's usage is the turn total (doc on OrchestratorHooks.afterModelResponse and UsageMetadata)"}}

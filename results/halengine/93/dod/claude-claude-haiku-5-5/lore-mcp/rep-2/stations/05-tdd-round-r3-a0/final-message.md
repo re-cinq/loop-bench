@@ -1,0 +1,9 @@
+The implementation is fully complete — `accumulateUsage` accumulates across all tool rounds, `TurnUsage` type alias is exported, spec file updated, CHANGELOG entry written, and acceptance tests are in place. The diff touches only orchestration and types, no MongoDB files at all.
+
+The CI failure is in `src/infrastructure/stores/mongo/mongoRedaction.test.ts` — MongoDB binary download race condition (`ENOENT: cannot rename .tgz.downloading → .tgz`). This is a pre-existing CI infrastructure flakiness in `mongodb-memory-server-core` when multiple jest workers race on the binary download. This file was never changed by this ticket. The `src/infrastructure/stores/` coverage floor requires 100%, so if the MongoDB tests cannot run, that floor also fails — but the root cause is the binary download race, not a code defect.
+
+My acceptance tests in `turnUsage.acceptance.test.ts` should pass (I traced both test cases through the accumulation logic: the orchestrator calls `accumulateUsage(lastUsage, outcome.usage)` each round, correctly building up the sum). The CI failure is NOT in my acceptance tests.
+
+Unrelated smell noticed (not acted on): the MongoDB binary download race in `mongodb-memory-server-core` when parallel jest workers start simultaneously — could be addressed by running those tests with `--runInBand` or upgrading `mongodb-memory-server`, but that is out of scope for this ticket.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI test step fails on MongoDB binary download race condition (ENOENT renaming .tgz.downloading) in mongoRedaction.test.ts — pre-existing infrastructure failure unrelated to this ticket; all ticket facets are implemented and turnUsage acceptance tests should pass, but the jest worker race prevents the full suite from completing"}}

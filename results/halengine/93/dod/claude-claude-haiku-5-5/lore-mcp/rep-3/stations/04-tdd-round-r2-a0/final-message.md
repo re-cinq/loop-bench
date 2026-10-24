@@ -1,0 +1,3 @@
+The push landed. The fix splits the single bullet at `specs/hal-engine-config-hooks/spec.md:28` into two bullets, putting each `([validated by: ...](link))` citation in the trailing parenthetical of its own statement — satisfying both `check:spec-links` (no more misplaced citation) and `re-lint/require-spec-link` (the test at L59 now has a valid spec link). No regressions were introduced; the test file was not touched.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"spec citations moved to trailing parentheticals","tdd_next":"acceptance green"}}
