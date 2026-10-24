@@ -1,0 +1,5 @@
+Branch is up to date and nothing is ahead. The round closed the core facet: `accumulateUsage` sums usage across all tool rounds; the orchestrator now uses it; the spec, changelog, and doc comment are updated.
+
+**Unrelated smell noticed**: The line number reference in the spec for `onError` (`chatOrchestrator.ts#L150` / `L151`) will drift as lines shift — the existing spec already had the wrong line for it before my change. Not fixing it this round per the rules.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum the usage of every provider call per turn in chatOrchestrator.ts (+ afterModelResponse doc comment, spec, CHANGELOG)","tdd_next":"Keep the no-tool turn reporting exactly what it reports today, pinned by the existing `receives collected response text and usage` test in chatOrchestrator.test.ts — then acceptance green"}}

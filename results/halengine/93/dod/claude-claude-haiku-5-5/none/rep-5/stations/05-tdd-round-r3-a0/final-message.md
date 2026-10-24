@@ -1,0 +1,3 @@
+Branch is pushed and up to date. Fixed both CI failures by splitting the spec's combined citation into two separate statements, each naming one of the actual test declarations. No regressions introduced (only a spec markdown file changed). Regressions: 0 mine, 0 others. Unrelated smells noticed: none.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec citation mismatch causing eslint and spec-names CI failures","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+Branch is up to date and pushed. The fix splits the single test with 2 `expect` calls (violating `re-lint/max-expects`) into two separate tests, each with one `expect` — no assertion logic was changed. The DoD facets are all already ticked; this was purely a lint repair.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint max-expects violation in acceptance test","tdd_next":"acceptance green"}}

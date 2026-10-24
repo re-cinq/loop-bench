@@ -1,0 +1,3 @@
+Pushed. The fix splits the compound bullet at spec.md line 28 into two separate bullets, so the `#L61` citation is now a trailing parenthetical — resolving both the `spec-links` check failure and the `re-lint/require-spec-link` ESLint error on the acceptance test. No new tests were needed: this was a doc-traceability fix, not a behaviour change (behaviour was already green).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix misplaced spec-link citation blocking CI","tdd_next":"acceptance green"}}

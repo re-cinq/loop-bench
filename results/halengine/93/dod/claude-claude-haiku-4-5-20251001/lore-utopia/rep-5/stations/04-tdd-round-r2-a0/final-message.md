@@ -1,0 +1,3 @@
+Branch is up to date and pushed. The fix adds a "Usage accumulation helper" section to `specs/hal-engine-config-hooks/spec.md` with four spec statements, each ending with a `([validated by: ...])` link that satisfies the `re-lint/require-spec-link` rule for the four `accumulateUsage` unit tests. Zero tests were regressions — all 8 tests in `orchestratorHelpers.test.ts` pass. No unrelated smells addressed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Ensure all existing tests continue to pass, especially the single-round cases","tdd_next":"acceptance green"}}

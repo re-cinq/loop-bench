@@ -1,0 +1,5 @@
+The CI failures are fixed. The `spec-links` and `eslint` failures both stemmed from the same root cause: the three validated-by citations for the usage-sum statements were all in one bullet, making L53 and L67 appear mid-sentence rather than in their statement's trailing parenthetical. Splitting into three bullets puts each citation at the end of its own statement, satisfying both checks.
+
+Unrelated smell noticed (not acted on): the DoD has two unchecked review-only facets (type rename, issue comment about rejected shape) that cannot be expressed as tests.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI failures: split spec bullet so L53 and L67 citations are each their statement's trailing parenthetical","tdd_next":"rename the afterModelResponse usage argument type/parameter so readers can tell it is a turn total (review-only facet)"}}

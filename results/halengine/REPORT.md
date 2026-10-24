@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-24 07:01 UTC: 640 loops over 217 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-24 12:04 UTC: 659 loops over 217 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -130,12 +130,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 1 | 1/1 | 2.0 | $7.72 | 23.7 min | 4.0 | 4.0 | 4.0 | 1/1 | 13 (0.54) | +229/−62 |
-| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 4 | 4/4 | 3.0 (3.0–3.0, sd 0.0) | $5.17 ($3.79–$7.33, sd $1.32) | 30.0 min (20.8 min–40.4 min, sd 7.9 min) | — | — | — | 4/4 | 11 (10–13, sd 1) (0.49 (0.43–0.55, sd 0.04)) | +247/−38 |
-| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 3 | 3/3 | 3.3 (2.0–4.0, sd 0.9) | $6.79 ($5.30–$9.56, sd $1.96) | 36.4 min (27.9 min–47.0 min, sd 7.9 min) | — | — | — | 3/3 | 11 (11–11, sd 0) (0.50 (0.50–0.50, sd 0.00)) | +246/−51 |
-| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 4 | 4/4 | 2.5 (2.0–3.0, sd 0.5) | $6.46 ($4.58–$8.48, sd $1.77) | 41.2 min (23.1 min–67.3 min, sd 16.7 min) | 5.0 | 4.0 | 4.0 | 4/4 | 11 (11–11, sd 0) (0.50 (0.50–0.50, sd 0.00)) | +229/−47 |
-| #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 4 | 4/4 | 1.8 (1.0–3.0, sd 0.8) | $6.43 ($1.40–$16.25, sd $5.83) | 21.3 min (7.8 min–34.8 min, sd 10.3 min) | — | — | — | 4/4 | 10 (7–13, sd 2) (0.44 (0.27–0.55, sd 0.10)) | +188/−38 |
-| #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 3/3 | 1.3 (1.0–2.0, sd 0.5) | $2.06 ($1.76–$2.30, sd $0.22) | 11.9 min (9.9 min–13.0 min, sd 1.4 min) | — | — | — | 3/3 | 7 (7–8, sd 0) (0.27 (0.25–0.27, sd 0.01)) | +153/−5 |
-| #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 4 | 4/4 | 2.3 (1.0–6.0, sd 2.2) | $3.26 ($1.56–$7.21, sd $2.32) | 25.5 min (9.4 min–68.5 min, sd 24.9 min) | 4.0 | 4.0 | 3.0 | 4/4 | 9 (7–15, sd 3) (0.40 (0.27–0.67, sd 0.16)) | +187/−26 |
+| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 5 | 5/5 | 3.0 (3.0–3.0, sd 0.0) | $5.50 ($3.79–$7.33, sd $1.35) | 30.9 min (20.8 min–40.4 min, sd 7.3 min) | — | — | — | 4/5 | 12 (10–13, sd 1) (0.50 (0.43–0.55, sd 0.04)) | +244/−41 |
+| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 4 | 4/4 | 3.3 (2.0–4.0, sd 0.8) | $6.35 ($5.02–$9.56, sd $1.86) | 34.7 min (27.9 min–47.0 min, sd 7.5 min) | — | — | — | 4/4 | 11 (11–11, sd 0) (0.50 (0.50–0.50, sd 0.00)) | +244/−49 |
+| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 5 | 5/5 | 2.6 (2.0–3.0, sd 0.5) | $6.62 ($4.58–$8.48, sd $1.62) | 40.9 min (23.1 min–67.3 min, sd 15.0 min) | 5.0 | 4.0 | 4.0 | 5/5 | 11 (11–12, sd 0) (0.49 (0.46–0.50, sd 0.02)) | +237/−49 |
+| #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 5 | 5/5 | 2.2 (1.0–4.0, sd 1.2) | $6.10 ($1.40–$16.25, sd $5.25) | 22.2 min (7.8 min–34.8 min, sd 9.4 min) | — | — | — | 5/5 | 10 (7–13, sd 2) (0.46 (0.27–0.55, sd 0.10)) | +194/−34 |
+| #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 5 | 5/5 | 1.6 (1.0–2.0, sd 0.5) | $2.92 ($1.76–$4.73, sd $1.11) | 16.7 min (9.9 min–26.3 min, sd 6.2 min) | — | — | — | 5/5 | 8 (7–10, sd 1) (0.32 (0.25–0.55, sd 0.11)) | +165/−13 |
+| #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 5/5 | 2.4 (1.0–6.0, sd 2.0) | $3.16 ($1.56–$7.21, sd $2.08) | 23.3 min (9.4 min–68.5 min, sd 22.7 min) | 4.0 | 4.0 | 3.0 | 5/5 | 9 (7–15, sd 3) (0.37 (0.27–0.67, sd 0.15)) | +182/−21 |
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 1 | 1/1 | 2.0 | $5.77 | 24.0 min | 4.0 | 4.0 | 4.0 | 1/1 | 9 (0.45) | +172/−20 |
@@ -181,12 +181,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 4 | 4/4 | 0.3 (0.0–1.0, sd 0.4) | $0.32 ($0.23–$0.43, sd $0.08) | 5.6 min (3.2 min–12.5 min, sd 4.0 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +148/−5 |
-| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 3 | 3/3 | 0.7 (0.0–1.0, sd 0.5) | $0.63 ($0.25–$0.84, sd $0.27) | 5.4 min (2.5 min–7.1 min, sd 2.0 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.7 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +152/−5 |
-| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 4 | 4/4 | 0.3 (0.0–1.0, sd 0.4) | $0.38 ($0.17–$1.01, sd $0.36) | 4.3 min (1.8 min–10.3 min, sd 3.5 min) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 3.3 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +151/−5 |
-| #93 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 4 | 4/4 | 0.0 (0.0–0.0, sd 0.0) | $0.06 ($0.05–$0.08, sd $0.01) | 1.2 min (1.1 min–1.3 min, sd 0.1 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.7 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +148/−5 |
-| #93 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.06 ($0.04–$0.07, sd $0.01) | 1.6 min (1.2 min–2.1 min, sd 0.4 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +147/−5 |
-| #93 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 4 | 4/4 | 0.3 (0.0–1.0, sd 0.4) | $0.24 ($0.05–$0.78, sd $0.31) | 2.6 min (1.0 min–5.8 min, sd 2.0 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +145/−5 |
+| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 5 | 5/5 | 0.4 (0.0–1.0, sd 0.5) | $0.56 ($0.23–$1.52, sd $0.48) | 6.5 min (3.2 min–12.5 min, sd 4.0 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–8, sd 0) (0.29 (0.27–0.36, sd 0.04)) | +151/−7 |
+| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 4 | 4/4 | 0.5 (0.0–1.0, sd 0.5) | $0.54 ($0.25–$0.84, sd $0.28) | 4.7 min (2.5 min–7.1 min, sd 2.1 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.7 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +151/−5 |
+| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 5 | 5/5 | 0.4 (0.0–1.0, sd 0.5) | $0.48 ($0.17–$1.01, sd $0.38) | 4.3 min (1.8 min–10.3 min, sd 3.1 min) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 3.3 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +151/−5 |
+| #93 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.06 ($0.05–$0.08, sd $0.01) | 1.1 min (0.9 min–1.3 min, sd 0.1 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.7 (3.0–4.0, sd 0.5) | — | 7 (7–8, sd 0) (0.29 (0.27–0.36, sd 0.04)) | +148/−5 |
+| #93 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 4 | 4/4 | 0.3 (0.0–1.0, sd 0.4) | $0.14 ($0.04–$0.39, sd $0.14) | 2.6 min (1.2 min–5.6 min, sd 1.8 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +146/−5 |
+| #93 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 5/5 | 0.2 (0.0–1.0, sd 0.4) | $0.20 ($0.05–$0.78, sd $0.29) | 2.3 min (1.0 min–5.8 min, sd 1.9 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +145/−5 |
 | #93 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -229,12 +229,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 4 | 4/4 | 1.5 (1.0–2.0, sd 0.5) | $0.64 ($0.46–$1.04, sd $0.24) | 10.4 min (5.1 min–14.5 min, sd 3.4 min) | 4.7 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | — | 8 (7–10, sd 1) (0.34 (0.27–0.55, sd 0.12)) | +178/−11 |
-| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 3 | 3/3 | 1.0 (1.0–1.0, sd 0.0) | $0.57 ($0.52–$0.67, sd $0.07) | 9.5 min (8.1 min–11.6 min, sd 1.5 min) | 4.3 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | 3.3 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +189/−7 |
-| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 4 | 4/4 | 1.5 (1.0–2.0, sd 0.5) | $0.86 ($0.30–$1.96, sd $0.64) | 9.1 min (6.0 min–14.3 min, sd 3.2 min) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 3.3 (3.0–4.0, sd 0.5) | — | 8 (7–9, sd 1) (0.35 (0.27–0.60, sd 0.14)) | +191/−11 |
-| #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 4 | 3/4 | 1.5 (1.0–2.0, sd 0.5) | $0.19 ($0.14–$0.26, sd $0.05) | 5.1 min (3.0 min–7.3 min, sd 1.7 min) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 3.3 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +160/−7 |
-| #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 2/3 | 1.0 (1.0–1.0, sd 0.0) | $0.16 ($0.13–$0.20, sd $0.03) | 4.0 min (2.2 min–5.2 min, sd 1.3 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (7–8, sd 0) (0.43 (0.27–0.67, sd 0.17)) | +172/−12 |
-| #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 4 | 3/4 | 2.3 (0.0–4.0, sd 1.5) | $0.23 ($0.03–$0.41, sd $0.14) | 6.3 min (2.3 min–10.8 min, sd 3.7 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (3.0–5.0, sd 0.8) | 3.7 (3.0–4.0, sd 0.5) | — | 8 (6–12, sd 2) (0.27 (0.18–0.36, sd 0.06)) | +169/−10 |
+| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | with Lore | baseline | 5 | 5/5 | 1.4 (1.0–2.0, sd 0.5) | $0.64 ($0.46–$1.04, sd $0.21) | 9.6 min (5.1 min–14.5 min, sd 3.5 min) | 4.7 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | — | 8 (7–10, sd 1) (0.41 (0.27–0.67, sd 0.17)) | +177/−11 |
+| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | Lore on Utopia | baseline | 4 | 4/4 | 1.0 (1.0–1.0, sd 0.0) | $0.56 ($0.52–$0.67, sd $0.06) | 8.4 min (4.8 min–11.6 min, sd 2.4 min) | 4.3 (4.0–5.0, sd 0.5) | 3.7 (3.0–4.0, sd 0.5) | 3.3 (3.0–4.0, sd 0.5) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +184/−7 |
+| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | none (no thinking) (claude CLI default) | without Lore | baseline | 5 | 5/5 | 1.6 (1.0–2.0, sd 0.5) | $0.83 ($0.30–$1.96, sd $0.58) | 8.8 min (6.0 min–14.3 min, sd 2.9 min) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 3.3 (3.0–4.0, sd 0.5) | — | 7 (7–9, sd 1) (0.34 (0.27–0.60, sd 0.13)) | +190/−10 |
+| #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 5 | 4/5 | 1.6 (1.0–2.0, sd 0.5) | $0.23 ($0.14–$0.39, sd $0.09) | 5.5 min (3.0 min–7.5 min, sd 1.8 min) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 3.3 (3.0–4.0, sd 0.5) | — | 7 (7–9, sd 1) (0.28 (0.27–0.33, sd 0.02)) | +157/−7 |
+| #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 4 | 3/4 | 1.8 (1.0–4.0, sd 1.3) | $0.25 ($0.13–$0.52, sd $0.16) | 5.0 min (2.2 min–7.8 min, sd 2.0 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 9 (7–13, sd 2) (0.43 (0.27–0.67, sd 0.15)) | +186/−18 |
+| #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 4/5 | 2.4 (0.0–4.0, sd 1.4) | $0.26 ($0.03–$0.41, sd $0.13) | 6.2 min (2.3 min–10.8 min, sd 3.3 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (3.0–5.0, sd 0.8) | 3.7 (3.0–4.0, sd 0.5) | — | 8 (6–12, sd 2) (0.36 (0.18–0.70, sd 0.18)) | +173/−14 |
 | #93 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -655,12 +655,12 @@ What the columns mean:
 | #37 medium | tdd-round | `gemini-4-argon` (gemini) | without Lore | green ×3 |
 | #93 small | baseline | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 small | dod | `claude-fable-5-1` (claude) | without Lore | green ×1 |
-| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×4 |
-| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×3 |
-| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×4 |
-| #93 small | dod | `claude-haiku-5-5` (claude) | with Lore | green ×4 |
-| #93 small | dod | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×3 |
-| #93 small | dod | `claude-haiku-5-5` (claude) | without Lore | green ×4 |
+| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×5 |
+| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×4 |
+| #93 small | dod | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×5 |
+| #93 small | dod | `claude-haiku-5-5` (claude) | with Lore | green ×5 |
+| #93 small | dod | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×5 |
+| #93 small | dod | `claude-haiku-5-5` (claude) | without Lore | green ×5 |
 | #93 small | dod | `claude-opus-5-5` (claude) | without Lore | green ×1 |
 | #93 small | dod | `claude-sonnet-4-6` (claude) | without Lore | green ×1 |
 | #93 small | dod | `claude-sonnet-5-5` (claude) | without Lore | green ×1 |
@@ -675,12 +675,12 @@ What the columns mean:
 | #93 small | dod | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 small | dod | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 small | dod | `gemini-4-argon` (gemini) | without Lore | green ×1 |
-| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×4 |
-| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×3 |
-| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×4 |
-| #93 small | repair-build | `claude-haiku-5-5` (claude) | with Lore | green ×4 |
-| #93 small | repair-build | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×3 |
-| #93 small | repair-build | `claude-haiku-5-5` (claude) | without Lore | green ×4 |
+| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×5 |
+| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×4 |
+| #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×5 |
+| #93 small | repair-build | `claude-haiku-5-5` (claude) | with Lore | green ×5 |
+| #93 small | repair-build | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×4 |
+| #93 small | repair-build | `claude-haiku-5-5` (claude) | without Lore | green ×5 |
 | #93 small | repair-build | `gpt-5.6-luna` (codex) | with Lore | excluded_harness ×1, green ×2 |
 | #93 small | repair-build | `gpt-5.6-luna` (codex) | Lore on Utopia | excluded_harness ×3 |
 | #93 small | repair-build | `gpt-5.6-luna` (codex) | without Lore | excluded_harness ×2, green ×1 |
@@ -711,12 +711,12 @@ What the columns mean:
 | #93 small | repair-build | `gemini-4-argon` (gemini) | with Lore | green ×5 |
 | #93 small | repair-build | `gemini-4-argon` (gemini) | Lore on Utopia | green ×5 |
 | #93 small | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×5 |
-| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×4 |
-| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×3 |
-| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×4 |
-| #93 small | tdd-round | `claude-haiku-5-5` (claude) | with Lore | green ×3, retry_budget ×1 |
-| #93 small | tdd-round | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×2, retry_budget ×1 |
-| #93 small | tdd-round | `claude-haiku-5-5` (claude) | without Lore | green ×3, retry_budget ×1 |
+| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×5 |
+| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×4 |
+| #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×5 |
+| #93 small | tdd-round | `claude-haiku-5-5` (claude) | with Lore | green ×4, retry_budget ×1 |
+| #93 small | tdd-round | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×3, retry_budget ×1 |
+| #93 small | tdd-round | `claude-haiku-5-5` (claude) | without Lore | green ×4, retry_budget ×1 |
 | #93 small | tdd-round | `glm-5.3-flash` (claude) | without Lore | green ×5 |
 | #93 small | tdd-round | `gpt-5.6-luna` (codex) | with Lore | green ×3 |
 | #93 small | tdd-round | `gpt-5.6-luna` (codex) | Lore on Utopia | green ×3 |
