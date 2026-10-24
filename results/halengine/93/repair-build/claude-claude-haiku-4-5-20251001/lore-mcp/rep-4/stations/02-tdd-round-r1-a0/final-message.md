@@ -1,0 +1,3 @@
+The branch is up to date. The CI failure was two stale spec-link line numbers in `specs/hal-engine-config-hooks/spec.md` — both pointing at lines that had shifted after previous test insertions. Running `npm run spec:names -- --fix` repointed them to their current positions (#L36→#L35 and #L42→#L40). All three facets in `.lore/dod.md` were already ticked; this round fixed the spec-names CI check with no new facet needed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix stale spec-link line numbers (CI spec-names check)","tdd_next":"acceptance green"}}
