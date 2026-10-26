@@ -1,28 +1,20 @@
-Added and pushed:
+Added and pushed commit `ef2df4c`.
 
-- [conversationList.acceptance.test.ts](/var/tmp/loop-bench/runs/1a6abc247b37/workspace/target/src/transport/ws/conversationList.acceptance.test.ts)
-- [.lore/dod.md](/var/tmp/loop-bench/runs/1a6abc247b37/workspace/target/.lore/dod.md)
+- Strategy: `direct`
+- Acceptance tests: [conversationList.acceptance.test.ts](/var/tmp/loop-bench/runs/1a6abc247b37/workspace/target/src/transport/ws/conversationList.acceptance.test.ts)
+- DoD: [.lore/dod.md](/var/tmp/loop-bench/runs/1a6abc247b37/workspace/target/.lore/dod.md)
+- Updated protocol spec citations.
+- Ran formatter and only the acceptance test file.
+- Branch is synchronized with upstream.
 
-Strategy: `direct`. Acceptance run:
-
-```text
-Test Suites: 1 failed, 1 total
-Tests:       4 failed, 4 total
-```
-
-Key failures include:
+Failure evidence:
 
 ```text
 Expected valid: true
-Received error: "Unknown message type: list_conversations"
+Received: valid: false, error: "Unknown message type: list_conversations"
 
-Expected: "u1"
-Received: undefined
-
-Expected code: "UNSUPPORTED"
-Received code: "INVALID_MESSAGE"
+Expected: "conversation_list"
+Received: "error"
 ```
-
-Committed as `159d51f`, pushed, merged with `origin/main`, and confirmed branch is synchronized.
 
 LORE_NODE_RESULT: {"outcome":"success","extras":{"dod_strategy":"direct"}}
