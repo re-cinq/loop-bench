@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-26 11:29 UTC: 689 loops over 219 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-26 12:09 UTC: 695 loops over 219 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -552,7 +552,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | repair-build | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #144 large | repair-build | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 1 | 1/1 | 2.0 | $3.11 | 17.8 min | — | — | — | — | 23 (0.27) | +636/−206 |
+| #144 large | repair-build | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 3 | 3/3 | 4.0 (2.0–6.0, sd 1.6) | $4.15 ($3.11–$5.04, sd $0.80) | 26.7 min (17.8 min–34.3 min, sd 6.8 min) | — | — | — | — | 18 (14–23, sd 4) (0.33 (0.27–0.40, sd 0.05)) | +589/−154 |
 | #144 large | repair-build | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -600,7 +600,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | tdd-round | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #144 large | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 1 | 0/1 | 1.0 | $0.03 | 3.4 min | 1.0 | 1.0 | 1.0 | — | 6 (0.15) | +287/−1 |
+| #144 large | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 2/5 | 3.0 (1.0–7.0, sd 2.3) | $0.10 ($0.03–$0.23, sd $0.08) | 11.8 min (3.1 min–25.9 min, sd 8.9 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | — | 12 (6–22, sd 6) (0.22 (0.15–0.28, sd 0.05)) | +419/−45 |
 | #144 large | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -830,7 +830,7 @@ What the columns mean:
 | #95 small | tdd-round | `gemini-4-argon` (gemini) | Lore on Utopia | green ×3 |
 | #95 small | tdd-round | `gemini-4-argon` (gemini) | without Lore | green ×3 |
 | #144 large | dod | `gpt-6-luna` (codex) | without Lore | excluded_harness ×5 |
-| #144 large | repair-build | `gpt-6-luna` (codex) | without Lore | green ×1 |
+| #144 large | repair-build | `gpt-6-luna` (codex) | without Lore | green ×3 |
 | #144 large | repair-build | `gemini-3-flash-preview` (gemini) | with Lore | excluded_harness ×2 |
 | #144 large | repair-build | `gemini-3-flash-preview` (gemini) | Lore on Utopia | excluded_harness ×2 |
 | #144 large | repair-build | `gemini-3-flash-preview` (gemini) | without Lore | excluded_harness ×3 |
@@ -840,7 +840,7 @@ What the columns mean:
 | #144 large | repair-build | `gemini-4-argon` (gemini) | with Lore | green ×2 |
 | #144 large | repair-build | `gemini-4-argon` (gemini) | Lore on Utopia | excluded_harness ×1, green ×1 |
 | #144 large | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×2, excluded_harness ×1 |
-| #144 large | tdd-round | `gpt-6-luna` (codex) | without Lore | retry_budget ×1 |
+| #144 large | tdd-round | `gpt-6-luna` (codex) | without Lore | retry_budget ×3, green ×2 |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | with Lore | green ×1, round_budget ×1 |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | Lore on Utopia | round_budget ×1, green ×1 |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | without Lore | green ×3 |

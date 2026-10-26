@@ -1,0 +1,3 @@
+I’m stuck before editing: the required `lore-query-trace` and `lore_get_ci_failures` calls aren’t available in this environment, and the embedded CI report is truncated, so I can’t retrieve all findings that this round must fix. I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required Lore trace and CI failure tools are unavailable; the only CI report is truncated, so I cannot identify all required fixes before starting the round."}}

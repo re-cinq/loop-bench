@@ -103,20 +103,38 @@ export async function scoreDod(input: {
   }
 }
 
-export async function scoreJudge(input: { config: ExperimentConfig; paths: BenchPaths; ticket: Ticket; cellDir: string }): Promise<(JudgeScores & { model: string }) | null> {
+/** The judge's brief for a finished cell, or null when the cell produced no diff. */
+export function judgePromptOf(input: { config: ExperimentConfig; paths: BenchPaths; ticket: Ticket; cellDir: string; referenceDiff: string }): string | null {
   const patch = join(input.cellDir, "diff.patch");
+  const dodPath = join(input.cellDir, "dod.md");
 
-  if (!existsSync(patch)) {
+  return existsSync(patch)
+    ? buildJudgePrompt({
+        ticket: readFileSync(join(input.paths.root, "experiments", input.ticket.ticket_file), "utf8"),
+        referenceDiff: input.referenceDiff,
+        candidateDiff: readFileSync(patch, "utf8"),
+        dodMarkdown: existsSync(dodPath) ? readFileSync(dodPath, "utf8") : null,
+        diffCapChars: input.config.judge.diff_cap_chars,
+      })
+    : null;
+}
+
+/** Parses the judge's reply and writes judge.json beside the cell; the scores, or null when the reply held none. */
+export function recordJudgeVerdict(input: { config: ExperimentConfig; cellDir: string; text: string }): (JudgeScores & { model: string }) | null {
+  const { harness, model } = input.config.judge;
+  const scores = parseJudgeOutput(input.text);
+
+  writeFileSync(join(input.cellDir, "judge.json"), JSON.stringify({ model, harness, scores, raw: input.text }, null, 2));
+
+  return scores ? { ...scores, model } : null;
+}
+
+export async function scoreJudge(input: { config: ExperimentConfig; paths: BenchPaths; ticket: Ticket; cellDir: string }): Promise<(JudgeScores & { model: string }) | null> {
+  const prompt = judgePromptOf({ ...input, referenceDiff: await diffOf(input.config.subject.mirror_dir, input.ticket.base_sha, input.ticket.merge_sha) });
+
+  if (prompt === null) {
     return null;
   }
-  const dodPath = join(input.cellDir, "dod.md");
-  const prompt = buildJudgePrompt({
-    ticket: readFileSync(join(input.paths.root, "experiments", input.ticket.ticket_file), "utf8"),
-    referenceDiff: await diffOf(input.config.subject.mirror_dir, input.ticket.base_sha, input.ticket.merge_sha),
-    candidateDiff: readFileSync(patch, "utf8"),
-    dodMarkdown: existsSync(dodPath) ? readFileSync(dodPath, "utf8") : null,
-    diffCapChars: input.config.judge.diff_cap_chars,
-  });
   const judge = input.config.judge;
   const homeDir = join(input.paths.runsDir, `judge-home-${process.pid}-${Date.now()}`);
   const workspaceDir = join(homeDir, "empty");
@@ -128,13 +146,11 @@ export async function scoreJudge(input: { config: ExperimentConfig; paths: Bench
   buildScratchHome({ spec, adapter, promptsDir: input.paths.promptsDir, skills: [] });
   const command = adapter.command(spec);
   const result = await runProcess({ ...command, args: withoutTools(judge.harness, command.args), timeoutMs: 15 * 60_000, stdoutPath: join(input.cellDir, "judge-stdout.jsonl") });
-  const text = finalText(judge.harness, result.stdout);
-  const scores = parseJudgeOutput(text);
+  const verdict = recordJudgeVerdict({ config: input.config, cellDir: input.cellDir, text: finalText(judge.harness, result.stdout) });
 
-  writeFileSync(join(input.cellDir, "judge.json"), JSON.stringify({ model: judge.model, harness: judge.harness, scores, raw: text }, null, 2));
   rmSync(homeDir, { recursive: true, force: true });
 
-  return scores ? { ...scores, model: judge.model } : null;
+  return verdict;
 }
 
 /** The judge reads its brief and answers; it uses no tools. */
@@ -150,7 +166,7 @@ export function withoutTools(harness: ExperimentConfig["judge"]["harness"], args
   return args.map((arg) => (arg === "--dangerously-bypass-approvals-and-sandbox" ? "--sandbox" : arg)).flatMap((arg) => (arg === "--sandbox" ? ["--sandbox", "read-only"] : [arg]));
 }
 
-function envOf(): Record<string, string> {
+export function envOf(): Record<string, string> {
   return Object.fromEntries(Object.entries(process.env).filter((pair): pair is [string, string] => typeof pair[1] === "string"));
 }
 

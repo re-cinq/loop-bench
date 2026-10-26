@@ -1,0 +1,5 @@
+The DoD already reflects the current state: 5 facets ticked, one open (`Document list_sessions and session_list in specs/...`). This round's work was fixing CI lint failures — no new facet closed, but now the branch is clean for CI to evaluate the existing facets.
+
+**Summary:** Fixed 3 eslint violations — `re-lint/max-member-chain` in `messageHandler.test.ts` (extracted `listFor.mock.calls[0]`) and `wsTestSupport.ts` (extracted `hal.wss.clients`), and `re-lint/max-expects` in `validation.test.ts` (merged two `expect` calls into one). Tests still pass. Pushed and branch is current with main.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI eslint: max-member-chain in messageHandler.test.ts and wsTestSupport.ts, max-expects in validation.test.ts","tdd_next":"document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md and specs/hal-engine-conversation-list/spec.md"}}

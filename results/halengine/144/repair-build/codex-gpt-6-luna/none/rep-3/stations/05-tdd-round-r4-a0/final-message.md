@@ -1,0 +1,3 @@
+Pushed. The fix was mechanical: ran `npm run spec:names -- --fix` to reanchor the 3 stale spec-name citations that CI reported (the test names pointed at the wrong line numbers after a prior round inserted lines into the spec). No new tests were written (this was a docs/spec maintenance fix). The DoD facets are all already ticked — the round brief's `CI reported failures` was the only remaining work.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix stale spec-names citations","tdd_next":"acceptance green"}}

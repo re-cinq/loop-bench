@@ -1,0 +1,5 @@
+I’m blocked before the round can proceed. The branch’s `.lore/dod.md` says the next facet is wiring `sessionStore` into `createMessageHandler`, but the round brief says the previous push is red and its CI findings must be fixed first. The brief is truncated at `src/transport/ws/validation.ts`, so it does not identify all the required fixes. Also, `lore-query-trace` and `lore_get_ci_failures` are unavailable in this environment, and I can’t meet the required trace check before editing.
+
+I made no changes, ran no tests, and did not commit or push. Please provide the complete CI findings and make the Lore tools available for the next round.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The prior CI verdict is truncated and the required lore CI/trace tools are unavailable, so I cannot identify all owed fixes or check coverage before editing."}}

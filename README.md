@@ -135,7 +135,23 @@ Two cells compare with `diff -r`.
 
 - **dod check**: the agent's acceptance tests must fail on the base commit and pass once the merged pull request's production code is applied. It is deterministic.
 - **Structural**: lines and files changed, and the overlap of the file set with the merged pull request's.
-- **Judge**: a fixed model (`judge` in the experiment file) scores correctness, completeness against the issue and closeness to the merged pull request from 1 to 5.
+- **Judge**: a fixed model (`judge` in the experiment file) scores correctness, completeness against the issue and closeness to the merged pull request from 1 to 5. `run` does not call it: a finished loop gets its dod check right away and its judge score later, from `score --missing` or `score --batch`.
+
+### Judging in a batch
+
+With a gemini judge, many loops can be judged as one Vertex batch job instead of one CLI call after another. Add a bucket folder to the experiment file (and a `location` if batch prediction is not served from the gemini one):
+
+```yaml
+judge: { harness: gemini, model: gemini-4-argon, batch: { gcs_prefix: gs://your-bucket/loop-bench-judge } }
+```
+
+```sh
+npm run bench -- score --batch submit    # one request per distinct prompt, for every loop without a judge score
+npm run bench -- score --batch status    # the state of each open job
+npm run bench -- score --batch collect   # writes judge.json, loop.json and results.jsonl for each answered cell
+```
+
+It needs `gcloud` logged in (`gcloud auth application-default login`). Open jobs are tracked in `results/<experiment>/judge-batches.json`. Cells whose answer did not parse stay without a judge score, and the next `submit` sends them again. The prompt and the scoring are the same as for the CLI judge.
 
 ## Improving the prompts
 

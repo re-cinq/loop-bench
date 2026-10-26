@@ -66,7 +66,13 @@ export const ExperimentConfigSchema = z.object({
       token_env: z.string().default("LORE_INGEST_TOKEN"),
     })
     .optional(),
-  judge: z.object({ harness: HarnessSchema, model: z.string(), diff_cap_chars: z.number().default(60_000) }),
+  judge: z.object({
+    harness: HarnessSchema,
+    model: z.string(),
+    diff_cap_chars: z.number().default(60_000),
+    /** Vertex batch judging (gemini only): the bucket folder the jobs read from and write to, and a location if batch prediction is not served from the gemini one. */
+    batch: z.object({ gcs_prefix: z.string().regex(/^gs:\/\/[^/]+(\/.*)?$/), location: z.string().optional() }).optional(),
+  }),
   gemini: z.object({ project: z.string(), location: z.string().default("global") }).optional(),
 });
 export type ExperimentConfig = z.infer<typeof ExperimentConfigSchema>;

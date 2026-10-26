@@ -1,0 +1,3 @@
+I’m blocked before the red phase: this environment exposes no `lore-query-trace` or `lore_get_ci_failures` tool or command. The trace query is required before editing a symbol, and the round brief truncates the CI findings, so I can’t identify all required repairs. I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore trace and full CI failure details are unavailable in this environment."}}

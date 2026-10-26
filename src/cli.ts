@@ -33,6 +33,7 @@ import { benchPaths } from "./run/paths.js";
 import { propose, type ProposalEvidence } from "./run/propose.js";
 import { appendRecord, latestLoops, latestStationRuns, readLoopJson, readRecords, writeLoopJson } from "./run/results.js";
 import { scoreDod, scoreJudge, withScores } from "./run/score.js";
+import { collectJudgeBatches, judgeBatchStatus, submitJudgeBatch } from "./run/judge-batch.js";
 import { cachedNodeModulesDir, ensureDepsCache } from "./workspace/deps-cache.js";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -44,10 +45,11 @@ const USAGE = `loop-bench <command> [options]
   plan        --experiment <file> [filters]   list the loops a run would start, with their cell folders
   prepare     --experiment <file>             install dependencies once per ticket base commit
   smoke       --harness <h> --model <m>        one tiny run under a scratch HOME: auth, stream parsing, cost
-  run         --experiment <file> [filters]   run loops; skips cells whose loop.json exists (use --force)
+  run         --experiment <file> [filters]   run loops and their dod check; skips cells whose loop.json exists (use --force); no judge
   make-artifact --experiment <file> --ticket <n> --kind dod|red --from-cell <dir>
   score       --experiment <file> [filters]   dod red/green check + judge on finished loops
   score --missing [--shard i/n]               judge only the finished loops that have no judge score, found on disk
+  score --batch submit|status|collect         judge those loops as one Vertex batch job (needs judge.batch in the experiment file)
   analyze     --experiment <file>             transcript metrics per station visit -> analysis.json
   propose     --experiment <file> --station <s> [--worst 5]
   report      --experiment <file>             rewrite results/<experiment>/REPORT.md and print it
@@ -85,6 +87,7 @@ async function main(argv: readonly string[]): Promise<void> {
       exclude: { type: "string" },
       missing: { type: "boolean", default: false },
       shard: { type: "string" },
+      batch: { type: "string" },
     },
   });
   const config = (): ExperimentConfig => loadExperiment(values.experiment);
@@ -102,7 +105,10 @@ async function main(argv: readonly string[]): Promise<void> {
     case "make-artifact":
       return makeArtifact(config(), values.ticket, values.kind, values["from-cell"]);
     case "score":
-      return values.missing ? scoreMissingJudges(config(), values.shard) : scoreSelected(config(), selected());
+      if (values.batch) {
+        return scoreInBatch(config(), values.batch);
+      }
+      return values.missing ? scoreMissingJudges(config(), values.shard) : scoreSelected(config(), selected(), { dod: "always", judge: true });
     case "analyze":
       return void analyzeAll(config());
     case "propose":
@@ -226,7 +232,7 @@ async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop
       log(`[loop-bench] ${index + 1}/${pending.length} ${cellPath(loop)}`);
       try {
         await runLoop(loop, { config, paths, log, keepRun, excludedHarnesses, ...(lanes ? { lanes } : {}) });
-        await scoreSelected(config, [loop]);
+        await scoreSelected(config, [loop], AFTER_RUN);
         analyzeAll(config);
         writeReport(config);
       } catch (error) {
@@ -308,27 +314,38 @@ function redCut(visits: readonly Visit[]): { sha: string; brief: string } | null
   return null;
 }
 
-async function scoreOne(config: ExperimentConfig, ticket: { number: number; title: string; ticket_file: string; base_sha: string; merge_sha: string; reference_pr: number }, cellDir: string, record: LoopRecord, onlyJudge: boolean): Promise<void> {
+/** Which scores to (re)compute: the dod check always or only where it is missing, and whether to call the judge. */
+interface ScoringSteps {
+  dod: "always" | "if-missing";
+  judge: boolean;
+}
+
+/** A run scores the dod check and leaves the judge to a later backfill (`score --missing` or `score --batch`). */
+const AFTER_RUN: ScoringSteps = { dod: "always", judge: false };
+
+async function scoreOne(config: ExperimentConfig, ticket: { number: number; title: string; ticket_file: string; base_sha: string; merge_sha: string; reference_pr: number }, cellDir: string, record: LoopRecord, steps: ScoringSteps): Promise<void> {
   const ranDod = record.mode !== "ofat" || record.varied_station === "dod";
   const dodCheck =
-    ranDod && !(onlyJudge && record.dod_check !== null)
+    ranDod && !(steps.dod === "if-missing" && record.dod_check !== null)
       ? await scoreDod({ config, paths, ticket, cellDir, testCommand: (files) => `node --experimental-vm-modules node_modules/jest/bin/jest.js --runTestsByPath ${files.map((file) => `'${file}'`).join(" ")}` })
       : null;
-  const judge = await scoreJudge({ config, paths, ticket, cellDir });
+  const judge = steps.judge ? await scoreJudge({ config, paths, ticket, cellDir }) : null;
   const scored = withScores(record, dodCheck, judge);
 
   writeLoopJson(cellDir, scored);
   appendRecord(paths.resultsDir, config.id, scored);
-  log(`[loop-bench] scored ${relative(paths.resultsDir, cellDir)}: dod ${dodCheck ? `red=${dodCheck.red_on_base} green=${dodCheck.green_with_reference}` : "kept"}, judge ${judge ? `${judge.correctness}/${judge.completeness_vs_ticket}/${judge.closeness_to_reference}` : "—"}`);
+  const unjudged = steps.judge ? "—" : "later";
+
+  log(`[loop-bench] scored ${relative(paths.resultsDir, cellDir)}: dod ${dodCheck ? `red=${dodCheck.red_on_base} green=${dodCheck.green_with_reference}` : "kept"}, judge ${judge ? `${judge.correctness}/${judge.completeness_vs_ticket}/${judge.closeness_to_reference}` : unjudged}`);
 }
 
-async function scoreSelected(config: ExperimentConfig, loops: readonly PlannedLoop[]): Promise<void> {
+async function scoreSelected(config: ExperimentConfig, loops: readonly PlannedLoop[], steps: ScoringSteps): Promise<void> {
   for (const loop of loops) {
     const cellDir = join(paths.resultsDir, cellPath(loop));
     const record = readLoopJson(cellDir);
 
     if (record) {
-      await scoreOne(config, loop.ticket, cellDir, record, false);
+      await scoreOne(config, loop.ticket, cellDir, record, steps);
     }
   }
 }
@@ -345,7 +362,22 @@ async function scoreMissingJudges(config: ExperimentConfig, shardText: string | 
       log(`[loop-bench] no ticket #${record.ticket} in the experiment, skipping ${relative(paths.resultsDir, cellDir)}`);
       continue;
     }
-    await scoreOne(config, ticket, cellDir, record, true);
+    await scoreOne(config, ticket, cellDir, record, { dod: "if-missing", judge: true });
+  }
+}
+
+async function scoreInBatch(config: ExperimentConfig, step: string): Promise<void> {
+  const context = { config, paths, log };
+
+  switch (step) {
+    case "submit":
+      return submitJudgeBatch(context);
+    case "status":
+      return judgeBatchStatus(context);
+    case "collect":
+      return collectJudgeBatches(context);
+    default:
+      throw new Error(`--batch takes submit, status or collect, got "${step}"`);
   }
 }
 

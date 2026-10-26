@@ -1,0 +1,3 @@
+I’m blocked from making a safe round. The brief reports CI failures for eslint, test, spec-names, and changelog, but its eslint output is truncated and it gives no test failure details. The required `lore_get_ci_failures` and `lore-query-trace` tools aren’t available here, and the trace query is required before editing a symbol. I can’t identify all work owed or check existing test coverage, so I made no edits and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required Lore CI-failure and trace queries are unavailable; the round brief truncates CI findings, so I cannot safely address every failure or check coverage before editing."}}
