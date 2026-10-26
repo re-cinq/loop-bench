@@ -1,0 +1,131 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..a900a61
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,40 @@
++# Definition of Done
++
++> what the hook receives is the usage of the final provider call alone.
++
++**Strategy: `direct`** — The seam exists: `createChatOrchestrator` takes the provider as a parameter, so a scripted provider can drive two tool rounds through the real `processMessage` entry point, and the `afterModelResponse` hook already receives the usage argument. The defect is in what that argument carries, not in how a test reaches it.
++
++## Done when these pass
++
++- [ ] **reports the summed usage of every provider call in a turn that ran two tool rounds** — three scripted provider calls report 10/20/30 input tokens; the hook must receive the sum, 60 input, 21 output, 81 total. Fails today with the final call alone (30 / 9 / 39).
++      `src/orchestration/usageAcrossRounds.acceptance.test.ts`
++- [ ] **still counts the rounds that reported when a middle round reports no usage** — the middle provider call reports nothing; the hook must receive the sum of the two calls that did report, 40 / 14 / 54, not `undefined`, `NaN`, or the final call alone. Fails today with the final call alone (30 / 9 / 39).
++      `src/orchestration/usageAcrossRounds.acceptance.test.ts`
++
++Existing tests that must stay green and must not be edited (they pin the no-tool path and the single-round path):
++
++- **receives collected response text and usage** — a single-round turn still hands the hook exactly its one provider call's usage.
++  `src/orchestration/chatOrchestrator.test.ts`
++- **keeps the usage an earlier round reported when a later round reports none** — the earlier round's usage survives a later round with no usage.
++  `src/orchestration/chatOrchestrator.test.ts`
++- **hands afterModelResponse text ending in the sentence, and the usage of a run without the hook** — the budget path's usage is unchanged by the hook's presence.
++  `src/orchestration/toolBudget.test.ts`
++
++## Facets
++
++- [ ] Shape decision: pass one summed `UsageMetadata` as the `usage` argument (the ticket's first option). The per-round breakdown is rejected for now: it doubles the hook surface for a consumer that has not asked for it, and a deployer who needs provider-call granularity can still count rounds in their own hooks.
++- [ ] `chatOrchestrator.ts`: replace `lastUsage = outcome.usage ?? lastUsage` with an accumulator that adds each reporting round's usage to a running total, and leaves the total `undefined` when no round reported.
++- [ ] No-tool path: a turn with one provider call reports that call's usage object unchanged (existing test above keeps it honest).
++- [ ] `ChatOrchestratorOptions.hooks` / `OrchestratorHooks.afterModelResponse` in `chatOrchestrator.ts`: the one-line doc comment states that `usage` is summed across every provider call in the turn, so the type reads unambiguously at the declaration.
++- [ ] `specs/hal-engine-config-hooks/spec.md` line 28: replace the under-counting statement with the summed behaviour and link it to the first acceptance test. Do not edit the `| Status |` row here (see the rules in the ticket).
++- [ ] `CHANGELOG.md`: a MINOR-bump entry stating that existing `afterModelResponse` consumers will record larger usage numbers for turns that ran tools, and that single-round turns are unchanged.
++- [ ] No `any` in the public API; `npm run build`, `npm run typecheck`, `npm run eslint` and `npm run prettier:check` pass in CI.
++
++## Out of scope
++
++- The audit entry or billing record itself; that is the consumer's concern.
++- Token accounting for anything other than the provider calls the orchestrator makes.
++- The `stop` chunk's own `usage` shape; providers already populate it and this ticket only aggregates it.
++- The per-round breakdown shape. It was weighed and rejected above, so no test pins it.
++- A turn where no round reports usage must still report `undefined`. This is a guard that passes today and is not an acceptance test here; the implementation must keep it.
++- No spec parenthetical was added to `specs/hal-engine-config-hooks/spec.md`: the statement this test validates is the replacement the facet above writes, and the current line 28 describes the behaviour being removed.
+diff --git a/src/orchestration/usageAcrossRounds.acceptance.test.ts b/src/orchestration/usageAcrossRounds.acceptance.test.ts
+new file mode 100644
+index 0000000..7eb385a
+--- /dev/null
++++ b/src/orchestration/usageAcrossRounds.acceptance.test.ts
+@@ -0,0 +1,79 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import {ToolRegistry} from './tools/registry.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, MessageChunk, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++
++// One provider call: the chunks it yields, in order. A round that asks for a tool ends in a tool_use stop.
++type Round = MessageChunk[];
++
++const toolRound = (usage?: UsageMetadata): Round => [
++  {type: 'tool_use', toolCall: {id: 'c', name: 'lookup', input: {}}},
++  {type: 'stop', stopReason: 'tool_use', usage},
++];
++const finalRound = (usage?: UsageMetadata): Round => [
++  {type: 'text', text: 'done'},
++  {type: 'stop', stopReason: 'end_turn', usage},
++];
++
++// Each call to sendMessage plays the next scripted round, so the test controls how many provider calls a turn makes.
++function scriptedProvider(rounds: Round[]): AIProvider {
++  let call = 0;
++  return {
++    async *sendMessage() {
++      const round = rounds[call++];
++      if (!round) throw new Error(`provider called ${call} times, but only ${rounds.length} rounds are scripted`);
++      yield* round;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++// Runs one turn through the real entry point and returns the usage the afterModelResponse hook was handed.
++async function usageHandedToHook(rounds: Round[]): Promise<UsageMetadata | undefined> {
++  const reports: Array<UsageMetadata | undefined> = [];
++  const hooks: OrchestratorHooks = {
++    afterModelResponse: async (_session, _text, usage) => void reports.push(usage),
++  };
++  const registry = new ToolRegistry();
++  registry.register(
++    {name: 'lookup', description: 'Looks something up.', inputSchema: {type: 'object'}},
++    async () => 'found'
++  );
++  const orchestrator = createChatOrchestrator(
++    scriptedProvider(rounds),
++    new PromptBuilder({identity: 'Usage test.'}),
++    registry,
++    {hooks}
++  );
++  const session: ChatSession = {sessionId: 's', userId: 'u', entries: [{role: 'user', content: 'go', timestamp: 't'}]};
++
++  await orchestrator.processMessage(session);
++
++  return reports[0];
++}
++
++describe('usage reported across tool rounds', () => {
++  it('reports the summed usage of every provider call in a turn that ran two tool rounds', async () => {
++    const reported = await usageHandedToHook([
++      toolRound({inputTokens: 10, outputTokens: 5, totalTokens: 15}),
++      toolRound({inputTokens: 20, outputTokens: 7, totalTokens: 27}),
++      finalRound({inputTokens: 30, outputTokens: 9, totalTokens: 39}),
++    ]);
++
++    expect(reported).toEqual({inputTokens: 60, outputTokens: 21, totalTokens: 81});
++  });
++
++  it('still counts the rounds that reported when a middle round reports no usage', async () => {
++    const reported = await usageHandedToHook([
++      toolRound({inputTokens: 10, outputTokens: 5, totalTokens: 15}),
++      toolRound(undefined),
++      finalRound({inputTokens: 30, outputTokens: 9, totalTokens: 39}),
++    ]);
++
++    expect(reported).toEqual({inputTokens: 40, outputTokens: 14, totalTokens: 54});
++  });
++});

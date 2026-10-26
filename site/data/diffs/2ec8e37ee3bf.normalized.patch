@@ -1,0 +1,198 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..e9a33a2
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,31 @@
++# Definition of Done
++
++> For a turn that called tools, it is the last leg of several, and the earlier rounds — including the one carrying the customer's question and the full tool results — are not counted anywhere. A deployer billing or budgeting from this hook under-counts exactly the expensive turns, and nothing in the signature hints at it.
++
++**Strategy: `direct`** — The seam exists in `src/orchestration/chatOrchestrator.ts` where `lastUsage` is assigned on each round. The acceptance tests call the real orchestrator with a scripted multi-round provider and assert that the accumulated usage is passed to `afterModelResponse`, not just the final round's usage.
++
++## Done when these pass
++
++- [ ] **accumulates usage from multiple tool rounds into a sum** — A two-round tool turn with known, different usage per round reports the summed total
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++- [ ] **reports the single round usage when a turn has no tool calls** — A no-tool turn reports the same as today, unchanged
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++- [ ] **accumulates only from rounds that report usage, handling undefined in some rounds** — Rounds with undefined usage are skipped; only rounds with reported usage are summed
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++- [ ] **reports undefined when no rounds report usage** — A turn where no round reports usage results in undefined, not 0 or NaN
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] Accumulate usage across all rounds in the loop, summing `inputTokens`, `outputTokens`, and `totalTokens` from each round that provides them
++- [ ] Pass the accumulated sum to `afterModelResponse` instead of just `lastUsage`
++- [ ] Update `specs/hal-engine-config-hooks/spec.md` to replace line 28 with the new accumulated-usage behaviour
++- [ ] Add a CHANGELOG entry under `### Changed` documenting that `afterModelResponse` now receives the summed usage across all rounds, a MINOR bump for deployers billing from the hook
++- [ ] All acceptance tests pass; existing tests remain unedited and pass
++
++## Out of scope
++
++- The `per-round breakdown` variant (passing both sum and per-round details)
++- Auditing or billing record implementation
++- Changes to the `stop` chunk's own `usage` shape
++- Any changes to other hooks or orchestrator behaviour
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..61000e0
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,155 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {ToolResponse} from './tools/registry.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++const TOOL_CALL: MessageChunk = {type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {q: 'x'}}};
++const STOP_FOR_TOOL: MessageChunk = {type: 'stop', stopReason: 'tool_use'};
++const STOP_DONE: MessageChunk = {type: 'stop', stopReason: 'end_turn'};
++
++// One scripted round per sendMessage call, to drive the tool loop round by round.
++const scriptedProvider = (rounds: MessageChunk[][]): AIProvider => {
++  let round = 0;
++
++  return {
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++};
++
++const registryReturning = (response: ToolResponse): ToolRegistry => {
++  const registry = new ToolRegistry();
++  registry.register(
++    {name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}},
++    async () => response
++  );
++  return registry;
++};
++
++describe('ChatOrchestrator usage accumulation', () => {
++  it('accumulates usage from multiple tool rounds into a sum', async () => {
++    const round1Usage: UsageMetadata = {inputTokens: 100, outputTokens: 20, totalTokens: 120};
++    const round2Usage: UsageMetadata = {inputTokens: 150, outputTokens: 30, totalTokens: 180};
++
++    let receivedUsage: UsageMetadata | undefined;
++
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, usage) => {
++        receivedUsage = usage;
++      },
++    };
++
++    const provider = scriptedProvider([
++      [TOOL_CALL, {type: 'stop', stopReason: 'tool_use', usage: round1Usage}],
++      [
++        {type: 'text', text: 'done'},
++        {type: 'stop', stopReason: 'end_turn', usage: round2Usage},
++      ],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registryReturning({result: 'r'}), {hooks});
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(receivedUsage).toEqual({
++      inputTokens: 250,
++      outputTokens: 50,
++      totalTokens: 300,
++    });
++  });
++
++  it('reports the single round usage when a turn has no tool calls', async () => {
++    const usage: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++    let receivedUsage: UsageMetadata | undefined;
++
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, u) => {
++        receivedUsage = u;
++      },
++    };
++
++    const provider = scriptedProvider([
++      [
++        {type: 'text', text: 'answer'},
++        {type: 'stop', stopReason: 'end_turn', usage},
++      ],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, undefined, {hooks});
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(receivedUsage).toEqual(usage);
++  });
++
++  it('accumulates only from rounds that report usage, handling undefined in some rounds', async () => {
++    const round1Usage: UsageMetadata = {inputTokens: 50, outputTokens: 10, totalTokens: 60};
++    const round3Usage: UsageMetadata = {inputTokens: 75, outputTokens: 15, totalTokens: 90};
++
++    let receivedUsage: UsageMetadata | undefined;
++
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, usage) => {
++        receivedUsage = usage;
++      },
++    };
++
++    const provider = scriptedProvider([
++      [TOOL_CALL, {type: 'stop', stopReason: 'tool_use', usage: round1Usage}],
++      [TOOL_CALL, {type: 'stop', stopReason: 'tool_use'}],
++      [
++        {type: 'text', text: 'done'},
++        {type: 'stop', stopReason: 'end_turn', usage: round3Usage},
++      ],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registryReturning({result: 'r'}), {hooks});
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(receivedUsage).toEqual({
++      inputTokens: 125,
++      outputTokens: 25,
++      totalTokens: 150,
++    });
++  });
++
++  it('reports undefined when no rounds report usage', async () => {
++    let receivedUsage: UsageMetadata | undefined = {inputTokens: 999, outputTokens: 999, totalTokens: 999};
++
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, usage) => {
++        receivedUsage = usage;
++      },
++    };
++
++    const provider = scriptedProvider([
++      [TOOL_CALL, {type: 'stop', stopReason: 'tool_use'}],
++      [
++        {type: 'text', text: 'done'},
++        {type: 'stop', stopReason: 'end_turn'},
++      ],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registryReturning({result: 'r'}), {hooks});
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(receivedUsage).toBeUndefined();
++  });
++});

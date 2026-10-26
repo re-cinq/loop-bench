@@ -1,0 +1,129 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..3f51d33
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,28 @@
++# Definition of Done
++
++> what the hook receives is the usage of the final provider call alone. For a turn that called tools, it is the last leg of several, and the earlier rounds — including the one carrying the customer's question and the full tool results — are not counted anywhere.
++
++**Strategy: `direct`** — The seam exists: `createChatOrchestrator` takes the `afterModelResponse` hook and a scripted `AIProvider` can report known usage per round, so the acceptance tests call `processMessage` and read the hook's `usage` argument. Decision recorded here: the hook keeps one `usage` argument and receives the sum over every provider call in the turn (the ticket's first option), not a per-round breakdown.
++
++## Done when these pass
++
++- [ ] **hands the hook the usage summed over every provider call in a turn that ran two tool rounds** — three scripted provider calls report 100/300/500 input tokens; the hook must receive the summed total, not the last call's usage
++      `src/orchestration/usageAcrossRounds.acceptance.test.ts`
++- [ ] **counts the rounds that reported when a middle round reports none, and reports nothing when no round did** — a round with no usage neither zeroes nor NaNs the total, and a turn where nothing reported still hands the hook `undefined`
++      `src/orchestration/usageAcrossRounds.acceptance.test.ts`
++
++## Facets
++
++- [ ] Keep green and unedited: "receives collected response text and usage" (no-tool turn reports what it reports today) and "keeps the usage an earlier round reported when a later round reports none", both in `src/orchestration/chatOrchestrator.test.ts`
++- [ ] Accumulate `usage` across provider calls in `processMessageStream` in `src/orchestration/chatOrchestrator.ts`, replacing the `lastUsage = outcome.usage ?? lastUsage` assignment; stays `undefined` when no round reported
++- [ ] Make the hook's usage type say it is a turn total (a named type or a doc on `afterModelResponse`'s parameter in `src/orchestration/chatOrchestrator.ts`), so a reader does not have to open the orchestrator
++- [ ] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` with the new behaviour
++- [ ] CHANGELOG entry stating that existing `afterModelResponse` consumers now record the summed usage for tool-using turns, with a MINOR bump
++- [ ] CI green: build, test, typecheck, eslint (`--max-warnings 0`), prettier:check
++
++## Out of scope
++
++- The audit entry or billing record itself; that is a consumer's concern
++- Token accounting for anything other than the provider calls the orchestrator makes
++- The `stop` chunk's own `usage` shape; providers already populate it and this ticket only aggregates it
++- The `onError` gate on `error instanceof Error` in `specs/hal-engine-config-hooks/spec.md` — a separate measured-semantics line, not this ticket's claim
+diff --git a/src/orchestration/usageAcrossRounds.acceptance.test.ts b/src/orchestration/usageAcrossRounds.acceptance.test.ts
+new file mode 100644
+index 0000000..dfa73d1
+--- /dev/null
++++ b/src/orchestration/usageAcrossRounds.acceptance.test.ts
+@@ -0,0 +1,89 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++
++// One scripted round per provider call, so each round reports the usage the test set for it.
++const providerReplaying = (rounds: MessageChunk[][]): AIProvider => {
++  let call = 0;
++
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[call++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++};
++
++const lookupTool = (): ToolRegistry => {
++  const registry = new ToolRegistry();
++  registry.register({name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}}, async () => ({
++    result: 'found',
++  }));
++  return registry;
++};
++
++const askForTool = (usage?: UsageMetadata): MessageChunk[] => [
++  {type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {q: 'x'}}},
++  {type: 'stop', stopReason: 'tool_use', usage},
++];
++const finish = (usage?: UsageMetadata): MessageChunk[] => [
++  {type: 'text', text: 'done'},
++  {type: 'stop', stopReason: 'end_turn', usage},
++];
++
++// Runs one user turn and returns the usage the afterModelResponse hook was handed.
++const usageHandedToHook = async (rounds: MessageChunk[][]): Promise<UsageMetadata | undefined> => {
++  let handed: UsageMetadata | undefined;
++  const hooks: OrchestratorHooks = {
++    afterModelResponse: async (_session, _text, usage) => {
++      handed = usage;
++    },
++  };
++  const session: ChatSession = {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content: 'ask', timestamp: '2026-01-01T00:00:00.000Z'}],
++  };
++  const orchestrator = createChatOrchestrator(
++    providerReplaying(rounds),
++    new PromptBuilder({identity: 'test'}),
++    lookupTool(),
++    {
++      hooks,
++    }
++  );
++
++  await orchestrator.processMessage(session);
++  return handed;
++};
++
++describe('afterModelResponse usage across tool rounds', () => {
++  it('hands the hook the usage summed over every provider call in a turn that ran two tool rounds', async () => {
++    const handed = await usageHandedToHook([
++      askForTool({inputTokens: 100, outputTokens: 20, totalTokens: 120}),
++      askForTool({inputTokens: 300, outputTokens: 40, totalTokens: 340}),
++      finish({inputTokens: 500, outputTokens: 60, totalTokens: 560}),
++    ]);
++
++    expect(handed).toEqual({inputTokens: 900, outputTokens: 120, totalTokens: 1020});
++  });
++
++  it('counts the rounds that reported when a middle round reports none, and reports nothing when no round did', async () => {
++    const withGap = await usageHandedToHook([
++      askForTool({inputTokens: 100, outputTokens: 20, totalTokens: 120}),
++      askForTool(),
++      finish({inputTokens: 500, outputTokens: 60, totalTokens: 560}),
++    ]);
++    const nothingReported = await usageHandedToHook([askForTool(), finish()]);
++
++    expect({withGap, nothingReported}).toEqual({
++      withGap: {inputTokens: 600, outputTokens: 80, totalTokens: 680},
++      nothingReported: undefined,
++    });
++  });
++});

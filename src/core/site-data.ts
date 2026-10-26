@@ -1,5 +1,6 @@
 // The results website's one data file: every cell as numbers rather than markdown, the with/without-Lore pairs, and the per-station spend.
 import type { LoopRecord, StationRunRecord } from "./records.js";
+import { progressOf, type ModelProgress, type PlannedCell } from "./progress.js";
 import { cellsOf, type CellSummary, type PendingCell } from "./report.js";
 import { spreadOf, type Spread } from "./stats.js";
 
@@ -72,6 +73,8 @@ export interface SiteData {
   cells: SiteCell[];
   lorePairs: LorePair[];
   stations: StationSpend[];
+  /** Per model, finished loops against the loops the experiment file plans for it. */
+  progress: ModelProgress[];
 }
 
 export interface SiteInput {
@@ -83,6 +86,7 @@ export interface SiteInput {
   loops: readonly LoopRecord[];
   pending: readonly PendingCell[];
   stationRuns: readonly StationRunRecord[];
+  plannedCells: readonly PlannedCell[];
 }
 
 export function siteDataOf(input: SiteInput): SiteData {
@@ -99,6 +103,7 @@ export function siteDataOf(input: SiteInput): SiteData {
     cells,
     lorePairs: lorePairsOf(cells),
     stations: stationSpendOf(input.stationRuns),
+    progress: progressOf(input.plannedCells, new Set(input.loops.map((loop) => loop.loop_id))),
   };
 }
 

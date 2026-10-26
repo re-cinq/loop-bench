@@ -1,0 +1,221 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..d4f18f0
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,29 @@
++# Definition of Done
++
++> For a turn that called tools, it is the last leg of several, and the earlier rounds — including the one carrying the customer's question and the full tool results — are not counted anywhere. A deployer billing or budgeting from this hook under-counts exactly the expensive turns.
++
++**Strategy: `direct`** — The `afterModelResponse` hook call site in `chatOrchestrator.ts` is a direct seam. The hook currently receives `lastUsage` (line 148), which holds only the final provider call's usage. The acceptance tests directly invoke the orchestrator and assert on what the hook receives.
++
++## Done when these pass
++
++- [ ] **accumulates usage across all rounds and passes the total to afterModelResponse** — A turn with multiple tool rounds reports the sum of usage across every provider call
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++- [ ] **passes the single round usage unchanged when there are no tool calls** — A turn with no tool calls maintains backward compatibility
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++- [ ] **counts rounds that reported and skips those that did not** — Rounds without usage are skipped; the total is not NaN or undefined
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++- [ ] **reports undefined if no rounds reported usage** — When nothing reports usage, the hook receives undefined
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] Change `lastUsage` accumulation in `chatOrchestrator.ts` to sum usage across rounds instead of keeping only the last one
++- [ ] Ensure the type signature of `afterModelResponse` and `UsageMetadata` makes the summing semantics unambiguous
++- [ ] Update `specs/hal-engine-config-hooks/spec.md` to replace the recorded under-counting note with the new behavior
++- [ ] Update CHANGELOG to document the behavior change for existing consumers
++
++## Out of scope
++
++- Token accounting for anything other than the provider calls the orchestrator makes
++- The audit entry or billing record itself (consumer concern)
++- The `stop` chunk's own `usage` shape
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..e18ad57
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,180 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {ToolResponse} from './tools/registry.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++// Provider that yields scripted rounds with different usage for each
++const scriptedProvider = (rounds: MessageChunk[][]): AIProvider => {
++  let round = 0;
++
++  return {
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++};
++
++const registryReturning = (response: ToolResponse): ToolRegistry => {
++  const registry = new ToolRegistry();
++  registry.register(
++    {name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}},
++    async () => response
++  );
++  return registry;
++};
++
++const TOOL_CALL: MessageChunk = {type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {q: 'x'}}};
++const STOP_FOR_TOOL: MessageChunk = {type: 'stop', stopReason: 'tool_use'};
++const STOP_DONE: MessageChunk = {type: 'stop', stopReason: 'end_turn'};
++
++describe('ChatOrchestrator usage accumulation (Issue #93)', () => {
++  describe('A turn driven through two tool rounds reports usage covering every provider call', () => {
++    it('accumulates usage across all rounds and passes the total to afterModelResponse', async () => {
++      const round1Usage: UsageMetadata = {inputTokens: 100, outputTokens: 20, totalTokens: 120};
++      const round2Usage: UsageMetadata = {inputTokens: 150, outputTokens: 25, totalTokens: 175};
++      const round3Usage: UsageMetadata = {inputTokens: 50, outputTokens: 10, totalTokens: 60};
++
++      let receivedUsage: UsageMetadata | undefined;
++      const hooks: OrchestratorHooks = {
++        afterModelResponse: async (_session, _text, usage) => {
++          receivedUsage = usage;
++        },
++      };
++
++      const orchestrator = createChatOrchestrator(
++        scriptedProvider([
++          [TOOL_CALL, {type: 'stop', stopReason: 'tool_use', usage: round1Usage}],
++          [TOOL_CALL, {type: 'stop', stopReason: 'tool_use', usage: round2Usage}],
++          [
++            {type: 'text', text: 'final answer'},
++            {type: 'stop', stopReason: 'end_turn', usage: round3Usage},
++          ],
++        ]),
++        promptBuilder,
++        registryReturning({result: 'found it'}),
++        {hooks}
++      );
++
++      await orchestrator.processMessage(createSession('ask'));
++
++      expect(receivedUsage).toEqual({
++        inputTokens: 100 + 150 + 50,
++        outputTokens: 20 + 25 + 10,
++        totalTokens: 120 + 175 + 60,
++      });
++    });
++  });
++
++  describe('A turn with no tool calls reports exactly what it reports today (backward compatibility)', () => {
++    it('passes the single round usage unchanged when there are no tool calls', async () => {
++      const singleUsage: UsageMetadata = {inputTokens: 50, outputTokens: 15, totalTokens: 65};
++
++      let receivedUsage: UsageMetadata | undefined;
++      const hooks: OrchestratorHooks = {
++        afterModelResponse: async (_session, _text, usage) => {
++          receivedUsage = usage;
++        },
++      };
++
++      const orchestrator = createChatOrchestrator(
++        scriptedProvider([
++          [
++            {type: 'text', text: 'direct answer'},
++            {type: 'stop', stopReason: 'end_turn', usage: singleUsage},
++          ],
++        ]),
++        promptBuilder,
++        registryReturning({result: 'ignored'}),
++        {hooks}
++      );
++
++      await orchestrator.processMessage(createSession('ask'));
++
++      expect(receivedUsage).toEqual(singleUsage);
++    });
++  });
++
++  describe('A provider that reports no usage on some rounds does not make the total undefined or NaN', () => {
++    it('counts rounds that reported and skips those that did not', async () => {
++      const round1Usage: UsageMetadata = {inputTokens: 100, outputTokens: 20, totalTokens: 120};
++      const round3Usage: UsageMetadata = {inputTokens: 50, outputTokens: 10, totalTokens: 60};
++
++      let receivedUsage: UsageMetadata | undefined;
++      const hooks: OrchestratorHooks = {
++        afterModelResponse: async (_session, _text, usage) => {
++          receivedUsage = usage;
++        },
++      };
++
++      const orchestrator = createChatOrchestrator(
++        scriptedProvider([
++          [TOOL_CALL, {type: 'stop', stopReason: 'tool_use', usage: round1Usage}],
++          [TOOL_CALL, {type: 'stop', stopReason: 'tool_use'}], // no usage
++          [
++            {type: 'text', text: 'done'},
++            {type: 'stop', stopReason: 'end_turn', usage: round3Usage},
++          ],
++        ]),
++        promptBuilder,
++        registryReturning({result: 'found it'}),
++        {hooks}
++      );
++
++      await orchestrator.processMessage(createSession('ask'));
++
++      expect(receivedUsage).toEqual({
++        inputTokens: 100 + 50,
++        outputTokens: 20 + 10,
++        totalTokens: 120 + 60,
++      });
++      expect(receivedUsage).not.toHaveProperty('NaN');
++      expect(receivedUsage?.inputTokens).not.toBeNaN();
++      expect(receivedUsage?.outputTokens).not.toBeNaN();
++      expect(receivedUsage?.totalTokens).not.toBeNaN();
++    });
++
++    it('reports undefined if no rounds reported usage', async () => {
++      let receivedUsage: UsageMetadata | undefined;
++      const hooks: OrchestratorHooks = {
++        afterModelResponse: async (_session, _text, usage) => {
++          receivedUsage = usage;
++        },
++      };
++
++      const orchestrator = createChatOrchestrator(
++        scriptedProvider([
++          [TOOL_CALL, {type: 'stop', stopReason: 'tool_use'}], // no usage
++          [
++            {type: 'text', text: 'done'},
++            {type: 'stop', stopReason: 'end_turn'},
++          ], // no usage
++        ]),
++        promptBuilder,
++        registryReturning({result: 'found it'}),
++        {hooks}
++      );
++
++      await orchestrator.processMessage(createSession('ask'));
++
++      expect(receivedUsage).toBeUndefined();
++    });
++  });
++});

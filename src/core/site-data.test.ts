@@ -73,6 +73,7 @@ const input = (overrides: Partial<SiteInput>): SiteInput => ({
   loops: [],
   pending: [],
   stationRuns: [],
+  plannedCells: [],
   ...overrides,
 });
 
@@ -113,5 +114,12 @@ describe("siteDataOf", () => {
     const data = siteDataOf(input({ stationRuns: [stationRun({}), stationRun({ cost_usd: 3, failure_class: "timeout" })] }));
 
     expect(data.stations).toEqual([{ station: "dod", harness: "codex", model: "luna", context: "none", visits: 2, costUsd: { n: 2, mean: 2, min: 1, max: 3, sd: 1 }, minutes: { n: 2, mean: 2, min: 2, max: 2, sd: 0 }, outputTokens: { n: 2, mean: 1000, min: 1000, max: 1000, sd: 0 }, toolCalls: { n: 2, mean: 10, min: 10, max: 10, sd: 0 }, failures: { timeout: 1 } }]);
+  });
+
+  it("returns progress of 1 of 2 planned loops for a model, whether or not any cell is pending", () => {
+    const planned = { mode: "ofat", varied_station: "dod", assignments: loop({}).assignments, prompt_variant: "baseline", context_mode: "none" } as const;
+    const data = siteDataOf(input({ loops: [loop({ loop_id: "a" })], plannedCells: [{ ...planned, loop_id: "a" }, { ...planned, loop_id: "b" }] }));
+
+    expect(data.progress).toMatchObject([{ harness: "claude", model: "opus", done: 1, planned: 2 }]);
   });
 });

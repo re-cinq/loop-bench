@@ -524,6 +524,7 @@ async function writeSiteData(config: ExperimentConfig): Promise<void> {
     loops,
     pending: pendingCells(config, loops),
     stationRuns: latestStationRuns(records),
+    plannedCells: plannedLoops(config),
   });
 
   mkdirSync(dataDir, { recursive: true });

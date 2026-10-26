@@ -1,0 +1,177 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..33316ca
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,26 @@
++# Definition of Done
++
++> It does not give a **client** anything: the browser holding the socket cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — The WebSocket validator and the real server upgrade/connection path already exist. The acceptance tests exercise those entry points with the shipped in-memory store and a real WebSocket client.
++
++## Done when these pass
++
++- [ ] **validates list_conversations with an optional bounded limit and composite cursor** — accepts the protocol request shape and rejects invalid paging fields with field-specific errors.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **answers the authenticated user’s paged list as ISO summaries and ignores a frame userId** — delivers only the connection user’s paged conversation summaries when history is enabled, with no stream response.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **refuses the request when history is not enabled** — returns `UNSUPPORTED` rather than a list when the opt-in is absent.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the additive inbound and outbound conversation-list protocol types and validator rules.
++- [ ] Thread history options and the session store through the WebSocket handler.
++- [ ] Answer the authenticated user’s list request with ISO summaries, paging, and unsupported-feature errors.
++- [ ] Keep list requests outside the per-session turn lock.
++- [ ] Add the protocol/config documentation, changelog, version bump, and spec citations required by the ticket.
++
++## Out of scope
++
++- Conversation previews, deletion, operator views, live cross-tab synchronization, and a new in-band conversation switch frame.
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..83e8882
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,139 @@
++import {WebSocket} from 'ws';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import {setLogger} from '../../shared/logger.js';
++import type {HalServerOptions} from '../createServer.js';
++import {connectClient, startEngineWith, stopEngines} from '../wsTestSupport.js';
++import {validateMessage} from './validation.js';
++
++interface Frame {
++  type: string;
++  code?: string;
++  conversations?: Array<Record<string, unknown>>;
++}
++
++const history = {enabled: true};
++
++const waitForFrame = (client: WebSocket, type: string): Promise<Frame> =>
++  new Promise((resolve, reject) => {
++    client.on('message', raw => {
++      const frame = JSON.parse(String(raw)) as Frame;
++      if (frame.type === type) resolve(frame);
++    });
++    client.on('error', reject);
++  });
++
++const waitForOneOf = (client: WebSocket, types: string[]): Promise<Frame> =>
++  new Promise((resolve, reject) => {
++    client.on('message', raw => {
++      const frame = JSON.parse(String(raw)) as Frame;
++      if (types.includes(frame.type)) resolve(frame);
++    });
++    client.on('error', reject);
++  });
++
++const seed = (): InMemorySessionStore => {
++  const store = new InMemorySessionStore();
++  for (const [sessionId, userId, timestamp] of [
++    ['oldest', 'u1', '2026-01-01T00:00:00.000Z'],
++    ['middle', 'u1', '2026-01-02T00:00:00.000Z'],
++    ['newest', 'u1', '2026-01-03T00:00:00.000Z'],
++    ['another-user', 'u2', '2026-01-04T00:00:00.000Z'],
++  ]) {
++    const session = store.create(sessionId, userId);
++    session.entries.push({role: 'user', content: sessionId, timestamp});
++  }
++  return store;
++};
++
++afterEach(async () => {
++  await stopEngines();
++  await new Promise(resolve => setTimeout(resolve, 20));
++});
++
++beforeAll(() => {
++  setLogger({debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined});
++});
++
++afterAll(() => {
++  setLogger();
++});
++
++describe('conversation list over the WebSocket protocol', () => {
++  it('validates list_conversations with an optional bounded limit and composite cursor', () => {
++    expect(
++      validateMessage({
++        type: 'list_conversations',
++        limit: 20,
++        before: {updatedAt: '2026-01-03T00:00:00.000Z', sessionId: 'newest'},
++      })
++    ).toMatchObject({valid: true});
++
++    for (const [field, value] of [
++      ['limit', 0],
++      ['limit', 201],
++      ['limit', 1.5],
++      ['limit', '10'],
++      ['before', 'not a cursor'],
++      ['before', {updatedAt: 'not a date', sessionId: 'newest'}],
++      ['before', {updatedAt: '2026-01-03T00:00:00.000Z'}],
++    ] as const) {
++      const result = validateMessage({type: 'list_conversations', [field]: value});
++      expect(result).toMatchObject({valid: false, error: expect.stringContaining(field)});
++    }
++  });
++
++  it('answers the authenticated user’s paged list as ISO summaries and ignores a frame userId', async () => {
++    const store = seed();
++    const {url} = await startEngineWith({
++      sessionStore: store,
++      history,
++    } as unknown as Partial<HalServerOptions> & Pick<HalServerOptions, 'sessionStore'>);
++    const client = connectClient(url);
++    const connected = await waitForFrame(client, 'connected');
++    const received: Frame[] = [];
++    client.on('message', raw => received.push(JSON.parse(String(raw)) as Frame));
++
++    client.send(
++      JSON.stringify({
++        type: 'list_conversations',
++        userId: 'u2',
++        limit: 2,
++        before: {updatedAt: '2026-01-03T00:00:00.000Z', sessionId: 'newest'},
++      })
++    );
++    const list = await waitForOneOf(client, ['conversation_list', 'error']);
++
++    expect(connected.type).toBe('connected');
++    expect(list.type).toBe('conversation_list');
++    expect(received.map(frame => frame.type)).not.toContain('stream_end');
++    expect(list.conversations).toHaveLength(2);
++    expect(list.conversations?.map(conversation => conversation.sessionId)).toEqual(['middle', 'oldest']);
++    expect(list.conversations).toEqual(
++      expect.arrayContaining([
++        expect.objectContaining({
++          sessionId: 'middle',
++          entryCount: 1,
++          createdAt: expect.any(String),
++          updatedAt: '2026-01-02T00:00:00.000Z',
++        }),
++        expect.objectContaining({
++          sessionId: 'oldest',
++          entryCount: 1,
++          createdAt: expect.any(String),
++          updatedAt: '2026-01-01T00:00:00.000Z',
++        }),
++      ])
++    );
++  });
++
++  it('refuses the request when history is not enabled', async () => {
++    const {url} = await startEngineWith({sessionStore: seed()});
++    const client = connectClient(url);
++    await waitForFrame(client, 'connected');
++
++    client.send(JSON.stringify({type: 'list_conversations'}));
++    const error = await waitForFrame(client, 'error');
++
++    expect(error).toMatchObject({type: 'error', code: 'UNSUPPORTED'});
++  });
++});

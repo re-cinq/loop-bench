@@ -1,0 +1,3 @@
+The round is blocked: the acceptance test is invalid against the repository’s current `PromptBuilderConfig` API (`baseSystemPrompt`, `systemPromptSuffix`, and `contextConfig` are unsupported). Per the instructions, I did not edit the acceptance test or source merely to mask that error, and made no changes.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test uses unsupported PromptBuilderConfig fields, and the rules prohibit editing a wrong acceptance test."}}

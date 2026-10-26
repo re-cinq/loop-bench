@@ -1,6 +1,6 @@
 // Summary: the headline numbers, the written reading of the results, and the cells nothing beats.
 import { mountChrome } from './chrome.js';
-import { el, header, isDone, loadBench, loreTag, meanOf, METRICS, metricNode, minutes, modelCell, money, one, panel, unique, mount } from './lib.js';
+import { CONTEXT_LABEL, el, header, isDone, loadBench, loreTag, meanOf, METRICS, metricNode, minutes, modelCell, money, one, panel, unique, mount } from './lib.js';
 import { mdToHtml } from './markdown.js';
 
 const FRONT_METRICS = ['green', 'rounds', 'cost', 'time', 'correct', 'complete', 'close'].map((key) => METRICS.find((m) => m.key === key));
@@ -15,6 +15,24 @@ const lowest = (cells, valueOf) => cells.filter((c) => valueOf(c) != null).sort(
 const cheapest = lowest(done.filter((c) => c.reachedGreen === c.runs), (c) => meanOf(c.costUsd));
 const fastest = lowest(done.filter((c) => c.reachedGreen === c.runs), (c) => meanOf(c.minutes));
 const bestJudged = done.filter((c) => c.judgeMean != null).sort((a, b) => b.judgeMean - a.judgeMean || meanOf(a.costUsd) - meanOf(b.costUsd))[0];
+
+/** One bar per model: the loops finished against the loops the experiment file plans for it, split by knowledge base. */
+function progressRow(model) {
+  const share = model.planned ? model.done / model.planned : 0;
+  const bar = el('div', {
+    class: 'progress-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(model.planned), 'aria-valuenow': String(model.done),
+    'aria-label': `${model.model}: ${model.done} of ${model.planned} cells computed`,
+  }, el('div', { class: 'progress-fill', style: `width: ${share * 100}%` }));
+  const split = Object.entries(CONTEXT_LABEL).map(([context, label]) => `${label} ${model.byContext[context].done}/${model.byContext[context].planned}`).join(' · ');
+
+  return el('div', { class: 'progress-row' }, [el('div', {}, modelCell(model)), bar, el('div', { class: 'progress-count' }, `${model.done}/${model.planned}`), el('div', { class: 'progress-split dim' }, split)]);
+}
+
+const progress = bench.progress ?? [];
+const progressPanel = panel('PROGRESS BY MODEL',
+  el('p', { class: 'dim' }, 'Cells computed per model. Each repeat of a ticket, station and knowledge base counts as one cell, out of the number the experiment plans.'),
+  progress.length ? el('div', {}, progress.map(progressRow)) : el('div', { class: 'note' }, 'No progress data in this build. Rebuild with npm run site.'),
+);
 
 const conclusions = el('div', { class: 'conclusions' });
 conclusions.innerHTML = mdToHtml(bench.conclusions);
@@ -35,6 +53,7 @@ mount(app,
     stat('fastest green loop', fastest ? minutes(meanOf(fastest.minutes)) : '–', fastest ? `${fastest.model} · ${fastest.station}` : null),
     stat('best judged', bestJudged ? one(bestJudged.judgeMean) : '–', bestJudged ? `${bestJudged.model} · ${bestJudged.station} · of 5` : null),
   ]),
+  progressPanel,
   panel('WHAT WE READ IN IT', conclusions),
   front.length ? panel('CELLS NOTHING BEATS',
     el('p', { class: 'dim' }, 'For each station, the cells no other cell beats on cost, time and judge score at once. Every other cell is worse on all three than at least one of these. Compare any of them on the results page.'),

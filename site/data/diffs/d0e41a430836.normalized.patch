@@ -1,0 +1,967 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..b6115c8
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,32 @@
++# Definition of Done
++
++> #143 gives a consumer `store.listFor(userId)` inside the server process. The client on the other end of the WebSocket has no way to ask for it, and the consumer who wants a conversation picker without standing up their own REST endpoint has to write one anyway.
++
++**Strategy: `direct`** — `createServer` and the WebSocket upgrade/message pipeline already exist and accept frames over a real WebSocket connection, so acceptance tests can connect today, send `list_sessions` frames, and fail directly on the missing `session_list` and `list_sessions` validation/dispatch behaviour.
++
++## Done when these pass
++
++- [ ] **listing conversations over the WebSocket protocol › answers list_sessions for the authenticated user with ISO dates, forwarding limit and before while ignoring any client userId** — Sends `{type: 'list_sessions', limit, before, userId}` over a connected WebSocket and verifies `store.listFor` is called with the socket's authenticated `userId` (`session.userId`) and `{limit, before}`, answering `{type: 'session_list', sessions}` with `createdAt` and `updatedAt` serialised as ISO-8601 strings.
++      `src/transport/conversationList.acceptance.test.ts`
++
++- [ ] **listing conversations over the WebSocket protocol › answers an empty session_list when the store has no listFor, and SERVER_ERROR with a ws error log when listFor throws** — Verifies that a store without `listFor` answers `{type: 'session_list', sessions: []}` and a store whose `listFor` throws/rejects logs an error under category `'ws'` with the userId and error message and answers `{type: 'error', code: 'SERVER_ERROR'}`.
++      `src/transport/conversationList.acceptance.test.ts`
++
++- [ ] **listing conversations over the WebSocket protocol › accepts a bare list_sessions frame and rejects a malformed limit or before with INVALID_MESSAGE without calling listFor** — Verifies that `{type: 'list_sessions'}` is accepted while non-integer or negative `limit` values and malformed `before` cursors (`sessionId` outside 1–128 chars or unparseable `updatedAt`) are rejected with `INVALID_MESSAGE` without invoking `store.listFor`.
++      `src/transport/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [x] Add `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` to `src/types/messages.ts`, include them in `IncomingMessage` and `OutgoingMessage`, and re-export them from `src/index.ts`.
++- [x] Validate `list_sessions` frames in `src/transport/ws/validation.ts` (optional non-negative integer `limit`; optional `before` object with 1–128 char `sessionId` and finite-date `updatedAt` string or number; strip unknown fields like `userId`).
++- [x] Thread `sessionStore` into `createMessageHandler` (optional parameter so existing 1-arg and 2-arg callers keep working) and wire it in `src/transport/createServer.ts`.
++- [x] Handle `list_sessions` in `src/transport/ws/messageHandler.ts` (and helper in `src/transport/ws/sender.ts` if needed) by reading `session.userId`, calling `await sessionStore?.listFor?.(session.userId, {limit, before})`, serialising `Date` fields to ISO strings, and on error logging via `log.error('ws', ...)` and sending `ErrorCodes.SERVER_ERROR`.
++- [x] Document `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md`.
++
++## Out of scope
++
++- Conversation titles or previews (first user message, model-generated title).
++- Deleting or renaming a conversation from the client over the socket.
++- Switching the socket's active session in place (`?sessionId=` on reconnect is how a conversation is rejoined).
++- Holding pagination cursor state server-side (the client pages with `before`).
++- An operator view of another user's conversations or live sync between open tabs.
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index b36c826..f97c99a 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -10,7 +10,7 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Added
+ 
+-- `SessionStore.listFor(userId, options?)`, an optional store member that answers the summaries of a user's conversations — `sessionId`, `createdAt`, `updatedAt` and `entryCount` — most recent activity first, so a consumer can build a conversation list instead of only rejoining one. Nothing in the engine calls it yet: the store answers the list, and the route or frame that carries it to a client is still yours to write. `InMemorySessionStore` and `MongoSessionStore` both implement it; a store of your own may leave it out. A summary never carries a conversation's entries or its credentials. Page with `limit` (50 by default, 200 at most, and `0` answers nothing) and `before`, which takes the last summary you saw: the cursor carries both `updatedAt` and `sessionId`, so two conversations saved in the same millisecond cannot straddle a page boundary and go unlisted. See `docs/session-stores.md` § Listing a user's conversations.
++- `SessionStore.listFor(userId, options?)`, an optional store member that answers the summaries of a user's conversations — `sessionId`, `createdAt`, `updatedAt` and `entryCount` — most recent activity first, so a consumer can build a conversation list instead of only rejoining one. A client can request it over the WebSocket with `list_sessions` and receives `session_list`; the connection's authenticated user determines whose list is returned. `InMemorySessionStore` and `MongoSessionStore` both implement it; a store of your own may leave it out. A summary never carries a conversation's entries or its credentials. Page with `limit` (50 by default, 200 at most, and `0` answers nothing) and `before`, which takes the last summary you saw: the cursor carries both `updatedAt` and `sessionId`, so two conversations saved in the same millisecond cannot straddle a page boundary and go unlisted. See `docs/session-stores.md` § Listing a user's conversations.
+ 
+ ### Changed
+ 
+diff --git a/specs/hal-engine-conversation-list/spec.md b/specs/hal-engine-conversation-list/spec.md
+index c9ee424..dd0326c 100644
+--- a/specs/hal-engine-conversation-list/spec.md
++++ b/specs/hal-engine-conversation-list/spec.md
+@@ -68,3 +68,13 @@ Resume gets a client back into one conversation: the id it names, or the user's
+ ## When the store cannot answer
+ 
+ - A store whose collection fails rejects rather than answering a partial or empty list: what to show a user who may have conversations is the caller's decision, and an empty history is not a safe guess ([validated by: rejects rather than answering a partial list when the collection fails](../../src/infrastructure/stores/mongo/mongoConversationList.test.ts#L225)).
++
++## Over the WebSocket protocol
++
++- A client sends `{type: 'list_sessions', limit?, before?}` and receives `{type: 'session_list', sessions}` for the socket's authenticated user, with `createdAt` and `updatedAt` serialised as ISO-8601 strings and any client-supplied `userId` ignored. The list contains that user's metadata only, not conversation content ([validated by: answers list_sessions for the authenticated user with ISO dates, forwarding limit and before while ignoring any client userId](../../src/transport/conversationList.acceptance.test.ts#L71)).
++- The frame validator accepts a bare `list_sessions` frame, validates paging fields, and drops fields the wire type does not define ([validated by: accepts a bare list_sessions frame and rejects malformed paging fields](../../src/transport/ws/validation.test.ts#L6)).
++- A store without `listFor` answers `{type: 'session_list', sessions: []}`, and a throwing `listFor` logs an error on the `ws` category and answers `{type: 'error', code: 'SERVER_ERROR'}` ([validated by: answers an empty session_list when the store has no listFor, and SERVER_ERROR with a ws error log when listFor throws](../../src/transport/conversationList.acceptance.test.ts#L112)).
++- The validator accepts an optional integer `limit` from 1 through 200 and an optional `before` cursor whose `sessionId` is 1–128 characters and whose `updatedAt` parses as a valid timestamp, rejecting any other `list_sessions` payload with `INVALID_MESSAGE` without calling `listFor` ([validated by: accepts a bare list_sessions frame and rejects a malformed limit or before with INVALID_MESSAGE without calling listFor](../../src/transport/conversationList.acceptance.test.ts#L141), [validated by: rejects limits outside one through two hundred](../../src/transport/ws/listSessionsLimit.test.ts#L4)).
++
++- The WebSocket handler reads `session.userId` and forwards the frame's paging values to `listFor` before returning a session list ([validated by: passes the authenticated session user and paging options to listFor](../../src/transport/ws/sessionStoreDispatch.test.ts#L10)).
++- If `listFor` rejects, the handler logs the failure under `ws` with the session id and returns `SERVER_ERROR` ([validated by: logs a listFor failure on ws with the session id and answers SERVER_ERROR](../../src/transport/ws/sessionStoreDispatch.test.ts#L31)).
+diff --git a/specs/hal-engine-npm-release/spec.md b/specs/hal-engine-npm-release/spec.md
+index 2c4c345..283c2ae 100644
+--- a/specs/hal-engine-npm-release/spec.md
++++ b/specs/hal-engine-npm-release/spec.md
+@@ -360,8 +360,8 @@ Measured before the fix, one config object produced `{"status":"","count":0}` th
+ 
+ The alias is removed. `user_message` is the only wire name, which is what the exported types have always said.
+ 
+-- `send_message` is rejected like any other unknown type, so a client still sending it gets an `error` frame carrying `INVALID_MESSAGE` rather than a silent acceptance ([validated by: rejects send_message, which is no longer a wire name](../../src/transport/ws/validation.test.ts#L12)).
+-- `user_message` is accepted and returns exactly the frame `UserMessagePayload` describes ([validated by: accepts user_message and returns the frame the exported union describes](../../src/transport/ws/validation.test.ts#L6)).
++- `send_message` is rejected like any other unknown type, so a client still sending it gets an `error` frame carrying `INVALID_MESSAGE` rather than a silent acceptance ([validated by: rejects send_message, which is no longer a wire name](../../src/transport/ws/validation.test.ts#L24)).
++- `user_message` is accepted and returns exactly the frame `UserMessagePayload` describes ([validated by: accepts user_message and returns the frame the exported union describes](../../src/transport/ws/validation.test.ts#L18)).
+ - No deprecation window was needed. This package has never been published, so there were no registry consumers to deprecate for, and the window would only ever have been cheap before the first release.
+ 
+ ### Two config options that were declared and dropped
+diff --git a/specs/hal-engine-session-resume/spec.md b/specs/hal-engine-session-resume/spec.md
+index 839155f..d716a82 100644
+--- a/specs/hal-engine-session-resume/spec.md
++++ b/specs/hal-engine-session-resume/spec.md
+@@ -16,42 +16,42 @@ A reconnect used to resume nothing: the server minted a fresh id on every connec
+ 
+ ## Opt-in
+ 
+-- Resume is the optional `transport.resume` config, off by default; without it, a reconnect naming an earlier id gets a new id, a `connected` frame with exactly its four original fields, and no replay ([validated by: with resume absent, answers a reconnect naming the first id with a new id and no replay](../../src/transport/sessionResume.test.ts#L180)).
+-- With resume off, a socket opened at `{basePath}/ws/undefined` still completes the handshake and gets a server-minted id ([validated by: with resume off, still completes a handshake at /hal/ws/undefined and mints an id](../../src/transport/sessionResume.test.ts#L412)).
++- Resume is the optional `transport.resume` config, off by default; without it, a reconnect naming an earlier id gets a new id, a `connected` frame with exactly its four original fields, and no replay ([validated by: with resume absent, answers a reconnect naming the first id with a new id and no replay](../../src/transport/sessionResume.test.ts#L162)).
++- With resume off, a socket opened at `{basePath}/ws/undefined` still completes the handshake and gets a server-minted id ([validated by: with resume off, still completes a handshake at /hal/ws/undefined and mints an id](../../src/transport/sessionResume.test.ts#L394)).
+ 
+ ## Rejoining a conversation
+ 
+-- The owner reconnecting with the id from their first `connected` frame receives `resumed: true` and `entryCount` equal to the stored entries, followed by one `entry_upsert` per entry at its own index, equal to what is stored ([validated by: with resume on, answers the owner reconnecting with resumed true, entryCount 2 and both stored entries](../../src/transport/sessionResume.test.ts#L196)).
+-- A resumed session takes the credentials of the socket that resumed it, and the socket it replaced closing afterwards leaves them alone, though that close still calls `onDisconnect`, since the hooks are per connection ([validated by: keeps the credentials of the socket that resumed a session when the socket it replaced closes](../../src/transport/sessionResume.test.ts#L262)).
+-- A session open on more than one socket carries the credentials of the newest; when that socket closes, it takes those of the newest one still open, so a tab left open keeps working, and they are cleared only when the last one closes ([validated by: gives a session back the credentials of a socket still open when the socket that resumed it closes](../../src/transport/sessionResume.test.ts#L281)).
+-- `onConnect` receives `{resumed}` as its second argument: `false` for the connection that started a session and `true` for each one that resumed it ([validated by: tells onConnect whether a connection started its session or resumed it](../../src/transport/sessionResume.test.ts#L301)).
+-- An entry still streaming when its session is resumed, because its turn is running on the socket that started it, is replayed with `isStreaming: false` and `truncated: true`, since its deltas and commit go to that socket and a client shown it streaming would wait for a commit that never comes, while the stored entry stays as the running turn leaves it ([validated by: replays an entry whose turn is still running as finished and truncated, leaving the stored entry as it is](../../src/transport/sessionResume.test.ts#L364)).
+-- A stored entry a tool suppressed is replayed as `entry_skip`, so the client sees the conversation it saw live and never the text a tool hid ([validated by: replays a suppressed entry as a skip, so the client never sees text a tool suppressed](../../src/transport/sessionResume.test.ts#L328)).
++- The owner reconnecting with the id from their first `connected` frame receives `resumed: true` and `entryCount` equal to the stored entries, followed by one `entry_upsert` per entry at its own index, equal to what is stored ([validated by: with resume on, answers the owner reconnecting with resumed true, entryCount 2 and both stored entries](../../src/transport/sessionResume.test.ts#L178)).
++- A resumed session takes the credentials of the socket that resumed it, and the socket it replaced closing afterwards leaves them alone, though that close still calls `onDisconnect`, since the hooks are per connection ([validated by: keeps the credentials of the socket that resumed a session when the socket it replaced closes](../../src/transport/sessionResume.test.ts#L244)).
++- A session open on more than one socket carries the credentials of the newest; when that socket closes, it takes those of the newest one still open, so a tab left open keeps working, and they are cleared only when the last one closes ([validated by: gives a session back the credentials of a socket still open when the socket that resumed it closes](../../src/transport/sessionResume.test.ts#L263)).
++- `onConnect` receives `{resumed}` as its second argument: `false` for the connection that started a session and `true` for each one that resumed it ([validated by: tells onConnect whether a connection started its session or resumed it](../../src/transport/sessionResume.test.ts#L283)).
++- An entry still streaming when its session is resumed, because its turn is running on the socket that started it, is replayed with `isStreaming: false` and `truncated: true`, since its deltas and commit go to that socket and a client shown it streaming would wait for a commit that never comes, while the stored entry stays as the running turn leaves it ([validated by: replays an entry whose turn is still running as finished and truncated, leaving the stored entry as it is](../../src/transport/sessionResume.test.ts#L346)).
++- A stored entry a tool suppressed is replayed as `entry_skip`, so the client sees the conversation it saw live and never the text a tool hid ([validated by: replays a suppressed entry as a skip, so the client never sees text a tool suppressed](../../src/transport/sessionResume.test.ts#L310)).
+ - For that, suppression is recorded on the stored entry: an assistant entry the client was sent and then shown blank is marked `suppressed`, and keeps its text for the model's history ([validated by: marks a sent assistant entry it blanked as suppressed in the session, keeping its text](../../src/transport/ws/messageHandler.test.ts#L237)).
+ - A segment opened after suppression, which the client was only ever sent as a skip, is marked `suppressed` too ([validated by: marks a segment opened after suppression as suppressed in the session](../../src/transport/ws/messageHandler.test.ts#L246)).
+-- An answer still open when suppression begins is first committed as streamed so far, then retracted and marked like any sent answer, and the text after it opens a new entry the client is only sent as a skip, so a replay leaves the client as blank as the live stream did ([validated by: commits and retracts an answer still open when suppression begins, and skips what follows as a new entry](../../src/transport/ws/messageHandler.test.ts#L267), [validated by: replays an answer suppressed while it was still open as skips, as blank as the live client was left](../../src/transport/sessionResume.test.ts#L351)).
++- An answer still open when suppression begins is first committed as streamed so far, then retracted and marked like any sent answer, and the text after it opens a new entry the client is only sent as a skip, so a replay leaves the client as blank as the live stream did ([validated by: commits and retracts an answer still open when suppression begins, and skips what follows as a new entry](../../src/transport/ws/messageHandler.test.ts#L267), [validated by: replays an answer suppressed while it was still open as skips, as blank as the live client was left](../../src/transport/sessionResume.test.ts#L333)).
+ - A thinking entry committed before suppression began is left unmarked, since the client kept seeing it, matching what the live stream showed ([validated by: leaves a thinking entry the client kept seeing unmarked, and marks the blanked answer](../../src/transport/ws/messageHandler.test.ts#L255)).
+ - A thought still open when suppression begins is committed as the client saw it and left unmarked, and its remaining text opens a new entry marked `suppressed` ([validated by: commits a thought still open when suppression begins as the client saw it, and skips what follows](../../src/transport/ws/messageHandler.test.ts#L288)).
+ 
+ ## Ownership and existence
+ 
+-- An id is resumed only for the stored session's own user: another user naming it receives a fresh session, `resumed: false` and `resumeFailure: 'unknown'`, with frames identical to the response for an id that was never issued, so the answer cannot be used to learn which ids exist ([validated by: answers another user naming the id exactly as it answers an id that was never issued](../../src/transport/sessionResume.test.ts#L213)).
+-- An id that was never issued receives `resumed: false` with `resumeFailure: 'unknown'`, no replay and no `error` frame ([validated by: answers a never-issued id with resumed false, resumeFailure unknown, and no replay or error](../../src/transport/sessionResume.test.ts#L227)).
+-- A requested id is never adopted as the key of a new session, which would be session fixation: the store then holds one session, under the id the server minted ([validated by: never adopts a requested id as a key: one session, under the id the server minted](../../src/transport/sessionResume.test.ts#L240)).
++- An id is resumed only for the stored session's own user: another user naming it receives a fresh session, `resumed: false` and `resumeFailure: 'unknown'`, with frames identical to the response for an id that was never issued, so the answer cannot be used to learn which ids exist ([validated by: answers another user naming the id exactly as it answers an id that was never issued](../../src/transport/sessionResume.test.ts#L195)).
++- An id that was never issued receives `resumed: false` with `resumeFailure: 'unknown'`, no replay and no `error` frame ([validated by: answers a never-issued id with resumed false, resumeFailure unknown, and no replay or error](../../src/transport/sessionResume.test.ts#L209)).
++- A requested id is never adopted as the key of a new session, which would be session fixation: the store then holds one session, under the id the server minted ([validated by: never adopts a requested id as a key: one session, under the id the server minted](../../src/transport/sessionResume.test.ts#L222)).
+ 
+ ## The store decides what is live
+ 
+-- Whether an id is resumable is the store's `get` answer: an id it returns a session for is resumed, and one it returns nothing for starts fresh ([validated by: resumes the id its store knows and starts fresh for one it does not](../../src/transport/sessionResume.test.ts#L313)).
+-- A resumed session whose socket closes before its replay is kept, never evicted: eviction erases, and it is reserved for a new session no client ever received ([validated by: keeps a resumed session whose socket closed before the replay, rather than evicting it](../../src/transport/sessionResume.test.ts#L378)).
+-- A socket closing under resume still calls `onDisconnect` with its session id ([validated by: still calls onDisconnect with the session id when a socket closes under resume](../../src/transport/sessionResume.test.ts#L253)).
++- Whether an id is resumable is the store's `get` answer: an id it returns a session for is resumed, and one it returns nothing for starts fresh ([validated by: resumes the id its store knows and starts fresh for one it does not](../../src/transport/sessionResume.test.ts#L295)).
++- A resumed session whose socket closes before its replay is kept, never evicted: eviction erases, and it is reserved for a new session no client ever received ([validated by: keeps a resumed session whose socket closed before the replay, rather than evicting it](../../src/transport/sessionResume.test.ts#L360)).
++- A socket closing under resume still calls `onDisconnect` with its session id ([validated by: still calls onDisconnect with the session id when a socket closes under resume](../../src/transport/sessionResume.test.ts#L235)).
+ 
+ ## Continuing the latest session
+ 
+-- With `latest` on, a connect that names no `?sessionId=` rejoins the user's most recently active session, which the store's optional `latestFor(userId)` returns, with the same `resumed: true`, `entryCount`, replay and `onConnect` `{resumed: true}` as a named resume ([validated by: with latest on, rejoins the most recently active session of a user whose connect names none](../../src/transport/sessionResume.test.ts#L428)).
+-- It starts a new session for a user who has none, and for a connect that sends `?new=1`, which is how a client starts a new conversation on purpose while a latest one exists ([validated by: with latest on, starts a new session for a user with none, and on ?new=1 even when one exists](../../src/transport/sessionResume.test.ts#L445)).
+-- A connect that names an id rejoins that session, whichever is latest ([validated by: with latest on, still rejoins the session a connect names rather than the latest one](../../src/transport/sessionResume.test.ts#L460)).
+-- A session `latestFor` answers for another user is never rejoined, and a `latestFor` that throws or that the store does not implement starts a new session ([validated by: starts a new session when the store's latestFor answers another user's session, throws, or is absent](../../src/transport/sessionResume.test.ts#L472)).
+-- Without `latest`, a connect that names no id starts a new session, as before ([validated by: with resume on but latest off, starts a new session for a connect that names none](../../src/transport/sessionResume.test.ts#L496)).
++- With `latest` on, a connect that names no `?sessionId=` rejoins the user's most recently active session, which the store's optional `latestFor(userId)` returns, with the same `resumed: true`, `entryCount`, replay and `onConnect` `{resumed: true}` as a named resume ([validated by: with latest on, rejoins the most recently active session of a user whose connect names none](../../src/transport/sessionResume.test.ts#L410)).
++- It starts a new session for a user who has none, and for a connect that sends `?new=1`, which is how a client starts a new conversation on purpose while a latest one exists ([validated by: with latest on, starts a new session for a user with none, and on ?new=1 even when one exists](../../src/transport/sessionResume.test.ts#L427)).
++- A connect that names an id rejoins that session, whichever is latest ([validated by: with latest on, still rejoins the session a connect names rather than the latest one](../../src/transport/sessionResume.test.ts#L442)).
++- A session `latestFor` answers for another user is never rejoined, and a `latestFor` that throws or that the store does not implement starts a new session ([validated by: starts a new session when the store's latestFor answers another user's session, throws, or is absent](../../src/transport/sessionResume.test.ts#L454)).
++- Without `latest`, a connect that names no id starts a new session, as before ([validated by: with resume on but latest off, starts a new session for a connect that names none](../../src/transport/sessionResume.test.ts#L478)).
+ - `?new=1` counts only when it is exactly `1`, and only on an upgrade inside `{basePath}/ws` ([validated by: reads exactly ?new=1 inside the base path as a request for a new session, and nothing else](../../src/transport/ws/helpers.test.ts#L40)).
+ - `InMemorySessionStore.latestFor` goes by a session's newest timed entry, so the conversation the user last wrote to beats one created later, and an entry with no time, such as a thought, counts for nothing ([validated by: returns the user's session with the newest entry, not the one created last, a thought counting for nothing](../../src/infrastructure/stores/inMemoryLatestSession.test.ts#L17)).
+ - A session with no entries counts from its creation, and of two created at the same moment the later one wins ([validated by: falls back to creation time for sessions with no entries, the one created later winning a tie](../../src/infrastructure/stores/inMemoryLatestSession.test.ts#L30)).
+@@ -69,14 +69,14 @@ A reconnect used to resume nothing: the server minted a fresh id on every connec
+ - An expired session is reported once and then evicted, so the next lookup reads `missing`: the store keeps no tombstone ([validated by: reports an expired session once, then as missing, keeping no tombstone](../../src/infrastructure/stores/inMemorySessionLookup.test.ts#L40)).
+ - A session whose creation time was not a finite number is never reported expired ([validated by: never reports a session whose creation time was not a finite number as expired](../../src/infrastructure/stores/inMemorySessionLookup.test.ts#L52)).
+ - An expired result carries the owner's id and no entry content ([validated by: lets no entry content reach an expired result](../../src/infrastructure/stores/inMemorySessionLookup.test.ts#L61)).
+-- A connect naming its own session after it aged out gets `resumed: false`, `resumeFailure: 'expired'`, a new `sessionId` and no replay ([validated by: tells the owner of a session that aged out that it expired, with a new id and no replay](../../src/transport/sessionResume.test.ts#L519)).
+-- Another user naming that expired id gets `resumeFailure: 'unknown'`, in a response identical to the one for an id never issued, so `expired` reveals nothing about an id that is not the caller's ([validated by: answers another user naming an expired id exactly as it answers an id never issued](../../src/transport/sessionResume.test.ts#L535)).
+-- A connect that names no id gets no `resumeFailure` at all, even when the latest-session default finds nothing to rejoin ([validated by: sends no resumeFailure at all when the connect names no id, even with no latest session to rejoin](../../src/transport/sessionResume.test.ts#L548)).
+-- Resume reads a named id with one call per attempt, the store's `lookup` when it has one and its `get` otherwise, and either way resumes a live session and answers a dead id `unknown` ([validated by: reads a named id with one call per attempt: lookup when the store has it, get otherwise](../../src/transport/sessionResume.test.ts#L559)).
++- A connect naming its own session after it aged out gets `resumed: false`, `resumeFailure: 'expired'`, a new `sessionId` and no replay ([validated by: tells the owner of a session that aged out that it expired, with a new id and no replay](../../src/transport/sessionResume.test.ts#L501)).
++- Another user naming that expired id gets `resumeFailure: 'unknown'`, in a response identical to the one for an id never issued, so `expired` reveals nothing about an id that is not the caller's ([validated by: answers another user naming an expired id exactly as it answers an id never issued](../../src/transport/sessionResume.test.ts#L517)).
++- A connect that names no id gets no `resumeFailure` at all, even when the latest-session default finds nothing to rejoin ([validated by: sends no resumeFailure at all when the connect names no id, even with no latest session to rejoin](../../src/transport/sessionResume.test.ts#L530)).
++- Resume reads a named id with one call per attempt, the store's `lookup` when it has one and its `get` otherwise, and either way resumes a live session and answers a dead id `unknown` ([validated by: reads a named id with one call per attempt: lookup when the store has it, get otherwise](../../src/transport/sessionResume.test.ts#L541)).
+ 
+ ## Compatibility
+ 
+-- `ConnectedMessage` gains only the optional `resumed`, `entryCount` and `resumeFailure`, so a `connected` literal carrying neither still type-checks ([validated by: still types a connected frame literal that carries neither resume field](../../src/transport/sessionResume.test.ts#L420)).
++- `ConnectedMessage` gains only the optional `resumed`, `entryCount` and `resumeFailure`, so a `connected` literal carrying neither still type-checks ([validated by: still types a connected frame literal that carries neither resume field](../../src/transport/sessionResume.test.ts#L402)).
+ 
+ ## Out of scope
+ 
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..211667e 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -18,7 +18,7 @@ Version 1.0 of the hal-engine WebSocket protocol. It covers, among other things,
+ 
+ This document specifies the WebSocket protocol used for real-time communication between a client and the hal-engine backend. The protocol enables streaming AI responses, tool invocations, and session management over a persistent WebSocket connection.
+ 
+-It specifies both ends, but this repository implements only one. Requirements addressed to the server are implemented here and testable here. Requirements addressed to the client -- the application-level ping cadence in Section 10.2, the reconnection policy in Section 11.3, the index adjustment in Section 5.5 -- are the contract a consumer is expected to meet, and nothing in this repository enforces them.
++It specifies both ends, but this repository implements only one. Requirements addressed to the server are implemented here and testable here. Requirements addressed to the client -- the application-level ping cadence in Section 10.2, the reconnection policy in Section 11.3, the index adjustment in Section 5.6 -- are the contract a consumer is expected to meet, and nothing in this repository enforces them.
+ 
+ ### 1.1 Terminology
+ 
+@@ -107,7 +107,7 @@ All messages are JSON objects containing a REQUIRED `type` field that identifies
+ }
+ ```
+ 
+-A client receiving a message with an unrecognized `type` SHOULD ignore it, so that additive protocol changes do not break older clients. The server does NOT ignore unknown types: it replies with an `error` carrying code `INVALID_MESSAGE` (Section 5.6).
++A client receiving a message with an unrecognized `type` SHOULD ignore it, so that additive protocol changes do not break older clients. The server does NOT ignore unknown types: it replies with an `error` carrying code `INVALID_MESSAGE` (Section 5.7).
+ 
+ ## 4. Client-to-Server Messages
+ 
+@@ -127,7 +127,7 @@ Sends a user chat message. `user_message` is the only accepted type: the server
+ | `type`    | string | Yes      | `"user_message"`                       |
+ | `content` | string | Yes      | Message text                           |
+ 
+-Any other field is ignored, and the validator forwards only the fields the frame defines. In particular the server does not read a `chatId` from this message: the connection already determines the session ([validated by: drops any field the frame does not define, rather than forwarding it](../../src/transport/ws/validation.test.ts#L18)).
++Any other field is ignored, and the validator forwards only the fields the frame defines. In particular the server does not read a `chatId` from this message: the connection already determines the session ([validated by: drops any field the frame does not define, rather than forwarding it](../../src/transport/ws/validation.test.ts#L30)).
+ 
+ Constraints:
+ 
+@@ -160,6 +160,29 @@ Application-level heartbeat. The server MUST respond with a `pong` message echoi
+ | `type`      | string | Yes      | `"ping"`                          |
+ | `timestamp` | number | Yes      | Client timestamp in milliseconds  |
+ 
++### 4.3 list_sessions
++
++Requests a page of conversation summaries for the user authenticated on this connection. The client MUST NOT send a user id: the server derives it from the authenticated session and ignores any `userId` field in the frame. If the store does not implement listing, the server answers with an empty `session_list`; a failing listing operation returns an `error`. ([validated by: answers list_sessions for the authenticated user with ISO dates, forwarding limit and before while ignoring any client userId](../../src/transport/conversationList.acceptance.test.ts#L71))
++
++```json
++{
++  "type": "list_sessions",
++  "limit": 10,
++  "before": {
++    "updatedAt": "2026-01-01T00:05:00.000Z",
++    "sessionId": "s3"
++  }
++}
++```
++
++| Field      | Type   | Required | Description                                            |
++| ---------- | ------ | -------- | ------------------------------------------------------ |
++| `type`     | string | Yes      | `"list_sessions"`                                     |
++| `limit`    | number | No       | Non-negative integer page size                         |
++| `before`   | object | No       | Composite cursor with `updatedAt` and `sessionId`      |
++
++The server returns summaries newest first according to the store's ordering. The cursor's timestamp may be an ISO date string or finite epoch number; its session id is 1–128 characters. Invalid paging fields receive `INVALID_MESSAGE` without querying the store. ([validated by: accepts a bare list_sessions frame and rejects a malformed limit or before with INVALID_MESSAGE without calling listFor](../../src/transport/conversationList.acceptance.test.ts#L141))
++
+ ## 5. Server-to-Client Messages
+ 
+ ### 5.1 connected
+@@ -176,7 +199,32 @@ Sent exactly once after a successful handshake. See Section 2.3.
+ | `entryCount`     | number   | Present only when `resumed` is `true`: how many stored entries the replay covers, skipped ones included |
+ | `resumeFailure`  | string   | Present only when the connection named an id and `resumed` is `false`: `expired` when the caller's own session aged out, `unknown` otherwise. `unknown` deliberately covers both an id the server never issued and one that is not the caller's, so the answer reveals nothing about ids that exist |
+ 
+-### 5.2 entry_upsert
++### 5.2 session_list
++
++Sent only in response to `list_sessions`. It contains metadata for the authenticated user's conversations and no conversation content. `createdAt` and `updatedAt` are ISO-8601 strings on the wire. ([validated by: answers list_sessions for the authenticated user with ISO dates, forwarding limit and before while ignoring any client userId](../../src/transport/conversationList.acceptance.test.ts#L71))
++
++```json
++{
++  "type": "session_list",
++  "sessions": [
++    {
++      "sessionId": "s2",
++      "createdAt": "2026-01-01T00:00:00.000Z",
++      "updatedAt": "2026-01-01T00:02:00.000Z",
++      "entryCount": 4
++    }
++  ]
++}
++```
++
++| Field      | Type            | Description                                      |
++| ---------- | --------------- | ------------------------------------------------ |
++| `type`     | string          | `"session_list"`                                 |
++| `sessions` | SessionSummaryFrame[] | Summary rows containing id, two dates and count |
++
++([validated by: answers an empty session_list when the store has no listFor, and SERVER_ERROR with a ws error log when listFor throws](../../src/transport/conversationList.acceptance.test.ts#L112))
++
++### 5.3 entry_upsert
+ 
+ Creates a new entry or replaces an existing entry at the given index. This is the primary mechanism for adding content to the conversation.
+ 
+@@ -203,9 +251,9 @@ Semantics:
+ - If `index` equals the current array length, the entry is appended.
+ - If `index` is within the existing array bounds, the entry at that position is replaced.
+ - The client MUST NOT assume entries arrive in sequential index order during tool loops.
+-- A repeat `entry_upsert` at an index the client already holds, carrying an assistant entry with empty `content`, is a **retraction**: the server is withdrawing text it already sent. See Section 5.5.
++- A repeat `entry_upsert` at an index the client already holds, carrying an assistant entry with empty `content`, is a **retraction**: the server is withdrawing text it already sent. See Section 5.6.
+ 
+-### 5.3 entry_delta
++### 5.4 entry_delta
+ 
+ Appends incremental text to an existing entry's content. Only valid for entries with role `assistant` or `thinking`.
+ 
+@@ -229,7 +277,7 @@ Semantics:
+ - The referenced entry MUST have `isStreaming: true`.
+ - Deltas for entries with role `user` or `tool` are invalid and SHOULD be ignored.
+ 
+-### 5.4 entry_commit
++### 5.5 entry_commit
+ 
+ Marks an entry as finalized. No further `entry_delta` messages will be sent for this index (within the current streaming sequence).
+ 
+@@ -250,7 +298,7 @@ Semantics:
+ - The client MUST set `isStreaming` to `false` on the entry at the given index.
+ - After a commit, the entry's content is considered complete and stable.
+ 
+-### 5.5 entry_skip
++### 5.6 entry_skip
+ 
+ Notifies the client that a session entry was created on the server and will never be sent. This happens under output suppression (see [tool-responses.md](../hal-engine-tool-responses/spec.md)): the server keeps the entry so the model retains context, and the client does not need it for display ([validated by: still records a suppressed reply in the session, so history keeps it](../../src/transport/ws/messageHandler.test.ts#L211)).
+ 
+@@ -286,7 +334,7 @@ Semantics:
+ - Skipped indices are always monotonically increasing within a session.
+ - The client MUST reset its tracked skipped indices on disconnect/reconnect.
+ 
+-### 5.6 error
++### 5.7 error
+ 
+ Reports an error condition. The connection remains open unless the error is fatal.
+ 
+@@ -319,7 +367,7 @@ Semantics:
+ - A rate limit reported by the AI provider is surfaced as `RATE_LIMITED`, which tells the client the same request is worth retrying ([validated by: tells the client to retry when the provider is rate limited](../../src/transport/ws/messageHandler.test.ts#L311)).
+ - Any other failure raised while processing a message is reported as `SERVER_ERROR` ([validated by: reports any other failure as a server error](../../src/transport/ws/messageHandler.test.ts#L320)).
+ 
+-### 5.7 pong
++### 5.8 pong
+ 
+ Response to a client `ping`. The server MUST echo the client's timestamp without modification ([validated by: answers a ping with the timestamp it was given](../../src/transport/ws/messageHandler.test.ts#L81)).
+ 
+@@ -335,7 +383,7 @@ Response to a client `ping`. The server MUST echo the client's timestamp without
+ | `type`      | string | `"pong"`                                |
+ | `timestamp` | number | Echoed from the client's `ping` message |
+ 
+-### 5.8 stream_end
++### 5.9 stream_end
+ 
+ Signals that the server has finished processing a user message. Sent exactly once for every `user_message` the server receives, after all `entry_commit` messages have been sent, whether the run succeeded or failed.
+ 
+@@ -611,7 +659,7 @@ The server sends a WebSocket ping frame at the configured `heartbeatIntervalMs`
+ 
+ ### 10.2 Application-Level Ping (Client-Initiated)
+ 
+-The client SHOULD send a `ping` message (Section 4.2) every 5 seconds. The server responds with a `pong` message (Section 5.7). The client MAY use the round-trip time to display connection health indicators.
++The client SHOULD send a `ping` message (Section 4.2) every 5 seconds. The server responds with a `pong` message (Section 5.8). The client MAY use the round-trip time to display connection health indicators.
+ 
+ ## 11. Connection Termination
+ 
+@@ -632,8 +680,8 @@ If the connection drops unexpectedly, the client SHOULD reconnect using exponent
+ - Maximum retries: 5
+ - On reconnection success, any queued `user_message` messages MUST be flushed immediately.
+ - On reconnection, the client MUST clear its local entries array and SHOULD send `?sessionId=` with the id from its last `connected` frame. When the server has resume enabled and the conversation is the user's own, it answers `resumed: true` and replays the conversation; otherwise the client is starting a new session.
+-- An entry still streaming when its conversation is resumed is replayed with `isStreaming: false` and `truncated: true`: the rest of its turn streams to the connection that started it, so this one would wait for a commit that never comes ([validated by: replays an entry whose turn is still running as finished and truncated, leaving the stored entry as it is](../../src/transport/sessionResume.test.ts#L364)).
+-- With the server's `latest` option, a client that has lost the id, after a page refresh for instance, MAY connect without one and still rejoin its user's most recent conversation, and sends `?new=1` to start a new conversation instead ([validated by: with latest on, rejoins the most recently active session of a user whose connect names none](../../src/transport/sessionResume.test.ts#L428), [validated by: with latest on, starts a new session for a user with none, and on ?new=1 even when one exists](../../src/transport/sessionResume.test.ts#L445)).
++- An entry still streaming when its conversation is resumed is replayed with `isStreaming: false` and `truncated: true`: the rest of its turn streams to the connection that started it, so this one would wait for a commit that never comes ([validated by: replays an entry whose turn is still running as finished and truncated, leaving the stored entry as it is](../../src/transport/sessionResume.test.ts#L346)).
++- With the server's `latest` option, a client that has lost the id, after a page refresh for instance, MAY connect without one and still rejoin its user's most recent conversation, and sends `?new=1` to start a new conversation instead ([validated by: with latest on, rejoins the most recently active session of a user whose connect names none](../../src/transport/sessionResume.test.ts#L410), [validated by: with latest on, starts a new session for a user with none, and on ?new=1 even when one exists](../../src/transport/sessionResume.test.ts#L427)).
+ 
+ After 5 failed attempts, the client MUST stop reconnecting and report a disconnected state.
+ 
+diff --git a/src/index.ts b/src/index.ts
+index f2dd3ba..ed074ba 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -112,6 +112,9 @@ export type {
+   StreamEndMessage,
+   OutgoingMessage,
+   UserMessagePayload,
++  ListSessionsMessage,
++  SessionSummaryFrame,
++  SessionListMessage,
+ } from './types/messages.js';
+ 
+ export type {WsAuthenticator, HttpAuthMiddleware, AuthenticatedRequest} from './types/auth.js';
+diff --git a/src/transport/conversationList.acceptance.test.ts b/src/transport/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..88965c2
+--- /dev/null
++++ b/src/transport/conversationList.acceptance.test.ts
+@@ -0,0 +1,176 @@
++import type {AddressInfo} from 'node:net';
++import {WebSocket} from 'ws';
++import type {Express} from 'express';
++import {createServer} from './createServer.js';
++import {HAL_WS_SUBPROTOCOL} from './ws/subprotocol.js';
++import {answeringOrchestrator, delegatingTo, stopSocketServers} from './wsTestSupport.js';
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++import type {SessionCursor, SessionListOptions, SessionStore, SessionSummary} from '../types/sessionStore.js';
++import {setLogger} from '../shared/logger.js';
++
++// Real upgrades over a real socket: what the list_sessions frame answers is the contract, and no double can observe it.
++
++interface Frame {
++  type: string;
++  sessionId?: string;
++  sessions?: Array<{sessionId: string; createdAt: string; updatedAt: string; entryCount: number}>;
++  code?: string;
++  message?: string;
++}
++
++const servers: Array<ReturnType<typeof createServer>> = [];
++const clients: WebSocket[] = [];
++const logLines: Array<{level: string; category: string; message: string; fields?: Record<string, unknown>}> = [];
++
++beforeEach(() => {
++  logLines.length = 0;
++  const record = (level: string) => (category: string, message: string, fields?: Record<string, unknown>) =>
++    void logLines.push({level, category, message, fields});
++  setLogger({debug: record('debug'), info: record('info'), warn: record('warn'), error: record('error')});
++});
++
++afterEach(async () => {
++  await stopSocketServers(clients, servers);
++  setLogger();
++});
++
++const startEngine = async (store: SessionStore, userId: string | number = 'u1') => {
++  const hal = createServer({
++    app: (() => undefined) as unknown as Express,
++    wsAuth: async () => ({id: userId}),
++    sessionStore: store,
++    orchestrator: answeringOrchestrator,
++  });
++  await hal.start(0);
++  servers.push(hal);
++  const {port} = hal.server.address() as AddressInfo;
++  return `ws://127.0.0.1:${port}/hal/ws`;
++};
++
++const askAfterConnect = async (url: string, outbound: unknown): Promise<{connected: Frame; frames: Frame[]}> => {
++  const client = new WebSocket(url, [HAL_WS_SUBPROTOCOL, 't']);
++  clients.push(client);
++  const frames: Frame[] = [];
++  let connected: Frame = {type: ''};
++  await new Promise<void>(resolve => {
++    client.on('message', raw => {
++      const frame = JSON.parse(String(raw)) as Frame;
++      if (frame.type === 'pong') {
++        return resolve();
++      }
++      if (frame.type !== 'connected') return void frames.push(frame);
++      connected = frame;
++      client.send(typeof outbound === 'string' ? outbound : JSON.stringify(outbound));
++      client.send(JSON.stringify({type: 'ping', timestamp: 1}));
++    });
++  });
++  return {connected, frames};
++};
++
++describe('listing conversations over the WebSocket protocol', () => {
++  it('answers list_sessions for the authenticated user with ISO dates, forwarding limit and before while ignoring any client userId', async () => {
++    const inner = new InMemorySessionStore();
++    const seen: Array<{userId: string | number; options?: SessionListOptions}> = [];
++    const summaries: SessionSummary[] = [
++      {
++        sessionId: 's2',
++        createdAt: new Date('2026-01-01T00:00:00.000Z'),
++        updatedAt: new Date('2026-01-01T00:02:00.000Z'),
++        entryCount: 4,
++      },
++    ];
++    const store: SessionStore = {
++      ...delegatingTo(inner),
++      listFor: (userId, options) => {
++        seen.push({userId, options});
++        return summaries;
++      },
++    };
++    const url = await startEngine(store, 'u1');
++    const before: SessionCursor = {updatedAt: '2026-01-01T00:05:00.000Z', sessionId: 's3'};
++
++    const {frames} = await askAfterConnect(url, {type: 'list_sessions', limit: 10, before, userId: 'u2'});
++
++    expect({seen, frames}).toEqual({
++      seen: [{userId: 'u1', options: {limit: 10, before}}],
++      frames: [
++        {
++          type: 'session_list',
++          sessions: [
++            {
++              sessionId: 's2',
++              createdAt: '2026-01-01T00:00:00.000Z',
++              updatedAt: '2026-01-01T00:02:00.000Z',
++              entryCount: 4,
++            },
++          ],
++        },
++      ],
++    });
++  });
++
++  it('answers an empty session_list when the store has no listFor, and SERVER_ERROR with a ws error log when listFor throws', async () => {
++    const inner = new InMemorySessionStore();
++    const withoutList = await startEngine(delegatingTo(inner));
++    const failingList = await startEngine({
++      ...delegatingTo(inner),
++      listFor: () => Promise.reject(new Error('database offline')),
++    });
++
++    const unimplemented = await askAfterConnect(withoutList, {type: 'list_sessions'});
++    const failed = await askAfterConnect(failingList, {type: 'list_sessions'});
++
++    expect({
++      unimplemented: unimplemented.frames,
++      failed: failed.frames.map(frame => ({type: frame.type, code: frame.code})),
++      logged: logLines.filter(line => line.level === 'error' && line.category === 'ws'),
++    }).toEqual({
++      unimplemented: [{type: 'session_list', sessions: []}],
++      failed: [{type: 'error', code: 'SERVER_ERROR'}],
++      logged: [
++        {
++          level: 'error',
++          category: 'ws',
++          message: expect.any(String),
++          fields: expect.objectContaining({userId: 'u1', error: 'database offline'}),
++        },
++      ],
++    });
++  });
++
++  it('accepts a bare list_sessions frame and rejects a malformed limit or before with INVALID_MESSAGE without calling listFor', async () => {
++    const inner = new InMemorySessionStore();
++    let calls = 0;
++    const store: SessionStore = {
++      ...delegatingTo(inner),
++      listFor: () => {
++        calls += 1;
++        return [];
++      },
++    };
++    const url = await startEngine(store);
++    const badFrames = [
++      {type: 'list_sessions', limit: 'ten'},
++      {type: 'list_sessions', limit: -1},
++      {type: 'list_sessions', limit: 1.5},
++      {type: 'list_sessions', before: 'not-an-object'},
++      {type: 'list_sessions', before: {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: ''}},
++      {type: 'list_sessions', before: {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 'a'.repeat(129)}},
++      {type: 'list_sessions', before: {updatedAt: 'not-a-date', sessionId: 's1'}},
++      {type: 'list_sessions', before: {updatedAt: true, sessionId: 's1'}},
++    ];
++
++    const codes: Array<string | undefined> = [];
++    for (const bad of badFrames) {
++      const {frames} = await askAfterConnect(url, bad);
++      codes.push(frames[0]?.code);
++    }
++    const {frames: accepted} = await askAfterConnect(url, {type: 'list_sessions'});
++
++    expect({codes, accepted, calls}).toEqual({
++      codes: Array(badFrames.length).fill('INVALID_MESSAGE'),
++      accepted: [{type: 'session_list', sessions: []}],
++      calls: 1,
++    });
++  });
++});
+diff --git a/src/transport/createServer.ts b/src/transport/createServer.ts
+index 65915ef..1072746 100644
+--- a/src/transport/createServer.ts
++++ b/src/transport/createServer.ts
+@@ -40,7 +40,7 @@ export function createServer(options: HalServerOptions): HalServer {
+     handleProtocols: selectSubprotocol,
+   });
+ 
+-  const handleMessage = createMessageHandler(options.orchestrator);
++  const handleMessage = createMessageHandler(options.orchestrator, options.sessionStore);
+   const examplePrompts = options.toolRegistry?.getExamplePrompts() ?? [];
+ 
+   const deps = {
+diff --git a/src/transport/sessionResume.test.ts b/src/transport/sessionResume.test.ts
+index fb8ae2d..80fbf0a 100644
+--- a/src/transport/sessionResume.test.ts
++++ b/src/transport/sessionResume.test.ts
+@@ -5,7 +5,7 @@ import type {Express} from 'express';
+ import {createServer} from './createServer.js';
+ import {HAL_WS_SUBPROTOCOL} from './ws/subprotocol.js';
+ import type {SessionResumeOptions} from './ws/sessionResume.js';
+-import {answeringOrchestrator} from './wsTestSupport.js';
++import {answeringOrchestrator, delegatingTo, eventually, stopSocketServers} from './wsTestSupport.js';
+ import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
+ import type {ChatOrchestrator} from '../orchestration/chatOrchestrator.js';
+ import type {MessageChunk} from '../types/ai.js';
+@@ -50,10 +50,6 @@ const suppressingMidAnswer: ChatOrchestrator = {
+ const servers: Array<ReturnType<typeof createServer>> = [];
+ const clients: WebSocket[] = [];
+ 
+-const eventually = async (check: () => boolean): Promise<void> => {
+-  for (let attempt = 0; attempt < 50 && !check(); attempt++) await new Promise(resolve => setTimeout(resolve, 10));
+-};
+-
+ // Silenced for the whole file: the server logs every connection and close, and these tests read frames, not logs.
+ beforeAll(() => {
+   setLogger({debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined});
+@@ -65,12 +61,7 @@ afterAll(() => {
+ 
+ // Each server sees its sockets close before it stops, so no close is logged after the logger above is restored.
+ afterEach(async () => {
+-  for (const client of clients.splice(0)) client.terminate();
+-  for (const hal of servers.splice(0)) {
+-    const {wss} = hal;
+-    await eventually(() => wss.clients.size === 0);
+-    await hal.stop();
+-  }
++  await stopSocketServers(clients, servers);
+ });
+ 
+ // The authenticated user is read per upgrade, so one test can reconnect as someone else.
+@@ -167,15 +158,6 @@ const storeWith = (conversations: Array<[sessionId: string, userId: string, sent
+   return store;
+ };
+ 
+-// A store with only the required members, so an optional one can be added, replaced or left out per test.
+-const delegatingTo = (inner: InMemorySessionStore): SessionStore => ({
+-  create: (sessionId, userId, options) => inner.create(sessionId, userId, options),
+-  get: sessionId => inner.get(sessionId),
+-  delete: sessionId => inner.delete(sessionId),
+-  count: () => inner.count(),
+-  clear: () => inner.clear(),
+-});
+-
+ describe('resuming a conversation on reconnect', () => {
+   it('with resume absent, answers a reconnect naming the first id with a new id and no replay', async () => {
+     const {base} = await startEngine(new InMemorySessionStore());
+diff --git a/src/transport/ws/listSessionsLimit.test.ts b/src/transport/ws/listSessionsLimit.test.ts
+new file mode 100644
+index 0000000..5f968d6
+--- /dev/null
++++ b/src/transport/ws/listSessionsLimit.test.ts
+@@ -0,0 +1,12 @@
++import {validateMessage} from './validation.js';
++
++describe('list_sessions limit validation', () => {
++  it('rejects limits outside one through two hundred', () => {
++    for (const limit of [0, 201]) {
++      expect(validateMessage({type: 'list_sessions', limit})).toEqual({
++        valid: false,
++        error: expect.stringContaining('limit'),
++      });
++    }
++  });
++});
+diff --git a/src/transport/ws/messageHandler.ts b/src/transport/ws/messageHandler.ts
+index 1fe6af8..17f6def 100644
+--- a/src/transport/ws/messageHandler.ts
++++ b/src/transport/ws/messageHandler.ts
+@@ -2,12 +2,13 @@ import {WebSocket} from 'ws';
+ import type {SessionEntry} from '../../types/session.js';
+ import type {ChatSession} from '../../types/session.js';
+ import {ErrorCodes} from '../../types/messages.js';
+-import type {OutgoingMessage} from '../../types/messages.js';
++import type {IncomingMessage, OutgoingMessage, SessionSummaryFrame} from '../../types/messages.js';
+ import {ThinkingTagParser, ParsedSegment} from '../../infrastructure/parsers/thinkingTagParser.js';
+ import {validateMessage} from './validation.js';
+ import type {ValidationResult} from './validation.js';
+ import {PerSessionLock} from '../../shared/perSessionLock.js';
+ import type {ChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import type {SessionStore, SessionSummary} from '../../types/sessionStore.js';
+ import {AIError} from '../../types/ai.js';
+ import type {MessageChunk} from '../../types/ai.js';
+ import {
+@@ -29,7 +30,7 @@ interface StreamState {
+ 
+ type StateIndexKey = 'thinkingIndex' | 'assistantIndex';
+ type EntryFactory = typeof createThinkingEntry | typeof createAssistantEntry;
+-export function createMessageHandler(orchestrator: ChatOrchestrator) {
++export function createMessageHandler(orchestrator: ChatOrchestrator, sessionStore?: SessionStore) {
+   // Keyed by session, not socket: a resumed session can be open on more than one (specs/hal-engine-architecture/spec.md).
+   const lock = new PerSessionLock();
+   return function handleMessage(
+@@ -44,7 +45,7 @@ export function createMessageHandler(orchestrator: ChatOrchestrator) {
+       return lock.run(session.sessionId, () => answerInTurn(ws, session, orchestrator, validation, signal));
+     }
+     // An async action runs up to its first await at once, so a ping is answered now and a throw stays a rejection.
+-    return wsErrorHandler(ws, async () => answerFrame(ws, validation));
++    return wsErrorHandler(ws, async () => answerFrame(ws, session, sessionStore, validation));
+   };
+ }
+ 
+@@ -90,10 +91,15 @@ async function answerUserMessage(
+ ): Promise<void> {
+   const message = validation.valid ? validation.data : undefined;
+   if (message?.type === 'user_message') return handleUserMessage(ws, session, orchestrator, message.content, signal);
+-  answerFrame(ws, validation);
++  await answerFrame(ws, session, undefined, validation);
+ }
+ 
+-function answerFrame(ws: WebSocket, validation: ValidationResult): void {
++async function answerFrame(
++  ws: WebSocket,
++  session: ChatSession,
++  sessionStore: SessionStore | undefined,
++  validation: ValidationResult
++): Promise<void> {
+   if (!validation.valid) {
+     log.warn('message', 'validation failed', {error: validation.error});
+     sendError(ws, ErrorCodes.INVALID_MESSAGE, validation.error);
+@@ -101,7 +107,39 @@ function answerFrame(ws: WebSocket, validation: ValidationResult): void {
+   }
+ 
+   const message = validation.data;
+-  if (message.type === 'ping') handlePing(ws, message.timestamp);
++  if (message.type === 'ping') return handlePing(ws, message.timestamp);
++  if (message.type === 'list_sessions') return handleListSessions(ws, session, sessionStore, message);
++}
++
++async function handleListSessions(
++  ws: WebSocket,
++  session: ChatSession,
++  sessionStore: SessionStore | undefined,
++  message: Extract<IncomingMessage, {type: 'list_sessions'}>
++): Promise<void> {
++  try {
++    const sessions =
++      (await sessionStore?.listFor?.(session.userId, {limit: message.limit, before: message.before})) ?? [];
++    sendJson(ws, {
++      type: 'session_list',
++      sessions: sessions.map(serializeSessionSummary),
++    });
++  } catch (error) {
++    log.error('ws', 'conversation list failed', {
++      sessionId: session.sessionId,
++      userId: session.userId,
++      error: error instanceof Error ? error.message : 'Unknown error',
++    });
++    sendError(ws, ErrorCodes.SERVER_ERROR, 'Failed to process message');
++  }
++}
++
++function serializeSessionSummary(summary: SessionSummary): SessionSummaryFrame {
++  return {
++    ...summary,
++    createdAt: summary.createdAt.toISOString(),
++    updatedAt: summary.updatedAt.toISOString(),
++  };
+ }
+ 
+ // Read from the raw frame, so a user_message that fails validation still gets its stream_end.
+diff --git a/src/transport/ws/sessionStoreDispatch.test.ts b/src/transport/ws/sessionStoreDispatch.test.ts
+new file mode 100644
+index 0000000..660f837
+--- /dev/null
++++ b/src/transport/ws/sessionStoreDispatch.test.ts
+@@ -0,0 +1,58 @@
++import {jest} from '@jest/globals';
++import {WebSocket} from 'ws';
++import {createMessageHandler} from './messageHandler.js';
++import type {ChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import type {ChatSession} from '../../types/session.js';
++import type {SessionStore} from '../../types/sessionStore.js';
++import {setLogger} from '../../shared/logger.js';
++
++describe('session list dispatch', () => {
++  it('passes the authenticated session user and paging options to listFor', async () => {
++    const sent: unknown[] = [];
++    const ws = {send: (raw: string) => sent.push(JSON.parse(raw))} as unknown as WebSocket;
++    const session: ChatSession = {sessionId: 's1', userId: 'owner', entries: []};
++    const listFor = jest.fn(async () => []);
++    const store = {listFor} as unknown as SessionStore;
++    const handler = createMessageHandler({} as ChatOrchestrator, store);
++
++    await handler(ws, session, {
++      type: 'list_sessions',
++      limit: 5,
++      before: {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 's0'},
++      userId: 'attacker',
++    });
++
++    expect({calls: listFor.mock.calls, sent}).toEqual({
++      calls: [['owner', {limit: 5, before: {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 's0'}}]],
++      sent: [{type: 'session_list', sessions: []}],
++    });
++  });
++
++  it('logs a listFor failure on ws with the session id and answers SERVER_ERROR', async () => {
++    const sent: unknown[] = [];
++    const ws = {send: (raw: string) => sent.push(JSON.parse(raw))} as unknown as WebSocket;
++    const session: ChatSession = {sessionId: 's1', userId: 'owner', entries: []};
++    const listFor = jest.fn(async () => {
++      throw new Error('database unavailable');
++    });
++    const store = {listFor} as unknown as SessionStore;
++    const errors: unknown[][] = [];
++    setLogger({
++      debug: () => undefined,
++      info: () => undefined,
++      warn: () => undefined,
++      error: (...args) => errors.push(args),
++    });
++
++    try {
++      await createMessageHandler({} as ChatOrchestrator, store)(ws, session, {type: 'list_sessions'});
++    } finally {
++      setLogger();
++    }
++
++    expect({sent, errors}).toEqual({
++      sent: [{type: 'error', code: 'SERVER_ERROR', message: 'Failed to process message'}],
++      errors: [['ws', 'conversation list failed', {sessionId: 's1', userId: 'owner', error: 'database unavailable'}]],
++    });
++  });
++});
+diff --git a/src/transport/ws/validation.test.ts b/src/transport/ws/validation.test.ts
+index e60fb80..e645e63 100644
+--- a/src/transport/ws/validation.test.ts
++++ b/src/transport/ws/validation.test.ts
+@@ -3,6 +3,18 @@ import {validateMessage} from './validation.js';
+ // One wire name for the client frame: the alias is gone, and the frame the validator returns is the exported shape.
+ 
+ describe('the websocket frame validator', () => {
++  it('accepts a bare list_sessions frame and rejects malformed paging fields', () => {
++    expect({
++      bare: validateMessage({type: 'list_sessions', userId: 'another-user'}),
++      malformedLimit: validateMessage({type: 'list_sessions', limit: -1}),
++      malformedBefore: validateMessage({type: 'list_sessions', before: {sessionId: '', updatedAt: 'nope'}}),
++    }).toEqual({
++      bare: {valid: true, data: {type: 'list_sessions'}},
++      malformedLimit: {valid: false, error: expect.stringContaining('limit')},
++      malformedBefore: {valid: false, error: expect.stringContaining('before')},
++    });
++  });
++
+   it('accepts user_message and returns the frame the exported union describes', () => {
+     const result = validateMessage({type: 'user_message', content: 'hello'});
+ 
+diff --git a/src/transport/ws/validation.ts b/src/transport/ws/validation.ts
+index 6e67a6a..c25ee8a 100644
+--- a/src/transport/ws/validation.ts
++++ b/src/transport/ws/validation.ts
+@@ -25,14 +25,61 @@ export function validateMessage(payload: unknown): ValidationResult {
+     return {valid: false, error: 'Message must have a type field'};
+   }
+ 
+-  switch (message.type) {
+-    case 'user_message':
+-      return validateUserMessage(message);
+-    case 'ping':
+-      return validatePingMessage(message);
+-    default:
+-      return {valid: false, error: `Unknown message type: ${message.type}`};
++  const validators: Record<string, (frame: Record<string, unknown>) => ValidationResult> = {
++    ['user_message']: validateUserMessage,
++    ping: validatePingMessage,
++    ['list_sessions']: validateListSessionsMessage,
++  };
++  const validate = validators[message.type];
++  return validate ? validate(message) : {valid: false, error: `Unknown message type: ${message.type}`};
++}
++
++function validateListSessionsMessage(message: Record<string, unknown>): ValidationResult {
++  const hasInvalidLimit = message.limit !== undefined && !isValidLimit(message.limit);
++  if (hasInvalidLimit) {
++    return {valid: false, error: 'list_sessions limit must be an integer from 1 to 200'};
++  }
++
++  if (message.before === undefined) return validListSessions(message);
++  if (typeof message.before !== 'object' || message.before === null || Array.isArray(message.before)) {
++    return {valid: false, error: 'list_sessions before must be a cursor object'};
++  }
++
++  const before = message.before as Record<string, unknown>;
++  const validSessionId =
++    typeof before.sessionId === 'string' && before.sessionId.length >= 1 && before.sessionId.length <= 128;
++  const validUpdatedAt = isValidUpdatedAt(before.updatedAt);
++  if (!validSessionId || !validUpdatedAt) {
++    return {valid: false, error: 'list_sessions before must have a valid sessionId and updatedAt'};
+   }
++
++  return {
++    valid: true,
++    data: {
++      type: 'list_sessions',
++      ...(message.limit !== undefined ? {limit: message.limit as number} : {}),
++      before: {sessionId: before.sessionId as string, updatedAt: before.updatedAt as string | number},
++    },
++  };
++}
++
++function isValidLimit(value: unknown): boolean {
++  return Number.isInteger(value) && (value as number) >= 1 && (value as number) <= 200;
++}
++
++function validListSessions(message: Record<string, unknown>): ValidationResult {
++  return {
++    valid: true,
++    data: {
++      type: 'list_sessions',
++      ...(message.limit !== undefined ? {limit: message.limit as number} : {}),
++    },
++  };
++}
++
++function isValidUpdatedAt(value: unknown): boolean {
++  if (typeof value === 'string') return Number.isFinite(Date.parse(value));
++  return typeof value === 'number' && Number.isFinite(value);
+ }
+ 
+ function validateUserMessage(message: Record<string, unknown>): ValidationResult {
+diff --git a/src/transport/wsTestSupport.ts b/src/transport/wsTestSupport.ts
+index 1aca7d8..c0746a7 100644
+--- a/src/transport/wsTestSupport.ts
++++ b/src/transport/wsTestSupport.ts
+@@ -8,6 +8,7 @@ import type {ChatOrchestrator} from '../orchestration/chatOrchestrator.js';
+ import type {MessageChunk} from '../types/ai.js';
+ import type {ChatSession} from '../types/session.js';
+ import type {SessionStore} from '../types/sessionStore.js';
++import type {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
+ 
+ // Shared by the suites that need a real upgrade over a real socket, which no double can stand in for.
+ 
+@@ -55,6 +56,30 @@ export function connectClient(url: string, token = 't'): WebSocket {
+   return client;
+ }
+ 
++export const eventually = async (check: () => boolean): Promise<void> => {
++  for (let attempt = 0; attempt < 50 && !check(); attempt++) await new Promise(resolve => setTimeout(resolve, 10));
++};
++
++export const delegatingTo = (inner: InMemorySessionStore): SessionStore => ({
++  create: (sessionId, userId, options) => inner.create(sessionId, userId, options),
++  get: sessionId => inner.get(sessionId),
++  delete: sessionId => inner.delete(sessionId),
++  count: () => inner.count(),
++  clear: () => inner.clear(),
++});
++
++export async function stopSocketServers(
++  clients: WebSocket[],
++  servers: Array<ReturnType<typeof createServer>>
++): Promise<void> {
++  for (const client of clients.splice(0)) client.terminate();
++  for (const hal of servers.splice(0)) {
++    const connectedClients = hal.wss.clients;
++    await eventually(() => connectedClients.size === 0);
++    await hal.stop();
++  }
++}
++
+ /** A promise a test settles by hand, to hold a stream or a hook at a point of its choosing. */
+ export function deferred(): {until: Promise<void>; release: () => void} {
+   let release = (): void => undefined;
+diff --git a/src/types/messages.ts b/src/types/messages.ts
+index 525508b..dc6c017 100644
+--- a/src/types/messages.ts
++++ b/src/types/messages.ts
+@@ -1,4 +1,21 @@
+ import type {SessionEntry} from './session.js';
++import type {SessionCursor, SessionSummary} from './sessionStore.js';
++
++export interface ListSessionsMessage {
++  type: 'list_sessions';
++  limit?: number;
++  before?: SessionCursor;
++}
++
++export type SessionSummaryFrame = Omit<SessionSummary, 'createdAt' | 'updatedAt'> & {
++  createdAt: string;
++  updatedAt: string;
++};
++
++export interface SessionListMessage {
++  type: 'session_list';
++  sessions: SessionSummaryFrame[];
++}
+ 
+ export interface UserMessagePayload {
+   type: 'user_message';
+@@ -10,7 +27,7 @@ export interface PingMessage {
+   timestamp: number;
+ }
+ 
+-export type IncomingMessage = UserMessagePayload | PingMessage;
++export type IncomingMessage = UserMessagePayload | PingMessage | ListSessionsMessage;
+ 
+ export interface ConnectedMessage {
+   type: 'connected';
+@@ -68,6 +85,7 @@ export type OutgoingMessage =
+   | EntrySkipMessage
+   | ErrorMessage
+   | PongMessage
+-  | StreamEndMessage;
++  | StreamEndMessage
++  | SessionListMessage;
+ 
+ export {ErrorCodes} from './session.js';

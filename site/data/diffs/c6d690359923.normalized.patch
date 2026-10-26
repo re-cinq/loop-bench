@@ -1,0 +1,129 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..ccd2c59
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,22 @@
++# Definition of Done
++
++> `afterModelResponse` is the hook a deployer reaches for when they need to record what a turn cost — an audit entry, a billing line, a usage budget. It is called once per user message, after the round loop exits, and is handed the `lastUsage` local: `chatOrchestrator.ts` assigns `lastUsage = outcome.usage ?? lastUsage` on each round, so what the hook receives is the usage of the final provider call alone.
++
++**Strategy: `direct`** — `createChatOrchestrator` already exposes the real `afterModelResponse` hook and accepts a real provider and tool registry, so the acceptance test drives the round loop directly.
++
++## Done when these pass
++
++- [ ] **reports the sum of every reported provider call across tool rounds and remains undefined when none report** — the hook receives the aggregate across all provider calls, ignores missing round usage, and preserves `undefined` when no call reports usage.
++      `src/orchestration/usageReporting.acceptance.test.ts`
++
++## Facets
++
++- [ ] Aggregate distinct usage values from every provider call in a multi-round tool turn.
++- [ ] Preserve the existing no-tool result, pinned by the unedited `stops after one round when nothing asked for a tool` test in `src/orchestration/chatOrchestrator.test.ts`.
++- [ ] Keep missing usage rounds out of the aggregate without producing `undefined` or `NaN`.
++- [ ] Make the public hook type describe the aggregate clearly, and document the consumer-visible change in the changelog.
++- [ ] Replace the old under-counting statement in `specs/hal-engine-config-hooks/spec.md` with the aggregate behavior.
++
++## Out of scope
++
++- Audit or billing records, non-provider token accounting, and the `stop` chunk usage shape.
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 2749d18..c961101 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -20,9 +20,9 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
+-## Measured semantics — out of scope
++## Measured semantics
+ 
+-These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour.
+ 
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+-- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++- `afterModelResponse` is called once per user message after the round loop exits and receives the sum of usage metadata from every provider call in that turn; rounds without usage contribute nothing, and a turn where no round reports usage still receives `undefined` ([validated by: reports the sum of every reported provider call across tool rounds and remains undefined when none report](../../src/orchestration/usageReporting.acceptance.test.ts#L48)).
+diff --git a/src/orchestration/usageReporting.acceptance.test.ts b/src/orchestration/usageReporting.acceptance.test.ts
+new file mode 100644
+index 0000000..00c3c58
+--- /dev/null
++++ b/src/orchestration/usageReporting.acceptance.test.ts
+@@ -0,0 +1,78 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 'usage-acceptance',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++function createToolRegistry(): ToolRegistry {
++  const registry = new ToolRegistry();
++  registry.register({name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}}, async () => ({
++    result: 'found it',
++  }));
++  return registry;
++}
++
++function scriptedProvider(rounds: MessageChunk[][]): AIProvider {
++  let round = 0;
++
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const toolCall = (id: string): MessageChunk => ({
++  type: 'tool_use',
++  toolCall: {id, name: 'lookup', input: {q: id}},
++});
++
++const toolStop = (usage?: UsageMetadata): MessageChunk => ({type: 'stop', stopReason: 'tool_use', usage});
++const doneStop = (usage?: UsageMetadata): MessageChunk => ({type: 'stop', stopReason: 'end_turn', usage});
++
++// spec: specs/hal-engine-config-hooks/spec.md#9
++describe('afterModelResponse usage reporting', () => {
++  it('reports the sum of every reported provider call across tool rounds and remains undefined when none report', async () => {
++    let reported: UsageMetadata | undefined;
++    const orchestrator = createChatOrchestrator(
++      scriptedProvider([
++        [toolCall('first'), toolStop({inputTokens: 10, outputTokens: 2, totalTokens: 12})],
++        [toolCall('second'), toolStop()],
++        [{type: 'text', text: 'done'}, doneStop({inputTokens: 7, outputTokens: 11, totalTokens: 18})],
++      ]),
++      promptBuilder,
++      createToolRegistry(),
++      {hooks: {afterModelResponse: async (_session, _text, usage) => void (reported = usage)}}
++    );
++
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(reported).toEqual({inputTokens: 17, outputTokens: 13, totalTokens: 30});
++
++    reported = undefined;
++    const noUsageOrchestrator = createChatOrchestrator(
++      scriptedProvider([[{type: 'text', text: 'done'}, doneStop()]]),
++      promptBuilder,
++      undefined,
++      {hooks: {afterModelResponse: async (_session, _text, usage) => void (reported = usage)}}
++    );
++
++    await noUsageOrchestrator.processMessage(createSession('ask'));
++
++    expect(reported).toBeUndefined();
++  });
++});
