@@ -4,6 +4,8 @@ Replays the agent stations of Lore's implementation loop (`dod`, `tdd-round`, `r
 
 Each run starts from the merged pull request's first parent, as if the ticket were still open. Agents run as bare `claude`, `gemini` and `codex` CLIs under a scratch HOME that holds credentials and Lore's skill and hook bundle, and nothing else from your machine.
 
+Each cell tests one station on its own: the model under test does that station's work, and the loop ends when the routing would hand over to a different station. A codex `dod` cell never starts Claude or Gemini. [What a cell runs](#what-a-cell-runs) has the details.
+
 ## Quick start
 
 ```sh
@@ -19,6 +21,25 @@ npm run bench -- report > docs/halengine-results.md
 
 `run` skips a cell whose `loop.json` already exists, so an interrupted batch resumes where it stopped. `--force` reruns it.
 
+## What a cell runs
+
+A cell is one ticket, one varied station, one model, one context and one repeat. Only the varied station is under test, so the loop ends as soon as the routing would move to another station:
+
+| Varied station | Starts from | Runs | Ends when |
+|---|---|---|---|
+| `dod` | the ticket's base commit | the dod station | the dod visit finishes (`station_done`), or it fails twice (`retry_budget`), or it scopes the ticket out (`dod_scoped_out`) |
+| `tdd-round` | the ticket's reference dod, `artifacts/<experiment>/<ticket>/dod` | tdd-round, then local CI, repeated | CI is green (`green`), 12 rounds are used (`round_budget`), or CI stays red on the same commit, which would hand over to repair-build (`station_done`) |
+| `repair-build` | the ticket's reference red commit, `artifacts/<experiment>/<ticket>/red` | repair-build, then local CI | CI is green (`green`), or CI is red and the loop would hand over to tdd-round (`station_done`) |
+
+The `baseline` and `whole_loop` modes vary nothing and run the full loop with the production model at every station.
+
+Two consequences:
+
+- **A cell needs only the login of the harness it varies.** A codex cell needs `codex login` and nothing from Claude or Gemini. Scoring is separate and needs the judge's login (Gemini on Vertex by default).
+- **Cells for different models are comparable.** They all start from the same commit and stop at the same point, whatever the other stations would have done.
+
+The `tdd-round` and `repair-build` cells need their reference artifact first (`make-artifact`, below). `run` fails with the exact command when one is missing.
+
 ## Collecting data
 
 ### Before the first run
@@ -33,6 +54,8 @@ npm run bench -- report > docs/halengine-results.md
   | `codex` | `codex login` done; the bench runs its own pinned codex, not yours | `~/.codex/auth.json` |
   | `gemini` | Vertex AI access: `gcloud auth application-default login`, and the `gemini:` project and location in the experiment file | `~/.config/gcloud/application_default_credentials.json` |
 
+- **Only the harness of the model you are running.** Skip the rows you do not use. `smoke` checks one harness.
+- **For scoring:** the judge's login, Gemini on Vertex unless `judge` in the experiment file says otherwise.
 - **For the `lore-mcp` context only:** the Lore API URL and token, as `LORE_API_URL` and `LORE_INGEST_TOKEN` in the environment, or `lore.api-url` and `lore.ingest-token` in git config, plus the `lore_mcp` block in the experiment file.
 - **Run outside your home folder.** Runs work under `/var/tmp/loop-bench/runs`, because Claude Code loads `.claude/CLAUDE.md` from every ancestor of its working directory and a run under `~/` would read your personal instructions. `run` refuses to start when an instruction file sits above that folder. Set `LOOP_BENCH_RUNS` to use another folder.
 
@@ -44,12 +67,31 @@ npm run bench -- smoke --harness claude --model claude-sonnet-5-5   # one tiny r
 npm run bench -- plan --ticket 93 --station dod   # list the loops a run would start
 npm run bench -- run --ticket 93 --station dod --replicates 1
 npm run bench -- score                            # dod check and judge scores for the loops that finished
+npm run bench -- score --missing                  # judge only the loops that have no judge score yet
 npm run bench -- analyze                          # transcript metrics per station visit
 npm run bench -- report                           # rewrite results/<experiment>/REPORT.md
 npm run site                                      # rewrite site/data from the same records
 ```
 
 Run `smoke` once per harness before a batch, so a missing login fails in seconds instead of in the middle of a run.
+
+`run` scores the dod check when a cell finishes and leaves the judge to a later `score --missing` (or `score --batch submit|status|collect` for one Vertex batch job), so a judge outage never blocks collection. A cell shows `judge later` until then.
+
+### The commands
+
+| Command | What it does |
+|---|---|
+| `plan [filters]` | Lists the cells a `run` with the same filters would cover, finished ones included. Costs nothing. |
+| `prepare` | Installs dependencies once per ticket base commit. |
+| `smoke --harness <h> --model <m>` | One tiny run: login, stream parsing, cost. |
+| `run [filters]` | Runs the cells that have no `loop.json` yet and scores their dod check. |
+| `make-artifact --ticket <n> --kind dod\|red --from-cell <dir>` | Cuts the reference branch that `tdd-round` (`dod`) or `repair-build` (`red`) cells start from. |
+| `score [filters]` | Recomputes the dod check and the judge on finished cells. |
+| `score --missing [--shard i/n]` | Judges only the cells without a judge score, found on disk. |
+| `truncate [--ticket <n>] [--apply]` | Cuts finished cells where a cell now ends (see below). Dry run without `--apply`. |
+| `analyze`, `report`, `site`, `site-deps`, `propose` | Analysis, report and website. |
+
+Filters: `--ticket`, `--station`, `--agent <harness/model>`, `--context`, `--prompt`, `--replicates`, `--limit`.
 
 ### Examples, one per harness
 
@@ -79,6 +121,26 @@ npm run bench -- run --ticket 93 --station dod --parallel 6 --per-harness 3
 
 A cell whose `loop.json` exists is skipped, so rerunning the same command resumes. `--force` reruns it, and `--keep-run` keeps the run's working folder under `/var/tmp` for inspection. A run never writes over a cell folder: whatever an earlier run left there, a cut-short loop or a forced cell, moves to `artifacts/replaced/<cell>/<timestamp>` first, so nothing paid for is deleted.
 
+#### One model at a time, cheapest first
+
+To collect one harness without touching the others, run its models one after another with the same flags. This is what a Codex pass looks like, cheapest list price first:
+
+```sh
+for model in gpt-6-luna gpt-5.6-luna gpt-6.1-sol gpt-6-sol gpt-5.6-terra gpt-5.6-sol gpt-6-astra; do
+  npm run bench -- run --agent codex/$model --context none --replicates 5 --parallel 3 --per-harness 3
+done
+```
+
+Prices are in `src/core/pricing.ts`. Run the loop in a terminal, `tmux` or a background task: a batch of 60 or more cells takes hours. Add `--context lore-mcp` or `lore-utopia` in a second pass, once `none` is complete, because each context multiplies the cell count.
+
+#### When a batch stops by itself
+
+A batch stops, and leaves the current cell unrun, when a station fails for a reason that is not the model's: an expired login, for example. The log says `stopping: <station> on <harness>/<model> hit an infrastructure error; see <path>/stderr.log`. Read that file, fix the cause (usually `claude`, `codex login` or `gcloud auth application-default login`), run `smoke` for that harness, then rerun the same command: finished cells are skipped.
+
+To tell whether a batch is still alive, use `pgrep -f "cli[.]ts run"`. The brackets keep the command from matching itself.
+
+`run ... --exclude claude[,gemini]` ends a loop before any step assigned to those CLIs. Cells that vary one station already stop at the station boundary, so this only matters for `baseline` and `whole_loop` runs.
+
 ### Publishing the results
 
 The website rebuilds itself: the **Publish website** workflow runs on every push to `main` that touches `results/`, `site/`, `src/` or `experiments/`. It clones the subject repository, installs the prettier each ticket pins (`site-deps`), runs `site` and deploys the result to GitHub Pages, so a results commit is enough. **CI** runs the typecheck and tests.
@@ -103,13 +165,13 @@ Everything is set in `experiments/halengine.yaml`; add it there, then `plan` to 
 2. Builds the station prompt from `prompts/<station>/<variant>.md`. `baseline.md` is the production prompt copied verbatim from lore; only `{ticket_path}` and the pod's `/workspace` paths are filled in.
 3. Runs the CLI with the station's deadline and environment (`LORE_ACCEPTANCE_DOD` on tdd-round) and reads the `LORE_NODE_RESULT` line, tokens and cost from its stream.
 4. Between rounds, runs the subject's CI commands on the pushed head and writes `round-brief.md` exactly as Lore's await-ci wait does.
-5. Routes the next visit as `implementation-loop.yaml` does: 12 rounds, 2 repairs and one retry per station at most.
+5. Routes the next visit as `implementation-loop.yaml` does: 12 rounds, 2 repairs and one retry per station at most. A cell that varies one station ends where that routing would hand over to another station (`station_done`), as [What a cell runs](#what-a-cell-runs) describes. `baseline` and `whole_loop` cells follow the routing to the end.
 
 ## The matrix
 
 `experiments/halengine.yaml` names the subject, the tickets, the production baseline per station and what to vary. One factor changes at a time:
 
-- **Model variants**: each station is run with every listed model while the other stations stay at baseline. A varied `tdd-round` or `repair-build` starts from a fixed reference branch, so its comparison does not depend on how dod went. Make one with `make-artifact --kind dod|red --from-cell <cell>`.
+- **Model variants**: each station is run with every listed model, on its own: the loop stops where it would hand over to another station, so the other stations' models never run. A varied `tdd-round` or `repair-build` starts from a fixed reference branch, so its comparison does not depend on how dod went. Make one with `make-artifact --kind dod|red --from-cell <cell>`.
 - **Prompt variants**: hand-written files beside `baseline.md`, run on the baseline model.
 - **Context modes**: `none`, or `lore-mcp`, the Lore MCP server over stdio as `install.sh` registers it. Its API URL and token come from the environment or from git config (`lore.api-url`, `lore.ingest-token`).
 - **Replicates**: every cell runs five times by default, so the report can show spread.
@@ -130,6 +192,21 @@ results/<experiment>/results.jsonl   every record, the report's input
 ```
 
 Two cells compare with `diff -r`.
+
+`loop.json` has an `end_reason`: `green`, `station_done`, `round_budget`, `repair_budget`, `retry_budget`, `dod_scoped_out` or `excluded_harness`. "Reached green" in the report is only meaningful for `tdd-round` and `repair-build` cells, because a `dod` cell never runs CI.
+
+### Cutting cells that ran past their station
+
+Cells collected before the stop-at-the-station rule kept running into the next stations. `truncate` brings them in line without rerunning anything. Each visit keeps its own cost, time, tokens and commit, so the command replays the routing over the recorded visits, keeps the ones up to the cut, and rebuilds `loop.json`, the branch bundle, `diff.patch` and `dod.md` at that commit.
+
+```sh
+npm run bench -- truncate                 # dry run: one line per cell it would cut
+npm run bench -- truncate --ticket 95 --apply   # cut one ticket first
+npm run bench -- truncate --apply         # cut them all
+npm run bench -- score                    # recompute the dod check; the judge follows with score --missing
+```
+
+Everything it replaces moves to `artifacts/replaced/<cell>/<timestamp>-before-cut/`: the old `loop.json`, bundle, patch, dod and score files, and the dropped station visits. The dropped visits stay in `results.jsonl`, so the per-station tables still count them. A cut cell has no dod check or judge score until it is scored again. Running `truncate` twice changes nothing the second time.
 
 ## Scores
 
