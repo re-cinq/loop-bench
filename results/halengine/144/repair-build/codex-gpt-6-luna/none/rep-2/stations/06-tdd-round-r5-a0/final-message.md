@@ -1,0 +1,3 @@
+Branch is up to date and pushed. The fix restructured the `if (frame.type === 'connected')` block in the test helper to guard the tail with `if (frame.type !== 'connected')`, letting the connected path run flat — satisfying `re-lint/prefer-early-return`. All DoD facets remain checked.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint prefer-early-return error in conversationList.acceptance.test.ts","tdd_next":"acceptance green"}}
