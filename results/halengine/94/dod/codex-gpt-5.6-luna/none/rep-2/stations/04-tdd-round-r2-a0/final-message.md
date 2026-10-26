@@ -1,0 +1,3 @@
+Branch is up to date. The fix replaces the cross-layer `providers/mock` import in the acceptance test with an inline `AIProvider` stub (the same pattern used by `chatOrchestrator.test.ts`), resolving the `re-lint/no-cross-layer-import` ESLint error. All facets in the DoD remain ticked; this was purely a CI compliance fix.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix cross-layer import violation in acceptance test (eslint CI failure)","tdd_next":"acceptance green"}}

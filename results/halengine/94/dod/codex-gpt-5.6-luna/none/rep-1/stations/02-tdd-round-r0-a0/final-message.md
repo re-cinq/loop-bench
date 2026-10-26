@@ -1,0 +1,5 @@
+Branch is pushed and up to date. The fix is a single-line movement: `beforeSession` was called on line 91 before the `try` block; it now lives as the first statement inside `try`. This means any throw from it now reaches the `catch` (`onError`) and `finally` (`afterSession`/`saveSession`) handlers identically to any other orchestrator failure. All three DoD facets are closed: the code boundary moved, the spec already stated the new guarantee with its validated-by link, and the CHANGELOG has a `### Fixed` entry explaining what changes for a consumer.
+
+Unrelated smell noticed (not acted on): the `onError` guard `error instanceof Error` at line 150 (now 151) gates the hook on non-`Error` throws — the ticket explicitly marks this out of scope as its own issue.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the existing try boundary (+ spec already current + changelog added)","tdd_next":"acceptance green"}}

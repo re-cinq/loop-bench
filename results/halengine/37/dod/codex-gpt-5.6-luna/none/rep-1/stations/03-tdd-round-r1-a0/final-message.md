@@ -1,0 +1,3 @@
+Three CI failures fixed: split the acceptance test's 2 expects into separate `it` blocks (re-lint/max-expects), advanced spec.md Status from Draft to Shipped (re-lint/require-status-matches-coverage), and added a CHANGELOG entry (scripts/check-changelog.sh). The unit test still passes; 0 tests were written new (all changes were mechanical fixes to CI failures), 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI failures: split acceptance test expects, mark spec Shipped, add CHANGELOG entry","tdd_next":"acceptance green"}}

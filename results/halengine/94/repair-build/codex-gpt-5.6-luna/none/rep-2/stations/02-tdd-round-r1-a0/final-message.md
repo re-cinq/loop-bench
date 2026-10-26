@@ -1,0 +1,3 @@
+Fixed the spec anchor: the `spec-names` CI check was failing because `specs/hal-engine-config-hooks/spec.md` cited `chatOrchestrator.beforeSession.acceptance.test.ts#L40` for the test "runs onError and afterSession when beforeSession throws", but that test's `it(...)` is actually at line 34. Updated the link from `#L40` to `#L34` and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec anchor L40→L34 for beforeSession acceptance test","tdd_next":"acceptance green"}}

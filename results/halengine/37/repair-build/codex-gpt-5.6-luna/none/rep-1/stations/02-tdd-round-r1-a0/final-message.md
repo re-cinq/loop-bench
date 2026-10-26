@@ -1,0 +1,5 @@
+Branch is up to date and pushed. The round wrote one unit test ("passes valid input with an extra property through to the executor unchanged") that covers the `execute` happy path through the new validation logic, cited it in the spec, and ticked DoD facet 3. This adds coverage to `src/orchestration/tools/` which was the likely cause of the CI coverage-threshold failure.
+
+Observed smells not acted on: the `getDynamicValidator` and `formatValidationFailures` helper functions still need their own unit tests; the `Unknown tool` throw and the function-valued-definition per-call validation also need tests (all part of DoD facet 4).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Validate input in ToolRegistry.execute (facet 3) — coverage for execute happy path added","tdd_next":"Add remaining unit tests: unknown-tool throw, function-valued per-call validation, static schema compiled once (DoD facet 4)"}}

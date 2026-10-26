@@ -1,0 +1,3 @@
+Branch is up to date and pushed. The fix was a one-line change: the spec citation for the acceptance test pointed to `#L13` but the test's `it(...)` is at line 25 — that stale line number caused both the `spec-names` check failure and the `require-spec-link` eslint error. Updating `#L13` → `#L25` in `specs/hal-engine-config-hooks/spec.md` resolves both.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix stale spec citation line number (L13→L25) to pass eslint require-spec-link and spec-names checks","tdd_next":"acceptance green"}}
