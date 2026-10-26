@@ -1,0 +1,3 @@
+The only change this round was fixing a stale spec anchor: the link cited `#L40` but the test "runs onError and afterSession when beforeSession throws" lives at `#L32`. Committed and pushed. All three DoD facets were already ticked; the spec-names CI check was the sole remaining blocker.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix stale spec anchor (#L40 → #L32) to pass spec-names CI check","tdd_next":"acceptance green"}}

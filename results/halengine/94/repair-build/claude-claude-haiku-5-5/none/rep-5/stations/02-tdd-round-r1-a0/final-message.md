@@ -1,0 +1,3 @@
+Pushed. The only work this round was fixing the stale spec anchor: `specs/hal-engine-config-hooks/spec.md` pointed `#L40` for the "runs onError and afterSession when beforeSession throws" citation, but the test is at `#L32`. The `spec:names --fix` command repointed it. All facets in `.lore/dod.md` were already checked off from prior rounds; this round cleared the remaining CI failure.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix stale spec anchor (spec:names CI check)","tdd_next":"acceptance green"}}

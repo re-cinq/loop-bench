@@ -1,0 +1,3 @@
+The fix is pushed. The CI failure was a stale line-number anchor in the spec: `#L40` instead of `#L34`. Running `npm run spec:names -- --fix` repointed it automatically. No regressions introduced (1 file changed, 1 line).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix stale spec anchor #L40→#L34 for 'runs onError and afterSession when beforeSession throws'","tdd_next":"acceptance green"}}

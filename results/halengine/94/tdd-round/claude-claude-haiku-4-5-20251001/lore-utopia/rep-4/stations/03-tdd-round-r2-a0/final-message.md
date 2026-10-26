@@ -1,0 +1,1 @@
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update specs/hal-engine-config-hooks/spec.md with the new guarantee for beforeSession","tdd_next":"Document in the CHANGELOG what changes for an existing consumer"}}

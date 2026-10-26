@@ -1,0 +1,3 @@
+The branch is pushed and up to date. The CI failure was a stale spec anchor (`#L40` → `#L35`) that `npm run spec:names -- --fix` corrected automatically. All three facets in `.lore/dod.md` were already ticked from the previous round; this round just fixed the spec-names check.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix stale spec anchor #L40→#L35 for beforeSession acceptance test","tdd_next":"acceptance green"}}

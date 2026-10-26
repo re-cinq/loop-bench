@@ -1,0 +1,3 @@
+The fix is committed and pushed. The CI failure was a stale `#L40` line-number anchor in the spec — the test had moved to `#L36` after an earlier edit. Running `npm run spec:names -- --fix` repointed the citation automatically. No regressions; the only change is the updated line reference in `specs/hal-engine-config-hooks/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"reanchor spec citation for 'runs onError and afterSession when beforeSession throws' to correct line #L36","tdd_next":"acceptance green"}}
