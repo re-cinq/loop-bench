@@ -1,27 +1,24 @@
-Added and pushed:
+Created and pushed commit `6371e86` with:
 
 - [registry.acceptance.test.ts](/var/tmp/loop-bench/runs/730a5ce3aefc/workspace/target/src/orchestration/tools/registry.acceptance.test.ts)
-- [.lore/dod.md](/var/tmp/loop-bench/runs/730a5ce3aefc/workspace/target/.lore/dod.md)
+- [spec.md](/var/tmp/loop-bench/runs/730a5ce3aefc/workspace/target/specs/hal-engine-tool-input-validation/spec.md)
+- [dod.md](/var/tmp/loop-bench/runs/730a5ce3aefc/workspace/target/.lore/dod.md)
 
-Strategy: `direct`. Acceptance tests run:
-
-```text
-npm test -- --runTestsByPath src/orchestration/tools/registry.acceptance.test.ts
-```
-
-All 3 fail for the intended missing-validation behavior:
+Strategy: `direct`. Acceptance tests were run after formatting:
 
 ```text
-Expected pattern: /location.*required/i
-Received string:  "sunny"
+Tests: 3 failed, 3 total
 
-Expected pattern: /alpha/
+Expected pattern: /location/
+Received string:  "executed"
+
+Expected pattern: /location/
 Received string:  "ok"
 
-Expected pattern: /broken-weather/
+Expected pattern: /weather/
 Received function did not throw
 ```
 
-Commit `dd6561b` is pushed, merged with `origin/main`, and the branch is synchronized.
+Branch is pushed, merged with `origin/main` (already up to date), and clean.
 
 LORE_NODE_RESULT: {"outcome":"success","extras":{"dod_strategy":"direct"}}

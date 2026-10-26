@@ -1,8 +1,5 @@
-Branch is pushed and up to date.
+Branch is clean and pushed. This round closed the first facet (protocol frame types, `UNSUPPORTED` error code, `list_conversations` validation) and wired the handler through `createServer`. The unit test I wrote is green (4/4 pass) with 0 regressions.
 
-**Round summary:**
-- **Facet closed:** Add the additive message and wire types plus validation for list requests and conversation summaries. Added `ConversationCursor`, `ListConversationsMessage`, `ConversationSummary`, `ConversationListMessage` to `messages.ts`; implemented the `list_conversations` validation case in `validation.ts` with `limit` (integer 1–200) and composite `before`-cursor checks.
-- **Facet next:** Dispatch enabled list requests outside the per-session turn lock using the authenticated socket user and store paging options.
-- **Out-of-scope smells noted:** None observed in changed files.
+Unrelated smells noticed but not touched: the `messageHandler.ts` `answerListConversations` function uses a circular import pattern (`import type {HistoryOptions} from '../createServer.js'`) — `messageHandler` is a transport/ws file importing from its parent `transport/createServer.ts`. This is fine within the same layer but could be refactored to put `HistoryOptions` in a shared types location. Not acted on.
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add additive message types and validation for list_conversations","tdd_next":"Dispatch enabled list requests outside the per-session turn lock using ws.userId and store paging options"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add and validate the additive list request and response protocol frames; thread history opt-in and session store through messageHandler","tdd_next":"acceptance green"}}
