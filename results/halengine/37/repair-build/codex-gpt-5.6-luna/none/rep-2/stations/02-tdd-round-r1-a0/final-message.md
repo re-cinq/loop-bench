@@ -1,0 +1,5 @@
+Branch is pushed and up to date. Now update the DoD to reflect the state — the CI failures are fixed, the next open facet is the input validation + remaining tests:
+
+The DoD facets remain unchanged (the third facet "Validate `input` in `ToolRegistry.execute`..." is still open, but looking at the code, it was actually implemented in the previous round — the issue is the CI errors prevented it from being validated). The current round fixed the CI failures from the previous round's code, it didn't open a new facet. The DoD facet ticks don't change since the code itself was already there.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fixed CI failures: ajv v6 API (removed invalid strict/validateFormats options), ErrorObject params type, and prefer-early-return eslint rule","tdd_next":"Validate input in ToolRegistry.execute — add remaining unit tests in registry.test.ts and chatOrchestrator.test.ts, link spec statements"}}
