@@ -20,11 +20,11 @@
 
 ## Facets
 
-- [x] Accumulate usage in a new variable (e.g., `totalUsage`) across rounds instead of overwriting `lastUsage`
-- [x] Handle missing usage gracefully by tracking which rounds reported (e.g., accumulating only defined values)
-- [x] Pass the accumulated usage (sum of all rounds) to `afterModelResponse` instead of `lastUsage`
-- [x] Update `specs/hal-engine-config-hooks/spec.md` line 28 to describe the new behavior
-- [x] Add CHANGELOG entry under Unreleased → Changed describing the behaviour change for existing consumers
+- [ ] Accumulate usage in a new variable (e.g., `totalUsage`) across rounds instead of overwriting `lastUsage`
+- [ ] Handle missing usage gracefully by tracking which rounds reported (e.g., accumulating only defined values)
+- [ ] Pass the accumulated usage (sum of all rounds) to `afterModelResponse` instead of `lastUsage`
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` line 28 to describe the new behavior
+- [ ] Add CHANGELOG entry under Unreleased → Changed describing the behaviour change for existing consumers
 
 ## Out of scope
 

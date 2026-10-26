@@ -18,12 +18,12 @@ Existing tests that must stay green (the no-tool path must not move):
 
 ## Facets
 
-- [x] Choose the shape: one summed `usage` argument, or summed total plus a per-round breakdown. Record the choice and why the other was rejected in the issue or spec.
-- [x] Sum `usage` across rounds in `src/orchestration/chatOrchestrator.ts` so both new tests pass, with a turn that ran no tools reporting exactly what it reports today.
-- [x] A turn where no round reported still reports `undefined`, not `0` or `NaN`. This already holds today and has no red test; keep it true when summing.
-- [x] Make the signature say the answer in `src/types/ai.ts` / `OrchestratorHooks.afterModelResponse`, so a reader need not open the orchestrator to learn it is a sum. Type-level only: no runtime test.
-- [x] Replace the under-counting bullet in `specs/hal-engine-config-hooks/spec.md` with the new behaviour and keep its trailing `validated by` link on the test above.
-- [x] CHANGELOG entry under Unreleased stating that `afterModelResponse` now receives the turn's total, so existing consumers record larger numbers for tool-heavy turns; MINOR bump per the ticket.
+- [ ] Choose the shape: one summed `usage` argument, or summed total plus a per-round breakdown. Record the choice and why the other was rejected in the issue or spec.
+- [ ] Sum `usage` across rounds in `src/orchestration/chatOrchestrator.ts` so both new tests pass, with a turn that ran no tools reporting exactly what it reports today.
+- [ ] A turn where no round reported still reports `undefined`, not `0` or `NaN`. This already holds today and has no red test; keep it true when summing.
+- [ ] Make the signature say the answer in `src/types/ai.ts` / `OrchestratorHooks.afterModelResponse`, so a reader need not open the orchestrator to learn it is a sum. Type-level only: no runtime test.
+- [ ] Replace the under-counting bullet in `specs/hal-engine-config-hooks/spec.md` with the new behaviour and keep its trailing `validated by` link on the test above.
+- [ ] CHANGELOG entry under Unreleased stating that `afterModelResponse` now receives the turn's total, so existing consumers record larger numbers for tool-heavy turns; MINOR bump per the ticket.
 
 ## Out of scope
 

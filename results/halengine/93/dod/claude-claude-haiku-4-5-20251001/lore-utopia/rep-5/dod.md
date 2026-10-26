@@ -7,22 +7,22 @@
 ## Done when these pass
 
 - [ ] **accumulates usage across multiple tool rounds and reports the total** — A turn driven through two tool rounds with different known usage values reports the sum of all rounds to the hook, not just the last round's usage
-      `src/orchestration/usage-accumulation.acceptance.test.ts`
+  `src/orchestration/usage-accumulation.acceptance.test.ts`
 - [ ] **reports usage from single round turn unchanged for backward compatibility** — A turn with no tool calls or a single provider call reports the same usage it does today, unchanged
-      `src/orchestration/usage-accumulation.acceptance.test.ts`
+  `src/orchestration/usage-accumulation.acceptance.test.ts`
 - [ ] **accumulates available usage when some rounds report no usage** — When only some rounds report usage, the hook receives the sum of available rounds without `undefined` or `NaN`
-      `src/orchestration/usage-accumulation.acceptance.test.ts`
+  `src/orchestration/usage-accumulation.acceptance.test.ts`
 - [ ] **handles turn with no usage reported on any round** — When no round reports usage, the hook receives `undefined` rather than `NaN` or `0`
-      `src/orchestration/usage-accumulation.acceptance.test.ts`
+  `src/orchestration/usage-accumulation.acceptance.test.ts`
 
 ## Facets
 
-- [x] Accumulate usage across rounds by summing `inputTokens`, `outputTokens`, and `totalTokens` from each round's `outcome.usage`
-- [x] Change the `afterModelResponse` hook signature or implementation to receive the accumulated total usage
-- [x] Verify the type signature makes it unambiguous that the value is a sum (consider a new type or updated documentation)
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to replace the under-counting note with the new accumulated behavior
-- [x] Add CHANGELOG entry documenting the behavior change and MINOR version bump
-- [x] Ensure all existing tests continue to pass, especially the single-round cases
+- [ ] Accumulate usage across rounds by summing `inputTokens`, `outputTokens`, and `totalTokens` from each round's `outcome.usage`
+- [ ] Change the `afterModelResponse` hook signature or implementation to receive the accumulated total usage
+- [ ] Verify the type signature makes it unambiguous that the value is a sum (consider a new type or updated documentation)
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to replace the under-counting note with the new accumulated behavior
+- [ ] Add CHANGELOG entry documenting the behavior change and MINOR version bump
+- [ ] Ensure all existing tests continue to pass, especially the single-round cases
 
 ## Out of scope
 

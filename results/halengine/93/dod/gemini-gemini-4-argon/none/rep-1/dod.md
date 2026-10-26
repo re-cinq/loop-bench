@@ -13,9 +13,9 @@
 
 ## Facets
 
-- [x] Accumulate `inputTokens`, `outputTokens`, and `totalTokens` across every provider call in the round loop in `src/orchestration/chatOrchestrator.ts` instead of overwriting `lastUsage`, keeping the result `undefined` when no round reported usage.
-- [x] Make the `afterModelResponse` signature in `src/orchestration/chatOrchestrator.ts` (and any synced doc-blocks in `CLAUDE.md` / `specs/hal-engine-architecture/spec.md`) unambiguously express that the hook receives cumulative turn usage while keeping single-round turns identical so existing tests in `src/orchestration/chatOrchestrator.test.ts` pass unedited.
-- [x] Add a `CHANGELOG.md` entry under `## [Unreleased]` describing the behaviour change in what an existing `afterModelResponse` consumer records on multi-round tool turns.
+- [ ] Accumulate `inputTokens`, `outputTokens`, and `totalTokens` across every provider call in the round loop in `src/orchestration/chatOrchestrator.ts` instead of overwriting `lastUsage`, keeping the result `undefined` when no round reported usage.
+- [ ] Make the `afterModelResponse` signature in `src/orchestration/chatOrchestrator.ts` (and any synced doc-blocks in `CLAUDE.md` / `specs/hal-engine-architecture/spec.md`) unambiguously express that the hook receives cumulative turn usage while keeping single-round turns identical so existing tests in `src/orchestration/chatOrchestrator.test.ts` pass unedited.
+- [ ] Add a `CHANGELOG.md` entry under `## [Unreleased]` describing the behaviour change in what an existing `afterModelResponse` consumer records on multi-round tool turns.
 
 ## Out of scope
 

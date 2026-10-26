@@ -15,12 +15,11 @@
 
 ## Facets
 
-- [x] Choose the shape and record the rejected one on the issue: either the summed total as the existing `usage` argument, or the total plus a per-round breakdown. Either satisfies the tests above, since both pin the summed total in the `usage` position.
-- [x] Accumulate usage across every provider call in `processMessageStream`, skipping rounds that report nothing, so the first two tests go green.
-- [x] Make the hook's type say the value is a turn sum (a named type or a doc comment on `afterModelResponse`), with no `any` in the public API.
-- [x] Rewrite the under-counting bullet in `specs/hal-engine-config-hooks/spec.md` to the new behaviour, and add a `validated by` link to the acceptance test there once the statement is rewritten.
-- [x] CHANGELOG entry as a MINOR bump, stating that an existing `afterModelResponse` consumer will now record larger totals for turns that ran tools.
-- [x] Fix re-lint/no-duplicate-code in chatOrchestrator.test.ts (lines 528-537 / 552-561) by extracting `makeUsageOrchestrator` helper.
+- [ ] Choose the shape and record the rejected one on the issue: either the summed total as the existing `usage` argument, or the total plus a per-round breakdown. Either satisfies the tests above, since both pin the summed total in the `usage` position.
+- [ ] Accumulate usage across every provider call in `processMessageStream`, skipping rounds that report nothing, so the first two tests go green.
+- [ ] Make the hook's type say the value is a turn sum (a named type or a doc comment on `afterModelResponse`), with no `any` in the public API.
+- [ ] Rewrite the under-counting bullet in `specs/hal-engine-config-hooks/spec.md` to the new behaviour, and add a `validated by` link to the acceptance test there once the statement is rewritten.
+- [ ] CHANGELOG entry as a MINOR bump, stating that an existing `afterModelResponse` consumer will now record larger totals for turns that ran tools.
 
 ## Out of scope
 

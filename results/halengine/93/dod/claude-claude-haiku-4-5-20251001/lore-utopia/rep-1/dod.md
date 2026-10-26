@@ -20,10 +20,10 @@
 
 ## Facets
 
-- [x] Modify `chatOrchestrator.ts` to accumulate usage from each round instead of replacing `lastUsage`
-- [x] Add a helper function to sum usage objects safely, handling undefined/missing rounds
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to replace the line describing the current under-counting behavior with the new behavior
-- [x] Add a CHANGELOG entry describing the behaviour change for `afterModelResponse` hook consumers
+- [ ] Modify `chatOrchestrator.ts` to accumulate usage from each round instead of replacing `lastUsage`
+- [ ] Add a helper function to sum usage objects safely, handling undefined/missing rounds
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to replace the line describing the current under-counting behavior with the new behavior
+- [ ] Add a CHANGELOG entry describing the behaviour change for `afterModelResponse` hook consumers
 
 ## Out of scope
 

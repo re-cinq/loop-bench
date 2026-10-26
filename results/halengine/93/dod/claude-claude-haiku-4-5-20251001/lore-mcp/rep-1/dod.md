@@ -20,12 +20,12 @@
 
 ## Facets
 
-- [x] Implement usage accumulation: change `lastUsage = outcome.usage ?? lastUsage` to sum token counts across rounds
-- [x] Ensure partial/missing usage is handled: if a round has no usage, skip it in the sum
-- [x] Verify backward compatibility: single-round turns unchanged
-- [x] Update type signature if needed to clarify the accumulated behavior
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to document the new behavior
-- [x] Update CHANGELOG with the behavior change
+- [ ] Implement usage accumulation: change `lastUsage = outcome.usage ?? lastUsage` to sum token counts across rounds
+- [ ] Ensure partial/missing usage is handled: if a round has no usage, skip it in the sum
+- [ ] Verify backward compatibility: single-round turns unchanged
+- [ ] Update type signature if needed to clarify the accumulated behavior
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to document the new behavior
+- [ ] Update CHANGELOG with the behavior change
 
 ## Out of scope
 

@@ -22,12 +22,12 @@ Existing tests that must stay green (no edits to them):
 
 ## Facets
 
-- [x] Sum the usage of every provider call in the turn and pass that single total as the `afterModelResponse` usage argument
+- [ ] Sum the usage of every provider call in the turn and pass that single total as the `afterModelResponse` usage argument
 - [ ] Rename the argument's type or parameter so a reader can tell it is a turn total, not one provider call (the type change is not runtime-testable; review judges it)
-- [x] Skip rounds that report no usage in the sum, so a silent round neither resets nor poisons the total
-- [x] Keep `usage` `undefined` when no round reported at all; pinned by `reports nothing when no round in the turn reports usage` in the acceptance test
-- [x] Replace the under-counting sentence in `specs/hal-engine-config-hooks/spec.md` with the new behaviour
-- [x] Add a CHANGELOG entry stating the number an existing consumer will now record for tool-heavy turns, with a MINOR bump
+- [ ] Skip rounds that report no usage in the sum, so a silent round neither resets nor poisons the total
+- [ ] Keep `usage` `undefined` when no round reported at all; no existing test pins this, so add a guard in the implementation round
+- [ ] Replace the under-counting sentence in `specs/hal-engine-config-hooks/spec.md` with the new behaviour
+- [ ] Add a CHANGELOG entry stating the number an existing consumer will now record for tool-heavy turns, with a MINOR bump
 - [ ] Record why the per-round breakdown shape was rejected (wider surface, consumers keep one argument) in the issue
 
 ## Out of scope

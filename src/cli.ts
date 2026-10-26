@@ -13,6 +13,7 @@ import { normalizedDiff, prettierBinIn } from "./run/normalize-diff.js";
 import { ensureSitePrettier } from "./run/site-deps.js";
 import { finishedLoopsOnDisk, parseShard, toJudge } from "./run/score-missing.js";
 import { enforce } from "./core/enforce.js";
+import { cutCell, planCellCut } from "./run/truncate-cell.js";
 import { ContextModeSchema, HarnessSchema, StationSchema, type ContextMode, type Harness, type Station } from "./core/harness-names.js";
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
 import { breadthFirst } from "./core/order.js";
@@ -47,6 +48,7 @@ const USAGE = `loop-bench <command> [options]
   smoke       --harness <h> --model <m>        one tiny run under a scratch HOME: auth, stream parsing, cost
   run         --experiment <file> [filters]   run loops and their dod check; skips cells whose loop.json exists (use --force); no judge
   make-artifact --experiment <file> --ticket <n> --kind dod|red --from-cell <dir>
+  truncate    --experiment <file> [--ticket <n>] [--apply]   cut finished one-station cells where a loop varying that station now ends (dry run without --apply)
   score       --experiment <file> [filters]   dod red/green check + judge on finished loops
   score --missing [--shard i/n]               judge only the finished loops that have no judge score, found on disk
   score --batch submit|status|collect         judge those loops as one Vertex batch job (needs judge.batch in the experiment file)
@@ -86,6 +88,7 @@ async function main(argv: readonly string[]): Promise<void> {
       "per-harness": { type: "string" },
       exclude: { type: "string" },
       missing: { type: "boolean", default: false },
+      apply: { type: "boolean", default: false },
       shard: { type: "string" },
       batch: { type: "string" },
     },
@@ -109,6 +112,8 @@ async function main(argv: readonly string[]): Promise<void> {
         return scoreInBatch(config(), values.batch);
       }
       return values.missing ? scoreMissingJudges(config(), values.shard) : scoreSelected(config(), selected(), { dod: "always", judge: true });
+    case "truncate":
+      return truncateCells(config(), values.ticket, values.apply);
     case "analyze":
       return void analyzeAll(config());
     case "propose":
@@ -379,6 +384,30 @@ async function scoreInBatch(config: ExperimentConfig, step: string): Promise<voi
     default:
       throw new Error(`--batch takes submit, status or collect, got "${step}"`);
   }
+}
+
+async function truncateCells(config: ExperimentConfig, ticketFilter: string | undefined, apply: boolean): Promise<void> {
+  const cuts = finishedLoopsOnDisk(paths.resultsDir, config.id)
+    .filter(({ record }) => ticketFilter === undefined || String(record.ticket) === ticketFilter)
+    .flatMap(({ cellDir, record }) => {
+      const planned = planCellCut(cellDir, record);
+
+      return planned ? [{ cellDir, record, ...planned }] : [];
+    });
+  const at = new Date();
+
+  for (const { cellDir, record, visits, plan } of cuts) {
+    const ticket = config.tickets.find((candidate) => candidate.number === record.ticket);
+
+    enforce(ticket !== undefined, `no ticket #${record.ticket} in the experiment for ${relative(paths.resultsDir, cellDir)}`);
+    const keptCost = visits.slice(0, plan.kept).reduce((sum, visit) => sum + visit.record.cost_usd, 0);
+
+    log(`[loop-bench] ${record.cell_path}: keep ${plan.kept}/${visits.length} visits, ${record.end_reason} -> ${plan.reason}, $${record.total_cost_usd.toFixed(2)} -> $${keptCost.toFixed(2)}`);
+    if (apply) {
+      await cutCell({ config, paths, ticket, cellDir, record, visits, plan, at });
+    }
+  }
+  log(`[loop-bench] ${cuts.length} cells ${apply ? "cut; run `score` (dod check) next" : "would be cut; rerun with --apply"}`);
 }
 
 function visitDirs(experimentId: string): string[] {

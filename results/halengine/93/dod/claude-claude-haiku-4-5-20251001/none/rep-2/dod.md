@@ -17,10 +17,10 @@
 
 ## Facets
 
-- [x] Accumulate usage across all rounds in the tool loop (sum inputTokens, outputTokens, totalTokens from each round)
-- [x] Update `OrchestratorHooks.afterModelResponse` type signature to clarify usage is summed/accumulated
-- [x] Update spec `specs/hal-engine-config-hooks/spec.md` line 28 to document the new behavior
-- [x] Add CHANGELOG entry under `[Unreleased] → Changed` documenting the behavior change and MINOR version bump
+- [ ] Accumulate usage across all rounds in the tool loop (sum inputTokens, outputTokens, totalTokens from each round)
+- [ ] Update `OrchestratorHooks.afterModelResponse` type signature to clarify usage is summed/accumulated
+- [ ] Update spec `specs/hal-engine-config-hooks/spec.md` line 28 to document the new behavior
+- [ ] Add CHANGELOG entry under `[Unreleased] → Changed` documenting the behavior change and MINOR version bump
 
 ## Out of scope
 

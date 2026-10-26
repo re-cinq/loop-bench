@@ -13,9 +13,9 @@
 
 ## Facets
 
-- [x] Update `chatOrchestrator.ts` to sum the usage across rounds instead of keeping only `lastUsage`
-- [x] Introduce a type alias like `TurnUsageMetadata` for the hook parameter to make the accumulated nature unambiguous
-- [x] Add a CHANGELOG entry stating the change in what an existing consumer will record
+- [ ] Update `chatOrchestrator.ts` to sum the usage across rounds instead of keeping only `lastUsage`
+- [ ] Introduce a type alias like `TurnUsageMetadata` for the hook parameter to make the accumulated nature unambiguous
+- [ ] Add a CHANGELOG entry stating the change in what an existing consumer will record
 
 ## Out of scope
 

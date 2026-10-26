@@ -15,11 +15,11 @@
 
 ## Facets
 
-- [x] Accumulate `usage` across every provider call in `processMessageStream`, keeping one `usage` argument. Sum chosen over pass-both (total plus per-round breakdown): the ticket states no need for per-round data, and the wider surface is not justified by it
-- [x] Skip rounds that report no usage when summing; a turn where nothing reported still passes `undefined`
-- [x] Make the signature say it is a turn total, e.g. a named type or a doc line on `OrchestratorHooks.afterModelResponse`, so a reader does not have to open the orchestrator
-- [x] Replace the under-counting statement in `specs/hal-engine-config-hooks/spec.md` with the summed behaviour, and cite the acceptance test on the replacement statement
-- [x] CHANGELOG entry under a MINOR bump stating that existing `afterModelResponse` consumers will record larger numbers for turns that ran tools
+- [ ] Accumulate `usage` across every provider call in `processMessageStream`, keeping one `usage` argument. Sum chosen over pass-both (total plus per-round breakdown): the ticket states no need for per-round data, and the wider surface is not justified by it
+- [ ] Skip rounds that report no usage when summing; a turn where nothing reported still passes `undefined`
+- [ ] Make the signature say it is a turn total, e.g. a named type or a doc line on `OrchestratorHooks.afterModelResponse`, so a reader does not have to open the orchestrator
+- [ ] Replace the under-counting statement in `specs/hal-engine-config-hooks/spec.md` with the summed behaviour, and cite the acceptance test on the replacement statement
+- [ ] CHANGELOG entry under a MINOR bump stating that existing `afterModelResponse` consumers will record larger numbers for turns that ran tools
 
 ## Out of scope
 

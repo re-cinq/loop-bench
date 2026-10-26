@@ -77,7 +77,7 @@ export const LoopRecordSchema = z.object({
   prompt_variant: z.string(),
   context_mode: ContextModeSchema,
   replicate: z.number().int(),
-  end_reason: z.enum(["green", "dod_scoped_out", "round_budget", "repair_budget", "retry_budget", "excluded_harness", "error"]),
+  end_reason: z.enum(["green", "dod_scoped_out", "round_budget", "repair_budget", "retry_budget", "excluded_harness", "station_done", "error"]),
   rounds: z.number().int(),
   repairs: z.number().int(),
   reached_green: z.boolean(),

@@ -18,9 +18,16 @@ export type StationEvent =
   | { kind: "agent"; station: Station; outcome: Outcome }
   | { kind: "ci"; green: boolean; headSha: string };
 
-export type EndReason = "green" | "dod_scoped_out" | "round_budget" | "repair_budget" | "retry_budget" | "excluded_harness";
+export type EndReason = "green" | "dod_scoped_out" | "round_budget" | "repair_budget" | "retry_budget" | "excluded_harness" | "station_done";
 
 export type Step = { kind: "run"; station: Station } | { kind: "ci" } | { kind: "done"; reason: EndReason };
+
+/** A loop that varies one station ends where the routing would hand over to any other station: that station is not under test. */
+export function cutBeforeOtherStations(step: Step, variedStation: Station | null): Step {
+  const handsOver = step.kind === "run" && variedStation !== null && step.station !== variedStation;
+
+  return handsOver ? { kind: "done", reason: "station_done" } : step;
+}
 
 export function initialState(station: Station): LoopState {
   return { station, attempts: { dod: 0, "tdd-round": 0, "repair-build": 0 }, rounds: 0, repairs: 0, lastRedSha: null };

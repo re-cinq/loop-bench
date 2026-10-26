@@ -11,9 +11,9 @@
 
 ## Facets
 
-- [x] Move `beforeSession` inside the existing `try` boundary.
-- [x] Update the lifecycle spec to state that cleanup runs after failed session setup.
-- [x] Add the consumer-facing change to the Unreleased changelog.
+- [ ] Move `beforeSession` inside the existing `try` boundary.
+- [ ] Update the lifecycle spec to state that cleanup runs after failed session setup.
+- [ ] Add the consumer-facing change to the Unreleased changelog.
 
 ## Out of scope
 

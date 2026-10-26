@@ -11,10 +11,10 @@
 
 ## Facets
 
-- [x] Accumulate each reported round's input, output, and total token counts for `afterModelResponse`.
+- [ ] Accumulate each reported round's input, output, and total token counts for `afterModelResponse`.
 - [ ] Give the hook's aggregate a public type and parameter name that identify it unambiguously as whole-turn usage, without `any`.
 - [ ] Preserve the existing direct-turn result and its unedited test.
-- [x] Replace the spec's recorded under-counting statement with the summed semantics and record the consumer-visible change in the changelog.
+- [ ] Replace the spec's recorded under-counting statement with the summed semantics and record the consumer-visible change in the changelog.
 - [ ] Complete the repository's CI verification gates, including build, tests, typecheck, eslint, and Prettier.
 
 ## Out of scope

@@ -6,13 +6,13 @@
 
 ## Done when these pass
 
-- [x] **Usage across tool rounds** — the hook reports aggregate usage from every provider call in a turn with two tool rounds.
+- [ ] **Usage across tool rounds** — the hook reports aggregate usage from every provider call in a turn with two tool rounds.
       `src/orchestration/usageAcrossToolRounds.acceptance.test.ts`
 
 ## Facets
 
-- [x] Aggregate usage reported by provider calls across the turn for the hook.
-- [x] Document the resulting hook semantics in the config hooks spec and note the consumer-visible change in the changelog.
+- [ ] Aggregate usage reported by provider calls across the turn for the hook.
+- [ ] Document the resulting hook semantics in the config hooks spec and note the consumer-visible change in the changelog.
 
 ## Out of scope
 

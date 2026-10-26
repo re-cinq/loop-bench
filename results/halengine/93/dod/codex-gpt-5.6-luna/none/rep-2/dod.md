@@ -11,11 +11,11 @@
 
 ## Facets
 
-- [x] Aggregate distinct usage values from every provider call in a multi-round tool turn.
-- [x] Preserve the existing no-tool result, pinned by the unedited `stops after one round when nothing asked for a tool` test in `src/orchestration/chatOrchestrator.test.ts`.
-- [x] Keep missing usage rounds out of the aggregate without producing `undefined` or `NaN`.
-- [x] Make the public hook type describe the aggregate clearly, and document the consumer-visible change in the changelog.
-- [x] Replace the old under-counting statement in `specs/hal-engine-config-hooks/spec.md` with the aggregate behavior.
+- [ ] Aggregate distinct usage values from every provider call in a multi-round tool turn.
+- [ ] Preserve the existing no-tool result, pinned by the unedited `stops after one round when nothing asked for a tool` test in `src/orchestration/chatOrchestrator.test.ts`.
+- [ ] Keep missing usage rounds out of the aggregate without producing `undefined` or `NaN`.
+- [ ] Make the public hook type describe the aggregate clearly, and document the consumer-visible change in the changelog.
+- [ ] Replace the old under-counting statement in `specs/hal-engine-config-hooks/spec.md` with the aggregate behavior.
 
 ## Out of scope
 

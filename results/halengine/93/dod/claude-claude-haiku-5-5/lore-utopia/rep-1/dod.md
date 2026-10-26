@@ -14,10 +14,10 @@
 ## Facets
 
 - [ ] Keep green and unedited: "receives collected response text and usage" (no-tool turn reports what it reports today) and "keeps the usage an earlier round reported when a later round reports none", both in `src/orchestration/chatOrchestrator.test.ts`
-- [x] Accumulate `usage` across provider calls in `processMessageStream` in `src/orchestration/chatOrchestrator.ts`, replacing the `lastUsage = outcome.usage ?? lastUsage` assignment; stays `undefined` when no round reported
+- [ ] Accumulate `usage` across provider calls in `processMessageStream` in `src/orchestration/chatOrchestrator.ts`, replacing the `lastUsage = outcome.usage ?? lastUsage` assignment; stays `undefined` when no round reported
 - [ ] Make the hook's usage type say it is a turn total (a named type or a doc on `afterModelResponse`'s parameter in `src/orchestration/chatOrchestrator.ts`), so a reader does not have to open the orchestrator
-- [x] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` with the new behaviour
-- [x] CHANGELOG entry stating that existing `afterModelResponse` consumers now record the summed usage for tool-using turns, with a MINOR bump
+- [ ] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` with the new behaviour
+- [ ] CHANGELOG entry stating that existing `afterModelResponse` consumers now record the summed usage for tool-using turns, with a MINOR bump
 - [ ] CI green: build, test, typecheck, eslint (`--max-warnings 0`), prettier:check
 
 ## Out of scope

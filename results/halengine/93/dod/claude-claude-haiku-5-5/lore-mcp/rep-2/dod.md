@@ -6,19 +6,19 @@
 
 ## Done when these pass
 
-- [x] **reports the sum of every provider call in a turn that ran two tool rounds** — a turn with two tool rounds and a final text round, reporting 100/150/210 input and 20/30/40 output tokens, hands `afterModelResponse` usage equal to the sum (460 in, 90 out, 550 total), not the final round's 210/40/250.
+- [ ] **reports the sum of every provider call in a turn that ran two tool rounds** — a turn with two tool rounds and a final text round, reporting 100/150/210 input and 20/30/40 output tokens, hands `afterModelResponse` usage equal to the sum (460 in, 90 out, 550 total), not the final round's 210/40/250.
       `src/orchestration/turnUsage.acceptance.test.ts`
 
-- [x] **counts the rounds that reported usage when an earlier round reports none** — a middle round with no usage is skipped, and the hook receives the sum of the rounds that did report (310 in, 60 out, 370 total), not the final round alone.
+- [ ] **counts the rounds that reported usage when an earlier round reports none** — a middle round with no usage is skipped, and the hook receives the sum of the rounds that did report (310 in, 60 out, 370 total), not the final round alone.
       `src/orchestration/turnUsage.acceptance.test.ts`
 
 ## Facets
 
-- [x] Accumulate usage across every provider call in `processMessageStream` and pass the sum as the `afterModelResponse` usage argument (one argument kept, per the ticket's first option); a round with no usage adds nothing, and a turn where no round reported still passes `undefined`.
-- [x] Make the type say it is a sum: rename the hook's third parameter's type so a reader does not need the orchestrator to learn it is a total (no `any` in the public API).
-- [x] Replace the under-counting bullet in `specs/hal-engine-config-hooks/spec.md` with the new behaviour, and link it to the tests above once they are green.
-- [x] Add a CHANGELOG entry under Unreleased > Changed stating that `afterModelResponse` now reports the total across tool rounds, so an existing consumer's recorded number grows for tool-heavy turns (MINOR bump, migration note).
-- [x] Confirm the existing test `keeps the usage an earlier round reported when a later round reports none` and `receives collected response text and usage` in `src/orchestration/chatOrchestrator.test.ts` stay unedited and green (a turn with no tool calls reports exactly what it reports today).
+- [ ] Accumulate usage across every provider call in `processMessageStream` and pass the sum as the `afterModelResponse` usage argument (one argument kept, per the ticket's first option); a round with no usage adds nothing, and a turn where no round reported still passes `undefined`.
+- [ ] Make the type say it is a sum: rename the hook's third parameter's type so a reader does not need the orchestrator to learn it is a total (no `any` in the public API).
+- [ ] Replace the under-counting bullet in `specs/hal-engine-config-hooks/spec.md` with the new behaviour, and link it to the tests above once they are green.
+- [ ] Add a CHANGELOG entry under Unreleased > Changed stating that `afterModelResponse` now reports the total across tool rounds, so an existing consumer's recorded number grows for tool-heavy turns (MINOR bump, migration note).
+- [ ] Confirm the existing test `keeps the usage an earlier round reported when a later round reports none` and `receives collected response text and usage` in `src/orchestration/chatOrchestrator.test.ts` stay unedited and green (a turn with no tool calls reports exactly what it reports today).
 
 ## Out of scope
 

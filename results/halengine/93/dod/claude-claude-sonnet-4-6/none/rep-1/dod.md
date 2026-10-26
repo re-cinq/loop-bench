@@ -14,10 +14,10 @@
 
 ## Facets
 
-- [x] Replace `lastUsage = outcome.usage ?? lastUsage` in `chatOrchestrator.ts` with an accumulator that sums `inputTokens`, `outputTokens`, and `totalTokens` across rounds, treating an absent round as contributing zero to each field
-- [x] Update `specs/hal-engine-config-hooks/spec.md` line 28: replace the "under-counting" out-of-scope statement with the new behaviour, and add the `([validated by ...])` traceability link to the acceptance test
-- [x] Add a CHANGELOG entry noting that existing `afterModelResponse` consumers will now receive a larger number for tool-heavy turns (MINOR bump per the ticket)
-- [x] Confirm the existing `chatOrchestrator.test.ts` test "keeps the usage an earlier round reported when a later round reports none" still passes (its assertion is still correct under summing: R1 + no-op = R1)
+- [ ] Replace `lastUsage = outcome.usage ?? lastUsage` in `chatOrchestrator.ts` with an accumulator that sums `inputTokens`, `outputTokens`, and `totalTokens` across rounds, treating an absent round as contributing zero to each field
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` line 28: replace the "under-counting" out-of-scope statement with the new behaviour, and add the `([validated by ...])` traceability link to the acceptance test
+- [ ] Add a CHANGELOG entry noting that existing `afterModelResponse` consumers will now receive a larger number for tool-heavy turns (MINOR bump per the ticket)
+- [ ] Confirm the existing `chatOrchestrator.test.ts` test "keeps the usage an earlier round reported when a later round reports none" still passes (its assertion is still correct under summing: R1 + no-op = R1)
 
 ## Out of scope
 

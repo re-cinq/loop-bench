@@ -20,10 +20,10 @@
 
 ## Facets
 
-- [x] Accumulate usage across all rounds in `chatOrchestrator.ts` instead of keeping only the last round
-- [x] Add or update type signature for `afterModelResponse` to make the accumulated sum unambiguous (decision on sum vs. sum+breakdown to be made in implementation)
-- [x] Update `specs/hal-engine-config-hooks/spec.md` line 28 to document the new behavior
-- [x] Add CHANGELOG entry documenting the behavior change (MINOR bump, existing consumers may record different totals)
+- [ ] Accumulate usage across all rounds in `chatOrchestrator.ts` instead of keeping only the last round
+- [ ] Add or update type signature for `afterModelResponse` to make the accumulated sum unambiguous (decision on sum vs. sum+breakdown to be made in implementation)
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` line 28 to document the new behavior
+- [ ] Add CHANGELOG entry documenting the behavior change (MINOR bump, existing consumers may record different totals)
 
 ## Out of scope
 

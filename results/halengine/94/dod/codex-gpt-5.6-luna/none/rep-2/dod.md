@@ -11,10 +11,10 @@
 
 ## Facets
 
-- [x] Make the acceptance test green by moving `beforeSession` inside the existing `try` boundary.
-- [x] Preserve the existing non-throwing lifecycle behavior covered by `fires the lifecycle hooks in documented order for a session that completes without error` in `src/config.test.ts`.
-- [x] Keep the spec guarantee and its test citation aligned with the cleanup assumption for a partially started session.
-- [x] Update the CHANGELOG with the behavior change for existing consumers.
+- [ ] Make the acceptance test green by moving `beforeSession` inside the existing `try` boundary.
+- [ ] Preserve the existing non-throwing lifecycle behavior covered by `fires the lifecycle hooks in documented order for a session that completes without error` in `src/config.test.ts`.
+- [ ] Keep the spec guarantee and its test citation aligned with the cleanup assumption for a partially started session.
+- [ ] Update the CHANGELOG with the behavior change for existing consumers.
 
 ## Out of scope
 

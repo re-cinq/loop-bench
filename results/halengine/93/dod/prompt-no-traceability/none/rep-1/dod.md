@@ -6,16 +6,16 @@
 
 ## Done when these pass
 
-- [x] **reports sum of usage covering every provider call in a turn with multiple rounds** — ensures that the hook receives the accumulated token usage across all tool rounds, not just the last round
+- [ ] **reports sum of usage covering every provider call in a turn with multiple rounds** — ensures that the hook receives the accumulated token usage across all tool rounds, not just the last round
   `src/orchestration/chatOrchestrator.acceptance.test.ts`
-- [x] **handles missing usage on some rounds without turning the sum into NaN or losing the counted rounds** — ensures that rounds returning undefined usage don't corrupt the sum or discard previously accumulated rounds
+- [ ] **handles missing usage on some rounds without turning the sum into NaN or losing the counted rounds** — ensures that rounds returning undefined usage don't corrupt the sum or discard previously accumulated rounds
   `src/orchestration/chatOrchestrator.acceptance.test.ts`
 
 ## Facets
 
-- [x] Update `chatOrchestrator.ts` to sum the usage from each round instead of storing only the last usage
-- [x] Ensure that summing handles rounds with `undefined` usage safely
-- [x] Update `specs/hal-engine-config-hooks/spec.md` and CHANGELOG to reflect the usage aggregation change
+- [ ] Update `chatOrchestrator.ts` to sum the usage from each round instead of storing only the last usage
+- [ ] Ensure that summing handles rounds with `undefined` usage safely
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` and CHANGELOG to reflect the usage aggregation change
 
 ## Out of scope
 

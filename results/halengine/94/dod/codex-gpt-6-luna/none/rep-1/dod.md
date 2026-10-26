@@ -11,8 +11,8 @@
 
 ## Facets
 
-- [x] Move `beforeSession` into the protected lifecycle so its failure reaches `onError` and `afterSession`.
-- [x] Document that `afterSession` receives a session whose turn may never have started.
+- [ ] Move `beforeSession` into the protected lifecycle so its failure reaches `onError` and `afterSession`.
+- [ ] Document that `afterSession` receives a session whose turn may never have started.
 
 ## Out of scope
 

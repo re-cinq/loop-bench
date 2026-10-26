@@ -13,11 +13,11 @@
 
 ## Facets
 
-- [x] Decide the shape. Recommended: keep one `usage` argument carrying the sum of every provider call in the turn (the first option in the ticket). The tests pin the sum in the third argument, so an implementation that also passes a per-round breakdown as a fourth argument keeps them green.
-- [x] Sum usage across rounds in `chatOrchestrator.ts`, skipping rounds that report none; a turn where no round reports still passes `undefined`.
-- [x] Make the hook's type say what the value is (`UsageMetadata` in `src/types/ai.ts` and the `OrchestratorHooks.afterModelResponse` declaration), with no `any` in the public API.
-- [x] A turn with no tool calls reports exactly what it reports today; the existing test `afterModelResponse receives collected response text and usage` in `src/orchestration/chatOrchestrator.test.ts` stays unedited and green.
-- [x] Replace the under-counting bullet in `specs/hal-engine-config-hooks/spec.md` with the new behaviour, and state the change for existing consumers in the `CHANGELOG.md` entry (a MINOR bump).
+- [ ] Decide the shape. Recommended: keep one `usage` argument carrying the sum of every provider call in the turn (the first option in the ticket). The tests pin the sum in the third argument, so an implementation that also passes a per-round breakdown as a fourth argument keeps them green.
+- [ ] Sum usage across rounds in `chatOrchestrator.ts`, skipping rounds that report none; a turn where no round reports still passes `undefined`.
+- [ ] Make the hook's type say what the value is (`UsageMetadata` in `src/types/ai.ts` and the `OrchestratorHooks.afterModelResponse` declaration), with no `any` in the public API.
+- [ ] A turn with no tool calls reports exactly what it reports today; the existing test `afterModelResponse receives collected response text and usage` in `src/orchestration/chatOrchestrator.test.ts` stays unedited and green.
+- [ ] Replace the under-counting bullet in `specs/hal-engine-config-hooks/spec.md` with the new behaviour, and state the change for existing consumers in the `CHANGELOG.md` entry (a MINOR bump).
 
 ## Out of scope
 

@@ -17,11 +17,10 @@
 
 ## Facets
 
-- [x] Add a `sumUsage` helper function to accumulate usage objects (handle undefined gracefully)
-- [x] Change line 117 in `chatOrchestrator.ts` to accumulate across rounds instead of replacing
-- [x] Update `specs/hal-engine-config-hooks/spec.md` line 28 to describe the new accumulated behaviour
-- [x] Add a CHANGELOG entry under [Unreleased] → Changed explaining the behaviour change for existing consumers
-- [x] Fix CI lint failures: extract shared test helpers to chatOrchestratorTestSupport.ts, refactor acceptance test to eliminate duplicate code, add validated-by links to spec for all acceptance tests and the sumUsage unit test
+- [ ] Add a `sumUsage` helper function to accumulate usage objects (handle undefined gracefully)
+- [ ] Change line 117 in `chatOrchestrator.ts` to accumulate across rounds instead of replacing
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` line 28 to describe the new accumulated behaviour
+- [ ] Add a CHANGELOG entry under [Unreleased] → Changed explaining the behaviour change for existing consumers
 
 ## Out of scope
 

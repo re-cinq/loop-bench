@@ -16,9 +16,9 @@
 ## Facets
 
 - [x] Red: both acceptance tests fail, each reporting only the last round's usage, against the claim quoted above.
-- [x] Green: `chatOrchestrator.ts` accumulates `outcome.usage` across rounds, skipping rounds that report none, and passes `undefined` when no round reported. The single `usage` argument keeps its type.
+- [ ] Green: `chatOrchestrator.ts` accumulates `outcome.usage` across rounds, skipping rounds that report none, and passes `undefined` when no round reported. The single `usage` argument keeps its type.
 - [ ] Document on `OrchestratorHooks.afterModelResponse` that `usage` is the sum over every provider call in the turn, so the type's reader does not need the orchestrator.
-- [x] CHANGELOG `[Unreleased]` entry under `Changed`: `afterModelResponse` usage now covers every provider call in the turn, so tool-heavy turns record a larger number; MINOR bump.
+- [ ] CHANGELOG `[Unreleased]` entry under `Changed`: `afterModelResponse` usage now covers every provider call in the turn, so tool-heavy turns record a larger number; MINOR bump.
 - [ ] Spec: the "Usage reported to afterModelResponse" section in `specs/hal-engine-config-hooks/spec.md` is green once the first two tests pass.
 
 ## Out of scope

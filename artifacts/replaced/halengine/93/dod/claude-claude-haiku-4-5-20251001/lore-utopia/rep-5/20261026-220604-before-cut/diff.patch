@@ -1,0 +1,435 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..cf59845
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,32 @@
++# Definition of Done
++
++> `afterModelResponse` is the hook a deployer reaches for when they need to record what a turn cost — an audit entry, a billing line, a usage budget. It is called once per user message, after the round loop exits, and is handed the `lastUsage` local: `chatOrchestrator.ts` assigns `lastUsage = outcome.usage ?? lastUsage` on each round, so what the hook receives is the usage of the final provider call alone. For a turn that answered directly, that is the whole turn. For a turn that called tools, it is the last leg of several, and the earlier rounds — including the one carrying the customer's question and the full tool results — are not counted anywhere.
++
++**Strategy: `direct`** — The `afterModelResponse` hook is already called with a `lastUsage` parameter that can be changed. The orchestrator loop at line 107-148 of `chatOrchestrator.ts` maintains this value and passes it to the hook. We can accumulate usage across rounds by summing the token counts, with the hook receiving the total.
++
++## Done when these pass
++
++- [ ] **accumulates usage across multiple tool rounds and reports the total** — A turn driven through two tool rounds with different known usage values reports the sum of all rounds to the hook, not just the last round's usage
++      `src/orchestration/usage-accumulation.acceptance.test.ts`
++- [ ] **reports usage from single round turn unchanged for backward compatibility** — A turn with no tool calls or a single provider call reports the same usage it does today, unchanged
++      `src/orchestration/usage-accumulation.acceptance.test.ts`
++- [ ] **accumulates available usage when some rounds report no usage** — When only some rounds report usage, the hook receives the sum of available rounds without `undefined` or `NaN`
++      `src/orchestration/usage-accumulation.acceptance.test.ts`
++- [ ] **handles turn with no usage reported on any round** — When no round reports usage, the hook receives `undefined` rather than `NaN` or `0`
++      `src/orchestration/usage-accumulation.acceptance.test.ts`
++
++## Facets
++
++- [x] Accumulate usage across rounds by summing `inputTokens`, `outputTokens`, and `totalTokens` from each round's `outcome.usage`
++- [x] Change the `afterModelResponse` hook signature or implementation to receive the accumulated total usage
++- [x] Verify the type signature makes it unambiguous that the value is a sum (consider a new type or updated documentation)
++- [x] Update `specs/hal-engine-config-hooks/spec.md` to replace the under-counting note with the new accumulated behavior
++- [x] Add CHANGELOG entry documenting the behavior change and MINOR version bump
++- [x] Ensure all existing tests continue to pass, especially the single-round cases
++
++## Out of scope
++
++- The choice between accumulating total vs passing both sum and per-round breakdown (pick one and make the signature say which)
++- Audit entry or billing record implementation (consumer concern)
++- Token accounting beyond provider calls the orchestrator makes
++- The `stop` chunk's own `usage` shape (providers populate this)
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index fda97c4..7270774 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -16,6 +16,8 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Changed
+ 
++- **`afterModelResponse` now receives accumulated usage across every provider call in a turn, not only the last one.** Previously, a turn that called tools reported only the final provider call's tokens to the hook; a two-round tool turn under-counted exactly the expensive calls. The hook now receives the sum of `inputTokens`, `outputTokens`, and `totalTokens` across all rounds. A turn with no tool calls is unchanged — it makes one provider call, and the sum of one is the value itself. A round that reports no usage contributes nothing to the total; a turn where no round reports usage still passes `undefined` to the hook. **Migration note**: if your `afterModelResponse` hook records or budgets on the usage argument, it will now see a larger number for tool-heavy turns — the number is more accurate, not inflated.
++
+ - Every `SessionStore` member is now `Awaitable<T>` (`T | Promise<T>`) rather than a bare `T`, so a store backed by a database is expressible for the first time. `Awaitable` is exported from the package root. **A synchronous implementation needs no change** — `T` is assignable to `T | Promise<T>` in a return position — and `InMemorySessionStore` is unedited. The WebSocket connection handler now awaits `create` and the release that follows a close: it pauses the socket across the await so a frame sent before `connected` arrives is buffered rather than dropped, attaches its `close` listener before the await so a socket that closes mid-create leaves no session behind, and catches a rejection from either call so one store failure closes one socket instead of ending the process with an unhandled rejection. **Migration note**: the `connected` frame now arrives one tick later, after the awaited `create`, so a client that waits for it (as the protocol already requires) sees no difference; only code that assumed the frame was emitted synchronously with the upgrade does.
+ - **The engine no longer erases a conversation when its socket closes.** The WebSocket close handler called `sessionStore.delete(sessionId)` unconditionally, which meant that behind a durable store every conversation was written and then destroyed the moment the customer closed their tab — the opposite of what this engine's own documentation promised. `SessionStore.delete` now has no engine-internal caller at all and is purely your erasure primitive. The credentials the socket carried are cleared from the session on close, since they were issued for a request that is over; the entries are untouched. **Migration note**: to restore the old behaviour exactly, pass `onDisconnect: sessionId => store.delete(sessionId)` — that one line is the whole migration. If you rely on the default store not growing, note that it is now bounded by `maxAgeMs` (eight hours) rather than by the close handler; that is a memory bound, not a retention policy, and the retention decision remains yours.
+ 
+diff --git a/package.json b/package.json
+index 5d8cbf2..8831443 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@re-cinq/hal-engine",
+-  "version": "0.3.0",
++  "version": "0.4.0",
+   "type": "module",
+   "description": "A generic AI chat server framework with pluggable providers, tools, and transport",
+   "license": "Apache-2.0",
+diff --git a/specs/hal-engine-architecture/spec.md b/specs/hal-engine-architecture/spec.md
+index 9e30580..c64ed84 100644
+--- a/specs/hal-engine-architecture/spec.md
++++ b/specs/hal-engine-architecture/spec.md
+@@ -330,10 +330,10 @@ Here is what the message handler does when a tool call comes through:
+ 2. The handler creates a `ToolEntry` and sends it to the client via `entry_upsert`
+ 3. The orchestrator executes the tool (via `ToolRegistry.execute()`)
+ 4. Tool results get added to the conversation as a `tool_result` message
+-5. If the tool returned `clientMessages`, they are forwarded to the frontend as-is, in one `tool_result` chunk ([validated by: forwards the client messages a tool returned as one tool_result chunk](../../src/orchestration/chatOrchestrator.test.ts#L463))
+-6. If the tool set `suppressAssistantResponse`, the AI's next reply is kept in session context but hidden from the frontend ([validated by: asks for suppression when the tool says the reply is already handled](../../src/orchestration/chatOrchestrator.test.ts#L493))
+-7. The orchestrator re-queries the AI provider with the updated messages, and the chunks of every round reach the client in order ([validated by: runs another round after a tool call and streams both rounds in order](../../src/orchestration/chatOrchestrator.test.ts#L428))
+-8. This repeats until the budget is spent: at most `maxToolRounds` tool rounds are executed, and the provider is called at most `maxToolRounds + 1` times, so the default of 5 executes five rounds and makes six model calls, the last of which reads the fifth round's results. A round requested after that is not executed; see [the tool budget spec](../hal-engine-tool-budget/spec.md) ([validated by: executes 5 tool rounds and makes 6 provider calls at the default budget](../../src/orchestration/toolBudget.test.ts#L95), [validated by: stops asking for tools once maxToolRounds is spent](../../src/orchestration/chatOrchestrator.test.ts#L449))
++5. If the tool returned `clientMessages`, they are forwarded to the frontend as-is, in one `tool_result` chunk ([validated by: forwards the client messages a tool returned as one tool_result chunk](../../src/orchestration/chatOrchestrator.test.ts#L436))
++6. If the tool set `suppressAssistantResponse`, the AI's next reply is kept in session context but hidden from the frontend ([validated by: asks for suppression when the tool says the reply is already handled](../../src/orchestration/chatOrchestrator.test.ts#L466))
++7. The orchestrator re-queries the AI provider with the updated messages, and the chunks of every round reach the client in order ([validated by: runs another round after a tool call and streams both rounds in order](../../src/orchestration/chatOrchestrator.test.ts#L401))
++8. This repeats until the budget is spent: at most `maxToolRounds` tool rounds are executed, and the provider is called at most `maxToolRounds + 1` times, so the default of 5 executes five rounds and makes six model calls, the last of which reads the fifth round's results. A round requested after that is not executed; see [the tool budget spec](../hal-engine-tool-budget/spec.md) ([validated by: executes 5 tool rounds and makes 6 provider calls at the default budget](../../src/orchestration/toolBudget.test.ts#L95), [validated by: stops asking for tools once maxToolRounds is spent](../../src/orchestration/chatOrchestrator.test.ts#L422))
+ 
+ ### Whether a round continues
+ 
+@@ -344,10 +344,10 @@ Here is what the message handler does when a tool call comes through:
+ 
+ ### Across rounds
+ 
+-- The loop ends as soon as a round stops with `end_turn`, and nothing further is asked of the provider ([validated by: stops after one round when nothing asked for a tool](../../src/orchestration/chatOrchestrator.test.ts#L440)).
+-- An `entry_upsert` a tool returns is appended to the session and its index rewritten to the position it actually landed in, because a tool cannot know how long the session already is ([validated by: appends an upserted entry to the session and rewrites its index to match](../../src/orchestration/chatOrchestrator.test.ts#L476)).
+-- The response text a hook sees is the text of every round joined, not only the last ([validated by: joins the text of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L505)).
+-- Usage an earlier round reported is kept when a later round reports none, so a tool round does not erase the token count ([validated by: keeps the usage an earlier round reported when a later round reports none](../../src/orchestration/chatOrchestrator.test.ts#L527)).
++- The loop ends as soon as a round stops with `end_turn`, and nothing further is asked of the provider ([validated by: stops after one round when nothing asked for a tool](../../src/orchestration/chatOrchestrator.test.ts#L413)).
++- An `entry_upsert` a tool returns is appended to the session and its index rewritten to the position it actually landed in, because a tool cannot know how long the session already is ([validated by: appends an upserted entry to the session and rewrites its index to match](../../src/orchestration/chatOrchestrator.test.ts#L449)).
++- The response text a hook sees is the text of every round joined, not only the last ([validated by: joins the text of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L478)).
++- Usage an earlier round reported is kept when a later round reports none, so a tool round does not erase the token count ([validated by: keeps the usage an earlier round reported when a later round reports none](../../src/orchestration/chatOrchestrator.test.ts#L500)).
+ 
+ The frontend shows a spinner on the last tool entry while the stream is still processing (`isProcessing` is `true`). The `stream_end` message clears the processing state, which hides the spinner. This works correctly even when tool suppression prevents assistant entries from reaching the frontend. See [tool-responses.md](../hal-engine-tool-responses/spec.md) for details on client messages and suppression.
+ 
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 2749d18..53d2147 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -20,9 +20,21 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
++## Usage accumulation helper
++
++The `accumulateUsage` helper is the building block for usage summing ([validated by: sums token counts from two rounds](../../src/orchestration/orchestratorHelpers.test.ts#L29)). Its behaviour is defined independently of the orchestrator so it can be verified in isolation ([validated by: sums token counts from two rounds](../../src/orchestration/orchestratorHelpers.test.ts#L29)).
++
++- When both an accumulated total and a current-round usage object are present, `accumulateUsage` adds the token counts field-by-field and returns the sum ([validated by: sums token counts from two rounds](../../src/orchestration/orchestratorHelpers.test.ts#L29)).
++- When there is no prior accumulated total, `accumulateUsage` returns the current round's usage unchanged, so the first round in a turn is not lost ([validated by: returns the round usage when there is no prior accumulated total](../../src/orchestration/orchestratorHelpers.test.ts#L35)).
++- When the current round reports no usage, `accumulateUsage` returns the prior accumulated total unchanged, so a silent round does not reset the running count ([validated by: returns accumulated total when the current round reports no usage](../../src/orchestration/orchestratorHelpers.test.ts#L40)).
++- When neither side is present, `accumulateUsage` returns `undefined`, keeping the turn's usage undefined rather than producing `NaN` or a zero-valued object ([validated by: returns undefined when both sides are absent](../../src/orchestration/orchestratorHelpers.test.ts#L45)).
++
+ ## Measured semantics — out of scope
+ 
+ These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
+ 
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+-- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L149](../../src/orchestration/chatOrchestrator.ts#L149)), and is passed accumulated usage summed across every provider call in that turn — a turn with two tool rounds reports the sum of all three calls, not just the last one ([validated by: accumulates usage across multiple tool rounds and reports the total](../../src/orchestration/usage-accumulation.acceptance.test.ts#L31)).
++- A turn with no tool calls passes the single provider call's usage through unchanged — the accumulation logic does not alter the common path where no rounds are chained ([validated by: reports usage from single round turn unchanged for backward compatibility](../../src/orchestration/usage-accumulation.acceptance.test.ts#L53)).
++- When only some rounds in a turn report usage, the hook receives the sum of the rounds that did report; a round reporting no usage contributes nothing rather than producing `undefined` or `NaN` in the total ([validated by: accumulates available usage when some rounds report no usage](../../src/orchestration/usage-accumulation.acceptance.test.ts#L77)).
++- When no round in a turn reports usage, the hook receives `undefined` — not `0`, not `NaN`, and not a zero-valued object ([validated by: handles turn with no usage reported on any round](../../src/orchestration/usage-accumulation.acceptance.test.ts#L98)).
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+index 7cebae8..ff101c6 100644
+--- a/specs/hal-engine-tool-input-validation/spec.md
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -22,7 +22,7 @@
+ 
+ ## Orchestrator integration
+ 
+-- A validation failure becomes a tool result (not a thrown error), so the orchestrator delivers the rejection text to the model and the model can attempt a corrected call; `DEFAULT_MAX_TOOL_ROUNDS = 5` is the bound that stops a retry cycle from spinning ([validated by: resolves processMessage and makes the validation-rejection text visible to the provider on the next round](../../src/orchestration/chatOrchestrator.test.ts#L550)).
++- A validation failure becomes a tool result (not a thrown error), so the orchestrator delivers the rejection text to the model and the model can attempt a corrected call; `DEFAULT_MAX_TOOL_ROUNDS = 5` is the bound that stops a retry cycle from spinning ([validated by: resolves processMessage and makes the validation-rejection text visible to the provider on the next round](../../src/orchestration/chatOrchestrator.test.ts#L523)).
+ 
+ ## Out of scope
+ 
+diff --git a/src/orchestration/chatOrchestrator.test.ts b/src/orchestration/chatOrchestrator.test.ts
+index c29b1eb..84377bd 100644
+--- a/src/orchestration/chatOrchestrator.test.ts
++++ b/src/orchestration/chatOrchestrator.test.ts
+@@ -5,8 +5,8 @@ import {AIError} from '../types/ai.js';
+ import type {ChatSession} from '../types/session.js';
+ import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
+ import {ToolRegistry} from './tools/registry.js';
+-import type {ToolResponse} from './tools/registry.js';
+ import type {OutgoingMessage} from '../types/messages.js';
++import {scriptedProvider, registryReturning, TOOL_CALL, STOP_FOR_TOOL, STOP_DONE} from './testFixtures.js';
+ import type {SessionEntry} from '../types/session.js';
+ 
+ // Fixed: nothing asserts on it, and new Date() would tie the run to the clock.
+@@ -391,33 +391,6 @@ describe('ChatOrchestrator hooks', () => {
+   });
+ });
+ 
+-// One scripted round per sendMessage call, to drive the tool loop round by round.
+-const scriptedProvider = (rounds: MessageChunk[][]): AIProvider => {
+-  let round = 0;
+-
+-  return {
+-    async *sendMessage(): AsyncGenerator<MessageChunk> {
+-      for (const chunk of rounds[round++] ?? []) yield chunk;
+-    },
+-    async generateStructured<T>(): Promise<T> {
+-      return {} as T;
+-    },
+-  };
+-};
+-
+-const registryReturning = (response: ToolResponse): ToolRegistry => {
+-  const registry = new ToolRegistry();
+-  registry.register(
+-    {name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}},
+-    async () => response
+-  );
+-  return registry;
+-};
+-
+-const TOOL_CALL: MessageChunk = {type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {q: 'x'}}};
+-const STOP_FOR_TOOL: MessageChunk = {type: 'stop', stopReason: 'tool_use'};
+-const STOP_DONE: MessageChunk = {type: 'stop', stopReason: 'end_turn'};
+-
+ const chunksFrom = async (stream: AsyncGenerator<MessageChunk>): Promise<MessageChunk[]> => {
+   const chunks: MessageChunk[] = [];
+   for await (const chunk of stream) chunks.push(chunk);
+diff --git a/src/orchestration/chatOrchestrator.ts b/src/orchestration/chatOrchestrator.ts
+index c57fc96..16c2107 100644
+--- a/src/orchestration/chatOrchestrator.ts
++++ b/src/orchestration/chatOrchestrator.ts
+@@ -21,6 +21,7 @@ import {
+   collectToolCalls,
+   extractStopReason,
+   extractUsage,
++  accumulateUsage,
+ } from './orchestratorHelpers.js';
+ import {appendEntry, commitStreamingEntries} from './entryMutations.js';
+ import {log} from '../shared/logger.js';
+@@ -33,6 +34,7 @@ export interface OrchestratorHooks {
+   beforeUserInput?: (session: ChatSession, userMessage: string) => Promise<string>;
+   afterUserInput?: (session: ChatSession, userMessage: string) => Promise<void>;
+   beforeModelResponse?: (session: ChatSession, systemPrompt: string) => Promise<string>;
++  /** usage: accumulated total across all provider calls in this turn, not just the last round. */
+   afterModelResponse?: (session: ChatSession, responseText: string, usage?: UsageMetadata) => Promise<void>;
+   onError?: (session: ChatSession, error: Error) => Promise<void>;
+   /** The supported seam for an EU AI Act Art. 14 human-oversight control: fires before each known tool's executor, and a returned ToolResponse replaces the call (see docs/adding-a-tool.md); it receives the model's raw tool input and, through session, the caller's authHeaders, so a policy that logs either logs personal data and credential material; the engine asserts nothing about any policy installed here. */
+@@ -114,7 +116,7 @@ export function createChatOrchestrator(
+ 
+           const outcome = yield* streamRound(provider, {messages, systemPrompt, tools}, pendingToolCalls);
+           responseText += outcome.text;
+-          lastUsage = outcome.usage ?? lastUsage;
++          lastUsage = accumulateUsage(lastUsage, outcome.usage);
+ 
+           if (!shouldContinueToolLoop(outcome.stopReason, pendingToolCalls, toolRegistry)) break;
+           if (budgetSpent(round, maxToolRounds, pendingToolCalls)) {
+diff --git a/src/orchestration/orchestratorHelpers.test.ts b/src/orchestration/orchestratorHelpers.test.ts
+index 4fd1476..fb28eab 100644
+--- a/src/orchestration/orchestratorHelpers.test.ts
++++ b/src/orchestration/orchestratorHelpers.test.ts
+@@ -1,6 +1,6 @@
+-import {shouldContinueToolLoop} from './orchestratorHelpers.js';
++import {shouldContinueToolLoop, accumulateUsage} from './orchestratorHelpers.js';
+ import type {ToolRegistry} from './tools/registry.js';
+-import type {ToolCall} from '../types/ai.js';
++import type {ToolCall, UsageMetadata} from '../types/ai.js';
+ 
+ // All three conditions matter; dropping the registry check spins the tool loop.
+ 
+@@ -24,3 +24,25 @@ describe('shouldContinueToolLoop', () => {
+     expect(shouldContinueToolLoop('end_turn', A_TOOL, REGISTRY)).toBe(false);
+   });
+ });
++
++describe('accumulateUsage', () => {
++  it('sums token counts from two rounds', () => {
++    const first: UsageMetadata = {inputTokens: 100, outputTokens: 50, totalTokens: 150};
++    const second: UsageMetadata = {inputTokens: 75, outputTokens: 40, totalTokens: 115};
++    expect(accumulateUsage(first, second)).toEqual({inputTokens: 175, outputTokens: 90, totalTokens: 265});
++  });
++
++  it('returns the round usage when there is no prior accumulated total', () => {
++    const round: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++    expect(accumulateUsage(undefined, round)).toEqual(round);
++  });
++
++  it('returns accumulated total when the current round reports no usage', () => {
++    const prior: UsageMetadata = {inputTokens: 100, outputTokens: 50, totalTokens: 150};
++    expect(accumulateUsage(prior, undefined)).toEqual(prior);
++  });
++
++  it('returns undefined when both sides are absent', () => {
++    expect(accumulateUsage(undefined, undefined)).toBeUndefined();
++  });
++});
+diff --git a/src/orchestration/orchestratorHelpers.ts b/src/orchestration/orchestratorHelpers.ts
+index 717eb9a..d57b3ce 100644
+--- a/src/orchestration/orchestratorHelpers.ts
++++ b/src/orchestration/orchestratorHelpers.ts
+@@ -40,3 +40,16 @@ export function extractStopReason(chunk: MessageChunk): string | null {
+ export function extractUsage(chunk: MessageChunk): UsageMetadata | undefined {
+   return chunk.type === 'stop' ? chunk.usage : undefined;
+ }
++
++export function accumulateUsage(
++  accumulated: UsageMetadata | undefined,
++  roundUsage: UsageMetadata | undefined
++): UsageMetadata | undefined {
++  if (!roundUsage) return accumulated;
++  if (!accumulated) return roundUsage;
++  return {
++    inputTokens: accumulated.inputTokens + roundUsage.inputTokens,
++    outputTokens: accumulated.outputTokens + roundUsage.outputTokens,
++    totalTokens: accumulated.totalTokens + roundUsage.totalTokens,
++  };
++}
+diff --git a/src/orchestration/testFixtures.ts b/src/orchestration/testFixtures.ts
+new file mode 100644
+index 0000000..eff2f4d
+--- /dev/null
++++ b/src/orchestration/testFixtures.ts
+@@ -0,0 +1,29 @@
++import type {AIProvider, MessageChunk} from '../types/ai.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {ToolResponse} from './tools/registry.js';
++
++export const scriptedProvider = (rounds: MessageChunk[][]): AIProvider => {
++  let round = 0;
++
++  return {
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++};
++
++export const registryReturning = (response: ToolResponse): ToolRegistry => {
++  const registry = new ToolRegistry();
++  registry.register(
++    {name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}},
++    async () => response
++  );
++  return registry;
++};
++
++export const TOOL_CALL: MessageChunk = {type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {q: 'x'}}};
++export const STOP_FOR_TOOL: MessageChunk = {type: 'stop', stopReason: 'tool_use'};
++export const STOP_DONE: MessageChunk = {type: 'stop', stopReason: 'end_turn'};
+diff --git a/src/orchestration/usage-accumulation.acceptance.test.ts b/src/orchestration/usage-accumulation.acceptance.test.ts
+new file mode 100644
+index 0000000..9dc6c31
+--- /dev/null
++++ b/src/orchestration/usage-accumulation.acceptance.test.ts
+@@ -0,0 +1,120 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {scriptedProvider, registryReturning, TOOL_CALL} from './testFixtures.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++function captureUsage(): {hooks: OrchestratorHooks; getRecordedUsage: () => UsageMetadata | undefined} {
++  let recorded: UsageMetadata | undefined;
++  const hooks: OrchestratorHooks = {
++    afterModelResponse: async (_session, _text, usage) => {
++      recorded = usage;
++    },
++  };
++  return {hooks, getRecordedUsage: () => recorded};
++}
++
++describe('afterModelResponse usage accumulation', () => {
++  it('accumulates usage across multiple tool rounds and reports the total', async () => {
++    const usage1: UsageMetadata = {inputTokens: 100, outputTokens: 50, totalTokens: 150};
++    const usage2: UsageMetadata = {inputTokens: 75, outputTokens: 40, totalTokens: 115};
++    const {hooks, getRecordedUsage} = captureUsage();
++
++    const provider = scriptedProvider([
++      [TOOL_CALL, {type: 'stop', stopReason: 'tool_use', usage: usage1}],
++      [
++        {type: 'text', text: 'result'},
++        {type: 'stop', stopReason: 'end_turn', usage: usage2},
++      ],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registryReturning({result: 'found'}), {
++      hooks,
++    });
++
++    await orchestrator.processMessage(createSession('test'));
++
++    expect(getRecordedUsage()).toEqual({inputTokens: 175, outputTokens: 90, totalTokens: 265});
++  });
++
++  it('reports usage from single round turn unchanged for backward compatibility', async () => {
++    const usage: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++    let recordedUsage: UsageMetadata | undefined;
++
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, u) => {
++        recordedUsage = u;
++      },
++    };
++
++    const provider = scriptedProvider([
++      [
++        {type: 'text', text: 'hello'},
++        {type: 'stop', stopReason: 'end_turn', usage},
++      ],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, undefined, {hooks});
++
++    await orchestrator.processMessage(createSession('hi'));
++
++    expect(recordedUsage).toEqual(usage);
++  });
++
++  it('accumulates available usage when some rounds report no usage', async () => {
++    const usage1: UsageMetadata = {inputTokens: 100, outputTokens: 50, totalTokens: 150};
++    const {hooks, getRecordedUsage} = captureUsage();
++
++    const provider = scriptedProvider([
++      [TOOL_CALL, {type: 'stop', stopReason: 'tool_use', usage: usage1}],
++      [
++        {type: 'text', text: 'done'},
++        {type: 'stop', stopReason: 'end_turn'},
++      ],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registryReturning({result: 'r'}), {
++      hooks,
++    });
++
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(getRecordedUsage()).toEqual(usage1);
++  });
++
++  it('handles turn with no usage reported on any round', async () => {
++    let recordedUsage: UsageMetadata | undefined = {inputTokens: 1, outputTokens: 1, totalTokens: 2};
++
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, usage) => {
++        recordedUsage = usage;
++      },
++    };
++
++    const provider = scriptedProvider([
++      [
++        {type: 'text', text: 'hello'},
++        {type: 'stop', stopReason: 'end_turn'},
++      ],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, undefined, {hooks});
++
++    await orchestrator.processMessage(createSession('hi'));
++
++    expect(recordedUsage).toBeUndefined();
++  });
++});

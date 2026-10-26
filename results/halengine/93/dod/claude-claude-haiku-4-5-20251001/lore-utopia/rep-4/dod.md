@@ -23,12 +23,12 @@
 
 ## Facets
 
-- [x] Accumulate usage fields (inputTokens, outputTokens, totalTokens) across every round where usage was reported
-- [x] Pass the accumulated total to `afterModelResponse` instead of only the last round's usage
-- [x] Ensure the type signature makes the behavior unambiguous (current `UsageMetadata | undefined` parameter reflects the accumulated sum, not per-round granularity)
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to document the new behavior where accumulated usage is passed, replacing the line about under-counting
-- [x] Add a CHANGELOG entry stating the behaviour change in what an existing consumer will record (tool-heavy turns now include all rounds' usage)
-- [x] All existing tests remain green, confirming backward compatibility for single-round cases
+- [ ] Accumulate usage fields (inputTokens, outputTokens, totalTokens) across every round where usage was reported
+- [ ] Pass the accumulated total to `afterModelResponse` instead of only the last round's usage
+- [ ] Ensure the type signature makes the behavior unambiguous (current `UsageMetadata | undefined` parameter reflects the accumulated sum, not per-round granularity)
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to document the new behavior where accumulated usage is passed, replacing the line about under-counting
+- [ ] Add a CHANGELOG entry stating the behaviour change in what an existing consumer will record (tool-heavy turns now include all rounds' usage)
+- [ ] All existing tests remain green, confirming backward compatibility for single-round cases
 
 ## Out of scope
 

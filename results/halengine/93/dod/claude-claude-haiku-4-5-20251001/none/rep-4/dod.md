@@ -17,11 +17,11 @@
 
 ## Facets
 
-- [x] Accumulate usage across all rounds in the loop, summing `inputTokens`, `outputTokens`, and `totalTokens` from each round that provides them
-- [x] Pass the accumulated sum to `afterModelResponse` instead of just `lastUsage`
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to replace line 28 with the new accumulated-usage behaviour
-- [x] Add a CHANGELOG entry under `### Changed` documenting that `afterModelResponse` now receives the summed usage across all rounds, a MINOR bump for deployers billing from the hook
-- [x] All acceptance tests pass; existing tests remain unedited and pass
+- [ ] Accumulate usage across all rounds in the loop, summing `inputTokens`, `outputTokens`, and `totalTokens` from each round that provides them
+- [ ] Pass the accumulated sum to `afterModelResponse` instead of just `lastUsage`
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to replace line 28 with the new accumulated-usage behaviour
+- [ ] Add a CHANGELOG entry under `### Changed` documenting that `afterModelResponse` now receives the summed usage across all rounds, a MINOR bump for deployers billing from the hook
+- [ ] All acceptance tests pass; existing tests remain unedited and pass
 
 ## Out of scope
 

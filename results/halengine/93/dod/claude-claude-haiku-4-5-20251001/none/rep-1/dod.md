@@ -19,11 +19,11 @@
 
 ## Facets
 
-- [x] Write a helper function to accumulate UsageMetadata objects by summing their numeric fields
-- [x] Modify chatOrchestrator.ts to accumulate usage across rounds instead of replacing it
-- [x] Update the type signature or documentation of `afterModelResponse` hook to clarify the usage is summed (if a type change is made)
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to document that `afterModelResponse` now receives summed usage
-- [x] Add CHANGELOG entry documenting this as a MINOR version bump and behaviour change for tool-heavy turns
+- [ ] Write a helper function to accumulate UsageMetadata objects by summing their numeric fields
+- [ ] Modify chatOrchestrator.ts to accumulate usage across rounds instead of replacing it
+- [ ] Update the type signature or documentation of `afterModelResponse` hook to clarify the usage is summed (if a type change is made)
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to document that `afterModelResponse` now receives summed usage
+- [ ] Add CHANGELOG entry documenting this as a MINOR version bump and behaviour change for tool-heavy turns
 
 ## Out of scope
 

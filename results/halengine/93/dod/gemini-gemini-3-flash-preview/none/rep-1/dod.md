@@ -7,19 +7,19 @@
 ## Done when these pass
 
 - [ ] **reports summed usage across multiple tool rounds** — A turn driven through two tool rounds reports usage covering every provider call in that turn.
-      `src/orchestration/usage-reporting.acceptance.test.ts`
+  `src/orchestration/usage-reporting.acceptance.test.ts`
 - [ ] **reports exact usage for a turn with no tool calls** — A turn with no tool calls reports exactly what it reports today.
-      `src/orchestration/usage-reporting.acceptance.test.ts`
+  `src/orchestration/usage-reporting.acceptance.test.ts`
 - [ ] **handles rounds with no usage reported** — A provider that reports no usage on some rounds does not make the total undefined or NaN: the rounds that reported are still counted.
-      `src/orchestration/usage-reporting.acceptance.test.ts`
+  `src/orchestration/usage-reporting.acceptance.test.ts`
 
 ## Facets
 
-- [x] Sum `UsageMetadata` across rounds in `chatOrchestrator.ts`
-- [x] Handle `undefined` rounds by treating them as zero or skipping
+- [ ] Sum `UsageMetadata` across rounds in `chatOrchestrator.ts`
+- [ ] Handle `undefined` rounds by treating them as zero or skipping
 - [ ] Update `afterModelResponse` hook signature to be unambiguous (e.g. rename `usage` to `totalUsage`)
-- [x] Update `CHANGELOG.md` with the behavior change
-- [x] Update `specs/hal-engine-config-hooks/spec.md` with new behavior (citations for all three tests added and repointed)
+- [ ] Update `CHANGELOG.md` with the behavior change
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` with new behavior
 
 ## Out of scope
 

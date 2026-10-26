@@ -22,8 +22,8 @@
 - [x] Thread `sessionStore` into `createMessageHandler` (optional parameter so existing 1-arg and 2-arg callers keep working) and wire it in `src/transport/createServer.ts`.
 - [x] Handle `list_sessions` in `src/transport/ws/messageHandler.ts` (and helper in `src/transport/ws/sender.ts` if needed) by reading `session.userId`, calling `await sessionStore?.listFor?.(session.userId, {limit, before})`, serialising `Date` fields to ISO strings, and on error logging via `log.error('ws', ...)` and sending `ErrorCodes.SERVER_ERROR`.
 - [x] Document `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md`.
-- [x] Add `history?: {enabled: boolean}` to `HalEngineConfig.transport` and `HalServerOptions`, threaded into `createServer`. With it off, `list_sessions` should answer with an `error` frame (`UNSUPPORTED`) and no list.
-- [x] Add `§ Conversation list` to `docs/getting-started.md` by editing `example/full-config.ts` and running `npm run docs:fix`.
+- [ ] Add `history?: {enabled: boolean}` to `HalEngineConfig.transport` and `HalServerOptions`, threaded into `createServer`. With it off, `list_sessions` should answer with an `error` frame (`UNSUPPORTED`) and no list.
+- [ ] Add `§ Conversation list` to `docs/getting-started.md` by editing `example/full-config.ts` and running `npm run docs:fix`.
 
 ## Out of scope
 

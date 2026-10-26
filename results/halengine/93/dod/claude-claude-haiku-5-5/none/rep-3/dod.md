@@ -22,13 +22,13 @@ Existing tests that must stay green and must not be edited (they pin the no-tool
 
 ## Facets
 
-- [x] Shape decision: pass one summed `UsageMetadata` as the `usage` argument (the ticket's first option). The per-round breakdown is rejected for now: it doubles the hook surface for a consumer that has not asked for it, and a deployer who needs provider-call granularity can still count rounds in their own hooks.
-- [x] `chatOrchestrator.ts`: replace `lastUsage = outcome.usage ?? lastUsage` with an accumulator that adds each reporting round's usage to a running total, and leaves the total `undefined` when no round reported.
-- [x] No-tool path: a turn with one provider call reports that call's usage object unchanged (existing test above keeps it honest).
-- [x] `ChatOrchestratorOptions.hooks` / `OrchestratorHooks.afterModelResponse` in `chatOrchestrator.ts`: the one-line doc comment states that `usage` is summed across every provider call in the turn, so the type reads unambiguously at the declaration.
-- [x] `specs/hal-engine-config-hooks/spec.md` line 28: replace the under-counting statement with the summed behaviour and link it to the first acceptance test. Do not edit the `| Status |` row here (see the rules in the ticket).
-- [x] `CHANGELOG.md`: a MINOR-bump entry stating that existing `afterModelResponse` consumers will record larger usage numbers for turns that ran tools, and that single-round turns are unchanged.
-- [x] No `any` in the public API; `npm run build`, `npm run typecheck`, `npm run eslint` and `npm run prettier:check` pass in CI.
+- [ ] Shape decision: pass one summed `UsageMetadata` as the `usage` argument (the ticket's first option). The per-round breakdown is rejected for now: it doubles the hook surface for a consumer that has not asked for it, and a deployer who needs provider-call granularity can still count rounds in their own hooks.
+- [ ] `chatOrchestrator.ts`: replace `lastUsage = outcome.usage ?? lastUsage` with an accumulator that adds each reporting round's usage to a running total, and leaves the total `undefined` when no round reported.
+- [ ] No-tool path: a turn with one provider call reports that call's usage object unchanged (existing test above keeps it honest).
+- [ ] `ChatOrchestratorOptions.hooks` / `OrchestratorHooks.afterModelResponse` in `chatOrchestrator.ts`: the one-line doc comment states that `usage` is summed across every provider call in the turn, so the type reads unambiguously at the declaration.
+- [ ] `specs/hal-engine-config-hooks/spec.md` line 28: replace the under-counting statement with the summed behaviour and link it to the first acceptance test. Do not edit the `| Status |` row here (see the rules in the ticket).
+- [ ] `CHANGELOG.md`: a MINOR-bump entry stating that existing `afterModelResponse` consumers will record larger usage numbers for turns that ran tools, and that single-round turns are unchanged.
+- [ ] No `any` in the public API; `npm run build`, `npm run typecheck`, `npm run eslint` and `npm run prettier:check` pass in CI.
 
 ## Out of scope
 

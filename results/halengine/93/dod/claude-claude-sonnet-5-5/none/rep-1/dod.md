@@ -13,10 +13,9 @@
 
 ## Facets
 
-- [x] Accumulate usage per round in chatOrchestrator.ts and pass the sum (undefined when nothing reported)
-- [x] Document the sum on the hook type; update the spec line and the CHANGELOG (MINOR)
-- [x] Existing no-tool test stays unedited and green
-- [x] Fix CI: add spec link for acceptance test line 56, deduplicate hooks pattern, reanchor stale spec citations
+- [ ] Accumulate usage per round in chatOrchestrator.ts and pass the sum (undefined when nothing reported)
+- [ ] Document the sum on the hook type; update the spec line and the CHANGELOG (MINOR)
+- [ ] Existing no-tool test stays unedited and green
 
 ## Out of scope
 

@@ -18,14 +18,12 @@
 
 ## Facets
 
-- [x] Red: the two acceptance tests fail on the `lastUsage = outcome.usage ?? lastUsage` assignment, as the ticket claims.
-- [x] Green: accumulate usage per round in `chatOrchestrator.ts` (sum the rounds that report; `undefined` only when none did). Keep the third argument of `afterModelResponse` as the sum; the test pins that slot.
-- [x] Green: a turn with no tool calls reports the same value as before (existing test above stays green).
-- [x] Type: the hook's usage parameter says it is a sum, not the last round. This is a type-level property that the typecheck step covers, not a behavioural test here. Either rename the type or document it at the declaration in `OrchestratorHooks`.
-- [x] Spec: `specs/hal-engine-config-hooks/spec.md` line 28 still records the last-round behaviour. Replace it with the summed behaviour and cite the acceptance test. It is not cited yet because the statement it would cite does not exist until the change lands.
-- [x] CHANGELOG: an `Unreleased` entry that says what an existing consumer will record. Tool-heavy turns report larger numbers. This is a MINOR bump.
-- [x] Spec link: `spec.md` line 27 (`catch` gates `onError` on `instanceof Error`) now carries a validated-by link to chatOrchestrator.test.ts#L311.
-- [x] CI fix: spec-anchor line numbers in architecture and tool-input-validation spec.md were stale (shifted by inserted tests); repointed by check-spec-anchor-names --fix. spec-hooks spec.md line 33 (accumulateUsage intro) was an unlinked testable statement; added validated-by link ending in `.` so the trailing-paren parser recognises it. Test at chatOrchestrator.test.ts#L311 had 2 expects (max 1) and an unknown eslint-disable rule; combined expects into one toEqual and removed the stale disable comment.
+- [ ] Red: the two acceptance tests fail on the `lastUsage = outcome.usage ?? lastUsage` assignment, as the ticket claims.
+- [ ] Green: accumulate usage per round in `chatOrchestrator.ts` (sum the rounds that report; `undefined` only when none did). Keep the third argument of `afterModelResponse` as the sum; the test pins that slot.
+- [ ] Green: a turn with no tool calls reports the same value as before (existing test above stays green).
+- [ ] Type: the hook's usage parameter says it is a sum, not the last round. This is a type-level property that the typecheck step covers, not a behavioural test here. Either rename the type or document it at the declaration in `OrchestratorHooks`.
+- [ ] Spec: `specs/hal-engine-config-hooks/spec.md` line 28 still records the last-round behaviour. Replace it with the summed behaviour and cite the acceptance test. It is not cited yet because the statement it would cite does not exist until the change lands.
+- [ ] CHANGELOG: an `Unreleased` entry that says what an existing consumer will record. Tool-heavy turns report larger numbers. This is a MINOR bump.
 
 ## Out of scope
 

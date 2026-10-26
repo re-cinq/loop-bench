@@ -17,10 +17,10 @@
 
 ## Facets
 
-- [x] Change `lastUsage` accumulation in `chatOrchestrator.ts` to sum usage across rounds instead of keeping only the last one
-- [x] Ensure the type signature of `afterModelResponse` and `UsageMetadata` makes the summing semantics unambiguous
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to replace the recorded under-counting note with the new behavior
-- [x] Update CHANGELOG to document the behavior change for existing consumers
+- [ ] Change `lastUsage` accumulation in `chatOrchestrator.ts` to sum usage across rounds instead of keeping only the last one
+- [ ] Ensure the type signature of `afterModelResponse` and `UsageMetadata` makes the summing semantics unambiguous
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to replace the recorded under-counting note with the new behavior
+- [ ] Update CHANGELOG to document the behavior change for existing consumers
 
 ## Out of scope
 

@@ -9,21 +9,21 @@ The ticket leaves the shape open (sum only, or sum plus per-round breakdown). Bo
 ## Done when these pass
 
 - [ ] **reports the usage of every provider call in a turn that ran two tool rounds, not only the last** — two tool rounds then a final answer, each provider call reporting different token counts; the hook receives their field-by-field sum, not the final call's counts
-      `src/orchestration/chatOrchestrator.acceptance.test.ts`
+  `src/orchestration/chatOrchestrator.acceptance.test.ts`
 - [ ] **counts the rounds that reported usage when others reported none, and reports nothing when no round did** — a middle round with no usage adds nothing and the two reporting rounds are still summed; a turn where no round reported usage hands the hook `undefined`, never zeros or `NaN`
-      `src/orchestration/chatOrchestrator.acceptance.test.ts`
+  `src/orchestration/chatOrchestrator.acceptance.test.ts`
 - [ ] **receives collected response text and usage** (existing, must stay green and unedited) — a turn with no tool calls reports exactly what it reports today
-      `src/orchestration/chatOrchestrator.test.ts`
+  `src/orchestration/chatOrchestrator.test.ts`
 - [ ] **keeps the usage an earlier round reported when a later round reports none** (existing, must stay green) — the sum of one reporting round is that round's usage
-      `src/orchestration/chatOrchestrator.test.ts`
+  `src/orchestration/chatOrchestrator.test.ts`
 
 ## Facets
 
-- [x] Replace the `lastUsage` local in `src/orchestration/chatOrchestrator.ts` with a running total that adds each round's reported usage field by field, stays `undefined` until a round reports, and skips rounds that report nothing
-- [x] Make the type of what the hook receives say it is a sum (a named type or a documented parameter on `OrchestratorHooks.afterModelResponse` in `src/orchestration/chatOrchestrator.ts`), with no `any`; if a per-round breakdown is chosen, pass it beside the total
-- [x] Add a CHANGELOG `### Changed` entry under `[Unreleased]` stating that an existing `afterModelResponse` consumer now records a larger number for tool-heavy turns, and that a turn without tools is unchanged (MINOR bump)
-- [x] Keep the three citations in `specs/hal-engine-config-hooks/spec.md` pointing at their tests (`npm run spec:names:fix` after any edit above the `it(` lines); the under-counting line has already been replaced by the new statements in this commit
-- [x] Regenerate the `OrchestratorHooks` block in `CLAUDE.md` and `README.md` if the hook signature changed (`npm run docs:check` guards it)
+- [ ] Replace the `lastUsage` local in `src/orchestration/chatOrchestrator.ts` with a running total that adds each round's reported usage field by field, stays `undefined` until a round reports, and skips rounds that report nothing
+- [ ] Make the type of what the hook receives say it is a sum (a named type or a documented parameter on `OrchestratorHooks.afterModelResponse` in `src/orchestration/chatOrchestrator.ts`), with no `any`; if a per-round breakdown is chosen, pass it beside the total
+- [ ] Add a CHANGELOG `### Changed` entry under `[Unreleased]` stating that an existing `afterModelResponse` consumer now records a larger number for tool-heavy turns, and that a turn without tools is unchanged (MINOR bump)
+- [ ] Keep the three citations in `specs/hal-engine-config-hooks/spec.md` pointing at their tests (`npm run spec:names:fix` after any edit above the `it(` lines); the under-counting line has already been replaced by the new statements in this commit
+- [ ] Regenerate the `OrchestratorHooks` block in `CLAUDE.md` and `README.md` if the hook signature changed (`npm run docs:check` guards it)
 
 ## Out of scope
 

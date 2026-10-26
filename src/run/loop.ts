@@ -4,11 +4,11 @@ import { join } from "node:path";
 import type { ExperimentConfig } from "../config/experiment.js";
 import type { Harness, Station } from "../core/harness-names.js";
 import { cellPath, type PlannedLoop } from "../core/matrix.js";
+import { loopTotals } from "../core/loop-totals.js";
 import { parseNumstat, structuralMetrics } from "../core/metrics.js";
 import type { LoopRecord, StationRunRecord } from "../core/records.js";
 import { ciFeedbackOf, handoffOf, roundBriefOf, type RoundHandoff } from "../core/round-brief.js";
-import { initialState, nextStep, type EndReason, type LoopState, type Step } from "../core/routing.js";
-import { EMPTY_USAGE, type Usage } from "../core/usage.js";
+import { cutBeforeOtherStations, initialState, nextStep, type EndReason, type LoopState, type Step } from "../core/routing.js";
 import { runSubjectCi } from "../workspace/ci.js";
 import { cachedDeps } from "../workspace/deps-cache.js";
 import { subjectEnv } from "../config/experiment.js";
@@ -98,6 +98,7 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
       handoff = handoffOf(record.extras) ?? handoff;
       log(`[${planned.loop_id}]   -> ${record.outcome} (${record.failure_class}) $${record.cost_usd.toFixed(3)} ${Math.round(record.wall_ms / 1000)}s pushed=${record.pushed}`);
       ({ state, step } = nextStep(state, { kind: "agent", station, outcome: record.outcome }));
+      step = cutBeforeOtherStations(step, planned.varied_station);
       continue;
     }
     const verdict = await runSubjectCi({
@@ -124,6 +125,7 @@ export async function runLoop(planned: PlannedLoop, deps: LoopDeps): Promise<Loo
       writeFileSync(workspace.roundBriefPath, roundBriefOf({ feedback, handoff }));
     }
     ({ state, step } = nextStep(state, { kind: "ci", green: verdict.green, headSha: verdict.headSha }));
+    step = cutBeforeOtherStations(step, planned.varied_station);
   }
 
   const record = await loopRecord(planned, config, cellDir, workspace, visits, state, step.reason, startedAt);
@@ -174,30 +176,13 @@ async function loopRecord(
     rounds: state.rounds,
     repairs: state.repairs,
     reached_green: reason === "green",
-    total_cost_usd: visits.reduce((sum, visit) => sum + visit.cost_usd, 0),
-    total_wall_ms: visits.reduce((sum, visit) => sum + visit.wall_ms + (visit.ci?.wall_ms ?? 0), 0),
-    total_usage: visits.reduce(sumUsage, EMPTY_USAGE),
+    ...loopTotals(visits),
     structural: finalHead ? structuralMetrics(candidate, reference, testFile) : null,
     dod_check: null,
     judge: null,
     final_head_sha: finalHead,
     started_at: startedAt.toISOString(),
     finished_at: new Date().toISOString(),
-  };
-}
-
-function sumUsage(total: Usage, visit: StationRunRecord): Usage {
-  const usage = visit.usage;
-
-  return {
-    input_tokens: total.input_tokens + usage.input_tokens,
-    output_tokens: total.output_tokens + usage.output_tokens,
-    cache_read_tokens: total.cache_read_tokens + usage.cache_read_tokens,
-    cache_write_tokens: total.cache_write_tokens + usage.cache_write_tokens,
-    reasoning_tokens: total.reasoning_tokens + usage.reasoning_tokens,
-    reported_cost_usd: usage.reported_cost_usd === null ? total.reported_cost_usd : (total.reported_cost_usd ?? 0) + usage.reported_cost_usd,
-    reported_duration_ms: usage.reported_duration_ms === null ? total.reported_duration_ms : (total.reported_duration_ms ?? 0) + usage.reported_duration_ms,
-    tool_calls: usage.tool_calls === null ? total.tool_calls : (total.tool_calls ?? 0) + usage.tool_calls,
   };
 }
 

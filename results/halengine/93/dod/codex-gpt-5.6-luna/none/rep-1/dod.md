@@ -13,11 +13,10 @@
 
 ## Facets
 
-- [x] Accumulate each provider call's reported usage into the hook's single total.
-- [x] Preserve the existing no-tool behavior pinned by `receives collected response text and usage` in `src/orchestration/chatOrchestrator.test.ts`.
-- [x] Add the required changelog entry describing the aggregate behavior change.
-- [x] Make the public hook type unambiguous (type name or spec language makes it clear it is an aggregate, not the last call).
-- [x] Replace the historical under-counting statement in `specs/hal-engine-config-hooks/spec.md` with the aggregate behavior.
+- [ ] Accumulate each provider call's reported usage into the hook's single total.
+- [ ] Preserve the existing no-tool behavior pinned by `receives collected response text and usage` in `src/orchestration/chatOrchestrator.test.ts`.
+- [ ] Make the public hook type describe the aggregate unambiguously and add the required changelog entry.
+- [ ] Replace the historical under-counting statement in `specs/hal-engine-config-hooks/spec.md` with the aggregate behavior.
 
 ## Out of scope
 

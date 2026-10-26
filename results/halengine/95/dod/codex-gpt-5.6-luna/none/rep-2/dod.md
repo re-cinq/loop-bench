@@ -11,9 +11,9 @@
 
 ## Facets
 
-- [x] Replace the `instanceof Error` gate so every rejection reaches `onError`, wrapping non-`Error` values with their original value as `cause`.
-- [x] Keep the original rejection unchanged at the caller boundary and preserve the existing same-instance behavior for `Error` rejections.
-- [x] Update the config-hooks spec and CHANGELOG to describe the new guarantee for existing consumers.
+- [ ] Replace the `instanceof Error` gate so every rejection reaches `onError`, wrapping non-`Error` values with their original value as `cause`.
+- [ ] Keep the original rejection unchanged at the caller boundary and preserve the existing same-instance behavior for `Error` rejections.
+- [ ] Update the config-hooks spec and CHANGELOG to describe the new guarantee for existing consumers.
 
 ## Out of scope
 

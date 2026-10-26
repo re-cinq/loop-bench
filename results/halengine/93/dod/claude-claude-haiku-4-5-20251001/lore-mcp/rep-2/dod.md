@@ -7,23 +7,23 @@
 ## Done when these pass
 
 - [ ] **accumulates usage from every tool round and passes the sum to afterModelResponse** — A turn driven through two tool rounds with known, different usage values on each round reports the sum of all rounds to the hook.
-      `src/orchestration/chatOrchestrator.acceptance.test.ts`
+  `src/orchestration/chatOrchestrator.acceptance.test.ts`
 
 - [ ] **preserves single-round usage when no tool round occurs** — A turn that answers directly with no tool calls reports the same usage as before, ensuring the common path does not move.
-      `src/orchestration/chatOrchestrator.acceptance.test.ts`
+  `src/orchestration/chatOrchestrator.acceptance.test.ts`
 
 - [ ] **accumulates usage when only some rounds report it** — When intermediate rounds report usage but later rounds do not, earlier usage is preserved and accumulated, not lost.
-      `src/orchestration/chatOrchestrator.acceptance.test.ts`
+  `src/orchestration/chatOrchestrator.acceptance.test.ts`
 
 - [ ] **reports undefined when no round reports usage** — A turn where no provider call reports usage should report undefined to the hook, not NaN or a zero object.
-      `src/orchestration/chatOrchestrator.acceptance.test.ts`
+  `src/orchestration/chatOrchestrator.acceptance.test.ts`
 
 ## Facets
 
-- [x] Implement usage accumulation in the round loop: sum token counts across rounds instead of replacing lastUsage
-- [x] Verify existing tests for single-round behavior remain green (no-tool turns should not change)
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to replace the under-counting statement with the new aggregation behavior
-- [x] Add CHANGELOG entry documenting the behavior change for existing consumers of the hook
+- [ ] Implement usage accumulation in the round loop: sum token counts across rounds instead of replacing lastUsage
+- [ ] Verify existing tests for single-round behavior remain green (no-tool turns should not change)
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to replace the under-counting statement with the new aggregation behavior
+- [ ] Add CHANGELOG entry documenting the behavior change for existing consumers of the hook
 
 ## Out of scope
 

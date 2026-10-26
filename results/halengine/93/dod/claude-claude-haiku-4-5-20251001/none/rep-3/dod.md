@@ -19,11 +19,11 @@
 
 ## Facets
 
-- [x] Decide whether to pass the accumulated sum (simpler, breaking change for consumers relying on `lastUsage` being the final round only) or pass both sum and breakdown (wider surface, more faithful). Decision: pass the accumulated sum — simpler for the common billing/audit case; documented as MINOR in CHANGELOG.
-- [x] Accumulate usage across all rounds instead of overwriting: replace `lastUsage = outcome.usage ?? lastUsage` logic with a helper that sums usage objects, handling `undefined` safely.
-- [x] Update the type signature of `afterModelResponse` hook parameter to clarify whether it receives a sum or per-round data (per acceptance criterion 4): added a one-line JSDoc stating it is the accumulated sum.
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to describe the new behavior (replacing the "under-counts" statement with spec-linked bullets).
-- [x] Add CHANGELOG entry documenting the change in what an existing consumer will record (per acceptance criterion 5).
+- [ ] Decide whether to pass the accumulated sum (simpler, breaking change for consumers relying on `lastUsage` being the final round only) or pass both sum and breakdown (wider surface, more faithful). Record the decision and rationale in the issue.
+- [ ] Accumulate usage across all rounds instead of overwriting: replace `lastUsage = outcome.usage ?? lastUsage` logic with a helper that sums usage objects, handling `undefined` safely.
+- [ ] Update the type signature of `afterModelResponse` hook parameter to clarify whether it receives a sum or per-round data (per acceptance criterion 4).
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` line 28 to describe the new behavior (replacing the current "under-counts" statement).
+- [ ] Add CHANGELOG entry documenting the change in what an existing consumer will record (per acceptance criterion 5).
 
 ## Out of scope
 

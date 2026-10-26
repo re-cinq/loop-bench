@@ -17,10 +17,10 @@ The assertions use `toMatchObject`/`objectContaining` on the usage argument, so 
 
 ## Facets
 
-- [x] Accumulate usage across rounds in `processMessageStream` instead of `lastUsage = outcome.usage ?? lastUsage`, leaving it `undefined` when no round reports
-- [x] Make the `afterModelResponse` signature say it is a turn total (name/type/doc comment in `OrchestratorHooks`; regenerate the CLAUDE.md block if it is generated from the declaration)
-- [x] CHANGELOG entry stating that an existing consumer now records larger usage for tool turns (MINOR bump)
-- [x] Spec `specs/hal-engine-config-hooks/spec.md` already carries the new statements, linked to these tests; re-anchor if the test file moves
+- [ ] Accumulate usage across rounds in `processMessageStream` instead of `lastUsage = outcome.usage ?? lastUsage`, leaving it `undefined` when no round reports
+- [ ] Make the `afterModelResponse` signature say it is a turn total (name/type/doc comment in `OrchestratorHooks`; regenerate the CLAUDE.md block if it is generated from the declaration)
+- [ ] CHANGELOG entry stating that an existing consumer now records larger usage for tool turns (MINOR bump)
+- [ ] Spec `specs/hal-engine-config-hooks/spec.md` already carries the new statements, linked to these tests; re-anchor if the test file moves
 
 ## Out of scope
 

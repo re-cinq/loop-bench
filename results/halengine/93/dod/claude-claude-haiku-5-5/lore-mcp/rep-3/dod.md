@@ -13,11 +13,11 @@
 
 ## Facets
 
-- [x] Accumulate usage across every provider call in `processMessageStream` (`src/orchestration/chatOrchestrator.ts`), replacing `lastUsage = outcome.usage ?? lastUsage`: add each reporting round, skip rounds that report nothing, stay `undefined` when none reported.
-- [x] Say in the type that the hook's usage is the turn total: document it on `OrchestratorHooks.afterModelResponse` and `UsageMetadata` in `src/types/ai.ts`, with no `any` added to the public API.
+- [ ] Accumulate usage across every provider call in `processMessageStream` (`src/orchestration/chatOrchestrator.ts`), replacing `lastUsage = outcome.usage ?? lastUsage`: add each reporting round, skip rounds that report nothing, stay `undefined` when none reported.
+- [ ] Say in the type that the hook's usage is the turn total: document it on `OrchestratorHooks.afterModelResponse` and `UsageMetadata` in `src/types/ai.ts`, with no `any` added to the public API.
 - [ ] Keep the no-tool-call path reporting exactly what it reports today: the existing test "receives collected response text and usage" in `src/orchestration/chatOrchestrator.test.ts` stays unedited and green.
-- [x] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` with the summed behaviour, and put its `validated by` link on the new statement, pointing at the first test above.
-- [x] Add a CHANGELOG entry under Unreleased → Changed stating that existing consumers record a larger number for tool-heavy turns, and that this is a MINOR bump.
+- [ ] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` with the summed behaviour, and put its `validated by` link on the new statement, pointing at the first test above.
+- [ ] Add a CHANGELOG entry under Unreleased → Changed stating that existing consumers record a larger number for tool-heavy turns, and that this is a MINOR bump.
 
 ## Out of scope
 

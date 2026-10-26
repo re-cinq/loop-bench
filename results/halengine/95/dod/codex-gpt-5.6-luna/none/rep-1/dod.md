@@ -6,14 +6,14 @@
 
 ## Done when these pass
 
-- [x] **calls onError for every rejection and preserves the caller rejection** — a string, plain object, `undefined`, and an existing `Error` each call `onError` once; non-Errors arrive wrapped with the original as `cause`, an existing `Error` arrives unchanged, and the caller receives the original value
+- [ ] **calls onError for every rejection and preserves the caller rejection** — a string, plain object, `undefined`, and an existing `Error` each call `onError` once; non-Errors arrive wrapped with the original as `cause`, an existing `Error` arrives unchanged, and the caller receives the original value
       `src/orchestration/onErrorRejection.acceptance.test.ts`
 
 ## Facets
 
-- [x] Exercise non-`Error` provider rejections through the orchestrator's public processing entry point.
-- [x] Assert wrapping, `cause`, Error identity, single invocation, and unchanged propagation in one parameterized acceptance test.
-- [x] Replace the measured-flaw wording in the config-hooks spec and document the consumer-facing change in the changelog during implementation.
+- [ ] Exercise non-`Error` provider rejections through the orchestrator's public processing entry point.
+- [ ] Assert wrapping, `cause`, Error identity, single invocation, and unchanged propagation in one parameterized acceptance test.
+- [ ] Replace the measured-flaw wording in the config-hooks spec and document the consumer-facing change in the changelog during implementation.
 
 ## Out of scope
 

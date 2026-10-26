@@ -23,11 +23,11 @@
 
 ## Facets
 
-- [x] Decide between accumulating usage into one parameter vs passing both sum and per-round breakdown — chose accumulate into one parameter (simpler; keeps the existing `usage?: UsageMetadata` signature unmodified)
-- [x] Update `OrchestratorHooks.afterModelResponse` signature to reflect the chosen shape — signature unchanged, semantics documented in spec
-- [x] Change line 117 of `chatOrchestrator.ts` to accumulate usage instead of overwriting — now calls `accumulateUsage(lastUsage, outcome.usage)` from `orchestratorHelpers.ts`
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to document the new behaviour instead of the under-counting — removed under-counting bullet, added "Usage reporting across tool rounds" section with all citations
-- [x] Add a CHANGELOG entry documenting the usage reporting change as a MINOR bump
+- [ ] Decide between accumulating usage into one parameter vs passing both sum and per-round breakdown
+- [ ] Update `OrchestratorHooks.afterModelResponse` signature to reflect the chosen shape
+- [ ] Change line 117 of `chatOrchestrator.ts` to accumulate usage instead of overwriting
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to document the new behaviour instead of the under-counting
+- [ ] Add a CHANGELOG entry documenting the usage reporting change as a MINOR bump
 
 ## Out of scope
 

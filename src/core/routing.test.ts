@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Station } from "./harness-names.js";
 import type { Outcome } from "./result-line.js";
-import { initialState, nextStep, type LoopState, type StationEvent } from "./routing.js";
+import { cutBeforeOtherStations, initialState, nextStep, type LoopState, type StationEvent } from "./routing.js";
 
 const agent = (station: Station, outcome: Outcome): StationEvent => ({
   kind: "agent",
@@ -70,5 +70,30 @@ describe("nextStep", () => {
       kind: "done",
       reason: "round_budget",
     });
+  });
+});
+
+describe("cutBeforeOtherStations", () => {
+  it("ends a dod-varied loop as station_done when the next step is tdd-round", () => {
+    expect(cutBeforeOtherStations({ kind: "run", station: "tdd-round" }, "dod")).toEqual({ kind: "done", reason: "station_done" });
+  });
+
+  it("keeps a tdd-round-varied loop going when the next step is tdd-round", () => {
+    expect(cutBeforeOtherStations({ kind: "run", station: "tdd-round" }, "tdd-round")).toEqual({ kind: "run", station: "tdd-round" });
+  });
+
+  it("ends a tdd-round-varied loop as station_done when the next step is repair-build", () => {
+    expect(cutBeforeOtherStations({ kind: "run", station: "repair-build" }, "tdd-round")).toEqual({ kind: "done", reason: "station_done" });
+  });
+
+  it("keeps the CI step and a finished loop as they are", () => {
+    expect([cutBeforeOtherStations({ kind: "ci" }, "dod"), cutBeforeOtherStations({ kind: "done", reason: "green" }, "dod")]).toEqual([
+      { kind: "ci" },
+      { kind: "done", reason: "green" },
+    ]);
+  });
+
+  it("never cuts a loop that varies no station", () => {
+    expect(cutBeforeOtherStations({ kind: "run", station: "repair-build" }, null)).toEqual({ kind: "run", station: "repair-build" });
   });
 });

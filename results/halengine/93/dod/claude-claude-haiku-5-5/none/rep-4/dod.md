@@ -9,9 +9,9 @@ Decision recorded for the implementer: sum the usage of every provider call in t
 ## Done when these pass
 
 - [ ] **reports usage covering every provider call in a turn driven through two tool rounds** — a scripted provider reports 14, 36 and 58 total tokens across three provider calls; the hook must receive the field-wise sum, 108.
-      `src/orchestration/chatOrchestrator.usage.acceptance.test.ts`
+  `src/orchestration/chatOrchestrator.usage.acceptance.test.ts`
 - [ ] **still counts the rounds that reported when a middle round reports no usage** — rounds reporting 7 and 4 with a silent round between must sum to 11, not `undefined`, `NaN`, or the last round alone.
-      `src/orchestration/chatOrchestrator.usage.acceptance.test.ts`
+  `src/orchestration/chatOrchestrator.usage.acceptance.test.ts`
 
 Existing tests that must stay green (no-tool path, unchanged):
 
@@ -22,10 +22,10 @@ Existing tests that must stay green (no-tool path, unchanged):
 
 ## Facets
 
-- [x] Sum usage across all provider calls in `processMessageStream` in `src/orchestration/chatOrchestrator.ts` instead of `lastUsage = outcome.usage ?? lastUsage`, keeping `undefined` when no round reported.
-- [x] Make the hook's usage type say it is a turn total: document the `afterModelResponse` usage parameter in `src/orchestration/chatOrchestrator.ts` (and `src/types/ai.ts` if a named alias is cleaner) as the sum over every provider call in the turn.
-- [x] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` (the "Measured semantics — out of scope" bullet about `afterModelResponse`) with the new behaviour.
-- [x] Add a CHANGELOG entry stating that an existing `afterModelResponse` consumer will now record larger totals for tool-using turns, with a MINOR bump.
+- [ ] Sum usage across all provider calls in `processMessageStream` in `src/orchestration/chatOrchestrator.ts` instead of `lastUsage = outcome.usage ?? lastUsage`, keeping `undefined` when no round reported.
+- [ ] Make the hook's usage type say it is a turn total: document the `afterModelResponse` usage parameter in `src/orchestration/chatOrchestrator.ts` (and `src/types/ai.ts` if a named alias is cleaner) as the sum over every provider call in the turn.
+- [ ] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` (the "Measured semantics — out of scope" bullet about `afterModelResponse`) with the new behaviour.
+- [ ] Add a CHANGELOG entry stating that an existing `afterModelResponse` consumer will now record larger totals for tool-using turns, with a MINOR bump.
 
 ## Out of scope
 

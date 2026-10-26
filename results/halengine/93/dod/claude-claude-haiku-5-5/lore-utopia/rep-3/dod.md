@@ -15,10 +15,10 @@
 
 ## Facets
 
-- [x] Accumulate usage across every provider call in `processMessageStream`, skipping rounds that report none, and keep `undefined` when none reported (`src/orchestration/chatOrchestrator.ts`, the `lastUsage` local)
-- [x] Make the type say the turn total: document `afterModelResponse`'s `usage` argument as the turn sum (`src/orchestration/chatOrchestrator.ts`, `OrchestratorHooks`)
-- [x] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` with the new behaviour; the spec statements there carry no `validated by` link, so no anchor is added in this ticket
-- [x] CHANGELOG entry stating that existing consumers will record larger numbers for tool-heavy turns, with a MINOR bump note
+- [ ] Accumulate usage across every provider call in `processMessageStream`, skipping rounds that report none, and keep `undefined` when none reported (`src/orchestration/chatOrchestrator.ts`, the `lastUsage` local)
+- [ ] Make the type say the turn total: document `afterModelResponse`'s `usage` argument as the turn sum (`src/orchestration/chatOrchestrator.ts`, `OrchestratorHooks`)
+- [ ] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` with the new behaviour; the spec statements there carry no `validated by` link, so no anchor is added in this ticket
+- [ ] CHANGELOG entry stating that existing consumers will record larger numbers for tool-heavy turns, with a MINOR bump note
 
 ## Out of scope
 

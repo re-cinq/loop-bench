@@ -13,12 +13,12 @@
 
 ## Facets
 
-- [x] Sum all three token fields across provider calls, with fresh accounting for each user turn.
-- [x] Ignore absent usage, preserving undefined when no call reports it.
-- [x] Keep the existing unedited `receives collected response text and usage` test in `src/orchestration/chatOrchestrator.test.ts` green in CI.
-- [x] Make the public hook signature explicitly identify total turn usage, without any; retain one usage argument as chosen in the spec rather than adding a per-round breakdown.
-- [x] Add the consumer-facing changelog entry and MINOR version bump explaining the larger totals for existing tool-heavy consumers; retain the new spec contract.
-- [x] Pass the repository's build, tests, typecheck, eslint and formatting gates in CI.
+- [ ] Sum all three token fields across provider calls, with fresh accounting for each user turn.
+- [ ] Ignore absent usage, preserving undefined when no call reports it.
+- [ ] Keep the existing unedited `receives collected response text and usage` test in `src/orchestration/chatOrchestrator.test.ts` green in CI.
+- [ ] Make the public hook signature explicitly identify total turn usage, without any; retain one usage argument as chosen in the spec rather than adding a per-round breakdown.
+- [ ] Add the consumer-facing changelog entry and MINOR version bump explaining the larger totals for existing tool-heavy consumers; retain the new spec contract.
+- [ ] Pass the repository's build, tests, typecheck, eslint and formatting gates in CI.
 
 ## Out of scope
 

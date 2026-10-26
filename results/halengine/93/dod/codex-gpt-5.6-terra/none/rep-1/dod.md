@@ -13,10 +13,10 @@
 
 ## Facets
 
-- [x] Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.
-- [x] Sum each token field only for provider rounds that report usage, preserving `undefined` when none do.
+- [ ] Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.
+- [ ] Sum each token field only for provider rounds that report usage, preserving `undefined` when none do.
 - [ ] Preserve the unchanged no-tool regression guard, `receives collected response text and usage`, in `src/orchestration/chatOrchestrator.test.ts`.
-- [x] Update the hooks spec and CHANGELOG with the aggregate-usage behavior and its impact on existing consumers.
+- [ ] Update the hooks spec and CHANGELOG with the aggregate-usage behavior and its impact on existing consumers.
 
 ## Out of scope
 

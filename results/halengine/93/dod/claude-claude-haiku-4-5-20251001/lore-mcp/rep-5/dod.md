@@ -6,21 +6,21 @@
 
 ## Done when these pass
 
-- [x] **Accumulated usage across tool rounds** — A turn with two tool rounds reports usage covering every provider call, with accumulated token counts
-      `src/orchestration/chatOrchestrator.acceptance.test.ts#L45`
+- [ ] **Accumulated usage across tool rounds** — A turn with two tool rounds reports usage covering every provider call, with accumulated token counts
+      `src/orchestration/chatOrchestrator.acceptance.test.ts#L48`
 
-- [x] **Single round unchanged** — A turn with no tool calls reports exactly what it reports today
-      `src/orchestration/chatOrchestrator.acceptance.test.ts#L55`
-
-- [x] **Handles partial usage** — When some rounds report no usage, the accumulated total includes the rounds that did report
+- [ ] **Single round unchanged** — A turn with no tool calls reports exactly what it reports today
       `src/orchestration/chatOrchestrator.acceptance.test.ts#L79`
+
+- [ ] **Handles partial usage** — When some rounds report no usage, the accumulated total includes the rounds that did report
+      `src/orchestration/chatOrchestrator.acceptance.test.ts#L103`
 
 ## Facets
 
-- [x] Modify orchestrator to accumulate `usage` across all rounds before passing to `afterModelResponse` hook
-- [x] Update type signature of `afterModelResponse` hook parameter to make it unambiguous whether a sum or breakdown is being passed
-- [x] Update `specs/hal-engine-config-hooks/spec.md` to document the new accumulated usage behaviour
-- [x] Update CHANGELOG with migration note for deployers using the hook for billing/audit
+- [ ] Modify orchestrator to accumulate `usage` across all rounds before passing to `afterModelResponse` hook
+- [ ] Update type signature of `afterModelResponse` hook parameter to make it unambiguous whether a sum or breakdown is being passed
+- [ ] Update `specs/hal-engine-config-hooks/spec.md` to document the new accumulated usage behaviour
+- [ ] Update CHANGELOG with migration note for deployers using the hook for billing/audit
 
 ## Out of scope
 

@@ -11,10 +11,10 @@
 
 ## Facets
 
-- [x] Accumulate reported usage across all provider calls without manufacturing usage when none is reported.
-- [x] Keep the existing “receives collected response text and usage” no-tool test in chatOrchestrator.test.ts unedited and green.
-- [x] Make the public hook signature explicitly identify usage as the turn total, with no any; retain the existing single argument shape.
-- [x] Keep the spec's new aggregate semantics and decision rationale accurate; record the larger tool-turn totals in CHANGELOG and make the requested MINOR version bump.
+- [ ] Accumulate reported usage across all provider calls without manufacturing usage when none is reported.
+- [ ] Keep the existing “receives collected response text and usage” no-tool test in chatOrchestrator.test.ts unedited and green.
+- [ ] Make the public hook signature explicitly identify usage as the turn total, with no any; retain the existing single argument shape.
+- [ ] Keep the spec's new aggregate semantics and decision rationale accurate; record the larger tool-turn totals in CHANGELOG and make the requested MINOR version bump.
 - [ ] Run the repository CI checks for build, tests, types, lint and formatting in the implementation round.
 
 ## Out of scope
