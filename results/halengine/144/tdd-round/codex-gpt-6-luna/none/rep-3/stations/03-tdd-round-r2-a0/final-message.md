@@ -1,0 +1,3 @@
+I couldn’t complete a red–green–refactor round. This environment exposes no `lore-query-trace` or `lore_get_ci_failures` tool, and the CI findings in the brief are truncated. Your instructions require the trace before editing and all prior CI findings to be fixed first. I made no changes, ran no tests, and did not commit or push. The DoD also describes `list_sessions`, while the ticket’s amended criteria describe `list_conversations`.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore trace and complete prior CI findings are unavailable; cannot safely choose or complete the round."}}

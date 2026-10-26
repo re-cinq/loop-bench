@@ -1,0 +1,5 @@
+Branch is clean and pushed. 
+
+**What changed:** Fixed all 6 eslint errors and the spec-names/spec-links failures from the previous CI run: reduced `beforeSessionFailure.acceptance.test.ts` from 5 expects to 1 (capturing hook args and asserting in one `toEqual`), reduced `chatOrchestrator.test.ts:116` from 2 expects to 1, fixed the spec link from `#L6` → `#L7` for the acceptance test, updated `#L213` → `#L212` after the line removal, and added three new spec statements for `afterSession`-fires-last, `beforeUserInput`-rewrites-message, and `onError`-propagates-error (each with a validated-by link at the correct post-edit line number). No regressions — all 24 chatOrchestrator tests pass locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint/spec-names/spec-links CI failures","tdd_next":"acceptance green"}}

@@ -1,0 +1,5 @@
+Added a focused test for authenticated-user lookup and paging forwarding. It failed before the handler change and passed after it. The session store is now threaded through `createServer` into the handler, and the DoD facet and spec citation are updated.
+
+I stopped before committing or pushing: the prior CI verdict still has unresolved failures, its lint details are truncated, and the required `lore-query-trace` tool is unavailable. The branch has uncommitted changes. I ran only the test I added; there were **1 test failure of mine before the fix and 0 known regressions**. Unrelated CI findings remain unresolved.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Cannot query main-branch coverage or enumerate all prior CI findings: lore-query-trace is unavailable and the round brief's lint report is truncated."}}

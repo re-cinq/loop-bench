@@ -1,0 +1,3 @@
+Branch is up to date. The fix was splitting spec.md line 17 into two separate bullets so the `([validated by: failure reaches onError with the original error](chatOrchestrator.test.ts#L116))` link appears at the trailing parenthetical of its statement. Both CI failures (eslint `require-spec-link` and `spec-links` misplaced link) are resolved by this single change. Zero regressions — all 24 chatOrchestrator tests pass. No unrelated smells acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix misplaced spec-link for beforeSession onError test (eslint + spec-links CI failures)","tdd_next":"acceptance green"}}

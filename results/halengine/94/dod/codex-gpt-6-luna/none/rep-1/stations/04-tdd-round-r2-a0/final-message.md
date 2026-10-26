@@ -1,0 +1,3 @@
+Branch is up to date. The fix: all 21 stale `chatOrchestrator.test.ts` line number anchors in `specs/hal-engine-architecture/spec.md` and 1 anchor in `specs/hal-engine-tool-input-validation/spec.md` were advanced by +18, matching the actual test positions after the 18-line test inserted in the previous round. The `check-spec-anchor-names` script confirms 592 citations pass. 0 regressions written by me; 0 regressions caused.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix eslint/spec-names/spec-links CI failures","tdd_next":"acceptance green"}}

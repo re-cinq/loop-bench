@@ -1,0 +1,3 @@
+I’m blocked from making a compliant edit: this session exposes no `lore-query-trace` or `lore_get_ci_failures` tool, and the round brief truncates the CI findings, so I can’t verify test coverage or identify every failure this round must repair. I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore trace and complete CI failure details are unavailable in this session."}}

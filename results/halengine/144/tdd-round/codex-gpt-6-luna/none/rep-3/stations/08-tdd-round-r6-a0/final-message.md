@@ -1,0 +1,3 @@
+The acceptance test’s expected frames are stale: `askAfterConnect` sends a ping barrier, and the helper now retains its pong. The test expects only the list response, so CI fails on the extra pong. The instructions say to stop if an acceptance test is wrong and forbid editing it; I made no changes and did not run tests. The validation lint finding therefore remains unresolved.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI's acceptance test expectation omits the ping-barrier pong; instructions require stopping on an incorrect acceptance test and forbid editing it."}}

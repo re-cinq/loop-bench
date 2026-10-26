@@ -1,0 +1,3 @@
+Closed the `list_sessions` validation facet in commit `603b224` and pushed it. The focused test was red before implementation and green afterward; no regressions were run or reported. The branch is up to date with `origin/main`. Lore CI and trace queries weren’t available in this session. The remaining DoD facets are still open.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Validate list_sessions frames","tdd_next":"Add and export the session list message types"}}
