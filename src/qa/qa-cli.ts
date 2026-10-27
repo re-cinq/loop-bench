@@ -7,10 +7,11 @@ import { DEFAULT_RUNS_DIR } from "../run/paths.js";
 import { ArmSchema } from "./arms.js";
 import { loadBank } from "./bank.js";
 import { renderQaReport, type QaRecord } from "./qa-report.js";
-import { plannedAsks, runAsks, type QaSettings } from "./run-qa.js";
+import { plannedAsks, rejudgeAsk, runAsk, runAsks, type QaSettings } from "./run-qa.js";
 
 const ROOT = resolve(import.meta.dirname, "..", "..");
 const USAGE = `usage: npm run qa -- <run|report> [options]
+  rejudge --bank <file,...> --only <id,...> [--arms ...] [--results <dir>]   grade stored answers again against the bank's gold answers
   run     --bank <file,...> [--arms none,lore,utopia] [--reps 3] [--parallel 3] [--only <id,...>] [--results <dir>]
   report  [--results <dir>]
 env for run: LORE_DIR, LORE_API_URL, LORE_INGEST_TOKEN (lore arm); UTOPIA_BASE_URL, UTOPIA_PAT (utopia arm)`;
@@ -67,7 +68,7 @@ async function main(): Promise<void> {
 
     return;
   }
-  if (positionals[0] !== "run" || !values.bank) {
+  if (!["run", "rejudge"].includes(positionals[0] ?? "") || !values.bank) {
     console.error(USAGE);
     process.exitCode = 1;
 
@@ -83,7 +84,7 @@ async function main(): Promise<void> {
   const arms = values.arms.split(",").map((arm) => ArmSchema.parse(arm));
   const asks = plannedAsks(banks, arms, replicates);
 
-  await runAsks(asks, settingsFromEnv(resultsDir, replicates), Number(values.parallel), (line) => console.log(line));
+  await runAsks(asks, settingsFromEnv(resultsDir, replicates), Number(values.parallel), (line) => console.log(line), positionals[0] === "rejudge" ? rejudgeAsk : runAsk);
 }
 
 await main();
