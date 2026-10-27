@@ -48,7 +48,7 @@ export interface HarnessAdapter {
   versionArgs: string[];
 }
 
-export function baseEnv(spec: InvocationSpec): Record<string, string> {
+export function baseEnv(spec: Pick<InvocationSpec, "homeDir" | "extraEnv">): Record<string, string> {
   return {
     HOME: spec.homeDir,
     PATH: process.env["PATH"] ?? "/usr/local/bin:/usr/bin:/bin",

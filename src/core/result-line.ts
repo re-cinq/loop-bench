@@ -39,7 +39,7 @@ function stringEntries(extras: Record<string, unknown>): Record<string, string> 
   );
 }
 
-function parseJson(line: string): unknown {
+export function parseJson(line: string): unknown {
   try {
     return JSON.parse(line);
   } catch {
