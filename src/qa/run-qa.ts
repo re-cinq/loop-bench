@@ -145,7 +145,25 @@ export async function runAsk(ask: QaAsk, settings: QaSettings): Promise<QaRecord
   return record;
 }
 
-export async function runAsks(asks: readonly QaAsk[], settings: QaSettings, parallel: number, log: (line: string) => void): Promise<void> {
+/** Grades an ask's stored answer again, with as many judge runs as it had: for a gold answer corrected after the run. */
+export async function rejudgeAsk(ask: QaAsk, settings: QaSettings): Promise<QaRecord> {
+  const resultDir = join(settings.resultsDir, askPath(ask));
+  const record = JSON.parse(readFileSync(join(resultDir, "result.json"), "utf8")) as QaRecord;
+  const workDir = join(settings.runsDir, askPath(ask), "rejudge");
+  const judgements: Graded[] = [];
+
+  for (let index = 1; index <= record.judgements.length; index += 1) {
+    judgements.push(await judgeOnce(join(workDir, `judge-${index}`), settings, ask, record.transcript.answer, join(resultDir, `judge-${index}`)));
+  }
+  const rejudged = { ...record, judgements };
+
+  writeFileSync(join(resultDir, "result.json"), `${JSON.stringify(rejudged, null, 2)}\n`);
+  rmSync(workDir, { recursive: true, force: true });
+
+  return rejudged;
+}
+
+export async function runAsks(asks: readonly QaAsk[], settings: QaSettings, parallel: number, log: (line: string) => void, perform: (ask: QaAsk, settings: QaSettings) => Promise<QaRecord> = runAsk): Promise<void> {
   let next = 0;
   const worker = async (): Promise<void> => {
     while (next < asks.length) {
@@ -153,7 +171,7 @@ export async function runAsks(asks: readonly QaAsk[], settings: QaSettings, para
       const ask = asks[index]!;
 
       log(`[context-qa] ${index + 1}/${asks.length} ${askPath(ask)}`);
-      const record = await runAsk(ask, settings).catch((error: unknown) => {
+      const record = await perform(ask, settings).catch((error: unknown) => {
         log(`[context-qa] ${askPath(ask)} failed: ${error instanceof Error ? error.message : String(error)}`);
 
         return null;
