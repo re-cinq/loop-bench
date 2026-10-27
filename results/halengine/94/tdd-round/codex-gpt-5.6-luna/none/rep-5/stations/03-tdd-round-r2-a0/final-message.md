@@ -1,0 +1,3 @@
+The round is blocked by an invalid acceptance test: it passes unsupported `PromptBuilder` fields (`baseSystemPrompt`, etc.). Per instructions, I did not edit the acceptance test or unrelated source to mask that error. No tests ran and no commit was made.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test does not typecheck because it uses unsupported PromptBuilderConfig fields; fixing it would violate the instruction not to edit acceptance tests."}}

@@ -1,0 +1,148 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..221b482
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,26 @@
++# Definition of Done
++
++> It does not give a **client** anything: the browser holding the socket cannot reach the store
++
++**Strategy: `direct`** — The real WebSocket server and message validator are already callable through `createServer` and `validateMessage`. The acceptance tests use a live WebSocket connection backed by the in-memory session store, so the missing protocol behavior is observable without a double.
++
++## Done when these pass
++
++- [ ] **validates a list_conversations frame and its paging fields** — accepts the new frame and rejects invalid `limit` and `before` values with field-specific errors.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **answers the authenticated user with their summaries and forwards the user id to listFor** — an enabled history request returns ISO-dated summaries for only the connected user, and the store receives the connection user rather than a frame-supplied id.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **refuses a conversation list when history is not enabled** — the default configuration answers with `UNSUPPORTED` and never sends a conversation list.
++      `src/transport/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the additive inbound frame and validation rules.
++- [ ] Thread history configuration and the session store into the WebSocket handler.
++- [ ] Answer enabled requests with authenticated summaries and ISO wire timestamps.
++- [ ] Return `UNSUPPORTED` when history is disabled or the store cannot list.
++
++## Out of scope
++
++- Conversation deletion, previews or titles, server-held paging state, operator views, and live cross-tab synchronization.
++- REST endpoints or a new in-band conversation-switch/replay path.
+diff --git a/src/transport/conversationList.acceptance.test.ts b/src/transport/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..02a59ea
+--- /dev/null
++++ b/src/transport/conversationList.acceptance.test.ts
+@@ -0,0 +1,110 @@
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++import {validateMessage} from './ws/validation.js';
++import {connectClient, startEngineWith, stopEngines} from './wsTestSupport.js';
++import type {HalServerOptions} from './createServer.js';
++
++const wait = (milliseconds: number) => new Promise<void>(resolve => setTimeout(resolve, milliseconds));
++
++afterEach(async () => {
++  await stopEngines();
++  await wait(10);
++});
++
++describe('conversation lists over the WebSocket protocol', () => {
++  it('validates a list_conversations frame and its paging fields', () => {
++    expect(validateMessage({type: 'list_conversations'})).toEqual({
++      valid: true,
++      data: {type: 'list_conversations'},
++    });
++
++    for (const [frame, field] of [
++      [{type: 'list_conversations', limit: 0}, 'limit'],
++      [{type: 'list_conversations', limit: 201}, 'limit'],
++      [{type: 'list_conversations', limit: 1.5}, 'limit'],
++      [{type: 'list_conversations', limit: '10'}, 'limit'],
++      [{type: 'list_conversations', before: 'not a date'}, 'before'],
++    ]) {
++      expect(validateMessage(frame)).toMatchObject({valid: false, error: expect.stringContaining(field)});
++    }
++  });
++
++  it('answers the authenticated user with their summaries and forwards the user id to listFor', async () => {
++    const store = new InMemorySessionStore();
++    store.create('u1-old', 'u1');
++    store.create('u1-new', 'u1');
++    store.create('u2-only', 'u2');
++    const calls: Array<{userId: string | number; options?: unknown}> = [];
++    const listFor = store.listFor.bind(store);
++    store.listFor = (userId, options) => {
++      calls.push({userId, options});
++      return listFor(userId, options);
++    };
++
++    const history = {enabled: true};
++    const {url} = await startEngineWith({
++      sessionStore: store,
++      history,
++    } as unknown as Partial<HalServerOptions> & Pick<HalServerOptions, 'sessionStore'>);
++    const client = connectClient(url);
++    const frames: Array<Record<string, unknown>> = [];
++    await new Promise<void>((resolve, reject) => {
++      const timer = setTimeout(() => reject(new Error('timed out waiting for connected')), 1000);
++      client.on('message', raw => {
++        const frame = JSON.parse(String(raw)) as Record<string, unknown>;
++        frames.push(frame);
++        if (frame.type === 'connected') {
++          clearTimeout(timer);
++          client.send(JSON.stringify({type: 'list_conversations', userId: 'u2'}));
++          resolve();
++        }
++      });
++      client.on('error', reject);
++    });
++
++    await wait(25);
++
++    const list = frames.find(frame => frame.type === 'conversation_list');
++    expect(calls.at(-1)?.userId).toBe('u1');
++    expect(list).toMatchObject({
++      type: 'conversation_list',
++      conversations: expect.arrayContaining([
++        expect.objectContaining({sessionId: 'u1-old'}),
++        expect.objectContaining({sessionId: 'u1-new'}),
++      ]),
++    });
++    expect(
++      (list?.conversations as Array<Record<string, unknown>>).every(
++        summary => typeof summary.createdAt === 'string' && typeof summary.updatedAt === 'string'
++      )
++    ).toBe(true);
++    expect(
++      (list?.conversations as Array<Record<string, unknown>>).some(summary => summary.sessionId === 'u2-only')
++    ).toBe(false);
++  });
++
++  it('refuses a conversation list when history is not enabled', async () => {
++    const store = new InMemorySessionStore();
++    store.create('u1-existing', 'u1');
++    const {url} = await startEngineWith({sessionStore: store});
++    const client = connectClient(url);
++    const frames: Array<Record<string, unknown>> = [];
++    await new Promise<void>((resolve, reject) => {
++      const timer = setTimeout(() => reject(new Error('timed out waiting for connected')), 1000);
++      client.on('message', raw => {
++        const frame = JSON.parse(String(raw)) as Record<string, unknown>;
++        frames.push(frame);
++        if (frame.type === 'connected') {
++          clearTimeout(timer);
++          client.send(JSON.stringify({type: 'list_conversations'}));
++          resolve();
++        }
++      });
++      client.on('error', reject);
++    });
++
++    await wait(25);
++
++    expect(frames).toContainEqual(expect.objectContaining({type: 'error', code: 'UNSUPPORTED'}));
++    expect(frames.some(frame => frame.type === 'conversation_list')).toBe(false);
++  });
++});

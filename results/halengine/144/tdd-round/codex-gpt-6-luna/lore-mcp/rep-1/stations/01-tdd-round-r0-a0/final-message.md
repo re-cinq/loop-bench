@@ -1,0 +1,5 @@
+Completed and pushed commit `6672e73` (`Validate list_sessions frames`). The new validator test went red, then green; one red test was ours, with zero regressions. I ran only `src/transport/ws/validation.test.ts`. Formatting completed, and the branch is up to date with `origin/loop-bench/144`.
+
+This round closed the message type and validation facets. Next: thread `sessionStore` into `createMessageHandler`. The branch DoD uses `list_sessions`/`session_list`, which differs from the ticket’s `list_conversations`/`conversation_list`; I followed the branch DoD. Lore could not provide a CI verdict: it returned 404 for the branch and PR 144.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"list_sessions message types and frame validation","tdd_next":"thread sessionStore into createMessageHandler"}}

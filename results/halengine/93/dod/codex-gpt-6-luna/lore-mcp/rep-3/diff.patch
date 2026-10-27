@@ -1,0 +1,129 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..92c6ae8
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,21 @@
++# Definition of Done
++
++> For a turn that called tools, it is the last leg of several, and the earlier rounds — including the one carrying the customer's question and the full tool results — are not counted anywhere.
++
++**Strategy: `direct`** — `createChatOrchestrator` exposes the real orchestrator entry point with injectable provider, tool registry, and hooks. A scripted provider can exercise multiple actual rounds and observe the usage delivered to `afterModelResponse`.
++
++## Done when these pass
++
++- [ ] **usage reported across tool rounds** — usage passed to `afterModelResponse` includes every provider call in a two-tool-round turn; rounds without usage contribute nothing, and no usage remains `undefined` when no round reports it. The existing no-tool usage test remains unedited.
++      `src/orchestration/usageAcrossToolRounds.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the red acceptance test for summed usage and missing-usage rounds.
++- [ ] Aggregate provider usage across rounds and make the hook's usage type unambiguous.
++- [ ] Update the hooks spec and changelog to describe the new behavior and consumer-visible change.
++- [ ] Run the existing no-tool usage test unchanged.
++
++## Out of scope
++
++- Billing or audit record implementation, accounting beyond provider calls made by the orchestrator, and the `stop` chunk's usage shape.
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 2749d18..ea1ba54 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -25,4 +25,4 @@
+ These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
+ 
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+-- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++- `afterModelResponse` is called once per user message after the round loop exits, and receives usage summed across every provider call in the turn; rounds without usage contribute nothing, and if no round reports usage the hook receives `undefined`. A turn without tool calls therefore keeps its existing usage value. ([validated by usage reported across tool rounds](../../src/orchestration/usageAcrossToolRounds.acceptance.test.ts#L54))
+diff --git a/src/orchestration/usageAcrossToolRounds.acceptance.test.ts b/src/orchestration/usageAcrossToolRounds.acceptance.test.ts
+new file mode 100644
+index 0000000..9dc3a45
+--- /dev/null
++++ b/src/orchestration/usageAcrossToolRounds.acceptance.test.ts
+@@ -0,0 +1,86 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++const session = (): ChatSession => ({
++  sessionId: 'usage-acceptance',
++  userId: 'user',
++  entries: [{role: 'user', content: 'look this up', timestamp: '2026-01-01T00:00:00.000Z'}],
++});
++const toolCall: MessageChunk = {
++  type: 'tool_use',
++  toolCall: {id: 'lookup-1', name: 'lookup', input: {query: 'answer'}},
++};
++const toolStop: MessageChunk = {type: 'stop', stopReason: 'tool_use'};
++
++function scriptedProvider(rounds: MessageChunk[][]): AIProvider {
++  let round = 0;
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++function registry(): ToolRegistry {
++  const tools = new ToolRegistry();
++  tools.register(
++    {name: 'lookup', description: 'look something up', inputSchema: {type: 'object'}},
++    async () => 'found it'
++  );
++  return tools;
++}
++
++async function usageFrom(rounds: MessageChunk[][]): Promise<UsageMetadata | undefined> {
++  let received: UsageMetadata | undefined;
++  const hooks: OrchestratorHooks = {
++    afterModelResponse: async (_session, _text, usage) => {
++      received = usage;
++    },
++  };
++  const orchestrator = createChatOrchestrator(scriptedProvider(rounds), promptBuilder, registry(), {hooks});
++  await orchestrator.processMessage(session());
++  return received;
++}
++
++describe('usage reported across tool rounds', () => {
++  it('reports the sum from every provider call in a two-tool-round turn', async () => {
++    const received = await usageFrom([
++      [toolCall, {type: 'stop', stopReason: 'tool_use', usage: {inputTokens: 11, outputTokens: 2, totalTokens: 13}}],
++      [toolCall, {type: 'stop', stopReason: 'tool_use', usage: {inputTokens: 17, outputTokens: 3, totalTokens: 20}}],
++      [
++        {type: 'text', text: 'done'},
++        {type: 'stop', stopReason: 'end_turn', usage: {inputTokens: 23, outputTokens: 5, totalTokens: 28}},
++      ],
++    ]);
++
++    const reported = {inputTokens: 11, outputTokens: 2, totalTokens: 13};
++    const partial = await usageFrom([
++      [toolCall, {type: 'stop', stopReason: 'tool_use', usage: reported}],
++      [toolCall, {type: 'stop', stopReason: 'tool_use'}],
++      [
++        {type: 'text', text: 'done'},
++        {type: 'stop', stopReason: 'end_turn'},
++      ],
++    ]);
++    const absent = await usageFrom([
++      [
++        {type: 'text', text: 'done'},
++        {type: 'stop', stopReason: 'end_turn'},
++      ],
++    ]);
++
++    expect({received, partial, absent}).toEqual({
++      received: {inputTokens: 51, outputTokens: 10, totalTokens: 61},
++      partial: reported,
++      absent: undefined,
++    });
++  });
++});

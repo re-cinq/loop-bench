@@ -1,0 +1,3 @@
+The `direct` acceptance test in `.lore/dod.md` requires a store without `listFor` to return an empty `session_list`. This round’s facet and ticket require the same case to return `UNSUPPORTED`. Your instructions say to stop when an acceptance test is wrong and not edit it, so I made no changes.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test requires an empty session_list where the ticket requires UNSUPPORTED; the test cannot be edited, so this facet cannot be implemented without violating the acceptance bar."}}

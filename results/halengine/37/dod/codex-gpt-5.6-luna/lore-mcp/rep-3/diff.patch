@@ -1,0 +1,153 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..df4ee04
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,24 @@
++# Definition of Done
++
++> Validate `input` against the resolved tool definition's `inputSchema` inside `ToolRegistry.execute`, before the executor runs, using a JSON Schema validator (`ajv` unless the build proves otherwise) added to `dependencies` — not a second, hand-written schema in a different format, since the schema already has to match what is handed to the providers.
++
++**Strategy: `direct`** — `ToolRegistry.execute` is already the real caller-facing seam. The acceptance tests register real tools and call the registry directly, without mocks or production-code changes.
++
++## Done when these pass
++
++- [ ] **rejects schema-invalid input without invoking the executor or exposing the offending value** — missing required and wrong-typed input returns a descriptive `ToolResponse`, leaves the executor untouched, and redacts the offending value.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **forwards valid input with an extra property unchanged exactly once** — valid input and undeclared properties reach the executor unchanged in one call.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **compiles static schemas at registration and resolves function-valued schemas for each execution** — invalid static schemas fail at registration with the tool name, and changing definition sources are validated against the schema current to each call.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the registry acceptance tests against the existing `ToolRegistry` seam.
++- [ ] Add the missing spec statements and link each acceptance test to its contract.
++- [ ] Implement schema validation, safe rejection responses, static compilation, and per-call dynamic schema resolution in a later round.
++
++## Out of scope
++
++- Unknown-tool behavior, tool output validation, orchestrator retry-loop integration, documentation, dependency/build checks, and migration/versioning work are not pinned by these direct registry tests.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..cfed1bb
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,12 @@
++# Tool Input Validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | Draft                |
++
++`ToolRegistry.execute` validates caller-supplied tool input against the resolved tool definition before an executor can run.
++
++- A missing required property or a property with the wrong type returns a `ToolResponse` describing the failed constraint, does not invoke the executor, and does not expose the rejected value ([validated by: rejects schema-invalid input without invoking the executor or exposing the offending value](../../src/orchestration/tools/registry.acceptance.test.ts#L10)).
++- Input that satisfies the declared schema reaches the executor unchanged, including properties not listed by the schema, and reaches it exactly once ([validated by: validates known fields and forwards valid input with an extra property unchanged exactly once](../../src/orchestration/tools/registry.acceptance.test.ts#L37)).
++- A static schema that cannot be compiled fails during registration with the tool name in the error, while a function-valued definition is validated against the schema it resolves for each execution ([validated by: compiles static schemas at registration and resolves function-valued schemas for each execution](../../src/orchestration/tools/registry.acceptance.test.ts#L66)).
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..f37d5a6
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,99 @@
++import {ToolRegistry} from './registry.js';
++
++const definition = (name: string, inputSchema: Record<string, unknown>) => ({
++  name,
++  description: `Acceptance test tool ${name}`,
++  inputSchema,
++});
++
++describe('ToolRegistry input validation', () => {
++  it('rejects schema-invalid input without invoking the executor or exposing the offending value', async () => {
++    let calls = 0;
++    const registry = new ToolRegistry();
++    registry.register(
++      definition('weather', {
++        type: 'object',
++        properties: {location: {type: 'string'}},
++        required: ['location'],
++      }),
++      async () => {
++        calls += 1;
++        return 'executed';
++      }
++    );
++
++    const missing = await registry.execute('weather', {});
++    const wrongType = await registry.execute('weather', {location: 987654321});
++
++    expect({missing, wrongType, calls}).toEqual({
++      missing: {result: expect.stringContaining('location')},
++      wrongType: {result: expect.stringContaining('location')},
++      calls: 0,
++    });
++    expect(wrongType.result).toMatch(/string/);
++    expect(wrongType.result).not.toContain('987654321');
++  });
++
++  it('validates known fields and forwards valid input with an extra property unchanged exactly once', async () => {
++    let calls = 0;
++    let received: Record<string, unknown> | undefined;
++    const registry = new ToolRegistry();
++    registry.register(
++      definition('weather', {
++        type: 'object',
++        properties: {location: {type: 'string'}},
++        required: ['location'],
++      }),
++      async input => {
++        calls += 1;
++        received = input;
++        return 'forecast';
++      }
++    );
++
++    const invalid = await registry.execute('weather', {location: 987654321, identifyingNote: 'private-value'});
++    const input = {location: 'Berlin', identifyingNote: 'private-value'};
++    const result = await registry.execute('weather', input);
++
++    expect({invalid, result, calls, received}).toEqual({
++      invalid: {result: expect.stringContaining('location')},
++      result: {result: 'forecast'},
++      calls: 1,
++      received: input,
++    });
++  });
++
++  it('compiles static schemas at registration and resolves function-valued schemas for each execution', async () => {
++    const registry = new ToolRegistry();
++    expect(() =>
++      registry.register(definition('broken-weather', {type: 'not-a-json-schema-type'}), async () => 'never')
++    ).toThrow(/broken-weather/);
++
++    let resolveCount = 0;
++    let calls = 0;
++    registry.register(
++      () => {
++        resolveCount += 1;
++        return definition(
++          'changing-weather',
++          resolveCount % 2 === 0
++            ? {type: 'object', properties: {city: {type: 'string'}}, required: ['city']}
++            : {type: 'object', properties: {location: {type: 'string'}}, required: ['location']}
++        );
++      },
++      async () => {
++        calls += 1;
++        return 'executed';
++      }
++    );
++
++    const first = await registry.execute('changing-weather', {city: 'Paris'});
++    const second = await registry.execute('changing-weather', {location: 'Berlin'});
++
++    expect({first, second, calls}).toEqual({
++      first: {result: expect.stringContaining('location')},
++      second: {result: expect.stringContaining('city')},
++      calls: 0,
++    });
++  });
++});

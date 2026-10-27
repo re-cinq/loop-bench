@@ -1,0 +1,3 @@
+The CI verdict exposes a type error in the acceptance test: it passes `baseSystemPrompt` to `PromptBuilder`, whose `PromptBuilderConfig` does not accept that property. The instructions say not to edit acceptance tests and to stop if one is wrong, so I stopped before editing or committing.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The CI acceptance test has an invalid PromptBuilderConfig property; correcting it would require editing the acceptance test, which this round forbids."}}

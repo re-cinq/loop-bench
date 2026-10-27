@@ -1,0 +1,3 @@
+The round is blocked by the CI typecheck finding: the acceptance test uses `baseSystemPrompt`, which `PromptBuilderConfig` does not support. Your instructions say to stop if an acceptance test is wrong, so I made no edits, ran no tests, and did not commit or push. Red tests written this round: 0; CI regressions to attribute: undetermined.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test does not typecheck because its PromptBuilderConfig uses unsupported baseSystemPrompt; instructions require stopping when an acceptance test is wrong."}}

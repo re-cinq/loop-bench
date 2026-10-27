@@ -1,0 +1,3 @@
+The round is blocked: the existing acceptance test asserts the superseded `list_sessions`/`session_list` behavior, conflicting with ticket #144’s required `list_conversations`/`conversation_list` contract. I made no changes, so no commit or push was performed. Red tests: 1 acceptance regression; 0 tests written this round.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Existing acceptance test asserts the obsolete list_sessions/session_list contract; instructions prohibit editing an incorrect acceptance test."}}

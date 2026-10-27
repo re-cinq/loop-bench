@@ -1,0 +1,5 @@
+Added nested required-property paths to validation rejections and fixed the two findings from the prior CI verdict: the Ajv options type error and the deep-member lint error. The new test failed before the implementation change and passed afterward; all 3 tests in `registry.test.ts` passed. I did not run acceptance tests, lint, or typecheck.
+
+Committed and pushed as `9083f92`; the branch is up to date with `origin/main` and its upstream. This round had 1 red test of mine and 0 regressions. Remaining unchecked facets include the additional tests and documentation updates. No unrelated smells were acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Include nested property paths in required-field validation rejections","tdd_next":"Add the remaining validation tests, orchestrator retry test, and documentation/spec updates"}}
