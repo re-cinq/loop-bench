@@ -1,0 +1,3 @@
+Fixed the reported eslint findings and pushed commit `03f4456`. Formatting and `git diff --check` passed; I did not run eslint, as required. `origin/main` was already merged, and the branch is synchronized with its upstream. CI will judge the pushed repair.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added spec links for the usage helper tests and combined the two assertions into one."}}

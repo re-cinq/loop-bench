@@ -1,0 +1,3 @@
+The round is blocked by an acceptance test defect. CI reports that `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` uses an invalid `PromptBuilder` config and violates the lint rules for assertion count and spec traceability. The requested workflow says to stop when an acceptance test is wrong, so I’m making no edits or commit. The `CHANGELOG` facet remains open.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test has CI-reported type and lint errors; the instructions require stopping when an acceptance test is wrong."}}

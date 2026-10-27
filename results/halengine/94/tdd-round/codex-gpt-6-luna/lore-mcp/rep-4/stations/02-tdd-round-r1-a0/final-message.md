@@ -1,0 +1,5 @@
+I stopped without editing or committing. The acceptance test `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` has a type error: its `PromptBuilder` config uses `baseSystemPrompt`, which is not a property of `PromptBuilderConfig`. CI also flags that test for lacking a spec link and having three `expect` calls. The instructions prohibit editing acceptance tests and require stopping if one is wrong, so I couldn’t complete the changelog facet or this TDD round.
+
+The CI test failure in the round brief is truncated; the Lore lookup could not retrieve branch results. Red tests written this round: 0. Regressions confirmed: 0.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test has a type error and ESLint violations, but the instructions prohibit editing it and require stopping when an acceptance test is wrong."}}

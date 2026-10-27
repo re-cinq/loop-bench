@@ -1,0 +1,3 @@
+The CI brief omits the remainder of the eslint findings, and Lore returned 404 for both the branch and PR lookups. I can’t identify and repair every required finding from the available verdict, so I made no changes or commit.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The CI brief truncates the eslint findings, and Lore cannot retrieve the branch or PR verdict to identify the remaining repairs."}}

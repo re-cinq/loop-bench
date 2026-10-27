@@ -1,0 +1,5 @@
+**Delivered and pushed** commit `319a13a` with the session list message types, public exports, a compatibility fixture, corrected spec anchors, and a changelog entry. The next facet is threading `sessionStore` into `createMessageHandler`.
+
+The targeted Jest test passed. **Red tests written this round: 0. Regressions: undetermined**—the prior CI brief truncates the test failure details, and Lore could not find the branch or PR. The brief also lists remaining lint findings whose details are truncated; they are not resolved here. The branch is clean and matches its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage types and wire them into the message unions","tdd_next":"Thread sessionStore into createMessageHandler and wire it in createServer"}}

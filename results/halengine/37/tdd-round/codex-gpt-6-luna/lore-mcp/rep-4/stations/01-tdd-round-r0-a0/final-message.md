@@ -1,0 +1,5 @@
+Completed one red–green–refactor round for required-field rejection. The new registry test failed before the change and passed afterward; only that test file was run. Added Ajv validation and a spec link, updated the DoD checklist, committed as `c37983a`, and pushed. The branch is up to date with its upstream.
+
+The acceptance suite was not run. Lore had no CI verdict for this branch. **Red tests:** 1 written by me, 0 regressions reported. The next round should take the remaining validation, compilation, documentation, and release facets.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Reject input missing a required property before invoking the executor and return a readable ToolResponse","tdd_next":"Complete the remaining schema-validation facets, including compilation behavior and remaining acceptance criteria"}}

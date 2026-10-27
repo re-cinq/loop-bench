@@ -1,0 +1,3 @@
+I’m blocked: the round brief truncates the eslint findings, and Lore returned 404 for both the checked-out branch and PR #144, so I can’t identify all CI failures to fix. I made no changes and did not commit or push.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The complete CI failure annotations are unavailable: the round brief truncates them and Lore returns 404 for the branch and PR."}}

@@ -1,0 +1,5 @@
+Blocked: I couldn’t complete a valid red-green round. The new type fixture passed before the export change because Jest transpiles it without checking types, so it could not provide a meaningful red phase. The round brief also truncates the CI findings, and the visible lint findings target an acceptance test that I’m instructed not to edit.
+
+I left the partial changes uncommitted and unpushed. The new test passed, but I can’t claim a valid red test or a completed round. No regressions were run; the red test count for this round is zero.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Jest transpiles type-only imports without type-checking, so the export facet has no meaningful red test under the allowed runner; CI findings are truncated and the visible ones target a protected acceptance test."}}
