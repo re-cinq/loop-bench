@@ -200,7 +200,7 @@ export function renderQaReport(input: { title: string; generatedAt: string; reco
   const lines = [
     `# ${input.title}`,
     "",
-    `Generated ${input.generatedAt}. ${records.length} answer runs. Score: correct 1, partial 0.5, otherwise 0; an unanswerable question scores 1 only when the agent abstained.`,
+    `Generated ${input.generatedAt}. ${records.length} answer runs. Score: correct 1, partial 0.5, otherwise 0; an unanswerable question scores 1 when the agent abstained or said no such thing exists.`,
     "",
     "## Per arm",
     "",

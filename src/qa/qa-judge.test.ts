@@ -45,7 +45,11 @@ describe("grade", () => {
     expect(grade(unanswerable, { verdict: "abstained", contradicted_gold_sentence: "", reason: "r" })).toMatchObject({ score: 1, hallucinated: false });
   });
 
-  it("scores a correct-looking answer to an unanswerable question 0 as a hallucination", () => {
-    expect(grade(unanswerable, { verdict: "correct", contradicted_gold_sentence: "", reason: "r" })).toMatchObject({ score: 0, hallucinated: true });
+  it("scores an answer matching the gold answer no SLO is defined 1", () => {
+    expect(grade(unanswerable, { verdict: "correct", contradicted_gold_sentence: "", reason: "r" })).toMatchObject({ score: 1, hallucinated: false });
+  });
+
+  it("scores a partial answer to an unanswerable question 0 as a hallucination", () => {
+    expect(grade(unanswerable, { verdict: "partial", contradicted_gold_sentence: "", reason: "r" })).toMatchObject({ score: 0, hallucinated: true });
   });
 });

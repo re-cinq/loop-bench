@@ -55,14 +55,14 @@ export function parseJudgement(text: string): Judgement | null {
   return parsed.success ? parsed.data : null;
 }
 
-/** The judge's verdict as a score: an unanswerable question is right only when the agent abstained, and any answer to it is a hallucination. */
+/** The judge's verdict as a score: an unanswerable question is right when the agent abstained or said, as the gold answer does, that no such thing exists; anything else is a hallucination. */
 export function grade(question: Question, judgement: Judgement): Graded {
   const quoteUnverified = judgement.verdict === "wrong" && judgement.contradicted_gold_sentence !== "" && !normalised(question.gold_answer).includes(normalised(judgement.contradicted_gold_sentence));
 
   if (question.must_abstain) {
-    const abstained = judgement.verdict === "abstained";
+    const declined = judgement.verdict === "abstained" || judgement.verdict === "correct";
 
-    return { verdict: judgement.verdict, score: abstained ? 1 : 0, hallucinated: !abstained, quote_unverified: false, reason: judgement.reason };
+    return { verdict: judgement.verdict, score: declined ? 1 : 0, hallucinated: !declined, quote_unverified: false, reason: judgement.reason };
   }
 
   return {
