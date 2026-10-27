@@ -1,0 +1,5 @@
+Added a focused test proving a static schema is read once across ten executions, and linked it from the spec. Consolidated the two assertions flagged by CI lint. The test went red with the deliberately incorrect expectation, then passed after correction.
+
+The previous CI report’s test failure details were truncated, and Lore could not retrieve them; I can’t classify that failure. This round had **1 red test of my own** and **0 confirmed regressions**. Formatted the changed test, committed and pushed both commits, merged `origin/main` (already up to date), and confirmed the branch is clean and not ahead of upstream. The next facet is the remaining tests and documentation updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Prove static schema is read once across ten executions and fix reported registry test lint errors","tdd_next":"Add remaining unit tests and documentation updates"}}
