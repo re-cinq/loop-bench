@@ -65,10 +65,29 @@ The judge gave the same verdict twice for 96% of the answers it graded twice.
 
 A Utopia search took 83–89 s on the lore base and 12–24 s on Otto's (37–118 s earlier the same day, under heavier load). The Utopia database has no approximate-nearest-neighbour index (no HNSW or IVFFlat), so every vector search compares against every stored vector. Its 3072-dimension embeddings are above pgvector's 2,000-dimension HNSW limit, so an index needs smaller embeddings or a halfvec or binary-quantised HNSW. Claude Code's default MCP tool timeout is shorter than these searches, so the Utopia arm ran with `MCP_TOOL_TIMEOUT` at 5 minutes; with the default, most lore-base searches failed in a smoke test. Utopia's quality lead holds today only for a client that waits; its time column will drop once search is indexed.
 
+## Utopia rerun after the search fix (same evening)
+
+After Utopia was changed the same day, the Utopia arm was run again on the same 60 questions × 3 asks, this time with **Claude Code's default MCP tool timeout** (no 5-minute override), as a normal agent would run. Results: `../2026-10-27-utopia-rerun/`.
+
+| Run | Score | Hallucinated | Tokens p50 | Cost / question | Time p50 / p95 | Failed tool calls |
+|---|---|---|---|---|---|---|
+| utopia, first run (5-min timeout) | 0.87 | 7% | 17,794 | $0.036 | 24.8 s / 70.9 s | 5 |
+| utopia, rerun (default timeout) | 0.85 | 9% | 17,813 | $0.034 | **14.4 s / 51.3 s** | 11 |
+
+| Repository | Time p50 before → after | Time p95 before → after |
+|---|---|---|
+| lore | 32.5 s → **15.1 s** | 89.1 s → **40.2 s** |
+| Otto | 15.9 s → 12.2 s | 46.2 s → 58.8 s |
+
+- **Twice as fast on the lore base**, a little faster on Otto. A single search on lore's base went from 83–89 s to about 12 s.
+- **Quality is the same within noise** (0.85 against 0.87; the rerun's replicate range is 0.82–0.88).
+- **The default timeout is now usable.** Only 2 of 11 failed calls were timeouts. The other 9 were the agent calling tools that do not exist (`json`, `answer`, an unprefixed `get_document`), so they are mistakes of the agent, not of Utopia.
+- Utopia now answers in about the same time as Lore (14.4 s against 16.3 s median) with a third of the tokens.
+
 ## What this suggests
 
 1. **Make Utopia the context store for agents**, by kind first where the gap is widest: tracker, history, requirements, temporal. That is the plan's switch rule (Utopia ≥ Lore), here on far more than a doc sample, though one run, not two weeks.
-2. **Index Utopia's vectors before switching.** Today an agent with a default MCP timeout would get timeouts, not answers.
+2. **Keep Utopia's search fast before switching.** After the evening fix a default agent gets answers in about Lore's time; the slow tail on Otto (59 s p95) still needs a look.
 3. **Rank newer statements first in both stores.** Every stale-document error was an older text winning over its amendment.
 4. **Fix ADR-010** so it says the context evals run from a developer machine, not nightly.
 
