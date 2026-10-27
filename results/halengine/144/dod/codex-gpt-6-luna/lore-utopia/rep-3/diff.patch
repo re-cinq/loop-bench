@@ -1,0 +1,115 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..21d024a
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,24 @@
++# Definition of Done
++
++> It does not give a **client** anything: the browser holding the socket cannot reach the store, so
++> every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over
++> the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — `createHalEngine` exposes the real authenticated WebSocket path and accepts a session store. The acceptance test exercises that path with real sockets and the in-memory store.
++
++## Done when these pass
++
++- [ ] **The conversation list websocket protocol answers an authenticated request** — returns the caller's summaries as ISO dates even when the frame names another user.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Accept and validate the list request, including its paging options.
++- [ ] Return the authenticated user's summaries over the socket with the history opt-in enabled.
++- [ ] Refuse disabled or unsupported listing and safely report store failures.
++- [ ] Keep list requests off the per-session turn lock.
++
++## Out of scope
++
++- Conversation selection and replay, which use the existing `?sessionId=` resume path.
++- Preview text, deletion, operator access to another user's conversations, and live sync between tabs.
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..80b4ca4 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -160,6 +160,10 @@ Application-level heartbeat. The server MUST respond with a `pong` message echoi
+ | `type`      | string | Yes      | `"ping"`                          |
+ | `timestamp` | number | Yes      | Client timestamp in milliseconds  |
+ 
++### 4.3 list_conversations
++
++Requests the summaries belonging to the authenticated connection's user. A client-supplied user id does not select whose conversations are listed; the server takes identity from the connection. The response serializes summary timestamps as ISO strings ([validated by: answers a list request with only the authenticated user’s summaries as ISO dates](../../src/transport/ws/conversationList.acceptance.test.ts#L17)).
++
+ ## 5. Server-to-Client Messages
+ 
+ ### 5.1 connected
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..1fa4165
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,64 @@
++import {WebSocket} from 'ws';
++import {createHalEngine} from '../../config.js';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import type {SessionListOptions} from '../../types/sessionStore.js';
++import type {OutgoingMessage} from '../../types/messages.js';
++
++class RecordingSessionStore extends InMemorySessionStore {
++  readonly listedUsers: Array<string | number> = [];
++
++  override listFor(userId: string | number, options?: SessionListOptions) {
++    this.listedUsers.push(userId);
++    return super.listFor(userId, options);
++  }
++}
++
++describe('the conversation list websocket protocol', () => {
++  it('answers a list request with only the authenticated user’s summaries as ISO dates', async () => {
++    const sessionStore = new RecordingSessionStore();
++    sessionStore.create('own-conversation', 'alice');
++    sessionStore.create('other-conversation', 'bob');
++    const expected = sessionStore.listFor('alice').map(summary => ({
++      ...summary,
++      createdAt: summary.createdAt.toISOString(),
++      updatedAt: summary.updatedAt.toISOString(),
++    }));
++    sessionStore.listedUsers.length = 0;
++    const engine = createHalEngine({
++      provider: {type: 'mock'},
++      prompt: {identity: 'test assistant'},
++      session: sessionStore,
++      auth: {ws: async () => ({id: 'alice'})},
++      transport: {history: {enabled: true}},
++    });
++
++    await engine.start(0);
++    const address = engine.server.address();
++    if (!address || typeof address === 'string') throw new Error('WebSocket server did not bind a TCP port');
++    const socket = new WebSocket(`ws://127.0.0.1:${address.port}/hal/ws`, ['hal.v1']);
++    const messages: OutgoingMessage[] = [];
++
++    try {
++      await new Promise<void>((resolve, reject) => {
++        socket.on('message', raw => {
++          const message = JSON.parse(raw.toString()) as OutgoingMessage;
++          messages.push(message);
++          if (message.type === 'connected') {
++            socket.send(JSON.stringify({type: 'list_conversations', userId: 'bob'}));
++          } else {
++            resolve();
++          }
++        });
++        socket.once('error', reject);
++      });
++
++      expect(messages.slice(1)).toEqual([{type: 'conversation_list', conversations: expected}]);
++      expect(sessionStore.listedUsers).toEqual(['alice']);
++    } finally {
++      const closed = new Promise<void>(resolve => socket.once('close', () => resolve()));
++      socket.close();
++      await closed;
++      await engine.stop();
++    }
++  });
++});

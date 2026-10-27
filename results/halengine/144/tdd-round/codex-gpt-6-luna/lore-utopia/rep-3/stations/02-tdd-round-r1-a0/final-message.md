@@ -1,0 +1,5 @@
+Committed and pushed `b2d455a` (`feat(ws): dispatch session list frames`). The handler now receives the store and answers `list_sessions` for the connected user with ISO dates. The new focused test passed; it was red before implementation. I ran no other tests.
+
+The previous CI brief also listed lint findings in the acceptance tests, including duplicated code; those remain unaddressed. I couldn’t retrieve fuller CI details because Lore returned a branch-not-found error. Red tests this round: **0**; confirmed regressions: **0**. The branch is up to date with its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Thread sessionStore into createMessageHandler and handle list_sessions dispatch","tdd_next":"Document list_sessions and session_list in the protocol and conversation-list specs"}}

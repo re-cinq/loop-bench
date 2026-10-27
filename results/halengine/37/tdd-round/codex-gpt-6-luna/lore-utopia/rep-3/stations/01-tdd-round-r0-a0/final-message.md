@@ -1,0 +1,5 @@
+Completed one round for the required-property rejection facet. The new registry test failed before the change and passed after implementation and refactoring. I added Ajv-backed validation, updated the spec link and DoD checklist, then committed and pushed `411ee90`. The branch is up to date with its upstream.
+
+The next round should cover other validation facets, starting with wrong-typed input and value redaction. Acceptance tests and CI checks were not run here; Lore had no CI record for this branch. Red tests written this round: 1; regressions: 0. No unrelated smells addressed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"missing required property returns a rejection without invoking the executor","tdd_next":"wrong-typed input rejection with field path and expected type, without leaking values"}}
