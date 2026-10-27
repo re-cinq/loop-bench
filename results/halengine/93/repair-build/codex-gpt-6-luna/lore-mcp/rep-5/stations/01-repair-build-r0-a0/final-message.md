@@ -1,0 +1,3 @@
+Fixed the reported lint findings: added spec links for all three usage helper tests and combined the two assertions in the undefined-side test into one. Formatted both changed files, committed as `4fca476`, and pushed. The branch is up to date with its upstream; I did not run the linter.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added spec links for usage helper tests and combined two expects into one"}}

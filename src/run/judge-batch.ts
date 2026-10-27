@@ -16,6 +16,7 @@ interface BatchContext {
   config: ExperimentConfig;
   paths: BenchPaths;
   log: (line: string) => void;
+  limit?: number | undefined;
 }
 
 const END_STATES: ReadonlySet<JobState> = new Set([JobState.JOB_STATE_SUCCEEDED, JobState.JOB_STATE_FAILED, JobState.JOB_STATE_CANCELLED, JobState.JOB_STATE_EXPIRED]);
@@ -59,7 +60,7 @@ export async function submitJudgeBatch(context: BatchContext): Promise<void> {
   const manifest = readManifest(context);
   const unjudged = toJudge(finishedLoopsOnDisk(context.paths.resultsDir, context.config.id), { index: 0, count: 1 });
   const idle = new Set(cellsWithoutOpenJob(manifest, unjudged.map(({ cellDir }) => relative(context.paths.resultsDir, cellDir))));
-  const todo = unjudged.filter(({ cellDir }) => idle.has(relative(context.paths.resultsDir, cellDir)));
+  const todo = unjudged.filter(({ cellDir }) => idle.has(relative(context.paths.resultsDir, cellDir))).slice(0, context.limit);
   const referenceDiffs = new Map(
     await Promise.all(
       context.config.tickets.map(async (ticket) => [ticket.number, await diffOf(context.config.subject.mirror_dir, ticket.base_sha, ticket.merge_sha)] as const),

@@ -51,7 +51,7 @@ const USAGE = `loop-bench <command> [options]
   truncate    --experiment <file> [--ticket <n>] [--apply]   cut finished one-station cells where a loop varying that station now ends (dry run without --apply)
   score       --experiment <file> [filters]   dod red/green check + judge on finished loops
   score --missing [--shard i/n]               judge only the finished loops that have no judge score, found on disk
-  score --batch submit|status|collect         judge those loops as one Vertex batch job (needs judge.batch in the experiment file)
+  score --batch submit|status|collect [--limit n]  judge those loops as one Vertex batch job (needs judge.batch in the experiment file)
   analyze     --experiment <file>             transcript metrics per station visit -> analysis.json
   propose     --experiment <file> --station <s> [--worst 5]
   report      --experiment <file>             rewrite results/<experiment>/REPORT.md and print it
@@ -109,7 +109,7 @@ async function main(argv: readonly string[]): Promise<void> {
       return makeArtifact(config(), values.ticket, values.kind, values["from-cell"]);
     case "score":
       if (values.batch) {
-        return scoreInBatch(config(), values.batch);
+        return scoreInBatch(config(), values.batch, values.limit === undefined ? undefined : Number(values.limit));
       }
       return values.missing ? scoreMissingJudges(config(), values.shard) : scoreSelected(config(), selected(), { dod: "always", judge: true });
     case "truncate":
@@ -371,8 +371,8 @@ async function scoreMissingJudges(config: ExperimentConfig, shardText: string | 
   }
 }
 
-async function scoreInBatch(config: ExperimentConfig, step: string): Promise<void> {
-  const context = { config, paths, log };
+async function scoreInBatch(config: ExperimentConfig, step: string, limit: number | undefined): Promise<void> {
+  const context = { config, paths, log, limit };
 
   switch (step) {
     case "submit":

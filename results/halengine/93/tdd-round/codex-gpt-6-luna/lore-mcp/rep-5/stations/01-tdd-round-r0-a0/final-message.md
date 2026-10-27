@@ -1,0 +1,5 @@
+Implemented and pushed commit `c1fcdbd`. `afterModelResponse` now receives usage summed across provider rounds through the named `TotalUsageMetadata` type. The new focused test was red before the change and green after formatting. The existing no-tool test was left unchanged; acceptance tests were not run.
+
+Closed facet: named aggregate-usage contract. Next: missing-usage edge cases. This round had 1 red test of mine and 0 regressions. The branch is up to date with `origin/main` and not ahead of its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Sum each token field only for provider rounds that report usage, preserving undefined when none do."}}
