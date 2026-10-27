@@ -84,6 +84,18 @@ After Utopia was changed the same day, the Utopia arm was run again on the same 
 - **The default timeout is now usable.** Only 2 of 11 failed calls were timeouts. The other 9 were the agent calling tools that do not exist (`json`, `answer`, an unprefixed `get_document`), so they are mistakes of the agent, not of Utopia.
 - Utopia now answers in about the same time as Lore (14.4 s against 16.3 s median) with a third of the tokens.
 
+## Utopia at the night's search speed
+
+Later that night a single Utopia search took 0.6–6 s on either base. The Utopia arm ran a third time on the same questions with the default MCP timeout. Results: `../2026-10-27-utopia-fast/`.
+
+| Utopia run | Score | Hallucinated | Tokens p50 | Cost / question | Time p50 / p95 | Failed tool calls |
+|---|---|---|---|---|---|---|
+| first (5-min timeout) | 0.87 | 7% | 17,794 | $0.036 | 24.8 s / 70.9 s | 5 |
+| after the evening fix | 0.85 | 9% | 17,813 | $0.034 | 14.4 s / 51.3 s | 11 |
+| at the night's speed | 0.84 | 9% | 17,800 | $0.023 | **8.8 s / 30.6 s** | 7 |
+
+At that speed an Utopia answer took about half as long as a Lore answer (16.3 s median), with the same tokens and quality as before. lore's base: 8.7 s median and 0.88 score. Otto's base: 8.9 s median and 0.80 score.
+
 ## What this suggests
 
 1. **Make Utopia the context store for agents**, by kind first where the gap is widest: tracker, history, requirements, temporal. That is the plan's switch rule (Utopia ≥ Lore), here on far more than a doc sample, though one run, not two weeks.
