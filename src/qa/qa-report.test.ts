@@ -10,6 +10,7 @@ const SCORES: Record<Verdict, number> = { correct: 1, partial: 0.5, wrong: 0, ab
 function transcript(tokens: number, wallMs: number, cost: number): QaTranscript {
   return {
     answer: "a",
+    answered_as_json: true,
     sources: [],
     usage: { ...EMPTY_USAGE, input_tokens: tokens, reported_cost_usd: cost },
     duration_ms: wallMs,

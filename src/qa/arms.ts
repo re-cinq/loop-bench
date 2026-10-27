@@ -23,7 +23,7 @@ export interface QaInvocation {
 }
 
 export function qaAnswerPrompt(repo: string, question: string): string {
-  return `Answer this question about the repository ${repo}. Use the tools you have if they help. If you cannot find the answer, say you do not know rather than guess.
+  return `Answer this question about the repository ${repo}. You cannot read the repository's files: your only sources are what you already know and the tools listed to you, if any. If you cannot find the answer, say you do not know rather than guess.
 
 Reply with a single JSON object and nothing else: {"answer": "...", "sources": ["..."]}, where sources lists the documents, files, commits, issues or pull requests your answer relies on (empty when none).
 

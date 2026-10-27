@@ -24,6 +24,7 @@ describe("readTranscript", () => {
   it("reads the answer, 2 MCP calls of which 1 failed, 102 result tokens and 3000 ms outside the model", () => {
     expect(readTranscript(stream)).toMatchObject({
       answer: "#3705",
+      answered_as_json: true,
       sources: ["#3705"],
       duration_ms: 9000,
       duration_api_ms: 6000,
@@ -41,6 +42,12 @@ describe("readTranscript", () => {
 
   it("reports an error and no answer for a run that never reached its result line", () => {
     expect(readTranscript(line({ type: "system", subtype: "init", tools: [], mcp_servers: [] }))).toMatchObject({ answer: null, is_error: true, mcp_calls: 0 });
+  });
+});
+
+describe("readTranscript of a prose reply", () => {
+  it("keeps the reply I do not know. as the answer and marks it as not JSON", () => {
+    expect(readTranscript(line({ type: "result", is_error: false, result: " I do not know. ", usage: { input_tokens: 1, output_tokens: 1 } }))).toMatchObject({ answer: "I do not know.", answered_as_json: false });
   });
 });
 

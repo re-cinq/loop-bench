@@ -4,7 +4,10 @@ import { parseJson, streamLines } from "../core/result-line.js";
 import { usageFromStream, type Usage } from "../core/usage.js";
 
 export interface QaTranscript {
+  /** The answer the JSON reply carried, or the whole reply when it carried none: the judge grades what was said, not its format. */
   answer: string | null;
+  /** Whether the reply was the JSON object the prompt asked for. */
+  answered_as_json: boolean;
   sources: string[];
   usage: Usage;
   duration_ms: number | null;
@@ -61,12 +64,14 @@ export function readTranscript(stdout: string): QaTranscript {
     .flatMap((parsed) => (parsed.success && Array.isArray(parsed.data.message.content) ? parsed.data.message.content : []));
   const toolUses = parts.map((part) => ToolUse.safeParse(part)).flatMap((parsed) => (parsed.success && parsed.data.name.startsWith("mcp__") ? [parsed.data.name] : []));
   const toolResults = parts.map((part) => ToolResult.safeParse(part)).flatMap((parsed) => (parsed.success ? [parsed.data] : []));
-  const answer = parseAnswer(result?.result ?? "");
+  const finalText = result?.result ?? "";
+  const answer = parseAnswer(finalText);
   const durationMs = result?.duration_ms ?? null;
   const durationApiMs = result?.duration_api_ms ?? null;
 
   return {
-    answer: answer?.answer ?? null,
+    answer: answer?.answer ?? (finalText.trim() === "" ? null : finalText.trim()),
+    answered_as_json: answer !== null,
     sources: answer?.sources ?? [],
     usage: usageFromStream("claude", stdout),
     duration_ms: durationMs,
