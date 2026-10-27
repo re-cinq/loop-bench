@@ -1,0 +1,3 @@
+The acceptance test is incorrectly configured: its `PromptBuilder` options include `baseSystemPrompt`, which `PromptBuilderConfig` does not accept. CI also reports a lint error in that acceptance test. The instructions say not to edit acceptance tests and to stop if one is wrong, so I stopped before making changes. No tests were run; no red tests were mine, and CI reported 3 findings, including 2 in the acceptance test and 1 in an existing test.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The CI typecheck and lint findings require changes to the acceptance test, which is explicitly forbidden; its PromptBuilder setup is invalid."}}
