@@ -20,6 +20,8 @@ export interface QaInvocation {
   runDir: string;
   homeDir: string;
   mcp: McpStdioServer | McpHttpServer | null;
+  /** How long claude waits on one MCP call before failing it; its own default when unset. */
+  mcpToolTimeoutMs?: number;
 }
 
 export function qaAnswerPrompt(repo: string, question: string): string {
@@ -59,7 +61,12 @@ export function qaClaudeCommand(invocation: QaInvocation): Command {
       "--",
       invocation.prompt,
     ],
-    env: baseEnv({ homeDir: invocation.homeDir, extraEnv: { DISABLE_AUTOUPDATER: "1", CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1" } }),
+    env: baseEnv({ homeDir: invocation.homeDir, extraEnv: {
+        DISABLE_AUTOUPDATER: "1",
+        CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
+        ...(invocation.mcpToolTimeoutMs === undefined ? {} : { MCP_TOOL_TIMEOUT: String(invocation.mcpToolTimeoutMs) }),
+      },
+    }),
     cwd: invocation.runDir,
   };
 }

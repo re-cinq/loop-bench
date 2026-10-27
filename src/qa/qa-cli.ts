@@ -32,7 +32,8 @@ function settingsFromEnv(resultsDir: string, replicates: number): QaSettings {
     judgeModel: env["QA_JUDGE_MODEL"] ?? "claude-opus-5-5",
     replicates,
     judgedTwiceRep: 1,
-    timeoutMs: 10 * 60_000,
+    timeoutMs: 20 * 60_000,
+    ...(env["QA_MCP_TOOL_TIMEOUT_MS"] ? { mcpToolTimeoutMs: Number(env["QA_MCP_TOOL_TIMEOUT_MS"]) } : {}),
     lore: loreDir && loreApiUrl && loreToken ? { dir: loreDir, apiUrl: loreApiUrl, token: loreToken } : null,
     utopia: utopiaBaseUrl && utopiaPat ? { baseUrl: utopiaBaseUrl, pat: utopiaPat } : null,
   };

@@ -25,6 +25,8 @@ export interface QaSettings {
   /** The replicate whose answers are judged twice, to measure the judge. */
   judgedTwiceRep: number;
   timeoutMs: number;
+  /** Passed to every answering claude as MCP_TOOL_TIMEOUT; unset keeps claude's default. */
+  mcpToolTimeoutMs?: number;
   lore: { dir: string; apiUrl: string; token: string } | null;
   utopia: { baseUrl: string; pat: string } | null;
 }
@@ -101,7 +103,7 @@ async function freshClaude(dir: string, settings: QaSettings, prompt: string, mo
 
   freshHome(homeDir, settings.userHome);
   emptyRunDir(runDir, repo);
-  const command = qaClaudeCommand({ model, effort, prompt, runDir, homeDir, mcp });
+  const command = qaClaudeCommand({ model, effort, prompt, runDir, homeDir, mcp, ...(mcp && settings.mcpToolTimeoutMs ? { mcpToolTimeoutMs: settings.mcpToolTimeoutMs } : {}) });
   const result = await runProcess({ ...command, timeoutMs: settings.timeoutMs, stdoutPath: `${outPrefix}.stdout.jsonl`, stderrPath: `${outPrefix}.stderr.log` });
 
   return { stdout: result.stdout, transcript: readTranscript(result.stdout) };

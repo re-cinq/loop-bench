@@ -32,6 +32,12 @@ describe("qaClaudeCommand", () => {
   });
 });
 
+describe("qaClaudeCommand with an MCP tool timeout", () => {
+  it("sets MCP_TOOL_TIMEOUT to 300000", () => {
+    expect(qaClaudeCommand({ ...invocation, mcpToolTimeoutMs: 300_000 }).env).toMatchObject({ MCP_TOOL_TIMEOUT: "300000" });
+  });
+});
+
 describe("qaHomeFiles", () => {
   it("writes an empty settings file and the onboarding flags into the scratch HOME", () => {
     expect(qaHomeFiles("/r/home").map((file) => [file.path, file.content])).toEqual([
