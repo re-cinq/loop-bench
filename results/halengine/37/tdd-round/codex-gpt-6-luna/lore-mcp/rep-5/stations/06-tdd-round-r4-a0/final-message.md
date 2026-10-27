@@ -1,0 +1,5 @@
+Added a focused root-property path test and linked it to the spec. Updated validation error handling to support AJV `dataPath` as well as `instancePath`. The registry test file passed locally; the formatter completed.
+
+Committed and pushed as `8577fa2`. `origin/main` was already up to date, and the branch is not ahead of its upstream. The CI’s root-path failure did not reproduce locally; the focused test passed after the change. Red tests: **0 written this round; 1 prior branch failure treated as a regression and addressed.** Remaining work includes the registry and orchestrator test coverage and the documentation updates listed in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Root-property validation error path reporting and spec traceability repair","tdd_next":"Complete remaining registry and orchestrator tests, spec links, and documentation updates"}}

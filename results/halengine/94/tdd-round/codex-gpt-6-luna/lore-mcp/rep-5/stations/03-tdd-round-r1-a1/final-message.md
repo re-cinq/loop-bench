@@ -1,0 +1,3 @@
+I’m blocked before starting the round. CI reports a type error in the acceptance test: it passes `baseSystemPrompt` to `PromptBuilder`, whose config does not accept that property. The ticket says not to edit acceptance tests, and its instructions say to stop if an acceptance test is wrong. I made no changes and ran no tests; there were 0 red tests from this round and 0 regressions identified.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI's typecheck fails on the acceptance test's invalid PromptBuilder config; fixing it would require editing a protected acceptance test."}}

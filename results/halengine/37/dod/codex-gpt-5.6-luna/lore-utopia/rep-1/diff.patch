@@ -1,0 +1,164 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..1d29448
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,27 @@
++# Definition of Done
++
++> Validate `input` against the resolved tool definition's `inputSchema` inside `ToolRegistry.execute`, before the executor runs, using a JSON Schema validator (`ajv` unless the build proves otherwise) added to `dependencies` — not a second, hand-written schema in a different format, since the schema already has to match what is handed to the providers.
++
++**Strategy: `direct`** — `ToolRegistry.execute` is an existing real entry point, so the acceptance tests exercise registered definitions and executors without mocks or stubs.
++
++## Done when these pass
++
++- [ ] **returns a schema rejection for missing and wrongly typed fields without invoking the executor** — rejected input returns a readable `ToolResponse`, names the field and expected type, does not expose the offending value, and does not run the executor.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **passes valid input and unlisted properties through unchanged, and still throws for an unknown tool** — valid extra properties are preserved exactly and the existing unknown-tool error remains unchanged.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **rejects an uncompilable schema at registration and compiles a static schema before later schema mutation** — invalid static schemas fail at registration with the tool name and valid static schemas are compiled once.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **validates a function-valued definition against the schema resolved for each call** — each execution uses its current resolved schema rather than a stale validator.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the JSON Schema validator as a runtime dependency and compile static schemas at registration.
++- [ ] Return schema rejection text from `execute` while preserving the unknown-tool exception.
++- [ ] Resolve and cache function-valued schemas by resolved schema object per call.
++- [ ] Update the tool documentation, README, system spec, migration note, and changelog.
++
++## Out of scope
++
++- Tool output validation, authorization, retry policy beyond the existing tool-round bound, and changing unknown-tool errors.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..ad8e4f2
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,15 @@
++# Tool Input Validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | Draft                |
++
++The tool registry validates model-supplied input against each tool's declared JSON Schema before an executor can receive it.
++
++## Contract
++
++- A missing required property or a property with the wrong type returns a `ToolResponse` describing the failed schema constraint and does not invoke the executor ([validated by: returns a schema rejection for missing and wrongly typed fields without invoking the executor](../../src/orchestration/tools/registry.acceptance.test.ts#L10)).
++- Valid input, including properties not listed in the schema, reaches the executor unchanged; an unregistered tool still throws its `Unknown tool` error ([validated by: passes valid input and unlisted properties through unchanged, and still throws for an unknown tool](../../src/orchestration/tools/registry.acceptance.test.ts#L34)).
++- A static schema is compiled at registration, so an uncompilable schema names its tool immediately and later mutation does not replace the compiled validator ([validated by: rejects an uncompilable schema at registration and compiles a static schema before later schema mutation](../../src/orchestration/tools/registry.acceptance.test.ts#L57)).
++- A function-valued definition is resolved and validated against its current schema on every execution ([validated by: validates a function-valued definition against the schema resolved for each call](../../src/orchestration/tools/registry.acceptance.test.ts#L76)).
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..227deef
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,104 @@
++import {ToolRegistry} from './registry.js';
++
++const definition = (inputSchema: Record<string, unknown>) => ({
++  name: 'weather',
++  description: 'Returns weather',
++  inputSchema,
++});
++
++describe('ToolRegistry input validation', () => {
++  it('returns a schema rejection for missing and wrongly typed fields without invoking the executor', async () => {
++    const registry = new ToolRegistry();
++    let calls = 0;
++    registry.register(
++      definition({
++        type: 'object',
++        properties: {location: {type: 'string'}},
++        required: ['location'],
++      }),
++      async () => {
++        calls += 1;
++        return 'executed';
++      }
++    );
++
++    const missing = await registry.execute('weather', {});
++    const wrongType = await registry.execute('weather', {location: 12345});
++
++    expect(missing.result).toMatch(/location.*required/i);
++    expect(wrongType.result).toMatch(/location.*string/i);
++    expect(wrongType.result).not.toContain('12345');
++    expect(calls).toBe(0);
++  });
++
++  it('passes valid input and unlisted properties through unchanged, and still throws for an unknown tool', async () => {
++    const registry = new ToolRegistry();
++    const input = {location: 'Berlin', identifyingValue: 'private-value'};
++    const received: Record<string, unknown>[] = [];
++    registry.register(
++      definition({
++        type: 'object',
++        properties: {location: {type: 'string'}},
++        required: ['location'],
++      }),
++      async receivedInput => {
++        received.push(receivedInput);
++        return 'executed';
++      }
++    );
++
++    const rejected = await registry.execute('weather', {});
++    await expect(registry.execute('weather', input)).resolves.toEqual({result: 'executed'});
++    expect(rejected.result).toMatch(/location.*required/i);
++    expect(received).toEqual([input]);
++    await expect(registry.execute('missing', {})).rejects.toThrow('Unknown tool: missing');
++  });
++
++  it('rejects an uncompilable schema at registration and compiles a static schema before later schema mutation', async () => {
++    const registry = new ToolRegistry();
++    expect(() => registry.register(definition({type: 'not-a-json-schema-type'}), async () => 'executed')).toThrow(
++      /weather/
++    );
++
++    const schema = {
++      type: 'object',
++      properties: {location: {type: 'string'}},
++      required: ['location'],
++    };
++    registry.register(definition(schema), async () => 'executed');
++    schema.required = ['city'];
++
++    const results = await Promise.all(Array.from({length: 10}, () => registry.execute('weather', {})));
++
++    expect(results).toHaveLength(10);
++    expect(results.every(result => /location.*required/i.test(result.result))).toBe(true);
++  });
++
++  it('validates a function-valued definition against the schema resolved for each call', async () => {
++    const registry = new ToolRegistry();
++    let resolutions = 0;
++    let calls = 0;
++    registry.register(
++      () => {
++        resolutions += 1;
++        const field = resolutions === 1 ? 'first' : 'second';
++        return definition({
++          type: 'object',
++          properties: {[field]: {type: 'string'}},
++          required: [field],
++        });
++      },
++      async () => {
++        calls += 1;
++        return 'executed';
++      }
++    );
++
++    const first = await registry.execute('weather', {first: 'ok'});
++    const second = await registry.execute('weather', {second: 'ok'});
++
++    expect(first.result).toMatch(/second.*required/i);
++    expect(second).toEqual({result: 'executed'});
++    expect(calls).toBe(1);
++  });
++});

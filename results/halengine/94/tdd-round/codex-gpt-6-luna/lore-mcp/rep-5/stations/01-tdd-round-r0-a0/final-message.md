@@ -1,0 +1,5 @@
+Moved `beforeSession` inside the `try`, so its rejection reaches `onError` and `afterSession` and still propagates unchanged. The new test failed before the change and passed after it and formatting. Updated the spec link and ticked the implementation facet; the spec guarantee and changelog remain for the next round.
+
+Committed and pushed as `49eb880`; the branch is up to date with `origin/main` and its upstream. The Lore CI lookup returned “branch not found,” so I couldn’t inspect CI’s verdict. One red test was mine during the red phase; no regression tests were observed. The test descriptor tooling does not expose a `spec` field, so I linked the test from the spec statement directly.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block","tdd_next":"Update the spec guarantee, then document the consumer change in the CHANGELOG"}}

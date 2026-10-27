@@ -1,0 +1,3 @@
+The previous CI verdict reports a type error in the acceptance test: it passes `baseSystemPrompt` and `systemPromptSuffix`, which are not fields in `PromptBuilderConfig`. The ticket says to stop if an acceptance test is wrong and not to edit it to make it pass. I made no changes, ran no tests, and did not commit or push. Red tests: 0 mine, 0 regressions identified.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test uses unsupported PromptBuilderConfig fields; fixing it would require editing the acceptance test or adding unrelated production API fields."}}

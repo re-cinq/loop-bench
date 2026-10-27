@@ -1,0 +1,5 @@
+I added a root-property type error test and linked it in the spec. The registry test file passed (4 tests). I did **not** complete a proper red-green-refactor round: the new test was green on its first run, so the required failing-test phase was missing. The CI lint finding also remains unresolved because it is in an acceptance test, which you instructed me not to edit.
+
+The change is committed and pushed as `c23beb4`; the branch is up to date with `origin/main`. The definition-of-done facet remains open. I did not change any unrelated smells.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The new regression test passed immediately, so I could not complete the required red-green-refactor round; the outstanding CI lint finding is in an acceptance test that must not be edited."}}

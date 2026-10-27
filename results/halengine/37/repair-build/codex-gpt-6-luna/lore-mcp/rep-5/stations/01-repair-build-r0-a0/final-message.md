@@ -1,0 +1,3 @@
+Fixed tool input validation and the reported AJV import and lint issues. `npm run test:coverage` passes: 33 suites, 393 tests. I formatted the changed files, committed and pushed `ce4198c`, merged `origin/main` (already up to date), and confirmed the branch is clean and synced with upstream. I did not run lint or typecheck, per the pod instructions; CI will judge those checks.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Corrected the AJV import and implemented schema validation with safe rejection responses and cached validators."}}
