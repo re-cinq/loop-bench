@@ -1,0 +1,172 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..8f8230b
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,27 @@
++# Definition of Done
++
++> For a turn that called tools, it is the last leg of several, and the earlier rounds — including the one carrying the customer's question and the full tool results — are not counted anywhere.
++
++**Strategy: `direct`** — the existing `afterModelResponse` hook is the real seam, and the orchestrator already executes provider calls through a tool loop. The acceptance tests drive that loop with a scripted provider and observe the usage delivered to the hook; no new seam or double is needed.
++
++## Done when these pass
++
++- [ ] **sums usage from every provider call in two tool rounds** — a scripted turn with two tool rounds and three provider calls delivers the component-wise sum to `afterModelResponse`, not only the final call.
++      `src/orchestration/usageAggregation.acceptance.test.ts`
++
++- [ ] **counts reporting rounds around a silent round and leaves an entirely silent turn undefined** — missing usage on one round neither erases reported rounds nor creates `NaN`, and no reported round remains `undefined`.
++      `src/orchestration/usageAggregation.acceptance.test.ts`
++
++## Facets
++
++- [ ] Red: the two acceptance tests fail because the hook receives only the final provider call's usage.
++- [ ] Green: accumulate each reported provider-call usage and pass the total to `afterModelResponse`.
++- [ ] Type: name the hook argument as the total usage so the public signature makes the sum semantics explicit without `any`.
++- [ ] Preserve the existing no-tool test `receives collected response text and usage`; its single provider-call usage must remain unchanged and the test file stays unedited.
++- [ ] Replace the spec's under-counting statement with the summed-usage behavior and add the CHANGELOG migration note for existing consumers.
++
++## Out of scope
++
++- The audit entry or billing record that consumes the hook.
++- Token accounting for anything other than provider calls made by the orchestrator.
++- The `stop` chunk's usage shape, provider-specific usage production, and any workspace-wide build, lint, typecheck, or formatter behavior.
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 2749d18..7b48254 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -25,4 +25,4 @@
+ These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
+ 
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+-- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the sum of usage reported by every provider call in the turn, while a turn where no provider call reports usage still receives `undefined` ([validated by: sums usage from every provider call in two tool rounds](../../src/orchestration/usageAggregation.acceptance.test.ts#L49), [validated by: counts reporting rounds around a silent round and leaves an entirely silent turn undefined](../../src/orchestration/usageAggregation.acceptance.test.ts#L75)).
+diff --git a/src/orchestration/usageAggregation.acceptance.test.ts b/src/orchestration/usageAggregation.acceptance.test.ts
+new file mode 100644
+index 0000000..d16ce11
+--- /dev/null
++++ b/src/orchestration/usageAggregation.acceptance.test.ts
+@@ -0,0 +1,123 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++function createSession(): ChatSession {
++  return {
++    sessionId: 'usage-acceptance',
++    userId: 'user-1',
++    entries: [{role: 'user', content: 'ask', timestamp: '2026-01-01T00:00:00.000Z'}],
++  };
++}
++
++function scriptedProvider(rounds: MessageChunk[][]): AIProvider {
++  let round = 0;
++
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++function toolRegistry(): ToolRegistry {
++  const registry = new ToolRegistry();
++  registry.register(
++    {name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}},
++    async () => 'found'
++  );
++  return registry;
++}
++
++function toolUse(id: string): MessageChunk {
++  return {type: 'tool_use', toolCall: {id, name: 'lookup', input: {}}};
++}
++
++function usage(inputTokens: number, outputTokens: number, totalTokens: number): UsageMetadata {
++  return {inputTokens, outputTokens, totalTokens};
++}
++
++describe('afterModelResponse usage aggregation acceptance', () => {
++  it('sums usage from every provider call in two tool rounds', async () => {
++    let reported: UsageMetadata | undefined;
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, totalUsage) => {
++        reported = totalUsage;
++      },
++    };
++    const orchestrator = createChatOrchestrator(
++      scriptedProvider([
++        [toolUse('call-1'), {type: 'stop', stopReason: 'tool_use', usage: usage(10, 5, 15)}],
++        [toolUse('call-2'), {type: 'stop', stopReason: 'tool_use', usage: usage(20, 7, 27)}],
++        [
++          {type: 'text', text: 'done'},
++          {type: 'stop', stopReason: 'end_turn', usage: usage(3, 2, 5)},
++        ],
++      ]),
++      promptBuilder,
++      toolRegistry(),
++      {hooks}
++    );
++
++    await orchestrator.processMessage(createSession());
++
++    expect(reported).toEqual({inputTokens: 33, outputTokens: 14, totalTokens: 47});
++  });
++
++  it('counts reporting rounds around a silent round and leaves an entirely silent turn undefined', async () => {
++    let sparseReported: UsageMetadata | undefined;
++    const sparseHooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, totalUsage) => {
++        sparseReported = totalUsage;
++      },
++    };
++    const sparseOrchestrator = createChatOrchestrator(
++      scriptedProvider([
++        [toolUse('call-1'), {type: 'stop', stopReason: 'tool_use', usage: usage(10, 5, 15)}],
++        [toolUse('call-2'), {type: 'stop', stopReason: 'tool_use'}],
++        [
++          {type: 'text', text: 'done'},
++          {type: 'stop', stopReason: 'end_turn', usage: usage(1, 2, 3)},
++        ],
++      ]),
++      promptBuilder,
++      toolRegistry(),
++      {hooks: sparseHooks}
++    );
++
++    await sparseOrchestrator.processMessage(createSession());
++
++    let silentReported: UsageMetadata | undefined = usage(99, 99, 99);
++    const silentHooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, totalUsage) => {
++        silentReported = totalUsage;
++      },
++    };
++    const silentOrchestrator = createChatOrchestrator(
++      scriptedProvider([
++        [
++          {type: 'text', text: 'done'},
++          {type: 'stop', stopReason: 'end_turn'},
++        ],
++      ]),
++      promptBuilder,
++      undefined,
++      {hooks: silentHooks}
++    );
++
++    await silentOrchestrator.processMessage(createSession());
++
++    expect({sparseReported, silentReported}).toEqual({
++      sparseReported: {inputTokens: 11, outputTokens: 7, totalTokens: 18},
++      silentReported: undefined,
++    });
++  });
++});

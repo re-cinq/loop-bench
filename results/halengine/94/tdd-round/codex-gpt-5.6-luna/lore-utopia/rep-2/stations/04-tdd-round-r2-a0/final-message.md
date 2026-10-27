@@ -1,0 +1,3 @@
+The acceptance test is invalid: it passes unsupported `PromptBuilder` options. Fixing that requires editing the acceptance test, which the ticket explicitly forbids. I made no changes and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test has invalid PromptBuilder options, and correcting it would violate the instruction never to edit acceptance tests."}}

@@ -1,0 +1,1 @@
+I’ll inspect the ticket, round brief, and branch checklist first, then identify the smallest uncovered facet and perform exactly one red–green–refactor round.

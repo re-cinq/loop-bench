@@ -1,0 +1,3 @@
+The round is blocked: CI’s acceptance tests require legacy `list_sessions`/`session_list` behavior, contradicting ticket #144’s specified `list_conversations`/`conversation_list` protocol and current specs. I made no edits and ran no tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance tests contradict the ticket and repository specs by requiring legacy list_sessions/session_list behavior; cannot safely implement without changing the acceptance contract."}}

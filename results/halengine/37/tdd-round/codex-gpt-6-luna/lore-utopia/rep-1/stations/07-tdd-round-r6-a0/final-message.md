@@ -1,0 +1,5 @@
+**Round delivered:** added a regression test for legacy nested validation paths, fixed the reported path, updated the tool documentation and bumped the package to `0.4.0`. Also fixed the previous CI findings: the test member chains and stale spec links.
+
+The registry test file passed: 5 tests. The new test was red before the fix and green afterward. **Red tests: 1 authored, 0 regressions.** I did not run acceptance tests, lint, or typecheck. The post-push CI lookup returned “branch not found,” so I can’t report a new CI verdict. The branch is pushed and synchronized with its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"legacy nested Ajv path reporting as JSON Pointer","tdd_next":"remaining registry unit tests for extra-property passthrough and unknown-tool errors"}}

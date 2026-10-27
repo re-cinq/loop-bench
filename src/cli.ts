@@ -11,7 +11,7 @@ import { ciFeedbackOf, handoffOf, roundBriefOf, type CheckResult } from "./core/
 import { diffOf, git } from "./workspace/git.js";
 import { normalizedDiff, prettierBinIn } from "./run/normalize-diff.js";
 import { ensureSitePrettier } from "./run/site-deps.js";
-import { finishedLoopsOnDisk, parseShard, toJudge } from "./run/score-missing.js";
+import { finishedLoopsOnDisk, parseShard, ranDod, toDodCheck, toJudge } from "./run/score-missing.js";
 import { enforce } from "./core/enforce.js";
 import { cutCell, planCellCut } from "./run/truncate-cell.js";
 import { ContextModeSchema, HarnessSchema, StationSchema, type ContextMode, type Harness, type Station } from "./core/harness-names.js";
@@ -51,6 +51,7 @@ const USAGE = `loop-bench <command> [options]
   truncate    --experiment <file> [--ticket <n>] [--apply]   cut finished one-station cells where a loop varying that station now ends (dry run without --apply)
   score       --experiment <file> [filters]   dod red/green check + judge on finished loops
   score --missing [--shard i/n]               judge only the finished loops that have no judge score, found on disk
+  score --missing-dod [--shard i/n]           dod check only, for finished loops that ran a dod station and have none
   score --batch submit|status|collect [--limit n]  judge those loops as one Vertex batch job (needs judge.batch in the experiment file)
   analyze     --experiment <file>             transcript metrics per station visit -> analysis.json
   propose     --experiment <file> --station <s> [--worst 5]
@@ -88,6 +89,7 @@ async function main(argv: readonly string[]): Promise<void> {
       "per-harness": { type: "string" },
       exclude: { type: "string" },
       missing: { type: "boolean", default: false },
+      "missing-dod": { type: "boolean", default: false },
       apply: { type: "boolean", default: false },
       shard: { type: "string" },
       batch: { type: "string" },
@@ -110,6 +112,9 @@ async function main(argv: readonly string[]): Promise<void> {
     case "score":
       if (values.batch) {
         return scoreInBatch(config(), values.batch, values.limit === undefined ? undefined : Number(values.limit));
+      }
+      if (values["missing-dod"]) {
+        return scoreMissingDods(config(), values.shard);
       }
       return values.missing ? scoreMissingJudges(config(), values.shard) : scoreSelected(config(), selected(), { dod: "always", judge: true });
     case "truncate":
@@ -329,9 +334,8 @@ interface ScoringSteps {
 const AFTER_RUN: ScoringSteps = { dod: "always", judge: false };
 
 async function scoreOne(config: ExperimentConfig, ticket: { number: number; title: string; ticket_file: string; base_sha: string; merge_sha: string; reference_pr: number }, cellDir: string, record: LoopRecord, steps: ScoringSteps): Promise<void> {
-  const ranDod = record.mode !== "ofat" || record.varied_station === "dod";
   const dodCheck =
-    ranDod && !(steps.dod === "if-missing" && record.dod_check !== null)
+    ranDod(record) && !(steps.dod === "if-missing" && record.dod_check !== null)
       ? await scoreDod({ config, paths, ticket, cellDir, testCommand: (files) => `node --experimental-vm-modules node_modules/jest/bin/jest.js --runTestsByPath ${files.map((file) => `'${file}'`).join(" ")}` })
       : null;
   const judge = steps.judge ? await scoreJudge({ config, paths, ticket, cellDir }) : null;
@@ -360,6 +364,18 @@ async function scoreMissingJudges(config: ExperimentConfig, shardText: string | 
   const todo = toJudge(finishedLoopsOnDisk(paths.resultsDir, config.id), parseShard(shardText));
 
   log(`[loop-bench] ${todo.length} loops without a judge score in this shard`);
+  await scoreFound(config, todo, { dod: "if-missing", judge: true });
+}
+
+/** The dod check, and nothing else, for every finished loop that ran a dod station and has none: loops copied in from a machine that did not score them. */
+async function scoreMissingDods(config: ExperimentConfig, shardText: string | undefined): Promise<void> {
+  const todo = toDodCheck(finishedLoopsOnDisk(paths.resultsDir, config.id), parseShard(shardText));
+
+  log(`[loop-bench] ${todo.length} loops without a dod check in this shard`);
+  await scoreFound(config, todo, { dod: "if-missing", judge: false });
+}
+
+async function scoreFound(config: ExperimentConfig, todo: ReadonlyArray<{ cellDir: string; record: LoopRecord }>, steps: ScoringSteps): Promise<void> {
   for (const { cellDir, record } of todo) {
     const ticket = config.tickets.find((candidate) => candidate.number === record.ticket);
 
@@ -367,7 +383,7 @@ async function scoreMissingJudges(config: ExperimentConfig, shardText: string | 
       log(`[loop-bench] no ticket #${record.ticket} in the experiment, skipping ${relative(paths.resultsDir, cellDir)}`);
       continue;
     }
-    await scoreOne(config, ticket, cellDir, record, { dod: "if-missing", judge: true });
+    await scoreOne(config, ticket, cellDir, record, steps);
   }
 }
 

@@ -1,0 +1,3 @@
+The acceptance test is invalid: it constructs `PromptBuilder` with nonexistent `PromptBuilderConfig` fields (`baseSystemPrompt`, `systemPromptSuffix`, `contextConfig`). Per instruction, I did not edit it or alter production types to mask the error. No files were changed, committed, or pushed.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The existing acceptance test does not typecheck because its PromptBuilderConfig fixture uses fields absent from the repository API; fixing it requires editing the acceptance test or introducing unrelated production compatibility."}}

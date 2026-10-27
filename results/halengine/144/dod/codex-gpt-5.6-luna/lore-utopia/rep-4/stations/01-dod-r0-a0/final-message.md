@@ -1,0 +1,1 @@
+The ticket’s two named specs are already fully cited, so the new transport behavior is defined by the ticket’s own acceptance criteria. The existing direct seam is `createMessageHandler`; I’m going to add focused tests there for validation and the enabled authenticated-user list response, using the repository’s real in-memory session store and real frame handling.

@@ -1,0 +1,3 @@
+The CI lint repair is committed and pushed as `4f6d04a`; the branch is synced with `main` and not ahead of its upstream. I added no test, so no tests ran here. The reported lint findings were from tests in the prior round, not new red tests or regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair the reported ESLint findings in the Error identity and undefined rejection tests","tdd_next":"acceptance green"}}

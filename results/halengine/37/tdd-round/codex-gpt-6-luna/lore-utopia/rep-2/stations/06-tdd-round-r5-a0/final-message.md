@@ -1,0 +1,5 @@
+Added a test proving a static schema compiles once at registration and is reused across ten executions. Updated the spec citation and ticked the facet. The first run exposed a missing ESM Jest import; after fixing it, all 6 tests in `registry.test.ts` passed.
+
+Committed and pushed as `d8df0e7`. The branch is up to date with `main`. The prior CI report named a failed test job but provided no individual failing tests; Lore could not retrieve annotations for this branch. No regressions were identified. The initial local run had 6 test errors caused by the missing import; the final run was green.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Verify static schema compilation happens once across repeated calls, and keep tool-loop retry behavior covered","tdd_next":"Add ajv dependency and bump package version MINOR"}}

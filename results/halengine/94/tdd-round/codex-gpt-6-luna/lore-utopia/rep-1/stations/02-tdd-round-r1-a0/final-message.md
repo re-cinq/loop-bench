@@ -1,0 +1,3 @@
+The acceptance test is invalid: it passes `baseSystemPrompt` to `PromptBuilder`, but `PromptBuilderConfig` does not define that property. The ticket says to stop if an acceptance test is wrong, so I made no changes and did not commit or push. The other reported CI findings remain unresolved.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test does not typecheck: baseSystemPrompt is not a PromptBuilderConfig property; ticket requires stopping when an acceptance test is wrong."}}

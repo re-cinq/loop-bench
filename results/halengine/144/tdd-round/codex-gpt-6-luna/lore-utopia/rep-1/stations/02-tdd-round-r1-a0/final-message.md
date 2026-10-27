@@ -1,0 +1,5 @@
+Added composite cursor validation for `list_sessions`, with a test covering paging fields and removal of an extra `userId`. The test failed before the implementation, then passed after the refactor. Updated the spec citation and checked off the validation facet in [`.lore/dod.md`](/var/tmp/loop-bench/runs/a98504d74994/workspace/target/.lore/dod.md).
+
+Committed and pushed as `b9feda6`; the branch is up to date with `origin/main` and its upstream. The prior CI verdict still reports ESLint, test, spec-name, and changelog failures. Its ESLint details were truncated, and Lore could not retrieve the verdict for this branch. **Red tests: 1 written this round; regressions: none identified in the available report.**
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"list_sessions paging validation","tdd_next":"thread sessionStore into createMessageHandler and wire it in createServer"}}

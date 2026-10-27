@@ -1,0 +1,3 @@
+The round is blocked: CI’s acceptance tests require the obsolete `list_sessions`/`session_list` protocol and contradict the ticket’s `list_conversations`/`conversation_list` contract and opt-in behavior. Fixing this would require editing acceptance tests or violating the specified protocol, so I made no changes.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance tests contradict the ticket and current protocol contract; resolving requires direction on whether to update or preserve the obsolete list_sessions behavior."}}

@@ -26,6 +26,11 @@ export function parseShard(text: string | undefined): Shard {
 
 export const needsJudge = (record: LoopRecord): boolean => record.judge === null;
 
+/** A loop that ran a dod station: every whole loop, and an ofat loop only when dod is the station it varies. */
+export const ranDod = (record: LoopRecord): boolean => record.mode !== "ofat" || record.varied_station === "dod";
+
+export const needsDod = (record: LoopRecord): boolean => ranDod(record) && record.dod_check === null;
+
 /** Every finished loop under an experiment's results folder, found on disk: a loop run from a config this checkout never held (a colleague's GLM runs) is still there. */
 export function finishedLoopsOnDisk(resultsDir: string, experimentId: string): Array<{ cellDir: string; record: LoopRecord }> {
   const root = join(resultsDir, experimentId);
@@ -42,5 +47,12 @@ export function finishedLoopsOnDisk(resultsDir: string, experimentId: string): A
 
 /** The loops this worker scores: those without a judge score whose position in the sorted list is its shard's. */
 export function toJudge(loops: ReadonlyArray<{ cellDir: string; record: LoopRecord }>, shard: Shard): Array<{ cellDir: string; record: LoopRecord }> {
-  return loops.filter(({ record }) => needsJudge(record)).filter((_, position) => position % shard.count === shard.index);
+  return inShard(loops.filter(({ record }) => needsJudge(record)), shard);
 }
+
+/** The loops this worker gives a dod check: those that ran a dod station and have none, dealt out like toJudge. */
+export function toDodCheck(loops: ReadonlyArray<{ cellDir: string; record: LoopRecord }>, shard: Shard): Array<{ cellDir: string; record: LoopRecord }> {
+  return inShard(loops.filter(({ record }) => needsDod(record)), shard);
+}
+
+const inShard = <T>(items: readonly T[], shard: Shard): T[] => items.filter((_, position) => position % shard.count === shard.index);

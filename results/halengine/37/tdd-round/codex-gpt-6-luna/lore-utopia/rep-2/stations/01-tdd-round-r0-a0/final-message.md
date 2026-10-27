@@ -1,0 +1,5 @@
+Added Ajv validation for missing required input. The registry returns a rejection `ToolResponse` without calling the executor; the new unit test failed before the change and passed after it. The test and code are committed and pushed as `0bcc860`, and the branch is up to date with `main` and its upstream.
+
+The DoD now records the required-property facet as closed. Remaining validation and documentation work is still open. I did not run acceptance tests, lint, typecheck, or a build. No unrelated issues were acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Reject input missing a schema-required property with a ToolResponse and do not invoke the executor.","tdd_next":"Complete schema validation coverage for invalid types, pass-through, schema compilation/caching, privacy, and tool-loop retry."}}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LoopRecord } from "../core/records.js";
-import { needsJudge, parseShard, toJudge } from "./score-missing.js";
+import { needsJudge, parseShard, toDodCheck, toJudge } from "./score-missing.js";
 
 const loop = (id: string, judged: boolean) => ({
   cellDir: `/r/${id}`,
@@ -17,6 +17,21 @@ describe("toJudge", () => {
 
   it("a loop with no judge needs one, a judged loop does not", () => {
     expect([needsJudge(loop("a", false).record), needsJudge(loop("b", true).record)]).toEqual([true, false]);
+  });
+});
+
+describe("toDodCheck", () => {
+  const dodLoop = (id: string, overrides: Partial<LoopRecord>) => ({ cellDir: `/r/${id}`, record: { loop_id: id, mode: "ofat", varied_station: "dod", dod_check: null, ...overrides } as LoopRecord });
+
+  it("keeps the unchecked dod loop a and whole loop c, and skips checked loop b and tdd-round loop d", () => {
+    const loops = [
+      dodLoop("a", {}),
+      dodLoop("b", { dod_check: { acceptance_files: [], red_on_base: true, green_with_reference: true, detail: "" } }),
+      dodLoop("c", { mode: "whole_loop", varied_station: null }),
+      dodLoop("d", { varied_station: "tdd-round" }),
+    ];
+
+    expect(toDodCheck(loops, { index: 0, count: 1 }).map((l) => l.record.loop_id)).toEqual(["a", "c"]);
   });
 });
 

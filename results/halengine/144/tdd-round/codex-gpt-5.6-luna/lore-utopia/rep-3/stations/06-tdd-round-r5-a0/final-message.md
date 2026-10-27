@@ -1,0 +1,3 @@
+The round is blocked: the repository’s acceptance test still requires the obsolete `list_sessions`/`session_list` protocol, contradicting the ticket’s required `list_conversations`/`conversation_list` protocol. I did not edit the acceptance test, run tests, or commit/push changes.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test is inconsistent with the ticket: it asserts obsolete list_sessions/session_list behavior and cannot be made green without editing the acceptance test."}}

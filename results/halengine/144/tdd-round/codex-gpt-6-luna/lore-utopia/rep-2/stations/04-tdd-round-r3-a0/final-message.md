@@ -1,0 +1,3 @@
+I’m blocked before editing. The CI brief requires fixes in `src/transport/conversationList.acceptance.test.ts`, but your instructions prohibit editing acceptance tests. The brief also truncates the `validation.ts` finding, and `lore_get_ci_failures` could not retrieve the full verdict for this branch. I made no changes, ran no tests, and committed nothing. Red tests written this round: 0; regressions: not established.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The CI repair requires editing a protected acceptance test, and the remaining validation.ts finding is truncated; the branch-specific CI verdict could not be retrieved."}}

@@ -1,0 +1,3 @@
+I’m blocked from completing this round safely. The CI brief requires changes to `src/transport/conversationList.acceptance.test.ts`, which is an acceptance test, and the round instructions say never to edit an acceptance test to make it pass. I made no changes, ran no tests, and did not commit or push.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI requires edits to the acceptance test, which this round’s instructions prohibit."}}

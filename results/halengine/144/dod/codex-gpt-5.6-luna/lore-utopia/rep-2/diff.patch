@@ -1,0 +1,191 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..ffbd1e8
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,29 @@
++# Definition of Done
++
++> It does not give a **client** anything: the browser holding the socket cannot reach the store, so
++> every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over
++> the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — `validateMessage` and the real `createServer` WebSocket path are already exposed. The acceptance tests exercise those entry points over a real WebSocket and the in-memory session store.
++
++## Done when these pass
++
++- [ ] **accepts list_conversations and validates its limit and composite before cursor** — accepts the new request frame and rejects invalid limits or incomplete cursors with field-specific errors.
++      `src/transport/conversation-list.acceptance.test.ts`
++- [ ] **answers the authenticated user’s list with summaries, ignoring a frame userId** — returns only the connecting user’s newest-first conversation summaries, with wire-safe ISO timestamps and no conversation content.
++      `src/transport/conversation-list.acceptance.test.ts`
++- [ ] **refuses the list with UNSUPPORTED when history is not enabled** — keeps the feature opt-in and emits an error rather than a list when disabled.
++      `src/transport/conversation-list.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the additive list message and summary wire types.
++- [ ] Validate limit and composite cursor fields.
++- [ ] Thread the history option through the real WebSocket server and answer lists outside the turn lock.
++- [ ] Enforce authenticated-user ownership and ISO serialization.
++- [ ] Return `UNSUPPORTED` when history is disabled.
++
++## Out of scope
++
++- Store implementation details already covered by the conversation-list store spec.
++- Conversation deletion, previews or titles, server-side paging state, and live cross-tab synchronization.
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..6f110d3 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -637,7 +637,13 @@ If the connection drops unexpectedly, the client SHOULD reconnect using exponent
+ 
+ After 5 failed attempts, the client MUST stop reconnecting and report a disconnected state.
+ 
+-## 12. Security Considerations
++## 12. Conversation list
++
++- A client may send `list_conversations` with an optional limit and composite `before` cursor; the server accepts the valid frame and rejects unusable limits or incomplete cursors with an error naming the field ([validated by: accepts list_conversations and validates its limit and composite before cursor](../../src/transport/conversation-list.acceptance.test.ts#L55)).
++- With history enabled, the server answers the authenticated connection's `list_conversations` request with one `conversation_list` of that user's newest-first summaries, containing only `sessionId`, `createdAt`, `updatedAt` and `entryCount` as ISO-safe wire values; a `userId` in the frame does not change whose list is returned ([validated by: answers the authenticated user’s list with summaries, ignoring a frame userId](../../src/transport/conversation-list.acceptance.test.ts#L75)).
++- History is opt-in: when it is not enabled, `list_conversations` produces one `UNSUPPORTED` error rather than a list ([validated by: refuses the list with UNSUPPORTED when history is not enabled](../../src/transport/conversation-list.acceptance.test.ts#L114)).
++
++## 13. Security Considerations
+ 
+ - Access tokens are transmitted in the `Sec-WebSocket-Protocol` request header, which keeps them out of the request line and so out of a URL-based access log. They are not hidden from logging in general: an ingress or proxy that captures request headers records them, as it records an `Authorization` header, so header capture must redact `Sec-WebSocket-Protocol` too.
+ - The server answers with the `hal.v1` marker, so the token is never written into the 101 response headers or held as the connected socket's `protocol` property. An offer without the marker is answered with no subprotocol, so no offered value is ever echoed.
+@@ -645,7 +651,7 @@ After 5 failed attempts, the client MUST stop reconnecting and report a disconne
+ - Message content is validated at the server boundary. Content exceeding 10,000 characters is rejected.
+ - The server validates all incoming messages against known types. Unrecognized types receive an `INVALID_MESSAGE` error.
+ 
+-## 13. Source Files
++## 14. Source Files
+ 
+ | Concern                  | File                                              |
+ | ------------------------ | ------------------------------------------------- |
+diff --git a/src/transport/conversation-list.acceptance.test.ts b/src/transport/conversation-list.acceptance.test.ts
+new file mode 100644
+index 0000000..e167101
+--- /dev/null
++++ b/src/transport/conversation-list.acceptance.test.ts
+@@ -0,0 +1,122 @@
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++import {validateMessage} from './ws/validation.js';
++import {answeringOrchestrator, connectClient, startEngineWith, stopEngines} from './wsTestSupport.js';
++import {setLogger} from '../shared/logger.js';
++
++type WireFrame = {
++  type: string;
++  code?: string;
++  conversations?: Array<Record<string, unknown>>;
++};
++
++const historyEnabled = {history: {enabled: true}};
++
++const waitForListResponse = async (url: string, request: unknown): Promise<WireFrame[]> => {
++  const client = connectClient(url, 'token');
++  const frames: WireFrame[] = [];
++
++  return new Promise<WireFrame[]>((resolve, reject) => {
++    const timeout = setTimeout(() => {
++      client.terminate();
++      reject(
++        new Error(`Timed out waiting for a response to ${JSON.stringify(request)}; received ${JSON.stringify(frames)}`)
++      );
++    }, 100);
++    const finish = (result: WireFrame[]): void => {
++      clearTimeout(timeout);
++      client.close();
++      resolve(result);
++    };
++
++    client.on('error', reject);
++    client.on('message', raw => {
++      const frame = JSON.parse(String(raw)) as WireFrame;
++      if (frame.type === 'connected') {
++        client.send(JSON.stringify(request));
++        return;
++      }
++      frames.push(frame);
++      if (frame.type === 'conversation_list' || frame.type === 'error') {
++        finish(frames);
++      }
++    });
++  });
++};
++
++describe('conversation list acceptance contract', () => {
++  beforeAll(() => {
++    setLogger({debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined});
++  });
++
++  afterEach(async () => {
++    await stopEngines();
++  });
++
++  it('accepts list_conversations and validates its limit and composite before cursor', () => {
++    expect(validateMessage({type: 'list_conversations'})).toEqual({
++      valid: true,
++      data: {type: 'list_conversations', limit: undefined, before: undefined},
++    });
++
++    for (const message of [
++      {type: 'list_conversations', limit: 0},
++      {type: 'list_conversations', limit: 201},
++      {type: 'list_conversations', limit: 1.5},
++      {type: 'list_conversations', limit: '10'},
++      {type: 'list_conversations', before: {updatedAt: '2026-10-27T12:00:00.000Z'}},
++      {type: 'list_conversations', before: {sessionId: 's1'}},
++    ]) {
++      const result = validateMessage(message);
++      expect(result.valid).toBe(false);
++      if (!result.valid) expect(result.error).toMatch(/limit|before/);
++    }
++  });
++
++  it('answers the authenticated user’s list with summaries, ignoring a frame userId', async () => {
++    const store = new InMemorySessionStore();
++    const newest = store.create('newest', 'u1');
++    newest.entries.push({role: 'user', content: 'newest', timestamp: '2026-12-01T00:00:00.000Z'});
++    const older = store.create('older', 'u1');
++    older.entries.push({role: 'user', content: 'older', timestamp: '2026-11-01T00:00:00.000Z'});
++    store.create('another-user', 'u2');
++
++    const {url} = await startEngineWith({
++      sessionStore: store,
++      orchestrator: answeringOrchestrator,
++      wsAuth: async () => ({id: 'u1'}),
++      ...(historyEnabled as never),
++    });
++    const [frame] = await waitForListResponse(url, {type: 'list_conversations', userId: 'u2'});
++
++    expect(frame).toMatchObject({type: 'conversation_list'});
++    expect(frame.conversations).toHaveLength(3);
++    expect(frame.conversations?.map(conversation => conversation.sessionId)).toEqual([
++      'newest',
++      'older',
++      expect.any(String),
++    ]);
++    expect(
++      frame.conversations?.every(
++        conversation => Object.keys(conversation).sort().join(',') === 'createdAt,entryCount,sessionId,updatedAt'
++      )
++    ).toBe(true);
++    expect(
++      frame.conversations?.every(
++        conversation =>
++          typeof conversation.createdAt === 'string' &&
++          typeof conversation.updatedAt === 'string' &&
++          new Date(conversation.createdAt).toISOString() === conversation.createdAt &&
++          new Date(conversation.updatedAt).toISOString() === conversation.updatedAt
++      )
++    ).toBe(true);
++  });
++
++  it('refuses the list with UNSUPPORTED when history is not enabled', async () => {
++    const store = new InMemorySessionStore();
++    const {url} = await startEngineWith({sessionStore: store, orchestrator: answeringOrchestrator});
++
++    await expect(waitForListResponse(url, {type: 'list_conversations'})).resolves.toEqual([
++      {type: 'error', code: 'UNSUPPORTED', message: expect.any(String)},
++    ]);
++  });
++});

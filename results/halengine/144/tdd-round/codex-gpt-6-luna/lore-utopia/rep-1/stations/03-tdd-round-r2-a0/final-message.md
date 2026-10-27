@@ -1,0 +1,5 @@
+Implemented and pushed `ebc90fa` (`Handle session list websocket frames`). `createMessageHandler` now receives the store, handles `list_sessions` for the authenticated session user, serializes dates, and logs store failures. I also added the wire types, updated CI-reported spec links and changelog, and extracted shared test helpers to address the reported duplicate-code findings. The branch is up to date with `origin/main`, and its working tree is clean.
+
+The one test written this round failed before the implementation and passed afterward. No regressions were identified in the coverage trace. I ran only that focused test; acceptance tests remain for CI.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"thread sessionStore into the handler and handle list_sessions frames","tdd_next":"document list_sessions and session_list in the protocol and conversation-list specs"}}

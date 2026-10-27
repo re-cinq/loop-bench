@@ -1,0 +1,3 @@
+The next DoD facet is a `CHANGELOG.md` entry, but there’s no behavioral test I can write for it without testing repository prose, which the instructions forbid. The CI brief also lists failures in the acceptance test; fixing them would require editing that test, which the instructions prohibit. I made no changes and did not commit or push.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The remaining facet is changelog-only, so no permitted behavioral test can start the required red-green round; CI also reports acceptance-test findings that cannot be fixed without editing that test."}}
