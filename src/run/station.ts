@@ -1,4 +1,5 @@
 // One station visit: the prompt, a scratch HOME, the CLI run to its deadline, and what it reported.
+import { enforce } from "../core/enforce.js";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -153,16 +154,12 @@ export function mcpFor(contextMode: StationPlan["contextMode"], config: Experime
   if (contextMode === "none") {
     return null;
   }
-  if (contextMode === "lore-mcp") {
-    return loreServer(config);
-  }
+  // Both Lore arms pin their store: since Utopia became Lore's default knowledge base (2026-10-28), an unpinned lore-mcp would read Utopia too.
   const utopiaLoreDir = config.lore_mcp?.utopia_lore_dir;
 
-  if (!utopiaLoreDir) {
-    throw new Error("context_mode lore-utopia needs lore_mcp.utopia_lore_dir: a Lore build whose store reads take `backend`");
-  }
+  enforce(utopiaLoreDir, `context_mode ${contextMode} needs lore_mcp.utopia_lore_dir: a Lore build whose store reads take \`backend\``);
 
-  return lorePinnedServer(loreServer(config, utopiaLoreDir), join(paths.root, "bin", "mcp-backend-proxy.mjs"), "utopia");
+  return lorePinnedServer(loreServer(config, utopiaLoreDir), join(paths.root, "bin", "mcp-backend-proxy.mjs"), contextMode === "lore-mcp" ? "lore" : "utopia");
 }
 
 export function loreServer(config: ExperimentConfig, loreDir?: string) {
