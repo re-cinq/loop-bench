@@ -1,0 +1,3 @@
+Fixed the Ajv import, added schema validation before tool execution, and resolved the three reported lint findings. Both targeted registry suites pass locally (5 tests). I formatted the changed files, committed and pushed the fix, and confirmed the branch is current with `origin/main` and its upstream. CI has not yet judged the new commit.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed the Ajv import and validated tool input before execution; targeted registry tests pass"}}

@@ -1,0 +1,3 @@
+Fixed the reported WebSocket test failure and lint findings, committed the repair, and pushed it. The three affected suites pass locally (32 tests). `origin/main` was already merged, and the branch is fully pushed. CI has not yet judged the new commit.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"WebSocket conversation list frames were validated but never handled; duplicated test fixtures also failed lint"}}

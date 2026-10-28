@@ -1,0 +1,3 @@
+Committed and pushed `d6bda67`. A new test exposed that replacing a static tool’s schema after registration changed validation; the registry now reuses its registered validator. The focused test file is green (4 tests), and the branch is up to date with `main` and its upstream. The two lint findings reported by CI were repaired; lint and acceptance tests await CI. Red tests at delivery: 0 mine, 0 regressions. No unrelated smells noted.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Reuse the validator compiled for a static tool at registration","tdd_next":"Add remaining unit tests, spec links, and documentation updates"}}

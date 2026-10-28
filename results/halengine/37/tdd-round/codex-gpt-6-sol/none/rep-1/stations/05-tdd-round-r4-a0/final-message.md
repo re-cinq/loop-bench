@@ -1,0 +1,3 @@
+Committed and pushed `4cf17ec`. Fixed both CI assertion-count findings, added a spec-linked test for passing valid input with an extra property through unchanged, and updated the facet checklist. The targeted test file passed (5 tests). The new test passed against the existing implementation, so there was no failing behavioral test this round. Red tests: 0 ours, 0 regressions. CI has not yet judged this push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair CI assertion-count findings and test valid input passthrough","tdd_next":"Add remaining unit tests, spec links, and documentation updates"}}
