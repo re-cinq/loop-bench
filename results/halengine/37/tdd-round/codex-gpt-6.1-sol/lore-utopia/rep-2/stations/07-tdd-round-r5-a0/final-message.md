@@ -1,0 +1,3 @@
+Committed and pushed `ab50e51`. Dynamic validators now cache by schema identity. One new test went red, then green; zero regressions reported. Fixed CI’s assertion-count finding and formatted changes. Branch is current with main and upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cache dynamic schema validators by object reference","tdd_next":"Complete remaining validation coverage and documentation"}}
