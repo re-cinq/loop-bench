@@ -1,0 +1,148 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..34518f3
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,23 @@
++# Definition of Done
++
++> A deployer billing or budgeting from this hook under-counts exactly the expensive turns, and nothing in the signature hints at it.
++
++**Strategy: `direct`** — `createChatOrchestrator` accepts a provider and real tool registry, so a scripted provider drives the actual round loop and hook. Keep a single summed usage argument; a breakdown adds public surface beyond the turn total consumers need.
++
++## Done when these pass
++
++- [ ] **reports the sum of every provider call once per turn, counting only rounds that report usage** — two tool executions and three provider calls contribute all three token fields; missing first, middle, or final usage is ignored, all missing remains undefined, and direct answers retain their usage.
++      `src/orchestration/chatOrchestrator.usage.acceptance.test.ts`
++
++## Facets
++
++- [ ] Sum every reported provider usage without mutating provider values; preserve undefined when no call reports usage.
++- [ ] Keep afterModelResponse once per turn and preserve the unedited existing test `receives collected response text and usage` in `src/orchestration/chatOrchestrator.test.ts`.
++- [ ] Name the public hook argument `totalUsage` so the signature communicates the summed meaning without adding any to the API.
++- [ ] Add a consumer-facing CHANGELOG entry explaining larger recorded usage for tool turns, and bump the MINOR version; the spec records why a breakdown was rejected.
++- [ ] Pass the acceptance test and CI's existing build, test, typecheck, eslint, and formatting gates.
++
++## Out of scope
++
++- Audit and billing storage, usage outside orchestrator provider calls, per-round breakdowns, and changes to streamed stop usage.
++- The spec's unrelated non-Error rejection behaviour remains unchanged.
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 2749d18..1e6da51 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -20,9 +20,14 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
++## Turn usage (issue #93)
++
++- `afterModelResponse` fires once per user message with the sum of `inputTokens`, `outputTokens`, and `totalTokens` from every provider call in that turn, including both tool rounds and the final answer; missing usage contributes nothing, a turn with no reported usage receives `undefined`, and a turn without tools retains its existing usage value ([validated by: reports the sum of every provider call once per turn, counting only rounds that report usage](../../src/orchestration/chatOrchestrator.usage.acceptance.test.ts#L59)).
++
++The chosen API keeps one summed usage argument, named `totalUsage` in the public hook signature to make its meaning explicit. A per-round breakdown is rejected for this change because billing and budgeting need a turn total and provider-call detail would widen the public surface. This consumer-visible correction requires a MINOR version bump and a changelog entry explaining that existing consumers record larger values for turns that use tools.
++
+ ## Measured semantics — out of scope
+ 
+-These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++The remaining error-hook behaviour is recorded for future hook features and is outside issue #93.
+ 
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+-- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/src/orchestration/chatOrchestrator.usage.acceptance.test.ts b/src/orchestration/chatOrchestrator.usage.acceptance.test.ts
+new file mode 100644
+index 0000000..b478b09
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.usage.acceptance.test.ts
+@@ -0,0 +1,92 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, UsageMetadata} from '../types/ai.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++
++const first: UsageMetadata = {inputTokens: 11, outputTokens: 2, totalTokens: 13};
++const second: UsageMetadata = {inputTokens: 23, outputTokens: 5, totalTokens: 28};
++const last: UsageMetadata = {inputTokens: 37, outputTokens: 7, totalTokens: 44};
++
++async function runTurn(rounds: (UsageMetadata | undefined)[]) {
++  let providerCalls = 0;
++  let toolExecutions = 0;
++  const reports: (UsageMetadata | undefined)[] = [];
++  const provider: AIProvider = {
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      const index = providerCalls++;
++      if (index >= rounds.length) throw new Error('Unexpected extra provider call');
++      if (index < rounds.length - 1) {
++        yield {type: 'tool_use', toolCall: {id: `lookup-${index}`, name: 'lookup', input: {}}};
++      } else {
++        yield {type: 'text', text: 'done'};
++      }
++      yield {
++        type: 'stop',
++        stopReason: index < rounds.length - 1 ? 'tool_use' : 'end_turn',
++        usage: rounds[index],
++      };
++    },
++    async generateStructured<T>(): Promise<T> {
++      throw new Error('This turn must use the streaming provider entry point');
++    },
++  };
++  const registry = new ToolRegistry();
++  registry.register({name: 'lookup', description: 'Look up a value', inputSchema: {type: 'object'}}, async () => {
++    toolExecutions++;
++    return {result: 'found'};
++  });
++  const orchestrator = createChatOrchestrator(
++    provider,
++    new PromptBuilder({identity: 'Answer the question.'}),
++    registry,
++    {
++      hooks: {
++        afterModelResponse: async (_session, _text, usage) => {
++          reports.push(usage);
++        },
++      },
++    }
++  );
++  const text = await orchestrator.processMessage({
++    sessionId: 'usage-turn',
++    userId: 'customer',
++    entries: [{role: 'user', content: 'Look it up twice', timestamp: '2026-01-01T00:00:00.000Z'}],
++  });
++  return {text, providerCalls, toolExecutions, reports};
++}
++
++// Spec: specs/hal-engine-config-hooks/spec.md#8 (Turn usage, issue #93).
++it('reports the sum of every provider call once per turn, counting only rounds that report usage', async () => {
++  const actual = [];
++  for (const rounds of [
++    [first, second, last],
++    [first, undefined, last],
++    [undefined, second, last],
++    [first, second, undefined],
++    [undefined, undefined, undefined],
++    [first],
++    [undefined],
++  ]) {
++    actual.push(await runTurn(rounds));
++  }
++
++  expect(actual).toEqual([
++    {
++      text: 'done',
++      providerCalls: 3,
++      toolExecutions: 2,
++      reports: [{inputTokens: 71, outputTokens: 14, totalTokens: 85}],
++    },
++    {text: 'done', providerCalls: 3, toolExecutions: 2, reports: [{inputTokens: 48, outputTokens: 9, totalTokens: 57}]},
++    {
++      text: 'done',
++      providerCalls: 3,
++      toolExecutions: 2,
++      reports: [{inputTokens: 60, outputTokens: 12, totalTokens: 72}],
++    },
++    {text: 'done', providerCalls: 3, toolExecutions: 2, reports: [{inputTokens: 34, outputTokens: 7, totalTokens: 41}]},
++    {text: 'done', providerCalls: 3, toolExecutions: 2, reports: [undefined]},
++    {text: 'done', providerCalls: 1, toolExecutions: 0, reports: [first]},
++    {text: 'done', providerCalls: 1, toolExecutions: 0, reports: [undefined]},
++  ]);
++});

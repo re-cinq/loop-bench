@@ -1,0 +1,3 @@
+Committed and pushed the test cleanup. The edited test file passed locally (2 tests); the latest CI verdict reported three lint findings, with **0 red tests and 0 regressions**. The branch is up to date with `main` and its upstream. No unrelated smells were identified.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Confirm existing Error-instance tests remain green","tdd_next":"acceptance green"}}
