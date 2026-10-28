@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-28 22:34 UTC: 1189 loops over 319 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-28 22:43 UTC: 1190 loops over 319 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -196,7 +196,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | dod | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.45 ($0.01–$2.16, sd $0.86) | 1.5 min (0.9 min–1.9 min, sd 0.4 min) | 1.0 (1.0–1.0, sd 0.0) | 1.2 (1.0–2.0, sd 0.4) | 1.6 (1.0–2.0, sd 0.5) | 5/5 | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +95/−2 |
 | #93 small | dod | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 small | dod | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 1 | 0/1 | 0.0 | $5.92 | 1.5 min | 1.0 | 2.0 | 2.0 | 1/1 | 3 (0.11) | +106/−2 |
+| #93 small | dod | `gpt-6-sol` (codex) | medium (codex default) | without Lore | baseline | 2 | 0/2 | 0.0 (0.0–0.0, sd 0.0) | $3.16 ($0.39–$5.92, sd $2.76) | 2.2 min (1.5 min–2.9 min, sd 0.7 min) | 1.0 | 2.0 | 2.0 | 2/2 | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +106/−3 |
 | #93 small | dod | `gpt-6.1-sol` (codex) | low (codex default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.13 | 6.7 min | 1.0 | 2.0 | 2.0 | 1/1 | 3 (0.11) | +130/−2 |
 | #93 small | dod | `gpt-6.1-sol` (codex) | low (codex default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.17 ($0.15–$0.22, sd $0.02) | 4.8 min (1.7 min–7.1 min, sd 2.5 min) | 1.0 (1.0–1.0, sd 0.0) | 1.5 (1.0–2.0, sd 0.5) | 1.5 (1.0–2.0, sd 0.5) | 5/5 | 3 (3–4, sd 0) (0.11 (0.10–0.11, sd 0.00)) | +117/−2 |
 | #93 small | dod | `gpt-6.1-sol` (codex) | low (codex default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $1.07 ($0.14–$4.71, sd $1.82) | 4.7 min (1.3 min–6.1 min, sd 1.7 min) | 1.0 (1.0–1.0, sd 0.0) | 1.8 (1.0–2.0, sd 0.4) | 1.8 (1.0–2.0, sd 0.4) | 5/5 | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +121/−2 |
@@ -835,7 +835,7 @@ What the columns mean:
 | #93 small | dod | `gpt-6-luna` (codex) | with Lore | station_done ×5 |
 | #93 small | dod | `gpt-6-luna` (codex) | Lore on Utopia | station_done ×5 |
 | #93 small | dod | `gpt-6-luna` (codex) | without Lore | station_done ×5 |
-| #93 small | dod | `gpt-6-sol` (codex) | without Lore | station_done ×1 |
+| #93 small | dod | `gpt-6-sol` (codex) | without Lore | station_done ×2 |
 | #93 small | dod | `gpt-6.1-sol` (codex) | with Lore | station_done ×1 |
 | #93 small | dod | `gpt-6.1-sol` (codex) | Lore on Utopia | station_done ×5 |
 | #93 small | dod | `gpt-6.1-sol` (codex) | without Lore | station_done ×5 |

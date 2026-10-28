@@ -1,0 +1,3 @@
+Committed and pushed one round. The new test failed on an escaped property path, then passed after the registry decoded it. I also fixed all three lint findings reported by the previous CI run. One red test was mine; zero were regressions. Acceptance tests remain for CI.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Decode escaped JSON Pointer property names in tool input rejection paths","tdd_next":"Add remaining unit tests, spec links, and documentation updates"}}
