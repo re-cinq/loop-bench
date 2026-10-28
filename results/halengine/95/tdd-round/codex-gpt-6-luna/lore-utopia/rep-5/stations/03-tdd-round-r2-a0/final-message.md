@@ -1,0 +1,5 @@
+Committed and pushed `416ce36` (`Deduplicate onError rejection tests`). The shared harness removes the duplicated test setup, and the new assertion checks that `undefined` remains both the error’s `cause` and the caller’s rejection value. The spec links and DoD checklist are updated.
+
+The focused test file passed: 3 tests. The implementation already handled `undefined`, so the new assertion was green immediately; this round did not produce a red test or change implementation code. The two lint findings from the previous CI report were in the duplicated setup addressed here. Regressions reported: 0. The branch is clean and matches its upstream; `origin/main` was already merged.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"undefined rejection preservation and duplicate test setup cleanup","tdd_next":"acceptance green"}}

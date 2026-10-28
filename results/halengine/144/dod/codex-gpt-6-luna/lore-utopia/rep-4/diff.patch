@@ -1,0 +1,239 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..36b7cf6
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,25 @@
++# Definition of Done
++
++> It does not give a **client** anything: the browser holding the socket cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — `createServer` and a real WebSocket connection are an existing seam, and `validateMessage` is directly callable. The tests exercise the protocol with the real session store and no doubles.
++
++## Done when these pass
++
++- [ ] **Returns the authenticated user’s summaries as ISO timestamps when history is enabled** — a client frame receives the caller’s own metadata-only rows over the socket, with pagination forwarded to the store.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **Validates list_conversations pagination fields at the protocol boundary** — the frame is accepted and invalid limits or cursors are rejected with the field named.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **Answers with UNSUPPORTED and no list when history is disabled** — opt-out is an explicit error response rather than a misleading empty history.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Accept and validate `list_conversations` frames, including bounded limit and cursor fields.
++- [ ] Return authenticated-user summaries as ISO wire values through the WebSocket handler.
++- [ ] Refuse history requests with `UNSUPPORTED` when the feature is disabled.
++
++## Out of scope
++
++- Switching conversations in-band; clients reconnect with `?sessionId=` through the existing resume path.
++- Conversation previews, deletion, cross-tab synchronization, and operator access to another user’s history.
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..0658362 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -160,6 +160,18 @@ Application-level heartbeat. The server MUST respond with a `pong` message echoi
+ | `type`      | string | Yes      | `"ping"`                          |
+ | `timestamp` | number | Yes      | Client timestamp in milliseconds  |
+ 
++### 4.3 list_conversations
++
++Requests a page of the authenticated user's conversation summaries. The server MUST take the user id from the authenticated connection, never from the frame; it MUST accept this frame even when history is disabled, leaving the handler to refuse it. When `transport.history.enabled` is true, the server answers with one `conversation_list` frame whose timestamps are ISO strings and whose rows contain metadata only, never conversation content. When history is disabled, or the store cannot list, the server answers with an `error` carrying `UNSUPPORTED`.
++
++| Field    | Type   | Required | Description                                                          |
++| -------- | ------ | -------- | -------------------------------------------------------------------- |
++| `type`   | string | Yes      | `"list_conversations"`                                               |
++| `limit`  | number | No       | Integer from 1 to 200                                                |
++| `before` | object | No       | Cursor with `updatedAt` as an ISO string and `sessionId` as a string |
++
++([validated by: returns the authenticated user's summaries as ISO timestamps when history is enabled](../../src/transport/ws/conversationList.acceptance.test.ts#L65), [validates list_conversations pagination fields at the protocol boundary](../../src/transport/ws/conversationList.acceptance.test.ts#L110), [answers with UNSUPPORTED and no list when history is disabled or the store cannot list](../../src/transport/ws/conversationList.acceptance.test.ts#L129))
++
+ ## 5. Server-to-Client Messages
+ 
+ ### 5.1 connected
+@@ -357,6 +369,31 @@ Semantics:
+ - The client SHOULD use this message to clear any "processing" or "loading" indicators.
+ - The client MUST treat a run as complete only at `stream_end` or when the socket closes. Unparseable JSON is the one frame answered with `INVALID_FORMAT` and no `stream_end`, because the server cannot tell what it was meant to be; for it the client falls back on the socket closing.
+ 
++### 5.9 conversation_list
++
++The response to an enabled `list_conversations` request. Each row carries only `sessionId`, `createdAt`, `updatedAt` and `entryCount`; both times are ISO strings on the wire. The list contains only conversations owned by the user authenticated on this connection, and the server never accepts an identity from the request frame.
++
++```json
++{
++  "type": "conversation_list",
++  "conversations": [
++    {
++      "sessionId": "550e8400-e29b-41d4-a716-446655440000",
++      "createdAt": "2026-10-28T00:00:00.000Z",
++      "updatedAt": "2026-10-28T00:00:00.000Z",
++      "entryCount": 2
++    }
++  ]
++}
++```
++
++| Field           | Type                    | Description                                 |
++| --------------- | ----------------------- | ------------------------------------------- |
++| `type`          | string                  | `"conversation_list"`                       |
++| `conversations` | `ConversationSummary[]` | Metadata summaries for the authenticated user |
++
++([validated by: returns the authenticated user's summaries as ISO timestamps when history is enabled](../../src/transport/ws/conversationList.acceptance.test.ts#L65))
++
+ ## 6. SessionEntry Objects
+ 
+ A SessionEntry represents a single piece of content in the conversation. Every entry has a `role` field that determines its shape. The `role` acts as a discriminant for the union type.
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..10cfec0
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,147 @@
++import {afterEach} from '@jest/globals';
++import type {RawData, WebSocket} from 'ws';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import type {SessionListOptions} from '../../types/sessionStore.js';
++import type {SessionSummary} from '../../types/sessionStore.js';
++import {validateMessage} from './validation.js';
++import {connectClient, startEngineWith, stopEngines} from '../wsTestSupport.js';
++
++afterEach(async () => {
++  await stopEngines();
++  await new Promise(resolve => setTimeout(resolve, 20));
++});
++
++class RecordingSessionStore extends InMemorySessionStore {
++  readonly listCalls: Array<{userId: string | number; options: SessionListOptions | undefined}> = [];
++
++  override listFor(userId: string | number, options?: SessionListOptions): SessionSummary[] {
++    this.listCalls.push({userId, options});
++    return super.listFor(userId, options);
++  }
++}
++
++async function openHistorySocket(store: InMemorySessionStore, history?: {enabled: boolean}) {
++  const {url} = await startEngineWith({
++    sessionStore: store,
++    wsAuth: async () => ({id: 'authenticated-user'}),
++    orchestrator: {
++      processMessage: async () => '',
++      async *processMessageStream() {},
++    },
++    ...(history === undefined ? {} : {history}),
++    heartbeatIntervalMs: 60_000,
++  });
++  const socket = connectClient(url);
++  const frames: Array<Record<string, unknown>> = [];
++  const connected = new Promise<void>(resolve => {
++    socket.on('message', raw => {
++      const frame = JSON.parse(String(raw)) as Record<string, unknown>;
++      frames.push(frame);
++      if (frame.type === 'connected') resolve();
++    });
++  });
++  const opened = new Promise<void>((resolve, reject) => {
++    socket.once('open', resolve);
++    socket.once('error', reject);
++  });
++  await Promise.all([opened, connected]);
++  return {socket, frames};
++}
++
++function nextFrame(socket: WebSocket) {
++  return new Promise<Record<string, unknown>>(resolve => {
++    const onMessage = (raw: RawData) => {
++      const frame = JSON.parse(String(raw)) as Record<string, unknown>;
++      socket.off('message', onMessage);
++      resolve(frame);
++    };
++    socket.on('message', onMessage);
++  });
++}
++
++// @spec specs/hal-engine-websocket-protocol/spec.md#4.3
++describe('conversation list over the WebSocket protocol', () => {
++  // @spec specs/hal-engine-websocket-protocol/spec.md#5.9
++  it("returns the authenticated user's summaries as ISO timestamps when history is enabled", async () => {
++    const store = new RecordingSessionStore();
++    store.create('mine-1', 'authenticated-user');
++    store.create('mine-2', 'authenticated-user');
++    store.create('theirs', 'another-user');
++    const {socket, frames} = await openHistorySocket(store, {enabled: true});
++    const received = nextFrame(socket);
++    const before = {updatedAt: new Date(Date.now() + 86_400_000).toISOString(), sessionId: 'zz'};
++
++    socket.send(JSON.stringify({type: 'list_conversations', userId: 'another-user', limit: 3, before}));
++
++    const list = await received;
++    expect(list.type).toBe('conversation_list');
++    const conversations = list.conversations as Array<Record<string, unknown>>;
++    expect({
++      type: list.type,
++      count: conversations.length,
++      ids: conversations.map(row => row.sessionId).sort(),
++      foreignConversationIncluded: conversations.some(row => row.sessionId === 'theirs'),
++      listFrameCount: frames.filter(frame => frame.type === 'conversation_list').length,
++      onlySummaryFields: conversations.every(
++        row => Object.keys(row).sort().join(',') === 'createdAt,entryCount,sessionId,updatedAt'
++      ),
++      isoTimes: conversations.every(row =>
++        ['createdAt', 'updatedAt'].every(
++          field => typeof row[field] === 'string' && !Number.isNaN(Date.parse(row[field] as string))
++        )
++      ),
++      calledFor: store.listCalls.at(-1)?.userId,
++      options: store.listCalls.at(-1)?.options,
++      streamEnd: frames.some(frame => frame.type === 'stream_end'),
++    }).toEqual({
++      type: 'conversation_list',
++      count: 3,
++      ids: expect.arrayContaining(['mine-1', 'mine-2']),
++      foreignConversationIncluded: false,
++      listFrameCount: 1,
++      isoTimes: true,
++      onlySummaryFields: true,
++      calledFor: 'authenticated-user',
++      options: {limit: 3, before},
++      streamEnd: false,
++    });
++  });
++
++  it('validates list_conversations pagination fields at the protocol boundary', () => {
++    expect(validateMessage({type: 'list_conversations'})).toEqual({
++      valid: true,
++      data: {type: 'list_conversations'},
++    });
++    const invalidFrames: Array<[unknown, string]> = [
++      [{type: 'list_conversations', limit: 0}, 'limit'],
++      [{type: 'list_conversations', limit: 201}, 'limit'],
++      [{type: 'list_conversations', limit: 1.5}, 'limit'],
++      [{type: 'list_conversations', limit: '10'}, 'limit'],
++      [{type: 'list_conversations', before: 'not a date'}, 'before'],
++    ];
++    for (const [frame, field] of invalidFrames) {
++      const result = validateMessage(frame);
++      expect(result).toMatchObject({valid: false});
++      if (!result.valid) expect(result.error).toContain(field);
++    }
++  });
++
++  it('answers with UNSUPPORTED and no list when history is disabled or the store cannot list', async () => {
++    const {socket, frames} = await openHistorySocket(new RecordingSessionStore());
++    const received = nextFrame(socket);
++
++    socket.send(JSON.stringify({type: 'list_conversations'}));
++
++    expect(await received).toMatchObject({type: 'error', code: 'UNSUPPORTED'});
++    expect(frames.some(frame => frame.type === 'conversation_list')).toBe(false);
++
++    const store = new InMemorySessionStore();
++    Object.defineProperty(store, 'listFor', {value: undefined});
++    const unavailable = await openHistorySocket(store, {enabled: true});
++    const unavailableResponse = nextFrame(unavailable.socket);
++    unavailable.socket.send(JSON.stringify({type: 'list_conversations'}));
++
++    expect(await unavailableResponse).toMatchObject({type: 'error', code: 'UNSUPPORTED'});
++    expect(unavailable.frames.some(frame => frame.type === 'conversation_list')).toBe(false);
++  });
++});

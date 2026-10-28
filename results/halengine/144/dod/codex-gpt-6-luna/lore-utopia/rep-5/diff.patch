@@ -1,0 +1,208 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..30d0883
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,25 @@
++# Definition of Done
++
++> It does not give a **client** anything: the browser holding the socket cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — `createServer` is the real WebSocket entry point, and a real socket can send the frame today. The acceptance tests assert the server’s response through that path.
++
++## Done when these pass
++
++- [ ] **Returns only the authenticated user’s summaries as wire-safe dates when asked** — a real WebSocket request returns the connected user’s ordered summaries with ISO timestamps and does not accept another user id from the frame.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **Accepts a composite paging cursor and names invalid list fields** — validation accepts a valid cursor and rejects out-of-range limits, malformed dates and incomplete cursors with field-specific errors.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **Reports that listing is unsupported while history is disabled** — a real WebSocket request gets an `UNSUPPORTED` error instead of a list.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Validate and type the list request and response frames.
++- [ ] Handle enabled list requests through the connection’s authenticated user and serialize summary dates for the wire.
++- [ ] Return `UNSUPPORTED` when history is disabled or the store cannot list.
++- [ ] Document the WebSocket list request, response and authorization rule in the specs.
++
++## Out of scope
++
++- Adding a REST conversation-list endpoint, conversation previews, deletion, server-held paging state or live sync between tabs.
+diff --git a/specs/hal-engine-conversation-list/spec.md b/specs/hal-engine-conversation-list/spec.md
+index c9ee424..3fa705e 100644
+--- a/specs/hal-engine-conversation-list/spec.md
++++ b/specs/hal-engine-conversation-list/spec.md
+@@ -68,3 +68,9 @@ Resume gets a client back into one conversation: the id it names, or the user's
+ ## When the store cannot answer
+ 
+ - A store whose collection fails rejects rather than answering a partial or empty list: what to show a user who may have conversations is the caller's decision, and an empty history is not a safe guess ([validated by: rejects rather than answering a partial list when the collection fails](../../src/infrastructure/stores/mongo/mongoConversationList.test.ts#L225)).
++
++## Asking for the list over the socket
++
++- When history is enabled, a client can ask over its authenticated WebSocket for its own conversation summaries; the response carries ISO date strings and never uses a user id from the frame ([validated by: returns only the authenticated user’s summaries as wire-safe dates when asked](../../src/transport/ws/conversationList.acceptance.test.ts#L52)).
++- When history is disabled, a list request receives an `UNSUPPORTED` error ([validated by: reports that listing is unsupported while history is disabled](../../src/transport/ws/conversationList.acceptance.test.ts#L96)).
++- The list frame accepts limits from 1 through 200 and a composite cursor with a parseable `updatedAt` and a `sessionId`; invalid fields are named in validation errors ([validated by: accepts a composite paging cursor and names invalid list fields](../../src/transport/ws/conversationList.acceptance.test.ts#L27)).
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..39eb777
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,157 @@
++import {once} from 'node:events';
++import type {AddressInfo} from 'node:net';
++import type {Express} from 'express';
++import {WebSocket} from 'ws';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import {createServer} from '../createServer.js';
++import {createChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import {PromptBuilder} from '../../infrastructure/builders/promptBuilder.js';
++import {createMockProvider} from '../../providers/mock/index.js';
++import {HAL_WS_SUBPROTOCOL} from './subprotocol.js';
++import type {SessionListOptions, SessionSummary} from '../../types/sessionStore.js';
++import {validateMessage} from './validation.js';
++
++interface Frame {
++  type: string;
++  code?: string;
++  conversations?: Array<{
++    sessionId: string;
++    createdAt: string;
++    updatedAt: string;
++    entryCount: number;
++  }>;
++}
++
++describe('conversation list over the WebSocket protocol', () => {
++  // spec: specs/hal-engine-conversation-list/spec.md#39
++  it('accepts a composite paging cursor and names invalid list fields', () => {
++    expect(
++      validateMessage({
++        type: 'list_conversations',
++        limit: 1,
++        before: {updatedAt: '2026-01-02T00:00:00.000Z', sessionId: 'middle'},
++      })
++    ).toMatchObject({valid: true});
++
++    for (const [field, value] of [
++      ['limit', 0],
++      ['limit', 201],
++      ['limit', 1.5],
++      ['limit', '10'],
++      ['before', {updatedAt: 'not a date', sessionId: 'middle'}],
++      ['before', {updatedAt: '2026-01-02T00:00:00.000Z'}],
++    ]) {
++      expect(validateMessage({type: 'list_conversations', [field]: value})).toMatchObject({
++        valid: false,
++        error: expect.stringContaining(field),
++      });
++    }
++  });
++
++  // spec: specs/hal-engine-conversation-list/spec.md#37
++  it('returns only the authenticated user’s summaries as wire-safe dates when asked', async () => {
++    const {hal, client, sessionStore} = await engine(true);
++
++    try {
++      const connected = once(client, 'message');
++      await once(client, 'open');
++      await connected;
++      const answer = once(client, 'message');
++      client.send(JSON.stringify({type: 'list_conversations', userId: 'u2'}));
++      const [raw] = await answer;
++      const frame = JSON.parse(String(raw)) as Frame;
++
++      expect(frame.type).toBe('conversation_list');
++      expect(frame.conversations?.map(({sessionId}) => sessionId)).toEqual(['newest', 'middle', 'older']);
++      expect(frame.conversations).toHaveLength(3);
++      expect(
++        frame.conversations?.every(
++          ({createdAt, updatedAt}) =>
++            !Number.isNaN(Date.parse(createdAt)) &&
++            new Date(createdAt).toISOString() === createdAt &&
++            !Number.isNaN(Date.parse(updatedAt)) &&
++            new Date(updatedAt).toISOString() === updatedAt
++        )
++      ).toBe(true);
++
++      const nextPage = once(client, 'message');
++      const before = {updatedAt: '2026-01-02T00:00:00.000Z', sessionId: 'middle'};
++      client.send(JSON.stringify({type: 'list_conversations', limit: 1, before}));
++      const [nextRaw] = await nextPage;
++      const nextFrame = JSON.parse(String(nextRaw)) as Frame;
++      expect(nextFrame.conversations?.map(({sessionId}) => sessionId)).toEqual(['older']);
++      expect(sessionStore.requestedUserIds).toEqual(['u1', 'u1']);
++      expect(sessionStore.requestedOptions).toEqual([
++        {limit: undefined, before: undefined},
++        {limit: 1, before},
++      ]);
++    } finally {
++      client.close();
++      await once(client, 'close');
++      await hal.stop();
++    }
++  });
++
++  // spec: specs/hal-engine-conversation-list/spec.md#38
++  it('reports that listing is unsupported while history is disabled', async () => {
++    const {hal, client, sessionStore} = await engine(false);
++
++    try {
++      const connected = once(client, 'message');
++      await once(client, 'open');
++      await connected;
++      const answer = once(client, 'message');
++      client.send(JSON.stringify({type: 'list_conversations'}));
++      const [raw] = await answer;
++      const frame = JSON.parse(String(raw)) as Frame;
++
++      expect(frame).toMatchObject({type: 'error', code: 'UNSUPPORTED'});
++      expect(frame.conversations).toBeUndefined();
++      expect(sessionStore.requestedUserIds).toEqual([]);
++    } finally {
++      client.close();
++      await once(client, 'close');
++      await hal.stop();
++    }
++  });
++});
++
++async function engine(history: boolean) {
++  const sessionStore = new RecordingSessionStore();
++  for (const [sessionId, userId, updatedAt] of [
++    ['older', 'u1', '2026-01-01T00:00:00.000Z'],
++    ['middle', 'u1', '2026-01-02T00:00:00.000Z'],
++    ['newest', 'u1', '2026-01-03T00:00:00.000Z'],
++    ['private', 'u2', '2026-01-04T00:00:00.000Z'],
++  ]) {
++    const session = sessionStore.create(sessionId, userId);
++    session.entries.push({role: 'user', content: 'hello', timestamp: updatedAt});
++  }
++
++  const options = {
++    app: (() => undefined) as unknown as Express,
++    wsAuth: async () => ({id: 'u1'}),
++    sessionStore,
++    orchestrator: createChatOrchestrator(
++      createMockProvider(),
++      new PromptBuilder({identity: 'Acceptance test assistant.'})
++    ),
++    ...(history ? {history: {enabled: true}} : {}),
++  };
++  const hal = createServer(options);
++  await hal.start(0);
++  const {port} = hal.server.address() as AddressInfo;
++  const client = new WebSocket(`ws://127.0.0.1:${port}/hal/ws`, [HAL_WS_SUBPROTOCOL, 'token']);
++  return {hal, client, sessionStore};
++}
++
++class RecordingSessionStore extends InMemorySessionStore {
++  readonly requestedUserIds: Array<string | number> = [];
++  readonly requestedOptions: Array<SessionListOptions | undefined> = [];
++
++  override listFor(userId: string | number, options?: SessionListOptions): SessionSummary[] {
++    this.requestedUserIds.push(userId);
++    this.requestedOptions.push(options);
++    return super.listFor(userId, options);
++  }
++}

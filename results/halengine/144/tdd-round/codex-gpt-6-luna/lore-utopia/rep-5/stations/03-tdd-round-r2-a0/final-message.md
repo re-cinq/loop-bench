@@ -1,0 +1,3 @@
+Documented `list_sessions` and `session_list` in the protocol spec, corrected the listed stale spec links, and fixed the test mock’s typed user capture. The changed test file passed; no acceptance tests or broader checks were run. Red tests this round: 0; regressions: 0. Commit `57936eb` is pushed, and the branch is up to date with its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Document list_sessions and session_list in the protocol specs","tdd_next":"acceptance green"}}

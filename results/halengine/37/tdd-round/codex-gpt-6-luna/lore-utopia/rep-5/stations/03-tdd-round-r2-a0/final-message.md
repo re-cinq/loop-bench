@@ -1,0 +1,5 @@
+Added a focused regression test for the wrong-typed field path and linked it from the spec. The test passed; the existing implementation already returned the path, so no source change was needed. The CI-reported failure remains worth checking against the pushed commit.
+
+This round’s facet: wrong-typed rejection names the field and omits its value. Next: static schema compilation and function-schema caching. There was one new test and no source change; I can’t classify the earlier CI failure as a regression from this round. The branch is pushed and synchronized with `origin/main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"wrong-typed rejection identifies the failing field path","tdd_next":"compile static schemas at registration and cache function-valued schemas by object reference"}}

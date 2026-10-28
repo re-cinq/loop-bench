@@ -1,0 +1,5 @@
+Fixed the CI lint findings by linking the `UNSUPPORTED` behavior to its spec statement and moving the session declaration closer to its use. Formatted the changed test file, committed as `dfabd4f`, pushed, and merged `origin/main`; the branch is even with its upstream.
+
+No tests ran here: I wrote no test this round, and the supplied instructions allow running only a test written this round. The Lore CI lookup returned 404, and the brief truncates the test failure details, so I can’t determine whether that failure was a regression. Red tests written this round: 0; regressions: unknown.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair the reported CI lint and spec-link findings","tdd_next":"Verify concurrency behavior, resume flow, config threading, changelog and generated getting-started docs"}}

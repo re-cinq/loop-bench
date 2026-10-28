@@ -1,0 +1,3 @@
+The acceptance test is invalid for this repository: it passes `baseSystemPrompt`, `systemPromptSuffix`, and `contextConfig` to `PromptBuilder`, whose constructor accepts `identity`, `domainContext`, `responseGuidelines`, and `toolPreamble`. The CI typecheck failure confirms the mismatch. Per your instruction to stop when an acceptance test is wrong, I made no edits, ran no tests, and did not commit or push. The trace query was rate limited (HTTP 429).
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test uses PromptBuilder options that do not exist in this repository; it must be corrected before this round can proceed."}}

@@ -1,0 +1,5 @@
+I stopped before the implementation round. The branch’s acceptance criteria are stale: `.lore/dod.md` and its acceptance test expect `list_sessions`/`session_list`, while the ticket specifies `list_conversations`/`conversation_list`. The recorded CI verdict also includes lint failures in that acceptance test, plus test, spec-name, and changelog failures; Lore could not retrieve the verdict for this branch, and the brief truncates the remaining findings. I made no repository changes.
+
+I tried a type-fixture test, but it passed before any implementation because Jest’s isolated TypeScript transform does not check type errors. That cannot provide the required failing test for this facet. No implementation or commit was made; this round has 0 red tests of mine and 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test and DoD contradict the ticket, CI findings are incomplete, and Jest cannot produce a failing type test without running the prohibited typechecker."}}
