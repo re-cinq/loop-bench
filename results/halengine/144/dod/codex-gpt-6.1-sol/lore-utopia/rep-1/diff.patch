@@ -1,0 +1,284 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..7720f2d
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,33 @@
++# Definition of Done
++
++> It does not give a **client** anything: the browser holding the socket cannot reach the store, so
++> every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over
++> the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — The real engine factory, validator, stores and WebSocket handshake already expose the required boundary. Tests send frames over real sockets; a recording adapter delegates to the real memory store and a Mongo adapter with an invalid URI supplies a real store rejection without a database fixture.
++
++## Done when these pass
++
++- [ ] **validates history limits and complete composite cursors without accepting a frame user id** — Static validation accepts the additive frame, rejects malformed pagination and drops the supplied identity.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **lists and pages only the socket owner metadata during a pending turn and resumes a listed conversation** — Enabled history exposes only owned metadata, forwards recorded arguments, preserves composite paging, bypasses the turn lock and uses existing resume replay.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **refuses history by default, when disabled, and when the store cannot list** — Unsupported deployments report failure rather than an empty history.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **reports a real store failure without exposing its detail or closing the socket** — A failed listing reports a sanitized error and logs its session while leaving the connection usable.
++      `src/transport/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the four protocol interfaces and additive unions, preserving existing message literals and ConnectedMessage.
++- [ ] Validate optional limits and complete composite cursors independently of feature configuration.
++- [ ] Thread the separate default-off history option from the engine factory into the handler; document retention and warn when resume is disabled.
++- [ ] Answer owned metadata outside the turn lock, preserving paging arguments and ISO times.
++- [ ] Return UNSUPPORTED for disabled or incapable stores, including StoreCannotList; sanitize and log other store failures.
++- [ ] Document the frame field tables, metadata disclosure and connection-derived identity; update full-config and regenerate getting-started, add the consumer changelog and minor version bump.
++
++## Out of scope
++
++- Conversation previews or titles, deletion, operator lists, server-held pagination state and live tab synchronization.
++- A new replay or in-band conversation-switch path; the acceptance test exercises existing resume.
++- Provider output: the pending-turn case pauses at the real orchestrator's beforeModelResponse hook and closes the socket before any provider request.
+diff --git a/specs/hal-engine-conversation-list/spec.md b/specs/hal-engine-conversation-list/spec.md
+index c9ee424..c0df8be 100644
+--- a/specs/hal-engine-conversation-list/spec.md
++++ b/specs/hal-engine-conversation-list/spec.md
+@@ -68,3 +68,7 @@ Resume gets a client back into one conversation: the id it names, or the user's
+ ## When the store cannot answer
+ 
+ - A store whose collection fails rejects rather than answering a partial or empty list: what to show a user who may have conversations is the caller's decision, and an empty history is not a safe guess ([validated by: rejects rather than answering a partial list when the collection fails](../../src/infrastructure/stores/mongo/mongoConversationList.test.ts#L225)).
++
++## Client history
++
++- When history is enabled, a requested `conversation_list` contains only the authenticated socket user's summaries, including the current conversation, newest first, with ISO string times and no content or credentials; `{limit, before}` reaches `listFor` unchanged, with ownership taken from the socket rather than the frame, and the response arrives outside the turn lock without `stream_end` or an unsolicited list; a listed id opens through the existing authenticated resume and replay path ([validated by: lists and pages only the socket owner metadata during a pending turn and resumes a listed conversation](../../src/transport/conversationList.acceptance.test.ts#L118)).
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..1e4585e 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -655,3 +655,14 @@ After 5 failed attempts, the client MUST stop reconnecting and report a disconne
+ | Message validation       | `src/transport/ws/validation.ts`                  |
+ | Message handling         | `src/transport/ws/messageHandler.ts`              |
+ | Connection handler       | `src/transport/ws/connectionHandler.ts`           |
++
++## Client conversation history
++
++### Request validation
++
++- `list_conversations` is accepted independently of configuration, with an optional integer `limit` from 1 to 200 and an optional `before` object containing a parseable ISO `updatedAt` string and a string `sessionId`; malformed fields are refused with field-specific errors, and extra fields including `userId` are discarded ([validated by: validates history limits and complete composite cursors without accepting a frame user id](../../src/transport/conversationList.acceptance.test.ts#L86)).
++
++### Deployment and failure
++
++- History is opt-in through `transport.history.enabled`, independently of resume; an absent or disabled flag, or a store without `listFor`, produces exactly one `UNSUPPORTED` error and no list or `stream_end`, keeping the socket open ([validated by: refuses history by default, when disabled, and when the store cannot list](../../src/transport/conversationList.acceptance.test.ts#L184)).
++- A failing store produces exactly one `SERVER_ERROR` without store detail, keeps the socket open, and logs the failure with the session id without credentials ([validated by: reports a real store failure without exposing its detail or closing the socket](../../src/transport/conversationList.acceptance.test.ts#L197)).
+diff --git a/src/transport/conversationList.acceptance.test.ts b/src/transport/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..5be2c5e
+--- /dev/null
++++ b/src/transport/conversationList.acceptance.test.ts
+@@ -0,0 +1,208 @@
++import {once} from 'node:events';
++import type {AddressInfo} from 'node:net';
++import {WebSocket} from 'ws';
++import {createHalEngine} from '../config.js';
++import type {HalEngineConfig, HalEngine} from '../config.js';
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++import {MongoSessionStore} from '../infrastructure/stores/mongo/mongoSessionStore.js';
++import type {SessionStore, SessionListOptions} from '../types/sessionStore.js';
++import {HAL_WS_SUBPROTOCOL} from './ws/subprotocol.js';
++import {validateMessage} from './ws/validation.js';
++import {captureErrors} from '../shared/logCaptureTestSupport.js';
++
++interface Row {
++  sessionId: string;
++  createdAt: string;
++  updatedAt: string;
++  entryCount: number;
++}
++interface Frame {
++  type: string;
++  code?: string;
++  message?: string;
++  sessionId?: string;
++  resumed?: boolean;
++  conversations?: Row[];
++  entry?: {content?: string};
++}
++const engines: HalEngine[] = [];
++const clients: WebSocket[] = [];
++afterEach(async () => {
++  for (const client of clients.splice(0)) client.terminate();
++  for (const engine of engines.splice(0)) {
++    while (engine.wss.clients.size > 0) await new Promise(resolve => setTimeout(resolve, 5));
++    await engine.stop();
++  }
++});
++
++const errors = captureErrors();
++
++async function start(session: SessionStore, enabled?: boolean, hooks?: HalEngineConfig['orchestrator']) {
++  const transport = {resume: {enabled: true}, ...(enabled === undefined ? {} : {history: {enabled}})};
++  const engine = createHalEngine({
++    provider: {type: 'openai', apiKey: 'unused', model: 'unused'},
++    prompt: {identity: 'History acceptance'},
++    auth: {ws: async () => ({id: 'owner'})},
++    session,
++    transport,
++    orchestrator: hooks,
++  });
++  engines.push(engine);
++  await engine.start(0);
++  return `ws://127.0.0.1:${(engine.server.address() as AddressInfo).port}/hal/ws`;
++}
++
++async function connect(url: string) {
++  const client = new WebSocket(url, [HAL_WS_SUBPROTOCOL, 'credential']);
++  clients.push(client);
++  const frames: Frame[] = [];
++  client.on('message', raw => frames.push(JSON.parse(String(raw)) as Frame));
++  await once(client, 'message');
++  return {client, frames};
++}
++
++async function request(client: WebSocket, frames: Frame[], payload: unknown): Promise<Frame[]> {
++  const from = frames.length;
++  client.send(JSON.stringify(payload));
++  for (let attempt = 0; attempt < 100; attempt++) {
++    const answer = frames.slice(from);
++    if (answer.some(frame => frame.type === 'conversation_list' || frame.type === 'error')) return answer;
++    await new Promise(resolve => setTimeout(resolve, 5));
++  }
++  throw new Error('No history response within 500ms; a list must not wait for the turn lock');
++}
++
++function originalStore(memory: InMemorySessionStore): SessionStore {
++  return {
++    create: memory.create.bind(memory),
++    get: memory.get.bind(memory),
++    delete: memory.delete.bind(memory),
++    count: memory.count.bind(memory),
++    clear: memory.clear.bind(memory),
++  };
++}
++
++// spec: specs/hal-engine-websocket-protocol/spec.md#4.3
++it('validates history limits and complete composite cursors without accepting a frame user id', () => {
++  expect(validateMessage({type: 'list_conversations'})).toEqual({valid: true, data: {type: 'list_conversations'}});
++  const before = {updatedAt: '2026-10-01T00:00:00.000Z', sessionId: 'last'};
++  for (const limit of [1, 200]) {
++    expect(validateMessage({type: 'list_conversations', limit, before, userId: 'victim'})).toEqual({
++      valid: true,
++      data: {type: 'list_conversations', limit, before},
++    });
++  }
++  for (const limit of [0, 201, 1.5, '10', null]) {
++    expect(validateMessage({type: 'list_conversations', limit})).toEqual({
++      valid: false,
++      error: expect.stringMatching(/limit/i),
++    });
++  }
++  for (const cursor of [
++    'not a date',
++    before.updatedAt,
++    {},
++    {updatedAt: before.updatedAt},
++    {sessionId: 'last'},
++    {...before, updatedAt: 'bad'},
++    {...before, sessionId: 1},
++  ]) {
++    expect(validateMessage({type: 'list_conversations', before: cursor})).toEqual({
++      valid: false,
++      error: expect.stringMatching(/before/i),
++    });
++  }
++});
++
++// spec: specs/hal-engine-conversation-list/spec.md#client-history
++it('lists and pages only the socket owner metadata during a pending turn and resumes a listed conversation', async () => {
++  const memory = new InMemorySessionStore();
++  for (const id of ['a', 'b'])
++    memory
++      .create(id, 'owner')
++      .entries.push({role: 'user', content: `private-${id}`, timestamp: '2099-01-01T00:00:00.000Z'});
++  memory.create('victim-session', 'victim');
++  const calls: Array<{userId: string | number; options?: SessionListOptions}> = [];
++  const store: SessionStore = {
++    ...originalStore(memory),
++    listFor(userId, options) {
++      calls.push({userId, options});
++      return memory.listFor(userId, options);
++    },
++  };
++  let entered = (): void => undefined;
++  const pending = new Promise<void>(resolve => {
++    entered = resolve;
++  });
++  let release = (): void => undefined;
++  const gate = new Promise<void>(resolve => {
++    release = resolve;
++  });
++  const url = await start(store, true, {
++    hooks: {
++      beforeModelResponse: async (_session, prompt) => {
++        entered();
++        await gate;
++        return prompt;
++      },
++    },
++  });
++  const {client, frames} = await connect(url);
++  expect(frames.map(frame => frame.type)).toEqual(['connected']);
++  client.send(JSON.stringify({type: 'user_message', content: 'pending answer'}));
++  await pending;
++  client.send(JSON.stringify({type: 'ping', timestamp: 7}));
++  while (!frames.some(frame => frame.type === 'pong')) await new Promise(resolve => setTimeout(resolve, 5));
++  try {
++    const answer = await request(client, frames, {type: 'list_conversations', userId: 'victim'});
++    expect(answer.map(frame => frame.type)).toEqual(['conversation_list']);
++    const rows = answer[0].conversations!;
++    expect(rows).toEqual(JSON.parse(JSON.stringify(memory.listFor('owner'))));
++    expect(rows).toHaveLength(3);
++    expect(calls[0]).toEqual({userId: 'owner', options: {limit: undefined, before: undefined}});
++    for (const row of rows) {
++      expect(Object.keys(row).sort()).toEqual(['createdAt', 'entryCount', 'sessionId', 'updatedAt']);
++      expect(new Date(row.createdAt).toISOString()).toBe(row.createdAt);
++      expect(new Date(row.updatedAt).toISOString()).toBe(row.updatedAt);
++    }
++    const before = {updatedAt: rows[0].updatedAt, sessionId: rows[0].sessionId};
++    const page = await request(client, frames, {type: 'list_conversations', limit: 1, before});
++    expect(page).toEqual([{type: 'conversation_list', conversations: [rows[1]]}]);
++    expect(calls.at(-1)).toEqual({userId: 'owner', options: {limit: 1, before}});
++    expect(frames.some(frame => frame.type === 'stream_end')).toBe(false);
++    const resumed = await connect(`${url}?sessionId=b`);
++    await request(resumed.client, resumed.frames, {type: 'list_conversations'});
++    expect(resumed.frames[0]).toMatchObject({type: 'connected', sessionId: 'b', resumed: true});
++    expect(resumed.frames.some(frame => frame.entry?.content === 'private-b')).toBe(true);
++  } finally {
++    client.terminate();
++    release();
++  }
++});
++
++// spec: specs/hal-engine-websocket-protocol/spec.md#history-refusal
++it('refuses history by default, when disabled, and when the store cannot list', async () => {
++  for (const enabled of [undefined, false, true]) {
++    const memory = new InMemorySessionStore();
++    memory.create('kept', 'owner');
++    const store = enabled === true ? originalStore(memory) : memory;
++    const {client, frames} = await connect(await start(store, enabled));
++    const answer = await request(client, frames, {type: 'list_conversations'});
++    expect(answer).toEqual([{type: 'error', code: 'UNSUPPORTED', message: expect.any(String)}]);
++    expect(client.readyState).toBe(WebSocket.OPEN);
++  }
++});
++
++// spec: specs/hal-engine-websocket-protocol/spec.md#history-failure
++it('reports a real store failure without exposing its detail or closing the socket', async () => {
++  const memory = new InMemorySessionStore();
++  const broken = new MongoSessionStore({url: 'private-store-detail', dbName: 'history'});
++  const store: SessionStore = {...originalStore(memory), listFor: broken.listFor.bind(broken)};
++  const {client, frames} = await connect(await start(store, true));
++  const answer = await request(client, frames, {type: 'list_conversations'});
++  expect(answer).toEqual([{type: 'error', code: 'SERVER_ERROR', message: expect.any(String)}]);
++  expect(JSON.stringify(answer)).not.toContain('private-store-detail');
++  expect(client.readyState).toBe(WebSocket.OPEN);
++  expect(JSON.stringify(errors)).toContain(frames[0].sessionId);
++  expect(JSON.stringify(errors)).not.toContain('credential');
++});

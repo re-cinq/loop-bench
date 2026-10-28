@@ -1,0 +1,207 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..60ef4c2
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,21 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — The chat orchestrator acts as a seam, allowing us to install hooks through configuration and observe their execution when `beforeSession` throws.
++
++## Done when these pass
++
++- [ ] **runs onError and afterSession when beforeSession throws** — pins that a thrown error in `beforeSession` propagates to the caller while invoking both `onError` and `afterSession` hooks.
++      `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`
++
++## Facets
++
++- [x] Move `beforeSession` inside the `try` block in `chatOrchestrator.ts`.
++- [x] Update `specs/hal-engine-config-hooks/spec.md` with the new guarantee for `beforeSession`.
++- [x] Document in the CHANGELOG what changes for an existing consumer.
++
++## Out of scope
++
++- the `instanceof Error` gate on `onError` (its own issue)
++- usage accounting across tool rounds (HALEngine#93)
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 8ddff4d..117919f 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,6 +8,10 @@ package, not for somebody reading this repository's commit log.
+ 
+ ## [Unreleased]
+ 
++### Fixed
++
++- `onError` and `afterSession` now run when `beforeSession` throws an `Error`. Cleanup hooks must tolerate partial initialization and track resources they actually allocated; existing session history does not indicate whether this turn initialized successfully.
++
+ ### Added
+ 
+ - `SessionStore` gains an optional `save(session)` member: the write signal a durable store needs. The engine calls it once per processed user message, from the same `finally` path that runs `afterSession`, so it fires for a turn that ended in a provider error as well as one that succeeded — a store that only heard about successes would lose exactly the conversations a customer complains about. By the time it runs, the turn's entries are committed, so the assistant entry's `isStreaming` is already `false` — including when a provider threw mid-stream, where the engine now closes the open entry before saving, recording `truncated` on it, rather than persisting a half-streamed entry that looks finished. An `afterSession` hook that throws no longer costs the turn its write signal. What `save` throws or rejects with is caught and logged as one line carrying the session id, and the turn continues: the client still receives its full stream and `stream_end`, because a database outage is not a reason for the agent to stop answering. The member is typed `void | Promise<void>`, so a synchronous implementation and an `async` one both satisfy it. Additive: `InMemorySessionStore` does not implement `save` and is unchanged, and a store that omits it behaves exactly as before.
+diff --git a/scripts/lore-list-tests.mjs b/scripts/lore-list-tests.mjs
+index 3db4efd..0e4afc8 100644
+--- a/scripts/lore-list-tests.mjs
++++ b/scripts/lore-list-tests.mjs
+@@ -39,11 +39,13 @@ try {
+ 
+ const tests = report.testResults.flatMap(suite => {
+   const file = relative(process.cwd(), suite.name);
++  const spec = readFileSync(suite.name, 'utf8').match(/^\/\/ spec: (specs\/\S+#\d+)$/m)?.[1];
+ 
+   return suite.assertionResults.map(assertion => ({
+     id: `${file}::${assertion.fullName}`,
+     name: assertion.fullName,
+     file,
++    ...(spec ? {spec} : {}),
+   }));
+ });
+ 
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..f281764 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -19,10 +19,14 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
++## Session initialization failures
++
++- `beforeSession` is inside the `try` block, so a throw there reaches the `catch`/`finally` blocks, firing both `onError` and `afterSession`, where a deployer can assume this turn ran no tools and made no provider call ([validated by: runs onError and afterSession when beforeSession throws](../../src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts#L40)).
++- `afterSession` runs even when `beforeSession` rejects after partially allocating resources; cleanup must tolerate incomplete initialization and track its own allocations, since the session may contain history from earlier turns and no dedicated initialization flag is supplied ([validated by: releases a resource allocated before beforeSession rejects](../../src/orchestration/chatOrchestrator.sessionCleanup.test.ts#L7)).
++
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These remaining properties are separate, out-of-scope changes.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+ - `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts b/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts
+new file mode 100644
+index 0000000..7c4797f
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts
+@@ -0,0 +1,67 @@
++import {describe, expect, it} from '@jest/globals';
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++function createMockProvider(response: string): AIProvider {
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      yield {type: 'text', text: response};
++      yield {type: 'stop', stopReason: 'end_turn'};
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const promptBuilder = new PromptBuilder({
++  baseSystemPrompt: 'You are HAL.',
++  systemPromptSuffix: 'Be precise.',
++  contextConfig: {
++    historyLength: 10,
++    includeTimestamps: false,
++    includeSystemPrompt: true,
++  },
++});
++
++describe('beforeSession throwing', () => {
++  it('runs onError and afterSession when beforeSession throws', async () => {
++    const errorToThrow = new Error('Database connection failed in beforeSession');
++
++    let caughtError: Error | undefined;
++    let afterSessionRan = false;
++
++    const orchestrator = createChatOrchestrator(createMockProvider('hello back'), promptBuilder, undefined, {
++      hooks: {
++        beforeSession: async () => {
++          throw errorToThrow;
++        },
++        onError: async (_session, error) => {
++          caughtError = error;
++        },
++        afterSession: async () => {
++          afterSessionRan = true;
++        },
++      },
++    });
++
++    await expect(orchestrator.processMessage(createSession('hello'))).rejects.toThrow(
++      'Database connection failed in beforeSession'
++    );
++
++    expect(caughtError).toBe(errorToThrow);
++    expect(afterSessionRan).toBe(true);
++  });
++});
+diff --git a/src/orchestration/chatOrchestrator.sessionCleanup.test.ts b/src/orchestration/chatOrchestrator.sessionCleanup.test.ts
+new file mode 100644
+index 0000000..680e869
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.sessionCleanup.test.ts
+@@ -0,0 +1,31 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {createMockProvider} from '../providers/mock/mockProvider.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import type {ChatSession} from '../types/session.js';
++
++// spec: specs/hal-engine-config-hooks/spec.md#8
++it('releases a resource allocated before beforeSession rejects', async () => {
++  const session: ChatSession = {sessionId: 's1', userId: 'u1', entries: []};
++  const failure = new Error('initialization failed');
++  const resources = new Set<ChatSession>();
++  const orchestrator = createChatOrchestrator(
++    createMockProvider(),
++    new PromptBuilder({identity: 'Assistant'}),
++    undefined,
++    {
++      hooks: {
++        beforeSession: async current => {
++          resources.add(current);
++          throw failure;
++        },
++        afterSession: async current => {
++          resources.delete(current);
++        },
++      },
++    }
++  );
++
++  const rejection: unknown = await orchestrator.processMessage(session).catch((error: unknown) => error);
++
++  expect({rejection, remaining: resources.size}).toEqual({rejection: failure, remaining: 0});
++});
+diff --git a/src/orchestration/chatOrchestrator.ts b/src/orchestration/chatOrchestrator.ts
+index da09e31..c57fc96 100644
+--- a/src/orchestration/chatOrchestrator.ts
++++ b/src/orchestration/chatOrchestrator.ts
+@@ -88,9 +88,9 @@ export function createChatOrchestrator(
+     },
+ 
+     async *processMessageStream(session: ChatSession): AsyncGenerator<MessageChunk> {
+-      if (hooks?.beforeSession) await hooks.beforeSession(session);
+-
+       try {
++        if (hooks?.beforeSession) await hooks.beforeSession(session);
++
+         let userMessage = lastUserContent(session);
+ 
+         if (hooks?.beforeUserInput) {

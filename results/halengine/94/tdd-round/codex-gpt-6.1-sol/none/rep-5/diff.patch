@@ -1,0 +1,217 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..2e8877c
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,23 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — The chat orchestrator acts as a seam, allowing us to install hooks through configuration and observe their execution when `beforeSession` throws.
++
++## Done when these pass
++
++- [ ] **runs onError and afterSession when beforeSession throws** — pins that a thrown error in `beforeSession` propagates to the caller while invoking both `onError` and `afterSession` hooks.
++      `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`
++
++## Facets
++
++- [x] Move `beforeSession` inside the `try` block in `chatOrchestrator.ts`.
++- [x] Update `specs/hal-engine-config-hooks/spec.md` with the new guarantee for `beforeSession`.
++- [x] Document in the CHANGELOG what changes for an existing consumer.
++
++- [x] Repair CI-reported prompt-builder configuration and test lint findings without changing hook expectations.
++
++## Out of scope
++
++- the `instanceof Error` gate on `onError` (its own issue)
++- usage accounting across tool rounds (HALEngine#93)
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 8ddff4d..b17a414 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -16,6 +16,8 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Changed
+ 
++- A throwing `beforeSession` now reaches `onError(session, error)` for an `Error` and always runs `afterSession` and session saving. The original error still rejects the turn when those hooks succeed. Cleanup hooks must now tolerate partially acquired or absent resources; the provider and tools have not run on this path.
++
+ - Every `SessionStore` member is now `Awaitable<T>` (`T | Promise<T>`) rather than a bare `T`, so a store backed by a database is expressible for the first time. `Awaitable` is exported from the package root. **A synchronous implementation needs no change** — `T` is assignable to `T | Promise<T>` in a return position — and `InMemorySessionStore` is unedited. The WebSocket connection handler now awaits `create` and the release that follows a close: it pauses the socket across the await so a frame sent before `connected` arrives is buffered rather than dropped, attaches its `close` listener before the await so a socket that closes mid-create leaves no session behind, and catches a rejection from either call so one store failure closes one socket instead of ending the process with an unhandled rejection. **Migration note**: the `connected` frame now arrives one tick later, after the awaited `create`, so a client that waits for it (as the protocol already requires) sees no difference; only code that assumed the frame was emitted synchronously with the upgrade does.
+ - **The engine no longer erases a conversation when its socket closes.** The WebSocket close handler called `sessionStore.delete(sessionId)` unconditionally, which meant that behind a durable store every conversation was written and then destroyed the moment the customer closed their tab — the opposite of what this engine's own documentation promised. `SessionStore.delete` now has no engine-internal caller at all and is purely your erasure primitive. The credentials the socket carried are cleared from the session on close, since they were issued for a request that is over; the entries are untouched. **Migration note**: to restore the old behaviour exactly, pass `onDisconnect: sessionId => store.delete(sessionId)` — that one line is the whole migration. If you rely on the default store not growing, note that it is now bounded by `maxAgeMs` (eight hours) rather than by the close handler; that is a memory bound, not a retention policy, and the retention decision remains yours.
+ 
+diff --git a/scripts/lore-list-tests.mjs b/scripts/lore-list-tests.mjs
+index 3db4efd..c21b497 100644
+--- a/scripts/lore-list-tests.mjs
++++ b/scripts/lore-list-tests.mjs
+@@ -39,11 +39,14 @@ try {
+ 
+ const tests = report.testResults.flatMap(suite => {
+   const file = relative(process.cwd(), suite.name);
++  // A file-level stamp applies to each test in a single-spec test file.
++  const spec = readFileSync(suite.name, 'utf8').match(/^\/\/ Spec: (specs\/\S+#\d+)$/m)?.[1];
+ 
+   return suite.assertionResults.map(assertion => ({
+     id: `${file}::${assertion.fullName}`,
+     name: assertion.fullName,
+     file,
++    ...(spec ? {spec} : {}),
+   }));
+ });
+ 
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..c16691e 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -21,8 +21,8 @@
+ 
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These properties of `src/orchestration/chatOrchestrator.ts` define the failure and usage semantics of the lifecycle seam. The `beforeSession` failure guarantee is implemented by #94; the non-`Error` gate and usage accounting remain outside its scope.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
++- `beforeSession` is inside the `try` block, so a throw there reaches the `catch`/`finally` blocks, firing both `onError` and `afterSession`, using the same session and original `Error`, then rejecting with that original error if the error and cleanup hooks succeed; `afterSession` runs even after an incomplete allocation, so cleanup must track which resources were acquired and tolerate resources that were never acquired, and no later input hook, provider call or tool execution has begun ([validated by: runs onError and afterSession when beforeSession throws](../../src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts#L35); [validated by: cleans up a failed session start before rejecting with the original error](../../src/orchestration/beforeSessionFailure.test.ts#L7)).
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+ - `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/src/orchestration/beforeSessionFailure.test.ts b/src/orchestration/beforeSessionFailure.test.ts
+new file mode 100644
+index 0000000..cb8af05
+--- /dev/null
++++ b/src/orchestration/beforeSessionFailure.test.ts
+@@ -0,0 +1,44 @@
++import {jest} from '@jest/globals';
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {answering, writeSignalPromptBuilder} from '../infrastructure/writeSignalTestSupport.js';
++import type {ChatSession} from '../types/session.js';
++
++// Spec: specs/hal-engine-config-hooks/spec.md#7
++it('cleans up a failed session start before rejecting with the original error', async () => {
++  const session: ChatSession = {sessionId: 's1', userId: 'u1', entries: []};
++  const failure = new Error('allocation failed');
++  const calls: unknown[] = [];
++  const provider = answering('unused');
++  const sendMessage = jest.spyOn(provider, 'sendMessage');
++  const orchestrator = createChatOrchestrator(provider, writeSignalPromptBuilder, undefined, {
++    hooks: {
++      beforeSession: async () => {
++        calls.push('beforeSession');
++        throw failure;
++      },
++      beforeUserInput: async (_session, message) => {
++        calls.push('beforeUserInput');
++        return message;
++      },
++      onError: async (current, error) => {
++        calls.push({hook: 'onError', sameSession: current === session, sameError: error === failure});
++      },
++      afterSession: async current => {
++        calls.push({hook: 'afterSession', sameSession: current === session});
++      },
++    },
++  });
++
++  const rejected = await orchestrator.processMessage(session).catch((error: unknown) => error);
++
++  const {calls: providerCalls} = sendMessage.mock;
++  expect({sameError: rejected === failure, calls, providerCalls: providerCalls.length}).toEqual({
++    sameError: true,
++    calls: [
++      'beforeSession',
++      {hook: 'onError', sameSession: true, sameError: true},
++      {hook: 'afterSession', sameSession: true},
++    ],
++    providerCalls: 0,
++  });
++});
+diff --git a/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts b/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts
+new file mode 100644
+index 0000000..fcf2fe5
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts
+@@ -0,0 +1,69 @@
++import {describe, expect, it} from '@jest/globals';
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++function createMockProvider(response: string): AIProvider {
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      yield {type: 'text', text: response};
++      yield {type: 'stop', stopReason: 'end_turn'};
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const promptBuilder = new PromptBuilder({
++  identity: 'You are HAL.',
++  responseGuidelines: 'Be precise.',
++});
++
++describe('beforeSession throwing', () => {
++  it('runs onError and afterSession when beforeSession throws', async () => {
++    const errorToThrow = new Error('Database connection failed in beforeSession');
++
++    let caughtError: Error | undefined;
++    let afterSessionRan = false;
++
++    const orchestrator = createChatOrchestrator(createMockProvider('hello back'), promptBuilder, undefined, {
++      hooks: {
++        beforeSession: async () => {
++          throw errorToThrow;
++        },
++        onError: async (_session, error) => {
++          caughtError = error;
++        },
++        afterSession: async () => {
++          afterSessionRan = true;
++        },
++      },
++    });
++
++    const rejected: unknown = await orchestrator
++      .processMessage(createSession('hello'))
++      .catch((error: unknown) => error);
++
++    expect({
++      rejectionMessage: rejected instanceof Error ? rejected.message : undefined,
++      sameError: caughtError === errorToThrow,
++      afterSessionRan,
++    }).toEqual({
++      rejectionMessage: 'Database connection failed in beforeSession',
++      sameError: true,
++      afterSessionRan: true,
++    });
++  });
++});
+diff --git a/src/orchestration/chatOrchestrator.ts b/src/orchestration/chatOrchestrator.ts
+index da09e31..c57fc96 100644
+--- a/src/orchestration/chatOrchestrator.ts
++++ b/src/orchestration/chatOrchestrator.ts
+@@ -88,9 +88,9 @@ export function createChatOrchestrator(
+     },
+ 
+     async *processMessageStream(session: ChatSession): AsyncGenerator<MessageChunk> {
+-      if (hooks?.beforeSession) await hooks.beforeSession(session);
+-
+       try {
++        if (hooks?.beforeSession) await hooks.beforeSession(session);
++
+         let userMessage = lastUserContent(session);
+ 
+         if (hooks?.beforeUserInput) {

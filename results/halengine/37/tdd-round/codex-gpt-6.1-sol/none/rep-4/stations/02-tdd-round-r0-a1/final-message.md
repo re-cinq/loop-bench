@@ -1,0 +1,3 @@
+No files changed or tests run. The required `tdd-loop` skill was not found in the available skills or filesystem search. The skill instructions require stopping when a necessary skill is missing. Lore tools are also unavailable, preventing the required coverage query.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required tdd-loop skill and Lore coverage-query tools are unavailable."}}

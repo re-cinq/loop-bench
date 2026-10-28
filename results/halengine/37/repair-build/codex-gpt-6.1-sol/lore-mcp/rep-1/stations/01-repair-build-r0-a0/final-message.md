@@ -1,0 +1,3 @@
+Pushed `4df7656` with the Ajv import fix, input validation, error cause preservation, and lint fixes. All 14 targeted tests pass; changed files are formatted. Branch is current with `origin/main` and fully pushed. Full CI verification remains pending.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed Ajv import, missing tool input validation, and reported lint findings; 14 targeted tests pass"}}

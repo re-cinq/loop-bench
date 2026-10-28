@@ -1,0 +1,114 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..bd36221
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,24 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — Call the real orchestrator's `processMessage` with deployer hooks and the shipped local provider. One test observes the original rejection, error-hook arguments, hook order, and release of a resource allocated before setup failed.
++
++## Done when these pass
++
++- [ ] **reports and cleans up a failed beforeSession before rejecting with the original error** — Await error reporting and cleanup on the same session before propagating the same Error; skip user-input processing after failed setup.
++      `src/orchestration/beforeSession.acceptance.test.ts`
++
++## Facets
++
++- [ ] Move session setup inside the lifecycle error-handling boundary so the acceptance test passes.
++- [ ] Preserve the existing successful-session tests without editing them.
++- [ ] Implement the spec's cleanup guarantee: afterSession tolerates incomplete setup and deployers track which resources were allocated.
++- [ ] Add a CHANGELOG entry explaining that existing consumers now receive onError and afterSession after failed beforeSession.
++- [ ] Pass the repository's required CI checks.
++
++## Out of scope
++
++- Non-Error rejection handling and the instanceof Error gate.
++- Usage accounting across tool rounds (#93).
++- Changing hook signatures or adding a session-started flag; allocation state belongs to the deployer's hooks.
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..1ad4a26 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -19,10 +19,13 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
++## Failed session setup
++
++- If `beforeSession` throws an `Error`, the orchestrator awaits `onError(session, error)` and then `afterSession(session)` before rejecting with the original error, provided those hooks complete normally; no user-input or model-response processing occurs. Cleanup receives the same session even when setup only partially completed, so `afterSession` must tolerate resources that were never allocated and track its own allocation state rather than assume the turn started ([validated by: reports and cleans up a failed beforeSession before rejecting with the original error](../../src/orchestration/beforeSession.acceptance.test.ts#L7)).
++
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These remaining properties are recorded so hook features specify against real behaviour; neither changes as part of #94.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+ - `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/src/orchestration/beforeSession.acceptance.test.ts b/src/orchestration/beforeSession.acceptance.test.ts
+new file mode 100644
+index 0000000..b6aa78f
+--- /dev/null
++++ b/src/orchestration/beforeSession.acceptance.test.ts
+@@ -0,0 +1,58 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {createMockProvider} from '../providers/mock/index.js';
++import type {ChatSession} from '../types/session.js';
++
++// Spec: specs/hal-engine-config-hooks/spec.md#8
++it('reports and cleans up a failed beforeSession before rejecting with the original error', async () => {
++  const session: ChatSession = {
++    sessionId: 'failed-setup',
++    userId: 'deployer',
++    entries: [{role: 'user', content: 'hello', timestamp: '2026-01-01T00:00:00.000Z'}],
++  };
++  const failure = new Error('setup failed after allocating a resource');
++  const resources = new Set<ChatSession>();
++  const calls: unknown[][] = [];
++  const orchestrator = createChatOrchestrator(
++    createMockProvider(),
++    new PromptBuilder({identity: 'You are an assistant.'}),
++    undefined,
++    {
++      hooks: {
++        beforeSession: async current => {
++          calls.push(['beforeSession', current === session]);
++          resources.add(current);
++          throw failure;
++        },
++        beforeUserInput: async (current, message) => {
++          calls.push(['beforeUserInput', current === session]);
++          return message;
++        },
++        onError: async (current, error) => {
++          await Promise.resolve();
++          calls.push(['onError', current === session, error === failure]);
++        },
++        afterSession: async current => {
++          await Promise.resolve();
++          resources.delete(current);
++          calls.push(['afterSession', current === session]);
++        },
++      },
++    }
++  );
++
++  const rejection = await orchestrator.processMessage(session).then(
++    () => undefined,
++    (error: unknown) => error
++  );
++
++  expect({originalError: rejection === failure, calls, resourcesLeft: resources.size}).toEqual({
++    originalError: true,
++    calls: [
++      ['beforeSession', true],
++      ['onError', true, true],
++      ['afterSession', true],
++    ],
++    resourcesLeft: 0,
++  });
++});

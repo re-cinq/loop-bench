@@ -1,0 +1,3 @@
+Fixed both reported test findings and pushed commit `e580ba4`. The targeted acceptance test passes, and the changed file is formatted. The branch is current with `origin/main` and fully pushed. CI will verify typecheck and lint.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed unsupported PromptBuilder configuration and consolidated acceptance assertions to satisfy max-expects"}}

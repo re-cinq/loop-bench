@@ -1,3 +1,3 @@
-Fixed all four reported lint findings and pushed `2c9e668`. Changed files are formatted; the branch is current with `main`, fully pushed, and clean. CI verification is pending; lint was not run locally as instructed.
+Fixed all four reported lint findings and pushed `98b9039`. Changed files are formatted; `main` is already merged, and the branch matches its upstream. CI must confirm lint passes; local lint was prohibited.
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added three missing spec links and combined duplicate test assertions; pushed for CI verification"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added three missing spec links and combined duplicate assertions without reducing coverage"}}
