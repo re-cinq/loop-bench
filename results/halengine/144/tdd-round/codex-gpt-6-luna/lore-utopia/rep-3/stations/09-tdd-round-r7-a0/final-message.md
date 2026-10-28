@@ -1,0 +1,3 @@
+Repaired the CI `max-member-chain` finding by asserting the store call directly. The focused test passed; I ran no acceptance tests. No red tests or regressions were reported. Committed and pushed as `f3ba08f`; the branch is up to date with `origin/main` and its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair the session list test's max-member-chain lint finding","tdd_next":"acceptance green"}}

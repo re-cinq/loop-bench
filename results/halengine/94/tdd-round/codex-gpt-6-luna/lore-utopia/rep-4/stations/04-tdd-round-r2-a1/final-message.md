@@ -1,0 +1,3 @@
+I’m blocked by the two CI findings: both require changes to acceptance-test code, which this round’s rules prohibit. The acceptance test has a type error and exceeds the `max-expects` limit; the cleanup test also exceeds that limit. I made no changes, so I could not complete a red-green-refactor round. The two reported test-file failures are branch-authored issues; there are no pre-existing regressions identified in the brief.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI findings require editing acceptance-test code, which this round forbids."}}

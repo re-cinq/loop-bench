@@ -1,0 +1,5 @@
+Committed and pushed `23fbef7` (`Pin unknown tool registry behavior`). The branch is up to date with `origin/loop-bench/37`; merging `origin/main` found no changes.
+
+`registry.test.ts` passed: 7 tests. The new unknown-tool test was already satisfied by the implementation, so it did not produce a red phase; I did not change implementation code. I also fixed the two reported max-member-chain lint findings and added the missing spec link. The broader docs and orchestrator work remains open. No tests I added were red; the previous CI report’s test-job failure did not identify a failing test, so I can’t classify it as a regression. I did not run acceptance tests or lint.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Pin unknown-tool behavior and repair reported registry test lint findings","tdd_next":"Complete remaining unit tests, orchestrator retry coverage, and documentation updates"}}

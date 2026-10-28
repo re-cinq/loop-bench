@@ -1,0 +1,5 @@
+Moved `beforeSession` inside the `try` and documented that a failure still rejects to the caller, while `afterSession` can assume the turn stopped before provider interaction. Updated the DoD: implementation and spec facets are closed; the changelog facet remains for the next round.
+
+The test I wrote failed before the change and passed after it. No acceptance tests or other checks were run. CI had no verdict available: Lore returned “branch not found.” The commit was pushed, the branch is up to date with `main`, and the working tree is clean. Red tests this round: **1 mine, 0 regressions**.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block and document its failure guarantee in the spec","tdd_next":"Document in the CHANGELOG what changes for an existing consumer"}}

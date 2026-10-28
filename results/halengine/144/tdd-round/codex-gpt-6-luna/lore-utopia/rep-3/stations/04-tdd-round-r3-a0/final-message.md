@@ -1,0 +1,3 @@
+I stopped before editing. The CI verdict identifies `src/transport/conversationList.acceptance.test.ts` as an acceptance test failure: it uses `for await` on a `WebSocket` type that has no async iterator, and that also causes the test failure. The instructions say to stop if an acceptance test is wrong, rather than edit it to make it pass. No test ran here; no test was mine, and I made no changes.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test uses an unsupported WebSocket async iterator; the instructions require stopping when an acceptance test is wrong."}}

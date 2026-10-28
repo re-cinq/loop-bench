@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-27 23:11 UTC: 1004 loops over 277 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-10-27 23:52 UTC: 1011 loops over 277 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -143,7 +143,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #37 medium | tdd-round | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | tdd-round | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 5 | 4/5 | 8.8 (7.0–12.0, sd 1.7) | $0.21 ($0.17–$0.26, sd $0.04) | 39.9 min (32.6 min–46.3 min, sd 5.4 min) | 3.6 (2.0–5.0, sd 1.0) | 3.6 (3.0–5.0, sd 0.8) | 3.6 (3.0–4.0, sd 0.5) | — | 11 (8–15, sd 3) (0.58 (0.46–0.73, sd 0.13)) | +581/−31 |
-| #37 medium | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 2 | 2/2 | 11.0 (10.0–12.0, sd 1.0) | $0.24 ($0.23–$0.25, sd $0.01) | 64.8 min (52.0 min–77.5 min, sd 12.7 min) | — | — | — | — | 15 (15–15, sd 0) (0.73 (0.73–0.73, sd 0.00)) | +689/−48 |
+| #37 medium | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 2/3 | 11.3 (10.0–12.0, sd 0.9) | $0.24 ($0.23–$0.26, sd $0.01) | 62.2 min (52.0 min–77.5 min, sd 11.1 min) | — | — | — | — | 15 (14–15, sd 0) (0.75 (0.73–0.79, sd 0.02)) | +681/−39 |
 | #37 medium | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 1/5 | 7.8 (2.0–12.0, sd 3.6) | $0.17 ($0.06–$0.24, sd $0.07) | 20.3 min (8.5 min–29.4 min, sd 7.0 min) | 3.2 (2.0–4.0, sd 0.7) | 3.2 (3.0–4.0, sd 0.4) | 3.2 (3.0–4.0, sd 0.4) | — | 10 (8–13, sd 2) (0.57 (0.46–0.77, sd 0.14)) | +522/−46 |
 | #37 medium | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -243,7 +243,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | repair-build | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.59 ($0.39–$0.69, sd $0.14) | 1.7 min (1.5 min–1.8 min, sd 0.2 min) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +144/−5 |
 | #93 small | repair-build | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.47 ($0.43–$0.49, sd $0.03) | 1.7 min (1.5 min–1.8 min, sd 0.1 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +146/−5 |
 | #93 small | repair-build | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 5 | 1/5 | 0.8 (0.0–1.0, sd 0.4) | $0.01 ($0.01–$0.01, sd $0.00) | 1.7 min (1.0 min–3.5 min, sd 1.0 min) | 4.6 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +141/−5 |
-| #93 small | repair-build | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 0/3 | 1.0 (1.0–1.0, sd 0.0) | $0.01 ($0.01–$0.01, sd $0.00) | 2.1 min (1.4 min–3.0 min, sd 0.6 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +143/−5 |
+| #93 small | repair-build | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 4 | 1/4 | 0.8 (0.0–1.0, sd 0.4) | $0.01 ($0.01–$0.01, sd $0.00) | 1.8 min (0.9 min–3.0 min, sd 0.8 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +142/−5 |
 | #93 small | repair-build | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 2/5 | 0.6 (0.0–1.0, sd 0.5) | $0.01 ($0.00–$0.01, sd $0.00) | 1.3 min (1.0 min–1.7 min, sd 0.3 min) | 4.8 (4.0–5.0, sd 0.4) | 4.0 (4.0–4.0, sd 0.0) | 3.8 (3.0–4.0, sd 0.4) | — | 7 (7–8, sd 0) (0.29 (0.27–0.36, sd 0.04)) | +141/−5 |
 | #93 small | repair-build | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 3 | 1/3 | 0.7 (0.0–1.0, sd 0.5) | $0.15 ($0.12–$0.17, sd $0.02) | 2.0 min (1.3 min–2.4 min, sd 0.5 min) | 4.7 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +143/−5 |
 | #93 small | repair-build | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 1/3 | 0.7 (0.0–1.0, sd 0.5) | $0.15 ($0.12–$0.19, sd $0.03) | 2.4 min (1.6 min–3.5 min, sd 0.8 min) | 4.3 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +142/−5 |
@@ -292,7 +292,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | tdd-round | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 3 | 3/3 | 1.3 (1.0–2.0, sd 0.5) | $3.12 ($2.31–$4.07, sd $0.72) | 6.0 min (5.4 min–6.4 min, sd 0.4 min) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 3.0 (3.0–3.0, sd 0.0) | — | 9 (9–10, sd 0) (0.23 (0.21–0.23, sd 0.01)) | +210/−9 |
 | #93 small | tdd-round | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 3 | 0/3 | 0.0 (0.0–0.0, sd 0.0) | $0.82 ($0.53–$1.15, sd $0.26) | 0.9 min (0.7 min–1.1 min, sd 0.2 min) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 1.7 (1.0–2.0, sd 0.5) | — | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +121/−2 |
 | #93 small | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 5 | 5/5 | 2.0 (1.0–3.0, sd 0.6) | $0.06 ($0.04–$0.09, sd $0.02) | 9.2 min (5.6 min–14.2 min, sd 3.2 min) | 4.8 (4.0–5.0, sd 0.4) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 9 (7–10, sd 1) (0.40 (0.25–0.60, sd 0.15)) | +211/−15 |
-| #93 small | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 3/3 | 2.3 (1.0–4.0, sd 1.2) | $0.08 ($0.07–$0.09, sd $0.01) | 8.0 min (6.8 min–9.7 min, sd 1.2 min) | 4.7 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 9 (7–11, sd 2) (0.34 (0.25–0.50, sd 0.11)) | +216/−12 |
+| #93 small | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 4 | 4/4 | 2.3 (1.0–4.0, sd 1.1) | $0.07 ($0.06–$0.09, sd $0.01) | 7.2 min (4.8 min–9.7 min, sd 1.7 min) | 4.7 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 9 (7–11, sd 2) (0.31 (0.21–0.50, sd 0.11)) | +216/−10 |
 | #93 small | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 3/5 | 0.8 (0.0–2.0, sd 0.7) | $0.04 ($0.01–$0.05, sd $0.02) | 3.0 min (0.7 min–5.1 min, sd 1.9 min) | 3.4 (1.0–5.0, sd 2.0) | 3.8 (2.0–5.0, sd 1.5) | 3.2 (2.0–4.0, sd 1.0) | — | 6 (3–9, sd 3) (0.19 (0.11–0.25, sd 0.06)) | +174/−5 |
 | #93 small | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 3 | 3/3 | 1.3 (1.0–2.0, sd 0.5) | $0.85 ($0.73–$0.98, sd $0.10) | 6.4 min (4.4 min–10.4 min, sd 2.8 min) | 4.7 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (8–9, sd 0) (0.28 (0.23–0.36, sd 0.06)) | +205/−10 |
 | #93 small | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 3/3 | 2.0 (1.0–3.0, sd 0.8) | $1.07 ($0.92–$1.35, sd $0.20) | 9.1 min (8.7 min–9.7 min, sd 0.4 min) | 4.0 (4.0–4.0, sd 0.0) | 4.7 (4.0–5.0, sd 0.5) | 3.3 (3.0–4.0, sd 0.5) | — | 9 (8–10, sd 1) (0.23 (0.21–0.25, sd 0.01)) | +221/−7 |
@@ -340,7 +340,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | dod | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | dod | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | dod | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.01 ($0.01–$0.02, sd $0.00) | 1.6 min (0.7 min–3.7 min, sd 1.1 min) | 1.0 (1.0–1.0, sd 0.0) | 1.8 (1.0–2.0, sd 0.4) | 1.8 (1.0–2.0, sd 0.4) | 5/5 | 3 (2–3, sd 0) (0.10 (0.00–0.13, sd 0.05)) | +77/−1 |
-| #94 small | dod | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 0/3 | 0.0 (0.0–0.0, sd 0.0) | $0.01 ($0.01–$0.01, sd $0.00) | 0.9 min (0.7 min–1.0 min, sd 0.1 min) | — | — | — | 3/3 | 3 (2–3, sd 0) (0.08 (0.00–0.13, sd 0.06)) | +76/−2 |
+| #94 small | dod | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 4 | 0/4 | 0.0 (0.0–0.0, sd 0.0) | $0.01 ($0.01–$0.02, sd $0.00) | 0.9 min (0.7 min–1.1 min, sd 0.1 min) | — | — | — | 4/4 | 3 (2–3, sd 0) (0.09 (0.00–0.13, sd 0.05)) | +77/−2 |
 | #94 small | dod | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.72 ($0.01–$3.55, sd $1.41) | 1.1 min (0.9 min–1.3 min, sd 0.2 min) | 1.0 (1.0–1.0, sd 0.0) | 1.8 (1.0–2.0, sd 0.4) | 1.8 (1.0–2.0, sd 0.4) | 5/5 | 3 (3–3, sd 0) (0.13 (0.13–0.13, sd 0.00)) | +75/−2 |
 | #94 small | dod | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | dod | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -391,7 +391,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | repair-build | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | repair-build | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 1 | 1/1 | 0.0 | $0.47 | 3.2 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +144/−27 |
 | #94 small | repair-build | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.01 ($0.01–$0.01, sd $0.00) | 4.0 min (1.1 min–9.1 min, sd 2.8 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.6 (4.0–5.0, sd 0.5) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +140/−27 |
-| #94 small | repair-build | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 0/3 | 1.0 (1.0–1.0, sd 0.0) | $0.01 ($0.01–$0.01, sd $0.00) | 2.1 min (0.8 min–4.6 min, sd 1.8 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +140/−27 |
+| #94 small | repair-build | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 4 | 0/4 | 1.0 (1.0–1.0, sd 0.0) | $0.01 ($0.01–$0.01, sd $0.00) | 2.9 min (0.8 min–5.4 min, sd 2.1 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +142/−27 |
 | #94 small | repair-build | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.01 ($0.00–$0.01, sd $0.00) | 1.0 min (0.8 min–1.2 min, sd 0.1 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.4 (4.0–5.0, sd 0.5) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +140/−27 |
 | #94 small | repair-build | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.17 | 2.3 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +143/−27 |
 | #94 small | repair-build | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -440,7 +440,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | tdd-round | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.86 | 1.5 min | 1.0 | 2.0 | 2.0 | — | 3 (0.13) | +89/−1 |
 | #94 small | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 5 | 1/5 | 1.0 (1.0–1.0, sd 0.0) | $0.03 ($0.02–$0.04, sd $0.01) | 8.9 min (4.3 min–16.4 min, sd 4.3 min) | 4.2 (4.0–5.0, sd 0.4) | 3.6 (3.0–5.0, sd 0.8) | 3.8 (3.0–4.0, sd 0.4) | — | 5 (5–6, sd 0) (0.37 (0.33–0.38, sd 0.02)) | +120/−4 |
-| #94 small | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 2/3 | 2.0 (1.0–4.0, sd 1.4) | $0.06 ($0.03–$0.10, sd $0.03) | 18.7 min (11.2 min–26.5 min, sd 6.2 min) | — | — | — | — | 7 (6–8, sd 1) (0.57 (0.33–0.75, sd 0.17)) | +160/−20 |
+| #94 small | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 4 | 2/4 | 2.0 (1.0–4.0, sd 1.2) | $0.05 ($0.03–$0.10, sd $0.03) | 18.2 min (11.2 min–26.5 min, sd 5.5 min) | — | — | — | — | 7 (6–8, sd 1) (0.51 (0.33–0.75, sd 0.18)) | +155/−16 |
 | #94 small | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 4/5 | 1.4 (1.0–2.0, sd 0.5) | $0.03 ($0.03–$0.04, sd $0.01) | 4.5 min (2.7 min–5.8 min, sd 1.2 min) | 4.2 (4.0–5.0, sd 0.4) | 4.6 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | — | 6 (5–6, sd 0) (0.34 (0.33–0.38, sd 0.02)) | +139/−5 |
 | #94 small | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.69 | 4.9 min | 4.0 | 3.0 | 3.0 | — | 6 (0.20) | +144/−3 |
 | #94 small | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -735,7 +735,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | tdd-round | `gpt-6-astra` (codex) | low (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gpt-6-astra` (codex) | low (codex default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | with Lore | baseline | 5 | 2/5 | 4.6 (1.0–11.0, sd 3.4) | $0.14 ($0.05–$0.24, sd $0.06) | 24.3 min (8.1 min–43.7 min, sd 12.1 min) | 1.8 (1.0–2.0, sd 0.4) | 1.8 (1.0–2.0, sd 0.4) | 1.8 (1.0–2.0, sd 0.4) | — | 14 (6–20, sd 5) (0.29 (0.11–0.46, sd 0.11)) | +488/−76 |
-| #144 large | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 2 | 1/2 | 4.5 (4.0–5.0, sd 0.5) | $0.16 ($0.15–$0.17, sd $0.01) | 26.6 min (25.8 min–27.4 min, sd 0.8 min) | — | — | — | — | 18 (14–21, sd 4) (0.28 (0.25–0.31, sd 0.03)) | +545/−105 |
+| #144 large | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | Lore on Utopia | baseline | 3 | 2/3 | 5.7 (4.0–8.0, sd 1.7) | $0.17 ($0.15–$0.19, sd $0.01) | 32.9 min (25.8 min–45.6 min, sd 9.0 min) | — | — | — | — | 17 (14–21, sd 3) (0.28 (0.25–0.31, sd 0.03)) | +522/−87 |
 | #144 large | tdd-round | `gpt-6-luna` (codex) | medium (codex default) | without Lore | baseline | 5 | 2/5 | 3.0 (1.0–7.0, sd 2.3) | $0.10 ($0.03–$0.23, sd $0.08) | 11.8 min (3.1 min–25.9 min, sd 8.9 min) | 1.4 (1.0–2.0, sd 0.5) | 1.4 (1.0–2.0, sd 0.5) | 1.4 (1.0–2.0, sd 0.5) | — | 12 (6–22, sd 6) (0.22 (0.15–0.28, sd 0.05)) | +419/−45 |
 | #144 large | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `gpt-6-sol` (codex) | medium (codex default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -793,7 +793,7 @@ What the columns mean:
 | #37 medium | tdd-round | `gpt-5.6-luna` (codex) | Lore on Utopia | round_budget ×4, green ×1 |
 | #37 medium | tdd-round | `gpt-5.6-luna` (codex) | without Lore | round_budget ×3, green ×2 |
 | #37 medium | tdd-round | `gpt-6-luna` (codex) | with Lore | green ×4, round_budget ×1 |
-| #37 medium | tdd-round | `gpt-6-luna` (codex) | Lore on Utopia | green ×2 |
+| #37 medium | tdd-round | `gpt-6-luna` (codex) | Lore on Utopia | green ×2, round_budget ×1 |
 | #37 medium | tdd-round | `gpt-6-luna` (codex) | without Lore | retry_budget ×4, green ×1 |
 | #37 medium | tdd-round | `gemini-3-flash-preview` (gemini) | with Lore | round_budget ×2, green ×1 |
 | #37 medium | tdd-round | `gemini-3-flash-preview` (gemini) | Lore on Utopia | green ×1, round_budget ×2 |
@@ -849,7 +849,7 @@ What the columns mean:
 | #93 small | repair-build | `gpt-6-astra` (codex) | Lore on Utopia | green ×3 |
 | #93 small | repair-build | `gpt-6-astra` (codex) | without Lore | green ×3 |
 | #93 small | repair-build | `gpt-6-luna` (codex) | with Lore | station_done ×4, green ×1 |
-| #93 small | repair-build | `gpt-6-luna` (codex) | Lore on Utopia | station_done ×3 |
+| #93 small | repair-build | `gpt-6-luna` (codex) | Lore on Utopia | station_done ×3, green ×1 |
 | #93 small | repair-build | `gpt-6-luna` (codex) | without Lore | station_done ×3, green ×2 |
 | #93 small | repair-build | `gpt-6-sol` (codex) | with Lore | station_done ×2, green ×1 |
 | #93 small | repair-build | `gpt-6-sol` (codex) | Lore on Utopia | station_done ×2, green ×1 |
@@ -886,7 +886,7 @@ What the columns mean:
 | #93 small | tdd-round | `gpt-6-astra` (codex) | Lore on Utopia | green ×3 |
 | #93 small | tdd-round | `gpt-6-astra` (codex) | without Lore | retry_budget ×3 |
 | #93 small | tdd-round | `gpt-6-luna` (codex) | with Lore | green ×5 |
-| #93 small | tdd-round | `gpt-6-luna` (codex) | Lore on Utopia | green ×3 |
+| #93 small | tdd-round | `gpt-6-luna` (codex) | Lore on Utopia | green ×4 |
 | #93 small | tdd-round | `gpt-6-luna` (codex) | without Lore | green ×3, retry_budget ×2 |
 | #93 small | tdd-round | `gpt-6-sol` (codex) | with Lore | green ×3 |
 | #93 small | tdd-round | `gpt-6-sol` (codex) | Lore on Utopia | green ×3 |
@@ -907,7 +907,7 @@ What the columns mean:
 | #94 small | dod | `gpt-5.6-luna` (codex) | Lore on Utopia | station_done ×5 |
 | #94 small | dod | `gpt-5.6-luna` (codex) | without Lore | station_done ×5 |
 | #94 small | dod | `gpt-6-luna` (codex) | with Lore | station_done ×5 |
-| #94 small | dod | `gpt-6-luna` (codex) | Lore on Utopia | station_done ×3 |
+| #94 small | dod | `gpt-6-luna` (codex) | Lore on Utopia | station_done ×4 |
 | #94 small | dod | `gpt-6-luna` (codex) | without Lore | station_done ×5 |
 | #94 small | repair-build | `claude-haiku-4-5-20251001` (claude) | with Lore | station_done ×4, green ×1 |
 | #94 small | repair-build | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×1, station_done ×5 |
@@ -925,7 +925,7 @@ What the columns mean:
 | #94 small | repair-build | `gpt-6-astra` (codex) | with Lore | green ×1 |
 | #94 small | repair-build | `gpt-6-astra` (codex) | without Lore | green ×1 |
 | #94 small | repair-build | `gpt-6-luna` (codex) | with Lore | station_done ×5 |
-| #94 small | repair-build | `gpt-6-luna` (codex) | Lore on Utopia | station_done ×3 |
+| #94 small | repair-build | `gpt-6-luna` (codex) | Lore on Utopia | station_done ×4 |
 | #94 small | repair-build | `gpt-6-luna` (codex) | without Lore | station_done ×5 |
 | #94 small | repair-build | `gpt-6-sol` (codex) | with Lore | station_done ×1 |
 | #94 small | repair-build | `gpt-6-sol` (codex) | without Lore | station_done ×1 |
@@ -956,7 +956,7 @@ What the columns mean:
 | #94 small | tdd-round | `gpt-6-astra` (codex) | with Lore | retry_budget ×1 |
 | #94 small | tdd-round | `gpt-6-astra` (codex) | without Lore | retry_budget ×1 |
 | #94 small | tdd-round | `gpt-6-luna` (codex) | with Lore | retry_budget ×4, green ×1 |
-| #94 small | tdd-round | `gpt-6-luna` (codex) | Lore on Utopia | green ×2, retry_budget ×1 |
+| #94 small | tdd-round | `gpt-6-luna` (codex) | Lore on Utopia | green ×2, retry_budget ×2 |
 | #94 small | tdd-round | `gpt-6-luna` (codex) | without Lore | green ×4, retry_budget ×1 |
 | #94 small | tdd-round | `gpt-6-sol` (codex) | with Lore | retry_budget ×1 |
 | #94 small | tdd-round | `gpt-6-sol` (codex) | without Lore | green ×1 |
@@ -1033,7 +1033,7 @@ What the columns mean:
 | #144 large | tdd-round | `gpt-5.6-luna` (codex) | Lore on Utopia | green ×2, round_budget ×2, retry_budget ×1 |
 | #144 large | tdd-round | `gpt-5.6-luna` (codex) | without Lore | green ×2, round_budget ×3 |
 | #144 large | tdd-round | `gpt-6-luna` (codex) | with Lore | green ×2, retry_budget ×3 |
-| #144 large | tdd-round | `gpt-6-luna` (codex) | Lore on Utopia | green ×1, retry_budget ×1 |
+| #144 large | tdd-round | `gpt-6-luna` (codex) | Lore on Utopia | green ×2, retry_budget ×1 |
 | #144 large | tdd-round | `gpt-6-luna` (codex) | without Lore | retry_budget ×3, green ×2 |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | with Lore | green ×1, round_budget ×1 |
 | #144 large | tdd-round | `gemini-3-flash-preview` (gemini) | Lore on Utopia | round_budget ×1, green ×1 |

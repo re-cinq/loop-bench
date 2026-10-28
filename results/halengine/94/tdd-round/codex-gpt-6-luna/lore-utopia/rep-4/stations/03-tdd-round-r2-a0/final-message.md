@@ -1,0 +1,3 @@
+The round is blocked by the prior CI findings in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`: the test uses an unsupported `PromptBuilder` option and exceeds the repository’s `max-expects` rule. The brief says to resolve those findings without editing the acceptance test, but neither can be fixed without editing that test or weakening unrelated project rules. The instructions say to stop when an acceptance test is wrong, so I made no changes, ran no tests, and did not commit or push. **Red tests this round: 0; regressions: 0.**
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The prior CI findings require editing the acceptance test or weakening unrelated project rules; both are prohibited."}}
