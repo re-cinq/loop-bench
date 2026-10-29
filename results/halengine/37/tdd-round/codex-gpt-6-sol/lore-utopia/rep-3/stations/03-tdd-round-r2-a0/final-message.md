@@ -1,0 +1,3 @@
+Committed and pushed one round. The new path test failed first, then all three tests in `registry.test.ts` passed after the fix and refactor. The previous CI findings are addressed; CI has not judged this push yet. One red test was mine, and I found zero regressions. The remaining facet is the other unit tests and documentation updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"readable validation paths and previous CI findings","tdd_next":"remaining unit tests and documentation updates"}}

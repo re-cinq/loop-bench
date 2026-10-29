@@ -1,0 +1,3 @@
+Committed and pushed the Ajv import fix and safe rejection logging. The new enum test went red, then green after the change. The prior CI verdict showed one regression (`config.test.ts`); the import fix addresses its reported cause. CI will judge the push. The remaining facet is unit tests, spec links, and documentation updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve Ajv import and log enum rejections without exposing values","tdd_next":"Add remaining unit tests, spec links, and documentation updates"}}

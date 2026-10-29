@@ -1,0 +1,3 @@
+Committed and pushed the round. The new no-tool usage test failed first, then passed after the hook preserved the provider’s usage object. I also fixed the spec-link and changelog findings from the previous CI run. One red test was mine; there were zero regressions. The branch is up to date and fully pushed. CI will judge the acceptance bar.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Preserve the no-tool usage contract and document aggregate usage","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+Fixed the two CI findings in the acceptance test: it now uses a valid prompt builder field and checks the three outcomes in one assertion. Prettier and `git diff --check` passed. I pushed commit `37a4a17`; the branch is up to date with `main` and its upstream. CI has not judged this push yet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Corrected the acceptance test's prompt builder config and consolidated its assertions"}}

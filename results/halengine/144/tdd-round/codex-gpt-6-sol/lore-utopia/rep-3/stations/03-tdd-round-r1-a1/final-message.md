@@ -1,0 +1,3 @@
+I stopped before editing. The acceptance test requires an empty `session_list` when the store has no `listFor`; the ticket explicitly requires an `UNSUPPORTED` error in that case. It also tests `list_sessions` and `session_list`, while the ticket specifies `list_conversations` and `conversation_list`. Your instruction says to stop when an acceptance test is wrong, so I could not complete a valid red-green-refactor round. No tests ran here. This round introduced 0 red tests and 0 regressions; the prior CI failures remain unresolved.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance tests contradict the ticket's required frame names and missing-listFor error behavior."}}

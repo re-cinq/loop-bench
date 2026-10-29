@@ -1,0 +1,3 @@
+Committed and pushed the wrong-type validation facet. The change restores the failing field path across Ajv error shapes and fixes the prior CI typecheck and test-lint findings. The focused registry test file passed; CI will judge the acceptance tests after the push. The prior verdict had one red ticket acceptance test and zero regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Wrong-typed input path and prior CI findings","tdd_next":"Add remaining unit tests and update documentation"}}

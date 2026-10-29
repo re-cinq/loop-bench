@@ -1,0 +1,3 @@
+Committed and pushed the first round. The new registration test failed before the change and passed after static schema compilation was added. The branch is clean and up to date with `origin/main`. CI has not yet judged the acceptance tests; this round had one red test of mine and zero known regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"AJV dependency and minor version bump","tdd_next":"cache compiled validators for function-valued schemas"}}

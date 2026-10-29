@@ -1,0 +1,3 @@
+Fixed both CI findings in the acceptance test: the prompt fixture now uses `identity`, and one assertion checks the rejection and both hooks. I formatted the file, committed the repair, and pushed it. The branch is synchronized with its upstream; CI has not reported on the new commit yet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Corrected the PromptBuilder config and the acceptance test’s assertion count"}}

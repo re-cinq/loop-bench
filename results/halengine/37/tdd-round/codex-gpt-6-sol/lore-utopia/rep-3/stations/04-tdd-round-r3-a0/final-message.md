@@ -1,0 +1,1 @@
+I’ll read the ticket, the round brief, and `.lore/dod.md` in that order, then do one test-driven round on the next open facet.
