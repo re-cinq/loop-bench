@@ -1,0 +1,3 @@
+Committed and pushed `84fd5c5`. The new tool-round test failed on the old last-call count, then passed with the summed count. All facets are checked; acceptance tests remain for CI to judge. This round had **1 red test of mine and 0 known regressions**. No unrelated smells were changed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"sum reported provider usage across tool rounds","tdd_next":"acceptance green"}}

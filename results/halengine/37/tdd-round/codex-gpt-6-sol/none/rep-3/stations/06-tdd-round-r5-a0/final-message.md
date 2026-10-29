@@ -1,0 +1,3 @@
+Committed and pushed `778c45b`; the branch is up to date with its upstream. This round’s new test failed, then passed after the fix. I also addressed the CI findings named in the brief. I observed one red test of my own and no identified regressions. The remaining tests and documentation are the next facet; CI has not judged this push yet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Preserve dotted property names in Ajv bracket dataPath errors and repair CI findings","tdd_next":"Add remaining unit tests and update documentation and changelog"}}

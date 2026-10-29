@@ -1,0 +1,3 @@
+Committed and pushed the round. A new test exposed an incorrect path in legacy Ajv required-property errors; the fix now reports `/location`. The test went red, then green. I also repaired the CI-reported test type and duplicate-code findings. Red tests this round: 1 mine, 0 regressions. The remaining unit tests and documentation are the next facet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Strip the legacy Ajv leading dot from required-property names and repair the CI-reported test type and duplicate-code findings","tdd_next":"Add remaining unit tests and update documentation and changelog"}}

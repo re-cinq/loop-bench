@@ -1,0 +1,3 @@
+Completed one red-green-refactor round and pushed commit `b67f1b7`. The new validator test failed before the change and passed afterward; one red test was mine, with zero regressions reported. I added the list frame types, validated `list_sessions` requests, updated the spec and checklist, and confirmed the branch is current with `main` and its upstream. The next facet is wiring the session store into the message handler.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add list frame types and validate list_sessions requests","tdd_next":"Thread sessionStore into createMessageHandler and createServer"}}

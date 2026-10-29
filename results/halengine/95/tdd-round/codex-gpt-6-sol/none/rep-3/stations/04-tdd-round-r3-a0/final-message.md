@@ -1,0 +1,3 @@
+Committed and pushed the round. The new cross-realm Error test failed before the fix and passed afterward; I also repaired the prior CI lint finding. I ran only that new test locally. The previous CI verdict reported **0 red tests of mine and 0 regressions**. Acceptance checks remain for CI to judge.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"preserve Error identity across JavaScript realms","tdd_next":"acceptance green"}}

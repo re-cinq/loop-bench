@@ -1,0 +1,3 @@
+Committed and pushed `663d06b`; the branch is current with `main` and its upstream. The one test written this round failed first, then passed after the fix. No regressions were identified. The next facet is the remaining unit tests and documentation updates. The prior CI test failure excerpt was truncated, so its cause remains unconfirmed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Preserve leading dots in real required property paths and repair the reported lint findings","tdd_next":"Add remaining unit tests and update documentation and changelog"}}

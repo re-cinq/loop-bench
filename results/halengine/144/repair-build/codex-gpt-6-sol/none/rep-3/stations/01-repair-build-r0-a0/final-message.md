@@ -1,0 +1,3 @@
+I fixed the reported WebSocket test failures and lint findings, then committed and pushed the change. The three affected Jest suites pass locally: **33 tests passed**. I did not run lint or the full coverage build in this pod; CI will judge those checks on the push. The branch is up to date with `origin/main` and has no unpushed commits.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"WebSocket list requests lacked a handler; missing list support now returns UNSUPPORTED and the affected tests pass"}}

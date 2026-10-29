@@ -1,0 +1,3 @@
+Committed and pushed the CI repair. The focused round test passed; the spec links now point to verified test lines. The branch is synchronized with `origin/main`. CI has not yet judged this push. Red tests in the previous verdict: 0 written this round, 0 regressions. No unrelated changes were made.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"repair usage spec links and round test assertion","tdd_next":"acceptance green"}}
