@@ -1,0 +1,3 @@
+Committed and pushed the WebSocket session-list round (`570e727`); the branch is up to date with `main` and its upstream. The one test written this round failed before the change and passed afterward. I also addressed the CI findings visible in the round brief. I ran no acceptance tests, linter, or typechecker here; CI will judge those. Red tests: 1 mine, 0 known regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle list_sessions for the authenticated user","tdd_next":"Document list_sessions and session_list in the protocol and conversation-list specs"}}

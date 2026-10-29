@@ -1,0 +1,3 @@
+Fixed both CI findings in the acceptance test: it now uses a valid `PromptBuilderConfig` and checks the rejection and hook calls in one assertion. Formatted the file, committed it as `a2d64ca`, and pushed it. The branch is up to date with `origin/main` and its upstream. CI has not judged this push yet; I did not run lint or typecheck locally, as instructed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed the acceptance test’s invalid prompt configuration and excess assertions"}}

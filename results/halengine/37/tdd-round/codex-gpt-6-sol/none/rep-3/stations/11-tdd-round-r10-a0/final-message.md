@@ -1,0 +1,3 @@
+Committed and pushed one round. The new legacy `dataPath` test failed, then passed after the path fix and lint refactor. The branch is up to date with `origin/main` and its upstream. CI’s previous verdict had **1 red ticket test and 0 regressions**; CI will judge this push. The remaining facet is the other unit tests and documentation updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Preserve literal leading dots in legacy required-property paths and repair the CI lint finding","tdd_next":"Add remaining unit tests and update documentation and changelog"}}

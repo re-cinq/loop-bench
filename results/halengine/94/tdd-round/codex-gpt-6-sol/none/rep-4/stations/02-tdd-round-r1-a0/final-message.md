@@ -1,0 +1,3 @@
+This round is blocked. CI reports an invalid `PromptBuilder` fixture and a lint error in the protected acceptance test. The ticket says to stop if that test is wrong, so I discarded my local edits and did not commit or push. The separate regression test passed locally. CI reported 0 failing test assertions of mine and 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI findings require correcting an invalid fixture and lint violation in the protected acceptance test"}】【。

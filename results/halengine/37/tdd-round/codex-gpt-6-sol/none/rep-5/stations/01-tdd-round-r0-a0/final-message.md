@@ -1,0 +1,3 @@
+Committed and pushed the registration-time schema compilation round. The new focused test failed before the change and passed afterward. Red tests: 1 written this round; regressions: 0. The branch is in sync with its upstream. No unrelated smells were changed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"compile static input schemas at registration","tdd_next":"cache validators for function-valued schemas by schema object reference"}}

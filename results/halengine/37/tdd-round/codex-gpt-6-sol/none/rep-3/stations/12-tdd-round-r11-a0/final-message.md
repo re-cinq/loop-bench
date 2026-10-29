@@ -1,0 +1,3 @@
+Committed and pushed `6b5a051`. The new nested required-property test failed before the fix and passed afterward. The round had **1 intentional red test and 0 identified regressions**. The branch is up to date with `origin/main` and fully pushed; CI will judge the remaining acceptance tests. The remaining facet is the unit tests and documentation updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Preserve a leading dot in a nested legacy required-property path and repair the CI lint findings","tdd_next":"Add remaining unit tests and update documentation and changelog"}}

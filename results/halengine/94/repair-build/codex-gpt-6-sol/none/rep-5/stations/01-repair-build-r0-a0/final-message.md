@@ -1,0 +1,3 @@
+Fixed both CI findings in the acceptance test: the prompt fixture now uses `identity`, and the test makes one combined assertion. I formatted the file, committed and pushed it. The branch is up to date with `origin/main` and its upstream; CI has not yet judged this push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Corrected the PromptBuilder fixture and the acceptance test's assertion count"}}
