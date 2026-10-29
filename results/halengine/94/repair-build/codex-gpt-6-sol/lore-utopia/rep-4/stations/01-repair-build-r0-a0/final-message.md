@@ -1,0 +1,3 @@
+Fixed both CI findings in the acceptance test: the prompt builder now uses `identity`, and one assertion checks the rejection and both hooks. I formatted the file and pushed commit `793c2e1`. The branch is current with `main` and its upstream; CI has not yet judged this push. I did not run lint or typecheck locally, as instructed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed the invalid prompt config and the three-assertion lint failure in the beforeSession acceptance test"}}

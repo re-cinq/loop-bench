@@ -1,0 +1,3 @@
+Committed and pushed the duplicate-code repair as `55bc9e7`. I consolidated the usage tests, updated their spec links, and marked the repair facet complete. The edited test file passed: **2 tests green**. During the red phase, **1 test I moved was red; 0 existing tests were regressions**. I did not run the acceptance tests or lint locally; CI will judge the push. The branch is synced with its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Share the usage test setup and remove the duplicate-code CI findings while retaining the mutable-usage check","tdd_next":"acceptance green"}}

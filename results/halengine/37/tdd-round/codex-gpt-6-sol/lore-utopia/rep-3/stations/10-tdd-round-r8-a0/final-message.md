@@ -1,0 +1,3 @@
+Committed and pushed the round. The new focused test failed before the path fix and passed after formatting; I ran no acceptance tests. The prior CI verdict showed **1 red test from this ticket and 0 regressions**. CI has not yet judged this push, and the remaining unit tests and documentation are the next facet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Normalize a leading dot in required-property error paths","tdd_next":"remaining unit tests and documentation updates"}}

@@ -1,0 +1,3 @@
+Committed and pushed `9670583`. The registry test file is green (6 tests); the new enum test was the round’s one red test, and there were 0 regressions. I also fixed the prior CI lint finding. Acceptance tests remain for CI, and the remaining unit tests and documentation are the next facet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Include permitted values in enum rejections and repair the registry test assertion count","tdd_next":"Add remaining unit tests, spec links, documentation, example, ADR, and changelog updates"}}

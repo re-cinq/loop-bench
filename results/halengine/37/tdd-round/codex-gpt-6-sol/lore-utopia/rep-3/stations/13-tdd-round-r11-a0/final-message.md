@@ -1,0 +1,3 @@
+Committed and pushed the numeric property path fix. The new test failed before the fix and passed afterward; the branch is up to date with `origin/main`. The prior CI verdict had 1 red test written for this ticket and 0 regressions. Acceptance and broader CI checks remain for CI to judge.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair bracketed numeric object property paths, including nested properties","tdd_next":"Add the remaining unit tests and documentation updates"}}

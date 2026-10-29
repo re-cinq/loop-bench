@@ -1,0 +1,5 @@
+Added and pushed one `direct` acceptance test in [beforeSessionFailure.acceptance.test.ts](/var/tmp/loop-bench/runs/e81dce040cb7/workspace/target/src/orchestration/beforeSessionFailure.acceptance.test.ts:9), with the contract in [.lore/dod.md](/var/tmp/loop-bench/runs/e81dce040cb7/workspace/target/.lore/dod.md) and the future guarantee in the [spec](/var/tmp/loop-bench/runs/e81dce040cb7/workspace/target/specs/hal-engine-config-hooks/spec.md:23). No production code changed.
+
+The named test ran and failed for the reported reason: `"calls": ["beforeSession"]`; the expected `"onError"` and `"afterSession"` calls were absent. The original error still reached the caller. Commit `3491ddf` is pushed, `origin/main` is merged, and the branch is not ahead of its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"dod_strategy":"direct"}}

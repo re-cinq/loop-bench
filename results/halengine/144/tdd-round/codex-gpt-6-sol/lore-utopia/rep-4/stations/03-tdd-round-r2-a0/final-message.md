@@ -1,0 +1,3 @@
+Committed and pushed one round. The new test failed on the missing session id in the list failure log, then passed after the fix. I also repaired all four lint findings reported by CI. This round had **1 red test of mine and 0 regressions**; I did not run the acceptance tests. The remaining facet is protocol and conversation-list documentation.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Include the session id in failed conversation list logs","tdd_next":"Document list_sessions and session_list in the protocol and conversation-list specs"}}

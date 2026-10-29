@@ -1,0 +1,3 @@
+Committed and pushed one round. The new numeric-property path test failed, then passed after the fix and refactor. I also repaired the reported Ajv type error and stale spec links. One red test was mine; no regressions were identified. CI will judge the remaining acceptance tests.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Distinguish numeric object property names from array indexes in rejection paths","tdd_next":"Add the remaining unit tests and documentation updates"}}

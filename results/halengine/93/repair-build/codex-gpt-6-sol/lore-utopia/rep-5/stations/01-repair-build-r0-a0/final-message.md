@@ -1,0 +1,3 @@
+Fixed all four reported ESLint findings: the usage tests now have spec links, and the test with two assertions now uses one. Formatted, committed, and pushed as `26c8357`; the branch is up to date with `origin/main` and its upstream. I did not run the linter or build locally, as instructed. CI has not yet judged this push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed the four reported usage-test lint findings and pushed the repair"} }

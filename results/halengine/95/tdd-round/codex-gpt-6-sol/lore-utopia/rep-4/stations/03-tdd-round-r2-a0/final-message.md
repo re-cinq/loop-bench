@@ -1,0 +1,3 @@
+Committed and pushed the round. The new empty-string rejection test failed before the fix and passed afterward; all three tests in its file are green. I also addressed the five findings from the previous CI verdict. Red tests: 1 written this round, 0 regressions. CI will judge the acceptance tests and lint on this push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Give an empty-string rejection a readable hook error while preserving the original rejection","tdd_next":"acceptance green"}}

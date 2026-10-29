@@ -1,0 +1,3 @@
+Fixed CI’s one-assertion lint finding in the Unicode cursor test. The test passes; the change is formatted, committed, pushed, and up to date with `main`. Red tests reported: 0 written for this round, 0 regressions. Acceptance tests were left to CI.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Keep the Unicode cursor boundary test within the repository's one-assertion lint rule","tdd_next":"acceptance green"}}

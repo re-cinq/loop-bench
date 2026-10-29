@@ -1,0 +1,3 @@
+Committed and pushed `89d584e`. Required field names containing `/` now appear correctly in validation errors, and I repaired both findings from the previous CI brief. The registry test file passes: 5 tests. Two red tests were ours (one from the prior CI run and one added this round); there were 0 regressions. Documentation and the remaining unit tests are the next facet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Preserve slashes in required property names and repair the two CI findings","tdd_next":"Add remaining unit tests, spec links, and documentation and changelog updates"}}
