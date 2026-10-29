@@ -1,0 +1,3 @@
+Fixed both CI findings in the acceptance test: it now uses the valid prompt config and checks the rejection and hooks in one assertion. The change was formatted, committed, and pushed; the branch is up to date with `main`. Typecheck and ESLint were left to CI as instructed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Acceptance test used an invalid prompt config and exceeded the one-expect lint limit"}】【。

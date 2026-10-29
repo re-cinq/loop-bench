@@ -1,0 +1,3 @@
+Committed and pushed `b84c4df`. The new dynamic schema caching test is green after the refactor. I also addressed the named CI type, lint, and spec-link findings; CI has not judged this push yet. Red tests in the local run: 0 of mine, 0 regressions. I found no unrelated issues requiring action.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference","tdd_next":"Add focused validation tests and complete the remaining documentation updates"}}

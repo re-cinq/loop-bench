@@ -1,0 +1,3 @@
+I shared the provider fixture between the `onError` tests to address CI’s two duplicate-code findings, updated the spec link, and committed and pushed the round. The modified test passed locally. CI has not judged this push yet; red tests reported in the previous verdict: 0 mine, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Share the successful provider stub through the error-test fixture","tdd_next":"acceptance green"}}

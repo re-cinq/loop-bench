@@ -1,0 +1,5 @@
+I stopped before editing. The checked-in acceptance test expects a store without `listFor` to return an empty `session_list` at [conversationList.acceptance.test.ts:149](/var/tmp/loop-bench/runs/84008fbf987d/workspace/target/src/transport/conversationList.acceptance.test.ts:149). The ticket explicitly requires an `UNSUPPORTED` error for that case. The CI brief also names lint failures inside that acceptance test, which this round is forbidden to edit.
+
+No test ran, and nothing was committed or pushed. The brief truncates the test failure details, so I cannot reliably count red tests or regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The checked-in acceptance test requires an empty list when listFor is absent, contradicting the ticket's required UNSUPPORTED error; editing that acceptance test is prohibited."}}

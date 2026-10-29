@@ -1,0 +1,5 @@
+Committed and pushed five red acceptance tests in [registry.acceptance.test.ts](/var/tmp/loop-bench/runs/5e3f9475dddf/workspace/target/src/orchestration/tools/registry.acceptance.test.ts), with the linked [spec](/var/tmp/loop-bench/runs/5e3f9475dddf/workspace/target/specs/hal-engine-tool-input-validation/spec.md) and [Definition of Done](/var/tmp/loop-bench/runs/5e3f9475dddf/workspace/target/.lore/dod.md). The branch is up to date with `origin/main` and its upstream.
+
+The targeted run reported `Tests: 5 failed, 5 total`. Its failure output includes `"calls": 3` where `0` was expected, `"missing": "forecast"` where a required-property error was expected, and `Received function did not throw` for an invalid schema. These failures show the missing validation behavior.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"dod_strategy":"direct"}}

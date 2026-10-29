@@ -1,0 +1,3 @@
+I stopped before editing. The RED acceptance tests contradict the ticket’s explicit protocol requirements: they require `list_sessions` and `session_list` instead of `list_conversations` and `conversation_list`, accept `limit: 0` where the ticket requires 1–200, and require an empty list when `listFor` is missing where the ticket requires `UNSUPPORTED`. The instructions say to stop when an acceptance test is wrong, so I did not change or run tests, commit, or push. Red tests written this round: 0; regressions caused: 0.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"RED acceptance tests contradict the ticket's frame names, limit bounds, and missing-store error behavior"}}

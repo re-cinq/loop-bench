@@ -1,0 +1,3 @@
+I stopped without editing or pushing. CI’s lint verdict flags `new Date()` in the protected acceptance test. Fixing that finding requires changing the acceptance test, which this round’s rules prohibit. No tests ran here. CI reported no red tests: zero written this round and zero regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI lint requires an edit to the protected acceptance test src/orchestration/onErrorNonError.acceptance.test.ts:12"} }

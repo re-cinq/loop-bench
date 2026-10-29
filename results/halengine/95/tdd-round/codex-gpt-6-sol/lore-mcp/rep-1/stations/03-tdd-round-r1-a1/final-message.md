@@ -1,0 +1,3 @@
+Committed and pushed `40bb0d2`. The new test failed before the fix and passed after it; I also fixed all three lint findings from the previous CI report. I ran only the new test locally. One red test was mine; there were zero regression tests. The branch is current with `origin/main` and its upstream. CI will judge the pushed round.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Preserve unstringifiable rejections while calling onError with the original cause","tdd_next":"acceptance green"}}

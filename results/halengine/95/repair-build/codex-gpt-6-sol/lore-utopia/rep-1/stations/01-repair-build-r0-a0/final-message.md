@@ -1,0 +1,3 @@
+Replaced the nondeterministic test timestamp with a fixed value. Prettier and `git diff --check` passed; I did not run lint locally, per the pod constraint. The fix is pushed, `origin/main` was already up to date, and the branch is even with its upstream. CI has yet to judge the new commit.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced the nondeterministic timestamp flagged by eslint in the onError acceptance test"}េច

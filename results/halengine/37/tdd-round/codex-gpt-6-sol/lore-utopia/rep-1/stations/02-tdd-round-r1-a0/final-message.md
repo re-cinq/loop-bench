@@ -1,0 +1,3 @@
+Committed and pushed one round: static tool schemas now compile at registration, and resolved schemas use cached validators. The new test was red before the change and green after it (2 tests passed in its file). I also addressed the previous CI type and lint findings; CI has not judged this push yet. Red tests remaining locally: 0 written this round, 0 regressions. No unrelated issues were changed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Compile static schemas at registration and cache dynamic validators by schema object reference","tdd_next":"Add remaining unit tests, spec links, and documentation updates"}}

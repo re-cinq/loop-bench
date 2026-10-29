@@ -1,0 +1,3 @@
+I stopped without editing or running tests. The acceptance test itself has an invalid `PromptBuilder` option and three assertions where CI permits one. The ticket explicitly forbids editing an incorrect acceptance test and requires stopping in that case. CI also reports spec-link and lint findings, but the acceptance-test errors block this round. No commit or push was made. Red tests: 0 of mine, 0 regressions; the reported failures are build checks.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The uneditable acceptance test has an invalid PromptBuilder option and violates the one-assertion lint rule."}}
