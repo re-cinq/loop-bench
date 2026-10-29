@@ -1,0 +1,3 @@
+Fixed the Ajv import, added input validation before tool execution, and addressed the reported lint findings. The three affected Jest suites pass locally (14 tests). Committed and pushed as `a3a1078`; the branch is up to date with `origin/main` and its upstream. CI has not yet judged this push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Ajv import and missing tool input validation broke typecheck and tests; reported lint findings were fixed"}}

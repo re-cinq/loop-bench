@@ -1,0 +1,3 @@
+The acceptance test is invalid: it passes `baseSystemPrompt` to `PromptBuilder`, whose config requires `identity`. CI also reports a lint error inside that acceptance test. Your instruction says to stop if an acceptance test is wrong, so I made no edits, ran no tests, and did not commit or push. CI reported no failing test executions: 0 tests of mine and 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test has an invalid PromptBuilder configuration and lint findings; editing it is prohibited."}}

@@ -1,0 +1,3 @@
+Fixed both CI findings in the acceptance test: it now uses the valid prompt setting and makes one combined assertion. The focused Jest test passed. I did not run lint or typecheck locally, as directed; CI will judge those checks on the pushed commit. The branch is up to date with `origin/main` and fully pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Corrected the invalid prompt configuration and the three-assertion lint violation"}}

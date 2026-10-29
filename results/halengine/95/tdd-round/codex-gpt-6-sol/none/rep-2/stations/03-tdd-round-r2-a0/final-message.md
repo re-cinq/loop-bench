@@ -1,0 +1,3 @@
+Committed and pushed the round. The new `undefined` rejection test passes, and the two tests named in CI’s lint findings now share setup and use one assertion each. CI has not judged this push yet; the previous verdict reported lint findings, with **0 failing tests of mine and 0 regressions**.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cover undefined provider rejection and repair CI lint findings","tdd_next":"acceptance green"}}

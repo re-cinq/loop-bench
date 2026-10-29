@@ -1,0 +1,3 @@
+Committed and pushed one round for tool input validation. The new required-property test went red, then green; I ran only `registry.test.ts`. The previous CI verdict had 3 red ticket acceptance tests and 0 regressions. CI will judge this push. The next facet is caching validators for function-valued definitions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Validate input before invoking the executor","tdd_next":"Cache validators for function-valued tool definitions by schema object"}}
