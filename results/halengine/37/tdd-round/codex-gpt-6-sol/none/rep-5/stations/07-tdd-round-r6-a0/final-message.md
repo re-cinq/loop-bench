@@ -1,0 +1,3 @@
+Committed and pushed `1c1b23c`. The new test caught a tool rejection that echoed an input value; the fix passes all 7 tests in `registry.test.ts`. I also repaired the five lint findings reported by the previous CI run. This round had 1 red test of mine and 0 regressions. CI has not yet judged this push; the remaining facet is unit coverage and documentation.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Prevent validator messages from echoing rejected values and repair prior CI lint findings","tdd_next":"Add remaining unit tests and update tool documentation"}}

@@ -1,0 +1,3 @@
+Committed and pushed the `list_sessions` handler facet. Store failures now log under `ws` and return `SERVER_ERROR`; the named CI lint findings and affected spec links were also repaired. The test written this round went red, then green after the change. Red tests identified: 1 mine, 0 regressions. CI’s test failure details were truncated in the brief, so its verdict remains pending.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle list_sessions in messageHandler","tdd_next":"Document list_sessions and session_list in the protocol and conversation-list specs"}}
