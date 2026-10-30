@@ -1,0 +1,5 @@
+The ticket needs splitting before an honest DoD can be written. It explicitly requires more than five distinct behavioral tests, including registry validation, schema compilation/caching, privacy-safe logging, orchestration retries, unknown-tool behavior, packaging, and documentation. It also requires `registry.test.ts`, conflicting with the mandated `.acceptance.test.ts` filename, and requests a stub provider while this task prohibits test doubles.
+
+No files were changed or committed.
+
+LORE_NODE_RESULT: {"outcome":"changes_requested","extras":{"dod_blocked":"Please split the registry validation, schema compilation/caching, orchestration retry, privacy logging, packaging, and documentation requirements into focused tickets, and reconcile the required registry.test.ts filename and stub-provider test with the acceptance-test contract."}}

@@ -1,0 +1,3 @@
+Blocked before editing: CI requires changing `src/transport/conversationList.acceptance.test.ts` to fix lint violations, including `prefer-early-return`, but the round explicitly forbids editing acceptance tests and says to stop if one is wrong. No test or production code was changed. Red tests written this round: 0; regressions caused this round: 0.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test itself fails mandatory CI lint, but this round is forbidden from editing acceptance tests."}}
