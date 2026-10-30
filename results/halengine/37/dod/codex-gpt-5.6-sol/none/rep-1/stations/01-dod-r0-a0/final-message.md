@@ -1,0 +1,3 @@
+This ticket explicitly requires more than five distinct acceptance tests—schema rejection, pass-through, type errors, invalid schemas, dynamic schemas, compile caching, retry flow, unknown tools, and log redaction. Per the contract, it needs splitting before a valid DoD can be written. No files were changed.
+
+LORE_NODE_RESULT: {"outcome":"changes_requested","extras":{"dod_blocked":"Split the ticket into smaller independently testable slices; its acceptance criteria require more than five distinct behavioral tests."}}

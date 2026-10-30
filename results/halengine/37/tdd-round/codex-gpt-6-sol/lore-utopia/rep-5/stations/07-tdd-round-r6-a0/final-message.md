@@ -1,0 +1,3 @@
+Committed and pushed the one round. A new test failed on a legacy bracketed required-property path, then passed after the fix and refactor. The prior CI failure was one ticket test; there were **0 regressions**. The branch is up to date with `main` and its upstream. The remaining facet is the unit tests, spec links, and documentation updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Normalize legacy bracketed required-property paths","tdd_next":"Remaining unit tests, spec links, and documentation updates"}}

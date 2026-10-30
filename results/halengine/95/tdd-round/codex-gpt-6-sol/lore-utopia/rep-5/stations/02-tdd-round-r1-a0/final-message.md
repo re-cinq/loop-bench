@@ -1,0 +1,3 @@
+CI flagged `new Date()` in [the acceptance test](/var/tmp/loop-bench/runs/4d4a0d8c83f6/workspace/target/src/orchestration/onErrorNonError.acceptance.test.ts:12) as nondeterministic. The round instructions require me to stop when an acceptance test is wrong, so I made no edits, ran no tests, and did not push. CI reported no red tests: 0 written by this round and 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI lint fails on nondeterministic new Date() in the acceptance test, which this round is forbidden to edit"} }

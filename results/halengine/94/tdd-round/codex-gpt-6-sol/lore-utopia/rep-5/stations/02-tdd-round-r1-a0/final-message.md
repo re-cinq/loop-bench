@@ -1,0 +1,3 @@
+The acceptance test is invalid: it passes fields that `PromptBuilderConfig` does not accept, and CI also flags its three assertions. Your rule says to stop rather than edit an incorrect acceptance test, so I made no changes or push. CI reported no red tests or regressions; it reported three typecheck and lint findings.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test has invalid PromptBuilderConfig fields and a lint violation, but editing an incorrect acceptance test is prohibited."}}

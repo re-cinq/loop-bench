@@ -1,0 +1,3 @@
+Committed and pushed `dfd55c9`. The new dynamic-schema test went red, then green; after formatting, the focused test file passed again (2 tests). The previous CI brief named acceptance failures, but no regressions: **0 red tests of mine and 0 regressions**. I found no unrelated smells to report. CI will judge the pushed branch.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"cache dynamic validators and reject invalid tool input","tdd_next":"add remaining unit tests, spec links, and documentation updates"}}

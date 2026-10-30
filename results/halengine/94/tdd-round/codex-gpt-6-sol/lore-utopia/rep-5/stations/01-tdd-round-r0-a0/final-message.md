@@ -1,0 +1,3 @@
+Committed and pushed `71d6009`. The new test failed before the change and passed after it; the spec, changelog, and DoD are updated. `origin/main` was already up to date, and the branch is fully pushed. CI has not reported a verdict yet. Red tests observed: 1 written this round, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Run onError and afterSession when beforeSession throws, with spec and changelog updated","tdd_next":"acceptance green"}}

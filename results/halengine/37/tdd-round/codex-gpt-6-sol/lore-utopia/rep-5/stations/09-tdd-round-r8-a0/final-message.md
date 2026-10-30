@@ -1,0 +1,3 @@
+Committed and pushed the CI lint fix and a spec-linked test confirming that a static schema compiles once across ten executions. The test was red until I added the required Jest import; the focused file then passed all 9 tests. Red tests: 1 mine, 0 regressions. The branch is synced with main and fully pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair the duplicate expect finding and verify static schema compilation reuse","tdd_next":"Remaining unit tests, spec links, and documentation updates"}}

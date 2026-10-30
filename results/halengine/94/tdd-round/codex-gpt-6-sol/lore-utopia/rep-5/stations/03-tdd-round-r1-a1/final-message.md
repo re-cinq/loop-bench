@@ -1,0 +1,3 @@
+The round is blocked by an error in the acceptance test: it passes `baseSystemPrompt` to `PromptBuilder`, whose config requires `identity` and has no `baseSystemPrompt` field. CI also reports an assertion-count lint error in that test. Your instruction says to stop if an acceptance test is wrong, so I made no edits and ran no tests. The CI findings remain unresolved; there were 0 red tests of mine and 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test uses an invalid PromptBuilderConfig and fails CI; the ticket forbids editing an incorrect acceptance test."}}
