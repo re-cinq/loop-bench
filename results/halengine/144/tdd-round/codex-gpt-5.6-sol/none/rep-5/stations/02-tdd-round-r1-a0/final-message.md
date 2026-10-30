@@ -1,0 +1,3 @@
+Blocked: CI requires edits to `src/transport/conversationList.acceptance.test.ts`, including restructuring test code, but the round rules explicitly prohibit editing acceptance tests. The saved CI report is truncated and no Lore gateway is available to retrieve the missing findings. I made no changes, commits, or pushes. Red tests written this round: 0; regressions identified: 0.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI lint findings require modifying the acceptance test, which this round explicitly forbids"}

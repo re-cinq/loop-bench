@@ -1,0 +1,3 @@
+Blocked: the immutable acceptance test is invalid. It passes unsupported `PromptBuilderConfig` fields and violates the repository’s one-expect lint rule. Fixing CI requires editing that acceptance test, which the round rules explicitly prohibit. No files changed and no tests ran. Red tests: 0 authored this round, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI requires edits to the immutable acceptance test: unsupported PromptBuilderConfig fields and three expect calls"} }

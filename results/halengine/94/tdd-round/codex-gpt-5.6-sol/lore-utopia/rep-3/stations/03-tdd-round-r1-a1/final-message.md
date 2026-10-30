@@ -1,0 +1,5 @@
+Blocked before editing: the acceptance test constructs `PromptBuilder` with invalid fields (`baseSystemPrompt`, `systemPromptSuffix`, and `contextConfig`), while `PromptBuilderConfig` requires `identity`. CI confirms TS2353 at line 30. Fixing that would require editing the acceptance test, which the round rules explicitly prohibit; changing production configuration types for unrelated legacy fields would exceed ticket scope.
+
+No files changed, tests run, commit created, or push performed. The prior CI reds include one ticket-authored test failure and additional regressions, but the invalid acceptance test prevents a valid red-green-refactor round.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test is invalid against PromptBuilderConfig, and the rules prohibit editing an incorrect acceptance test."}}
