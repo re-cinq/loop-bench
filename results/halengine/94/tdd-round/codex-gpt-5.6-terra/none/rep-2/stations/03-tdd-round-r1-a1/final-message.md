@@ -1,0 +1,3 @@
+Blocked: the acceptance test constructs `PromptBuilderConfig` with nonexistent `baseSystemPrompt`; its API requires `identity`. Per instruction, I did not alter an acceptance test or introduce unrelated compatibility code.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test uses nonexistent PromptBuilderConfig.baseSystemPrompt; correcting it would require editing the acceptance test."}}

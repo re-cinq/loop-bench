@@ -1,0 +1,3 @@
+Fixed and pushed the two CI-reported spec-link anchors; all DOD facets are checked. No local tests ran because this round only repaired CI metadata and acceptance files must not be rerun here. CI reported 0 red tests of mine and 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Confirm existing Error-instance tests remain green without modification","tdd_next":"acceptance green"}}
