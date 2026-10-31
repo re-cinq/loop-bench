@@ -1,0 +1,3 @@
+The ticket bundles more than five independent acceptance contracts, including unobservable implementation details (schema compilation count) and PR metadata. Please split it into a focused validation-behaviour ticket plus separate caching/documentation/release-metadata work.
+
+LORE_NODE_RESULT: {"outcome":"changes_requested","extras":{"dod_blocked":"Split this into a focused validation contract; it currently requires more than five independent tests and includes unobservable cache-count and PR-body requirements."}}

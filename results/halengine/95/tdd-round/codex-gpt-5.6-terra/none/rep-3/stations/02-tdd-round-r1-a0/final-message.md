@@ -1,0 +1,3 @@
+Added an Error-identity hook test, repaired all stale spec anchors, and added the Unreleased changelog entry. The selected test and spec-anchor check pass. Pushed `5023bc6`; branch is synced with upstream. Red tests: 0 yours, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Confirm existing Error-instance tests and add the consumer changelog entry","tdd_next":"acceptance green"}}

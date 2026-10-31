@@ -1,0 +1,3 @@
+Fixed Ajv error-path compatibility, the type annotation, lint violation, and missing changelog entry; committed and pushed `4d9431c`. Only `registry.test.ts` was run and passed. CI had 1 branch-owned unit-test failure and 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Ajv schema-error path compatibility and CI repair","tdd_next":"Add remaining unit/orchestrator tests and documentation updates"}}

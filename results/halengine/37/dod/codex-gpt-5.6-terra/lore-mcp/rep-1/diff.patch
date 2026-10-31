@@ -1,0 +1,171 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..ed80527
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,24 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`).
++
++**Strategy: `direct`** — `ToolRegistry.register` and `ToolRegistry.execute` are public, real entry points. The acceptance tests register concrete tools and observe their executor results without altering production code.
++
++## Done when these pass
++
++- [ ] **rejects schema-invalid calls before invoking the executor while preserving accepted input** — required, type, and enum failures return a redacted result before execution, while valid extra properties pass through unchanged.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **rejects an invalid static schema when registering its named tool** — static schemas fail early and identify the invalid tool.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **validates each function-defined tool call against its current schema** — dynamic definitions do not reuse an earlier schema.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Compile static schemas during registration and return redacted validation `ToolResponse` values before an executor runs.
++- [ ] Resolve function-valued definitions per call and cache validators only by the resolved schema object.
++- [ ] Preserve unknown input properties and the existing unknown-tool exception.
++
++## Out of scope
++
++- Tool-output validation, authorization, retry and timeout policy, and changing the existing unknown-tool error into a tool response.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..931fcdb
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,18 @@
++# Tool Input Validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | Draft                |
++
++The registry is the enforcement boundary for a model's tool-call input: providers receive a tool's JSON Schema, and the same schema decides whether the executor may receive that call.
++
++## Registry validation
++
++`ToolRegistry.execute` validates required properties, declared types, and enums against the resolved tool definition's `inputSchema` before it invokes the executor. A rejected call returns a `ToolResponse` whose result describes the property and failed constraint without exposing submitted values; valid calls, including undeclared extra properties, reach the executor unchanged. ([validated by: rejects schema-invalid calls before invoking the executor while preserving accepted input](../../src/orchestration/tools/registry.acceptance.test.ts#L14))
++
++## Schema lifecycle
++
++A static definition's schema is compiled when it is registered, so an invalid schema throws an error naming that tool before a conversation starts. ([validated by: rejects an invalid static schema when registering its named tool](../../src/orchestration/tools/registry.acceptance.test.ts#L59))
++
++A function-valued definition is resolved for each execution, and that execution uses its currently resolved schema rather than a schema from an earlier call. ([validated by: validates each function-defined tool call against its current schema](../../src/orchestration/tools/registry.acceptance.test.ts#L81))
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..c7bc55b
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,111 @@
++import {ToolRegistry} from './registry.js';
++import type {ToolDefinition} from '../../types/ai.js';
++
++const weatherDefinition = (inputSchema: Record<string, unknown>): ToolDefinition => ({
++  name: 'weather',
++  description: 'Returns the weather for a location.',
++  inputSchema,
++});
++
++const messageDescribes = (result: string, property: string, constraint: string): boolean =>
++  result.includes(property) && result.toLowerCase().includes(constraint);
++
++describe('ToolRegistry input-schema validation', () => {
++  it('rejects schema-invalid calls before invoking the executor while preserving accepted input', async () => {
++    const registry = new ToolRegistry();
++    const executedInputs: Record<string, unknown>[] = [];
++    const identifyingValue = 'member-12345';
++    const validInput = {location: 'Berlin', units: 'celsius', requestedBy: identifyingValue};
++
++    registry.register(
++      weatherDefinition({
++        type: 'object',
++        required: ['location'],
++        properties: {
++          location: {type: 'string'},
++          units: {enum: ['celsius', 'fahrenheit']},
++        },
++      }),
++      async input => {
++        executedInputs.push(input);
++        return 'forecast';
++      }
++    );
++
++    const missing = await registry.execute('weather', {});
++    const wrongType = await registry.execute('weather', {location: 42, requestedBy: identifyingValue});
++    const wrongEnum = await registry.execute('weather', {location: 'Berlin', units: 'kelvin'});
++    const accepted = await registry.execute('weather', validInput);
++
++    expect({
++      missingIsRequiredError: messageDescribes(missing.result, 'location', 'required'),
++      wrongTypeNamesPathAndType: messageDescribes(wrongType.result, 'location', 'string'),
++      wrongEnumNamesPropertyAndConstraint: messageDescribes(wrongEnum.result, 'units', 'allowed'),
++      rejectedResultsRedactInput: [missing, wrongType, wrongEnum].every(
++        response => !response.result.includes(identifyingValue)
++      ),
++      accepted,
++      executedInputs,
++    }).toEqual({
++      missingIsRequiredError: true,
++      wrongTypeNamesPathAndType: true,
++      wrongEnumNamesPropertyAndConstraint: true,
++      rejectedResultsRedactInput: true,
++      accepted: {result: 'forecast'},
++      executedInputs: [validInput],
++    });
++  });
++
++  it('rejects an invalid static schema when registering its named tool', () => {
++    const registry = new ToolRegistry();
++    let registrationResult = 'registered';
++
++    try {
++      registry.register(
++        {name: 'broken_weather', description: 'Cannot be compiled.', inputSchema: {type: 'not-a-json-schema-type'}},
++        async () => 'unreachable'
++      );
++    } catch (error) {
++      registrationResult = error instanceof Error ? error.message : String(error);
++    }
++
++    expect({
++      threw: registrationResult !== 'registered',
++      namesTool: registrationResult.includes('broken_weather'),
++    }).toEqual({
++      threw: true,
++      namesTool: true,
++    });
++  });
++
++  it('validates each function-defined tool call against its current schema', async () => {
++    const registry = new ToolRegistry();
++    const executedInputs: Record<string, unknown>[] = [];
++    let locationType = 'string';
++
++    registry.register(
++      () => weatherDefinition({type: 'object', properties: {location: {type: locationType}}}),
++      async input => {
++        executedInputs.push(input);
++        return 'forecast';
++      }
++    );
++
++    const initiallyValid = await registry.execute('weather', {location: 'Berlin'});
++    locationType = 'number';
++    const staleValue = await registry.execute('weather', {location: 'Berlin'});
++    const currentlyValid = await registry.execute('weather', {location: 42});
++
++    expect({
++      initiallyValid,
++      staleValueRejectsCurrentSchema: messageDescribes(staleValue.result, 'location', 'number'),
++      currentlyValid,
++      executedInputs,
++    }).toEqual({
++      initiallyValid: {result: 'forecast'},
++      staleValueRejectsCurrentSchema: true,
++      currentlyValid: {result: 'forecast'},
++      executedInputs: [{location: 'Berlin'}, {location: 42}],
++    });
++  });
++});

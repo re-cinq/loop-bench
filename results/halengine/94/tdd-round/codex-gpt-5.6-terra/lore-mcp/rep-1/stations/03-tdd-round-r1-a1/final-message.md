@@ -1,0 +1,3 @@
+Blocked: the acceptance test itself is invalid (`PromptBuilder` requires `identity`, but it supplies unsupported fields) and violates lint’s one-expect rule. Instructions prohibit editing acceptance tests to make them pass, while CI requires those findings be fixed. No tests ran; no files changed. Red tests: 0 mine, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI failures are in an invalid acceptance test that instructions prohibit editing."}}

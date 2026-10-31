@@ -1,0 +1,3 @@
+Committed and pushed `4faecbf`. Updated the hook contract, changelog migration note, acceptance fixture, and traceability checklist. No local tests ran because the only relevant test is the prohibited acceptance test. Previous CI reported 0 red tests of ours and 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Document beforeSession failure contract","tdd_next":"acceptance green"}}

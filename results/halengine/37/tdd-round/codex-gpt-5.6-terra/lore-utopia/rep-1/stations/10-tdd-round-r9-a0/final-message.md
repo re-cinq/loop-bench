@@ -1,0 +1,3 @@
+Fixed slash-key JSON Pointer conversion and repaired its spec-test anchor. Focused registry test passes; no acceptance tests run. CI red tests: 1 branch-authored, 0 regressions. Pushed `fc1df78`; branch is current with upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Escape JSON Pointer-reserved characters in nested required-property paths","tdd_next":"Add remaining registry/orchestrator unit tests and documentation updates"}}

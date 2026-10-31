@@ -1,0 +1,3 @@
+Repaired CI’s nested-if lint failure in `askAfterConnect`, formatted, committed (`53fae77`), pushed, and confirmed the branch is synced with upstream. No tests ran locally: this was a lint-only equivalent control-flow repair, and the acceptance suite is CI-only. Red tests: 0 mine, 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"repair CI lint finding in askAfterConnect","tdd_next":"acceptance green"}}

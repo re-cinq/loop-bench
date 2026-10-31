@@ -1,0 +1,3 @@
+Repaired the CI-reported registry-test type and lint errors, strengthened the nested-path assertion, and reanchored affected spec links. Focused test passed; red tests: 1 updated unit test, 0 regressions. Pushed `0dea02d`; branch is current with upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Repair CI-reported registry validation test typing, duplication, and nested-path assertion","tdd_next":"Add the remaining registry/orchestrator tests and documentation updates"}}

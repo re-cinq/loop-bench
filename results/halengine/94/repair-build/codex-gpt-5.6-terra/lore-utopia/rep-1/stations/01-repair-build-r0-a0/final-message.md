@@ -1,0 +1,3 @@
+Fixed and pushed `6b22d37`: updated the acceptance test to use the current prompt config and a single combined assertion, resolving CI’s typecheck and ESLint findings. Formatter ran; `origin/main` was already merged and branch is synced.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed the beforeSession acceptance test's obsolete PromptBuilder config and max-expects lint violation"}}

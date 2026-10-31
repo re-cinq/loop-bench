@@ -1,0 +1,3 @@
+Committed and pushed `0717edb` fixing stable Ajv rejection wording and the CI lint order. Focused test passed; 1 red test was written this round, 0 regressions. No unrelated smells acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Normalize Ajv validation rejection wording and repair the helper-order lint finding","tdd_next":"Add the remaining registry/orchestrator tests and documentation updates"}}
