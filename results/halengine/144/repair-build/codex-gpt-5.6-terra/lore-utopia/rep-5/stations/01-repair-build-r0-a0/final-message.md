@@ -1,0 +1,3 @@
+Fixed session-list frame handling and the CI-reported test lint issues. `npm run test:coverage` passes (69 suites, 696 tests). Committed and pushed `9c69685`; branch is synced with `origin/main` and its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Implemented WebSocket session-list dispatch with authenticated-user lookup and removed lint-flagged duplicated test helpers"}}

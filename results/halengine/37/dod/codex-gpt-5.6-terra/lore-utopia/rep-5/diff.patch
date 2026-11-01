@@ -1,0 +1,225 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..b84a72e
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,21 @@
++# Definition of Done
++
++> A tool that receives unexpected input must fail in one predictable, known way before the rest of this epic's tool work can be built on top of it.
++
++**Strategy: `direct`** — `ToolRegistry.execute` is a direct public seam, and the orchestrator already feeds its returned `ToolResponse` back to the provider. The acceptance suite exercises registration, execution, and the real tool-loop boundary without changing production code.
++
++## Done when these pass
++
++- [ ] **ToolRegistry input-schema validation** — rejects malformed calls before executors run, preserves schema-valid extra keys, compiles schemas at the required time, and returns the rejection through a retryable tool loop.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add JSON Schema validation at the registry boundary and return validation failures as `ToolResponse` values.
++- [ ] Compile static schemas at registration and resolve function-valued schemas per call without stale validation.
++- [ ] Preserve valid input unchanged and let the provider retry after receiving a rejection.
++- [ ] Update the public documentation, package dependency, changelog, and release migration note.
++
++## Out of scope
++
++- Unknown-tool handling, output validation, authorization, retry policy, timeouts, rate limiting, and tool implementations.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..92d47dd
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,22 @@
++# Tool Input Validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | Draft                |
++
++The tool registry is the boundary between provider-produced tool calls and application executors, so it validates every resolved definition's JSON Schema before application code receives input.
++
++## Registry behaviour
++
++`ToolRegistry.execute` validates input against the resolved definition's `inputSchema` before invoking the executor; a rejected call returns a `ToolResponse` whose result identifies the violated constraint and property path without including an input value, and does not invoke the executor. ([validated by: returns a readable required-field rejection without executing or exposing input values](../../src/orchestration/tools/registry.acceptance.test.ts#L20))
++
++Schema-valid input reaches the executor exactly once and unchanged, including properties not declared by the schema. ([validated by: passes schema-valid input, including unlisted properties, unchanged exactly once while rejecting a later malformed call](../../src/orchestration/tools/registry.acceptance.test.ts#L35))
++
++Wrong-typed input is rejected with the property path and expected declared type, without including its value. ([validated by: rejects a wrong type with its property path and expected type without exposing the value](../../src/orchestration/tools/registry.acceptance.test.ts#L52))
++
++The registry compiles a static definition's schema once while registering it so an invalid schema fails with the tool name, while a function-valued definition is validated against the schema it resolves for each call. ([validated by: keeps unknown-tool errors while compiling static schemas once at registration and using the schema returned for each dynamic call](../../src/orchestration/tools/registry.acceptance.test.ts#L69))
++
++An unregistered tool name still throws `Unknown tool: <name>` rather than returning a validation response. ([validated by: keeps unknown-tool errors while compiling static schemas once at registration and using the schema returned for each dynamic call](../../src/orchestration/tools/registry.acceptance.test.ts#L69))
++
++Validation rejections are tool results returned to the provider, allowing the provider to correct a call in a later tool round rather than aborting the conversation. ([validated by: returns the rejection to the provider so a corrected retry completes the tool loop](../../src/orchestration/tools/registry.acceptance.test.ts#L121))
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..80169be
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,164 @@
++import {PromptBuilder} from '../../infrastructure/builders/promptBuilder.js';
++import {createChatOrchestrator} from '../chatOrchestrator.js';
++import {ToolRegistry} from './registry.js';
++import type {AIProvider, MessageChunk, SendMessageParams, ToolDefinition} from '../../types/ai.js';
++import type {ChatSession} from '../../types/session.js';
++
++const LOCATION_SCHEMA = {
++  type: 'object',
++  properties: {location: {type: 'string'}},
++  required: ['location'],
++};
++
++const SESSION: ChatSession = {
++  sessionId: 'session-1',
++  userId: 'user-1',
++  entries: [{role: 'user', content: 'weather please', timestamp: '2026-01-01T00:00:00.000Z'}],
++};
++
++describe('ToolRegistry input-schema validation', () => {
++  it('returns a readable required-field rejection without executing or exposing input values', async () => {
++    const registry = new ToolRegistry();
++    let executions = 0;
++    registry.register({name: 'weather', description: 'gets weather', inputSchema: LOCATION_SCHEMA}, async () => {
++      executions++;
++      return 'should not execute';
++    });
++
++    const response = await registry.execute('weather', {email: 'person@example.com'});
++
++    expect(response.result).toMatch(/location.*required|required.*location/i);
++    expect(response.result).not.toContain('person@example.com');
++    expect(executions).toBe(0);
++  });
++
++  it('passes schema-valid input, including unlisted properties, unchanged exactly once while rejecting a later malformed call', async () => {
++    const registry = new ToolRegistry();
++    const input = {location: 'Berlin', units: 'metric'};
++    const received: Record<string, unknown>[] = [];
++    registry.register({name: 'weather', description: 'gets weather', inputSchema: LOCATION_SCHEMA}, async toolInput => {
++      received.push(toolInput);
++      return 'forecast';
++    });
++
++    const response = await registry.execute('weather', input);
++    const rejection = await registry.execute('weather', {});
++
++    expect(response).toEqual({result: 'forecast'});
++    expect(received).toEqual([{location: 'Berlin', units: 'metric'}]);
++    expect(rejection.result).toMatch(/location.*required|required.*location/i);
++  });
++
++  it('rejects a wrong type with its property path and expected type without exposing the value', async () => {
++    const registry = new ToolRegistry();
++    let executions = 0;
++    registry.register({name: 'weather', description: 'gets weather', inputSchema: LOCATION_SCHEMA}, async () => {
++      executions++;
++      return 'should not execute';
++    });
++
++    const response = await registry.execute('weather', {location: 42, account: 'person@example.com'});
++
++    expect(response.result).toMatch(/location/);
++    expect(response.result).toMatch(/string/);
++    expect(response.result).not.toContain('42');
++    expect(response.result).not.toContain('person@example.com');
++    expect(executions).toBe(0);
++  });
++
++  it('keeps unknown-tool errors while compiling static schemas once at registration and using the schema returned for each dynamic call', async () => {
++    const registry = new ToolRegistry();
++
++    await expect(registry.execute('missing-weather', {})).rejects.toThrow('Unknown tool: missing-weather');
++
++    expect(() =>
++      registry.register(
++        {name: 'broken-weather', description: 'gets weather', inputSchema: {type: 'not-a-json-schema-type'}},
++        async () => 'never'
++      )
++    ).toThrow(/broken-weather/);
++
++    let staticSchemaReads = 0;
++    const staticSchema = {
++      get type(): string {
++        staticSchemaReads++;
++        return 'object';
++      },
++      properties: {location: {type: 'string'}},
++      required: ['location'],
++    };
++    let staticExecutions = 0;
++    registry.register({name: 'static-weather', description: 'gets weather', inputSchema: staticSchema}, async () => {
++      staticExecutions++;
++      return 'forecast';
++    });
++    const readsAtRegistration = staticSchemaReads;
++    await Promise.all(Array.from({length: 10}, () => registry.execute('static-weather', {location: 'Berlin'})));
++
++    expect(readsAtRegistration).toBeGreaterThan(0);
++    expect(staticSchemaReads).toBe(readsAtRegistration);
++    expect(staticExecutions).toBe(10);
++
++    let definitionCalls = 0;
++    const dynamicDefinition = (): ToolDefinition => {
++      definitionCalls++;
++      const required = definitionCalls === 2 ? 'location' : 'postalCode';
++      return {
++        name: 'changing-weather',
++        description: 'gets weather',
++        inputSchema: {type: 'object', properties: {[required]: {type: 'string'}}, required: [required]},
++      };
++    };
++    registry.register(dynamicDefinition, async () => 'should not execute');
++
++    const first = await registry.execute('changing-weather', {});
++    const second = await registry.execute('changing-weather', {});
++
++    expect(first.result).toMatch(/location.*required|required.*location/i);
++    expect(second.result).toMatch(/postalCode.*required|required.*postalCode/i);
++  });
++
++  it('returns the rejection to the provider so a corrected retry completes the tool loop', async () => {
++    const registry = new ToolRegistry();
++    registry.register(
++      {name: 'weather', description: 'gets weather', inputSchema: LOCATION_SCHEMA},
++      async input => `forecast for ${input.location}`
++    );
++    let round = 0;
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        if (round++ === 0) {
++          yield {type: 'tool_use', toolCall: {id: 'bad-call', name: 'weather', input: {}}};
++          yield {type: 'stop', stopReason: 'tool_use'};
++          return;
++        }
++
++        if (round === 2) {
++          const latest = params.messages.at(-1);
++          expect(latest).toEqual({
++            role: 'user',
++            content: [
++              {
++                type: 'tool_result',
++                toolUseId: 'bad-call',
++                content: expect.stringMatching(/location.*required|required.*location/i),
++              },
++            ],
++          });
++          yield {type: 'tool_use', toolCall: {id: 'good-call', name: 'weather', input: {location: 'Berlin'}}};
++          yield {type: 'stop', stopReason: 'tool_use'};
++          return;
++        }
++
++        yield {type: 'text', text: 'The Berlin forecast is ready.'};
++        yield {type: 'stop', stopReason: 'end_turn'};
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++    const orchestrator = createChatOrchestrator(provider, new PromptBuilder({identity: 'You are helpful.'}), registry);
++
++    await expect(orchestrator.processMessage(SESSION)).resolves.toBe('The Berlin forecast is ready.');
++  });
++});

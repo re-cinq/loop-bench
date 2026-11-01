@@ -1,0 +1,131 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..e3f3efc
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,23 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — `createChatOrchestrator().processMessage()` exercises the real streaming lifecycle through installed hooks. The acceptance test uses a real Bedrock provider (never reached on this path), a real prompt builder, and resource-owning hooks without mocks or stubs.
++
++## Done when these pass
++
++- [ ] **reports and cleans up a failed beforeSession before rejecting with the original error** — both hooks are awaited in order with the original session and error, partial initialization is cleaned up, later user-input processing does not run, and the caller receives the identical rejection.
++      `src/orchestration/beforeSession.acceptance.test.ts`
++
++## Facets
++
++- [ ] Move `beforeSession` into the existing error-handling boundary and make the acceptance test green without editing existing success-path tests.
++- [ ] Preserve the spec decision: cleanup runs after failed initialization, has no new started flag, and must handle partially acquired resources.
++- [ ] Add a consumer-facing CHANGELOG entry describing the additional error and cleanup callbacks after initialization failure.
++- [ ] Let CI confirm the unchanged existing tests and required build, typecheck, ESLint and formatting checks.
++
++## Out of scope
++
++- Non-Error rejection handling and usage accounting across tool rounds (#93).
++- New hook arguments, guarantees when error/cleanup hooks themselves throw, and changes to successful turns.
++- The current Lore listing script emits only id, name and file; it has no spec descriptor support. The test carries its spec anchor as a comment and the spec carries the explicit validating link; changing that tooling is outside this ticket.
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..54d5ccd 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -19,10 +19,15 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
++## Failed session initialization
++
++- When `beforeSession` throws an `Error`, the orchestrator awaits `onError(session, error)` and then `afterSession(session)` before rejecting with the same error, provided those hooks complete normally; no user-input or model work follows the failed initialization, and cleanup receives the same session even when initialization only partially completed ([validated by: reports and cleans up a failed beforeSession before rejecting with the original error](../../src/orchestration/beforeSession.acceptance.test.ts#L8)).
++
++`afterSession` is deliberately a cleanup hook for attempted turns, including failed initialization. Its invocation does not imply that initialization completed or that a model ran. No new started flag is added: deployers track acquired resources in their hooks and release only resources actually acquired, allowing for absent or partially initialized state.
++
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. Issue #94 changes neither of them; non-Error rejection handling is separate, and usage accounting belongs to #93.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+ - `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/src/orchestration/beforeSession.acceptance.test.ts b/src/orchestration/beforeSession.acceptance.test.ts
+new file mode 100644
+index 0000000..a4c7d56
+--- /dev/null
++++ b/src/orchestration/beforeSession.acceptance.test.ts
+@@ -0,0 +1,74 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {createBedrockProvider} from '../providers/bedrock/bedrockProvider.js';
++import type {ChatSession} from '../types/session.js';
++
++// spec: specs/hal-engine-config-hooks/spec.md#7
++it('reports and cleans up a failed beforeSession before rejecting with the original error', async () => {
++  const session: ChatSession = {
++    sessionId: 'failed-start',
++    userId: 'user',
++    entries: [{role: 'user', content: 'hello', timestamp: '2026-01-01T00:00:00.000Z'}],
++  };
++  const failure = new Error('initialization failed after acquiring a resource');
++  const resources = new Set<ChatSession>();
++  const events: string[] = [];
++  let errorArgs: Parameters<NonNullable<OrchestratorHooks['onError']>> | undefined;
++  let cleanupArgs: Parameters<NonNullable<OrchestratorHooks['afterSession']>> | undefined;
++  const hooks: OrchestratorHooks = {
++    beforeSession: async current => {
++      events.push('beforeSession');
++      resources.add(current);
++      await Promise.resolve();
++      throw failure;
++    },
++    beforeUserInput: async (_current, message) => {
++      events.push('beforeUserInput');
++      return message;
++    },
++    onError: async (...args) => {
++      await Promise.resolve();
++      errorArgs = args;
++      events.push('onError');
++    },
++    afterSession: async (...args) => {
++      await Promise.resolve();
++      cleanupArgs = args;
++      resources.delete(args[0]);
++      events.push('afterSession');
++    },
++  };
++  const provider = createBedrockProvider({
++    type: 'bedrock',
++    modelId: 'unused-before-session-completes',
++    region: 'eu-west-1',
++    maxTokens: 16,
++  });
++  const orchestrator = createChatOrchestrator(provider, new PromptBuilder({identity: 'Assistant'}), undefined, {hooks});
++
++  const rejection: unknown = await orchestrator.processMessage(session).catch((error: unknown) => {
++    events.push('caller');
++    return error;
++  });
++
++  expect({
++    events,
++    originalRejection: rejection === failure,
++    errorArgumentCount: errorArgs?.length,
++    errorSession: errorArgs?.[0] === session,
++    originalError: errorArgs?.[1] === failure,
++    cleanupArgumentCount: cleanupArgs?.length,
++    cleanupSession: cleanupArgs?.[0] === session,
++    unreleasedResources: resources.size,
++  }).toEqual({
++    events: ['beforeSession', 'onError', 'afterSession', 'caller'],
++    originalRejection: true,
++    errorArgumentCount: 2,
++    errorSession: true,
++    originalError: true,
++    cleanupArgumentCount: 1,
++    cleanupSession: true,
++    unreleasedResources: 0,
++  });
++});
