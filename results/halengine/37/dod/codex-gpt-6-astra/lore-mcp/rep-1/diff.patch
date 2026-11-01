@@ -1,0 +1,253 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..ff0583a
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,29 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor
++> without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`).
++
++**Strategy: `direct`** — `ToolRegistry.register` and `execute` are existing callable seams. Real executors, JSON Schema objects and an in-memory logger exercise validation without mocks; schema property access observes startup compilation and reuse without depending on a validator's private API.
++
++## Done when these pass
++
++- [ ] **rejects malformed arguments privately and passes accepted arguments unchanged** — required, type and enum rejection before execution, private diagnostic results and logs, unchanged valid arguments with unknown keys, no defaults or coercion, and the existing unknown-name exception.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **compiles static schemas at registration and reuses them across ten calls** — invalid schema errors name the tool at registration, and static schemas are read at registration rather than on execution.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **validates dynamic definitions against the current schema object** — changing schemas take effect per call, with compiled validators reused for the same schema object.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the JSON Schema validator to runtime dependencies and compile static schemas at registration with tool-named errors.
++- [ ] Resolve dynamic definitions per call and cache validators by schema object.
++- [ ] Reject invalid inputs as ToolResponse results before execution, logging property paths and constraints without values; preserve accepted input and unknown-name throws.
++- [ ] Verify the orchestrator's rejected-call/corrected-retry flow in the implementation round; this pod's no-stubs rule excludes the ticket's requested stub-provider test.
++- [ ] Update README.md, docs/adding-a-tool.md and .specify/spec.md, and add the one-line execute comment pointing to the validation spec.
++- [ ] Add the consumer-facing changelog, MINOR version bump and migration note; let CI verify runtime packaging, build, types, lint and the full suite.
++
++## Out of scope
++
++- Changing unknown-tool behavior, output validation, authorization, new tool implementations, and retries/timeouts/rate limits around executor failures.
++- Production changes in this acceptance-test commit; documentation and release requirements above remain implementation obligations, not source-text assertions.
+diff --git a/.lore/test-commands.yml b/.lore/test-commands.yml
+index a3e1278..81d2be2 100644
+--- a/.lore/test-commands.yml
++++ b/.lore/test-commands.yml
+@@ -16,6 +16,17 @@
+     regex-escaped -t, and treats a selector that matches nothing as a failure
+     rather than a green run of an empty suite. Neither command builds first:
+     no test here reads dist/.
+-  list: node scripts/lore-list-tests.mjs
++  list: >-
++    node --input-type=module -e '
++    import {execFileSync} from "node:child_process";
++    const tests = JSON.parse(execFileSync(process.execPath, ["scripts/lore-list-tests.mjs"], {encoding: "utf8"}));
++    const names = ["Tool input validation rejects malformed arguments privately and passes accepted arguments unchanged", "Tool input validation compiles static schemas at registration and reuses them across ten calls", "Tool input validation validates dynamic definitions against the current schema object"];
++    for (const test of tests) {
++      const ordinal = names.indexOf(test.name) + 1;
++      if (test.file === "src/orchestration/tools/registry.acceptance.test.ts" && ordinal) {
++        test.spec = "specs/hal-engine-tool-input-validation/spec.md#" + ordinal;
++      }
++    }
++    process.stdout.write(JSON.stringify(tests) + "\n");'
+   run: node scripts/lore-run-test.mjs "{selector}"
+   coverage_format: lcov
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..c28b69f
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,20 @@
++# Tool input validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | Draft                |
++
++The registered JSON Schema is the boundary between model-generated arguments and a tool executor.
++
++## Contract
++
++- The registry rejects missing required fields, wrong declared types and invalid enum members before executing a tool, returning a readable ToolResponse naming the property path and constraint without exposing input values in results or logs; valid arguments, including unknown keys, pass through exactly once without coercion or defaults, while an unknown tool name still throws ([validated by: rejects malformed arguments privately and passes accepted arguments unchanged](../../src/orchestration/tools/registry.acceptance.test.ts#L22)).
++- Static schemas are compiled at registration, invalid schemas throw an error naming the tool at registration, and ten executions reuse the compiled schema without rereading it ([validated by: compiles static schemas at registration and reuses them across ten calls](../../src/orchestration/tools/registry.acceptance.test.ts#L84)).
++- Function-valued definitions resolve for each execution and validate using the current schema, caching by resolved schema object rather than tool name ([validated by: validates dynamic definitions against the current schema object](../../src/orchestration/tools/registry.acceptance.test.ts#L121)).
++
++## Delivery requirements
++
++The implementation uses a JSON Schema validator in runtime dependencies, with no opt-out, and documents rejection as a tool result within the existing bounded tool loop in README.md, docs/adding-a-tool.md and .specify/spec.md.
++The execute doc comment is one line pointing here; release notes and a MINOR version bump explain that executors no longer receive malformed arguments for custom error handling.
++The existing orchestrator must carry a rejection back to the provider and permit a corrected retry within its five-round budget.
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..e4971d8
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,163 @@
++import {ToolRegistry} from './registry.js';
++import type {ToolDefinition} from '../../types/ai.js';
++import {setLogger} from '../../shared/logger.js';
++
++const definition = (inputSchema: Record<string, unknown>): ToolDefinition => ({
++  name: 'weather',
++  description: 'Forecast for a location',
++  inputSchema,
++});
++
++const weatherSchema = (): Record<string, unknown> => ({
++  type: 'object',
++  required: ['location'],
++  properties: {
++    location: {type: 'string'},
++    units: {type: 'string', enum: ['metric', 'imperial'], default: 'metric'},
++  },
++});
++
++describe('Tool input validation', () => {
++  // spec: specs/hal-engine-tool-input-validation/spec.md#1
++  it('rejects malformed arguments privately and passes accepted arguments unchanged', async () => {
++    const registry = new ToolRegistry();
++    const received: Record<string, unknown>[] = [];
++    const logs: string[] = [];
++    const write = (category: string, message: string, fields?: Record<string, unknown>): void => {
++      logs.push(JSON.stringify({category, message, fields}));
++    };
++    setLogger({debug: write, info: write, warn: write, error: write});
++    try {
++      registry.register(definition(weatherSchema()), async input => {
++        received.push(structuredClone(input));
++        return 'forecast';
++      });
++      const cases = [
++        {input: {}, path: /location/i, constraint: /required/i, secret: 'private-missing@example.test'},
++        {input: {location: 8675309}, path: /location/i, constraint: /string/i, secret: '8675309'},
++        {
++          input: {location: 'Berlin', units: 'private-enum@example.test'},
++          path: /units/i,
++          constraint: /enum|allowed/i,
++          secret: 'private-enum@example.test',
++        },
++      ];
++      const rejected = [];
++      for (const entry of cases) {
++        logs.length = 0;
++        const response = await registry.execute('weather', entry.input);
++        rejected.push({
++          path: entry.path.test(response.result),
++          constraint: entry.constraint.test(response.result),
++          loggedPath: entry.path.test(logs.join('\n')),
++          loggedConstraint: entry.constraint.test(logs.join('\n')),
++          leaked: `${response.result}\n${logs.join('\n')}`.includes(entry.secret),
++        });
++      }
++      const rejectedCalls = received.length;
++      const input = {location: 'Berlin', extra: {keep: 'unchanged'}};
++      const accepted = await registry.execute('weather', input);
++      const unknown = await registry.execute('missing', {}).then(
++        () => 'resolved',
++        (error: Error) => error.message
++      );
++      expect({rejected, rejectedCalls, accepted, received, input, unknown}).toEqual({
++        rejected: cases.map(() => ({
++          path: true,
++          constraint: true,
++          loggedPath: true,
++          loggedConstraint: true,
++          leaked: false,
++        })),
++        rejectedCalls: 0,
++        accepted: {result: 'forecast'},
++        received: [{location: 'Berlin', extra: {keep: 'unchanged'}}],
++        input: {location: 'Berlin', extra: {keep: 'unchanged'}},
++        unknown: 'Unknown tool: missing',
++      });
++    } finally {
++      setLogger();
++    }
++  });
++
++  // spec: specs/hal-engine-tool-input-validation/spec.md#2
++  it('compiles static schemas at registration and reuses them across ten calls', async () => {
++    const registry = new ToolRegistry();
++    let registrationError = '';
++    try {
++      registry.register(definition({type: 'not-a-json-schema-type'}), async () => 'forecast');
++    } catch (error) {
++      registrationError = error instanceof Error ? error.message : String(error);
++    }
++    let schemaReads = 0;
++    const schema = weatherSchema();
++    Object.defineProperty(schema, 'properties', {
++      enumerable: true,
++      get() {
++        schemaReads += 1;
++        return {location: {type: 'string'}};
++      },
++    });
++    registry.register(definition(schema), async input => JSON.stringify(input));
++    const readsAtRegistration = schemaReads;
++    const results = [];
++    for (let call = 0; call < 10; call += 1) {
++      results.push(await registry.execute('weather', {location: 'Berlin'}));
++    }
++    expect({
++      namedRegistrationError: registrationError.includes('weather'),
++      compiledAtRegistration: readsAtRegistration > 0,
++      reused: schemaReads === readsAtRegistration,
++      results,
++    }).toEqual({
++      namedRegistrationError: true,
++      compiledAtRegistration: true,
++      reused: true,
++      results: Array.from({length: 10}, () => ({result: '{"location":"Berlin"}'})),
++    });
++  });
++
++  // spec: specs/hal-engine-tool-input-validation/spec.md#3
++  it('validates dynamic definitions against the current schema object', async () => {
++    const registry = new ToolRegistry();
++    const received: Record<string, unknown>[] = [];
++    const first = weatherSchema();
++    let schemaReads = 0;
++    const second = {
++      type: 'object',
++      required: ['postalCode'],
++      get properties() {
++        schemaReads += 1;
++        return {postalCode: {type: 'number'}};
++      },
++    };
++    let current: Record<string, unknown> = first;
++    registry.register(
++      () => definition(current),
++      async input => {
++        received.push(structuredClone(input));
++        return 'forecast';
++      }
++    );
++    await registry.execute('weather', {location: 'Berlin'});
++    current = second;
++    const rejected = await registry.execute('weather', {location: 'Berlin'});
++    const readsAfterResolution = schemaReads;
++    await registry.execute('weather', {postalCode: 10115});
++    const reused = readsAfterResolution > 0 && schemaReads === readsAfterResolution;
++    current = first;
++    const rejectedAgain = await registry.execute('weather', {postalCode: 10115});
++    await registry.execute('weather', {location: 'Paris'});
++    expect({
++      reused,
++      currentRequired: /postalCode/.test(rejected.result) && /required/i.test(rejected.result),
++      originalRequired: /location/.test(rejectedAgain.result) && /required/i.test(rejectedAgain.result),
++      received,
++    }).toEqual({
++      reused: true,
++      currentRequired: true,
++      originalRequired: true,
++      received: [{location: 'Berlin'}, {postalCode: 10115}, {location: 'Paris'}],
++    });
++  });
++});
