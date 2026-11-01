@@ -1,0 +1,142 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..6cee0d8
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,22 @@
++# Definition of Done
++
++> A rejection that is not an `Error` — a thrown string, a plain object, a value from a library that rejects with its own shape — bypasses `onError` entirely while still propagating to the caller.
++
++**Strategy: `direct`** — `createChatOrchestrator` accepts an `AIProvider` and lifecycle hooks. Drive its real `processMessage` entry point with rejected provider streams and record the error callback and caller outcome.
++
++## Done when these pass
++
++- [ ] **reports non-Error provider rejections once with their cause and preserves the caller rejection** — covers string, plain object, and `undefined`, including an own `cause` property for `undefined`, plus existing `Error` identity; verifies exactly one callback and unchanged rejection identity at the caller boundary.
++      `src/orchestration/onError.acceptance.test.ts`
++
++## Facets
++
++- [ ] Normalize non-`Error` rejections only for `onError`, retaining the raw value as `cause`; leave the caller rejection unchanged.
++- [ ] Preserve existing `Error` identity and leave existing hook tests unedited.
++- [ ] Keep the linked spec guarantee and add a consumer-facing CHANGELOG entry explaining that previously omitted failures now reach `onError`.
++- [ ] Pass the repository's build, tests, typecheck, ESLint, and formatting gates in CI.
++
++## Out of scope
++
++- Changes to `beforeSession` placement, usage accounting across tool rounds, retry policy, or failures thrown by `onError` itself.
++- Error message wording for newly wrapped values.
+diff --git a/.lore/test-commands.yml b/.lore/test-commands.yml
+index a3e1278..0faad91 100644
+--- a/.lore/test-commands.yml
++++ b/.lore/test-commands.yml
+@@ -16,6 +16,16 @@
+     regex-escaped -t, and treats a selector that matches nothing as a failure
+     rather than a green run of an empty suite. Neither command builds first:
+     no test here reads dist/.
+-  list: node scripts/lore-list-tests.mjs
++  list: >-
++    node scripts/lore-list-tests.mjs |
++    node --input-type=module -e '
++    import {readFileSync} from "node:fs";
++    const tests = JSON.parse(readFileSync(0, "utf8"));
++    for (const test of tests) {
++      if (test.file === "src/orchestration/onError.acceptance.test.ts") {
++        test.spec = "specs/hal-engine-config-hooks/spec.md#9";
++      }
++    }
++    process.stdout.write(JSON.stringify(tests) + "\n");'
+   run: node scripts/lore-run-test.mjs "{selector}"
+   coverage_format: lcov
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 66ff9d3..fda28ad 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -21,8 +21,6 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L195)).
+ 
+-## Measured semantics — out of scope
++## Rejection reporting
+ 
+-This property of `src/orchestration/chatOrchestrator.ts` is recorded so the hook features that follow specify against real behaviour. This issue does not change it; that is a separate, out-of-scope change owned by no issue in this epic.
+-
+-- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
++- Every rejection caught by the orchestrator calls `onError` once with an `Error`: a non-`Error` value (including a string, plain object, or `undefined`) is wrapped with the original value as its `cause`, while an existing `Error` is passed unchanged. The caller receives the original rejection unchanged ([validated by: reports non-Error provider rejections once with their cause and preserves the caller rejection](../../src/orchestration/onError.acceptance.test.ts#L7)).
+diff --git a/src/orchestration/onError.acceptance.test.ts b/src/orchestration/onError.acceptance.test.ts
+new file mode 100644
+index 0000000..c24fed6
+--- /dev/null
++++ b/src/orchestration/onError.acceptance.test.ts
+@@ -0,0 +1,71 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, MessageChunk} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++
++// spec: specs/hal-engine-config-hooks/spec.md#9
++it('reports non-Error provider rejections once with their cause and preserves the caller rejection', async () => {
++  const rejections: unknown[] = [
++    'provider unavailable',
++    {code: 'PROVIDER_UNAVAILABLE'},
++    undefined,
++    new Error('failed'),
++  ];
++  const observations = [];
++
++  for (const rejection of rejections) {
++    const provider: AIProvider = {
++      // eslint-disable-next-line require-yield -- A rejected stream has no chunks to yield.
++      async *sendMessage(): AsyncGenerator<MessageChunk> {
++        throw rejection;
++      },
++      async generateStructured<T>(): Promise<T> {
++        throw rejection;
++      },
++    };
++    const session: ChatSession = {
++      sessionId: 'rejected-turn',
++      userId: 'user',
++      entries: [{role: 'user', content: 'hello', timestamp: '2026-01-01T00:00:00.000Z'}],
++    };
++    const errors: Error[] = [];
++    const orchestrator = createChatOrchestrator(
++      provider,
++      new PromptBuilder({identity: 'You are helpful.'}),
++      undefined,
++      {
++        hooks: {
++          onError: async (_session, error) => {
++            errors.push(error);
++          },
++        },
++      }
++    );
++    const outcome = await orchestrator.processMessage(session).then(
++      () => ({rejected: false, value: undefined}),
++      (value: unknown) => ({rejected: true, value})
++    );
++    observations.push({
++      rejection,
++      rejected: outcome.rejected,
++      callerReceivedOriginal: Object.is(outcome.value, rejection),
++      hookCalls: errors.length,
++      hookReceivedError: errors[0] instanceof Error,
++      hookPreservedOriginal:
++        rejection instanceof Error ? errors[0] === rejection : Object.is(errors[0]?.cause, rejection),
++      hookHasCause: rejection instanceof Error || Object.hasOwn(errors[0] ?? {}, 'cause'),
++    });
++  }
++
++  expect(observations).toEqual(
++    rejections.map(rejection => ({
++      rejection,
++      rejected: true,
++      callerReceivedOriginal: true,
++      hookCalls: 1,
++      hookReceivedError: true,
++      hookPreservedOriginal: true,
++      hookHasCause: true,
++    }))
++  );
++});

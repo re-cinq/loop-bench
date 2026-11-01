@@ -1,0 +1,3 @@
+Pushed `ac72219`: fixed the invalid prompt configuration and consolidated assertions without weakening coverage. The targeted acceptance test passes. Branch is current with `main` and fully pushed; CI must confirm lint and typecheck.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed unsupported PromptBuilder options and max-expects violation in the beforeSession acceptance test"}}

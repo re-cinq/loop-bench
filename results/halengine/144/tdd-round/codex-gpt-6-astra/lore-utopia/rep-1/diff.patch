@@ -1,0 +1,407 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..2b0bb46
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,37 @@
++# Definition of Done
++
++> #143 gives a consumer `store.listFor(userId)` inside the server process. The client on the other end of the WebSocket has no way to ask for it, and the consumer who wants a conversation picker without standing up their own REST endpoint has to write one anyway.
++
++**Strategy: `direct`** — `createServer` and the WebSocket upgrade/message pipeline already exist and accept frames over a real WebSocket connection, so acceptance tests can connect today, send `list_sessions` frames, and fail directly on the missing `session_list` and `list_sessions` validation/dispatch behaviour.
++
++## Done when these pass
++
++- [ ] **listing conversations over the WebSocket protocol › answers list_sessions for the authenticated user with ISO dates, forwarding limit and before while ignoring any client userId** — Sends `{type: 'list_sessions', limit, before, userId}` over a connected WebSocket and verifies `store.listFor` is called with the socket's authenticated `userId` (`session.userId`) and `{limit, before}`, answering `{type: 'session_list', sessions}` with `createdAt` and `updatedAt` serialised as ISO-8601 strings.
++      `src/transport/conversationList.acceptance.test.ts`
++
++- [ ] **listing conversations over the WebSocket protocol › answers an empty session_list when the store has no listFor, and SERVER_ERROR with a ws error log when listFor throws** — Verifies that a store without `listFor` answers `{type: 'session_list', sessions: []}` and a store whose `listFor` throws/rejects logs an error under category `'ws'` with the userId and error message and answers `{type: 'error', code: 'SERVER_ERROR'}`.
++      `src/transport/conversationList.acceptance.test.ts`
++
++- [ ] **listing conversations over the WebSocket protocol › accepts a bare list_sessions frame and rejects a malformed limit or before with INVALID_MESSAGE without calling listFor** — Verifies that `{type: 'list_sessions'}` is accepted while non-integer or negative `limit` values and malformed `before` cursors (`sessionId` outside 1–128 chars or unparseable `updatedAt`) are rejected with `INVALID_MESSAGE` without invoking `store.listFor`.
++      `src/transport/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [x] Accept `list_sessions` without paging fields and drop a supplied `userId`; add the minimal incoming request type.
++
++- [x] Extend `ListSessionsMessage` with paging fields.
++- [ ] Add `SessionSummaryFrame` and `SessionListMessage` to `src/types/messages.ts`, include them in `IncomingMessage` and `OutgoingMessage`, and re-export them from `src/index.ts`.
++- [x] Validate paging on `list_sessions` frames in `src/transport/ws/validation.ts` (optional non-negative integer `limit`; optional `before` object with 1–128 char `sessionId` and finite-date `updatedAt` string or number; strip unknown fields like `userId`).
++- [ ] Thread `sessionStore` into `createMessageHandler` (optional parameter so existing 1-arg and 2-arg callers keep working) and wire it in `src/transport/createServer.ts`.
++- [ ] Handle `list_sessions` in `src/transport/ws/messageHandler.ts` (and helper in `src/transport/ws/sender.ts` if needed) by reading `session.userId`, calling `await sessionStore?.listFor?.(session.userId, {limit, before})`, serialising `Date` fields to ISO strings, and on error logging via `log.error('ws', ...)` and sending `ErrorCodes.SERVER_ERROR`.
++- [ ] Document `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md`.
++
++- [x] Repair the reported acceptance setup duplication, early-return lint finding, and stale spec citations without changing assertions.
++
++## Out of scope
++
++- Conversation titles or previews (first user message, model-generated title).
++- Deleting or renaming a conversation from the client over the socket.
++- Switching the socket's active session in place (`?sessionId=` on reconnect is how a conversation is rejoined).
++- Holding pagination cursor state server-side (the client pages with `before`).
++- An operator view of another user's conversations or live sync between open tabs.
+diff --git a/.lore/test-commands.yml b/.lore/test-commands.yml
+index a3e1278..b46a3ee 100644
+--- a/.lore/test-commands.yml
++++ b/.lore/test-commands.yml
+@@ -12,6 +12,8 @@
+     list command. Jest has no dry-run, so the list command executes the suite
+     once with --json and derives every name from the report; it deliberately
+     tolerates a red suite, since listing must not depend on the tests passing.
++    A file-level "// @spec specs/<path>#<ordinal>" stamp supplies the spec
++    descriptor field for tests in that file.
+     The run command selects one test with --runTestsByPath plus an anchored,
+     regex-escaped -t, and treats a selector that matches nothing as a failure
+     rather than a green run of an empty suite. Neither command builds first:
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index b36c826..74eae88 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -10,6 +10,8 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Added
+ 
++- Begin WebSocket conversation-list support: the validator accepts `list_sessions` without paging fields and discards a client-supplied `userId`. List responses and paging validation are not implemented yet.
++
+ - `SessionStore.listFor(userId, options?)`, an optional store member that answers the summaries of a user's conversations — `sessionId`, `createdAt`, `updatedAt` and `entryCount` — most recent activity first, so a consumer can build a conversation list instead of only rejoining one. Nothing in the engine calls it yet: the store answers the list, and the route or frame that carries it to a client is still yours to write. `InMemorySessionStore` and `MongoSessionStore` both implement it; a store of your own may leave it out. A summary never carries a conversation's entries or its credentials. Page with `limit` (50 by default, 200 at most, and `0` answers nothing) and `before`, which takes the last summary you saw: the cursor carries both `updatedAt` and `sessionId`, so two conversations saved in the same millisecond cannot straddle a page boundary and go unlisted. See `docs/session-stores.md` § Listing a user's conversations.
+ 
+ ### Changed
+diff --git a/scripts/lore-list-tests.mjs b/scripts/lore-list-tests.mjs
+index 3db4efd..33dae2b 100644
+--- a/scripts/lore-list-tests.mjs
++++ b/scripts/lore-list-tests.mjs
+@@ -39,11 +39,13 @@ try {
+ 
+ const tests = report.testResults.flatMap(suite => {
+   const file = relative(process.cwd(), suite.name);
++  const spec = readFileSync(suite.name, 'utf8').match(/^\/\/ @spec (specs\/\S+#\d+)$/m)?.[1];
+ 
+   return suite.assertionResults.map(assertion => ({
+     id: `${file}::${assertion.fullName}`,
+     name: assertion.fullName,
+     file,
++    ...(spec ? {spec} : {}),
+   }));
+ });
+ 
+diff --git a/specs/hal-engine-conversation-list/spec.md b/specs/hal-engine-conversation-list/spec.md
+index c9ee424..dc35331 100644
+--- a/specs/hal-engine-conversation-list/spec.md
++++ b/specs/hal-engine-conversation-list/spec.md
+@@ -5,6 +5,8 @@
+ | Issue  | re-cinq/HALEngine#143 |
+ | Status | Shipped               |
+ 
++The validator accepts a `list_sessions` request with optional non-negative integer `limit` and a `before` cursor carrying a 1–128 character `sessionId` and a finite-date string or number `updatedAt`, rejects malformed paging fields, and drops a supplied `userId` ([validated by: accepts list_sessions without paging and drops a supplied userId](../../src/transport/ws/listSessionsValidation.test.ts#L4), [validated by: preserves valid list_sessions paging and rejects malformed limits and cursors](../../src/transport/ws/listSessionsPaging.test.ts#L4)).
++
+ Resume gets a client back into one conversation: the id it names, or the user's most recently active one. Neither tells it which conversations exist, and every other member of `SessionStore` answers about a session the caller can already name, so a consumer wanting to offer a conversation list had to query the collection behind the engine's back, against a document shape and a key the engine owns. `listFor` answers the list instead, as summaries rather than sessions. **GDPR.** A summary is personal data — that a user held a conversation, and when — so it carries no conversation content, it is filtered to one user by the query rather than in application code afterwards, and the retention bound stays the consumer's, through the store's `maxAgeMs` and erasure methods and re-cinq/HALEngine#41.
+ 
+ ## The summary
+@@ -68,3 +70,9 @@ Resume gets a client back into one conversation: the id it names, or the user's
+ ## When the store cannot answer
+ 
+ - A store whose collection fails rejects rather than answering a partial or empty list: what to show a user who may have conversations is the caller's decision, and an empty history is not a safe guess ([validated by: rejects rather than answering a partial list when the collection fails](../../src/infrastructure/stores/mongo/mongoConversationList.test.ts#L225)).
++
++## Over the WebSocket protocol
++
++- A client sends `{type: 'list_sessions', limit?, before?}` and receives `{type: 'session_list', sessions}` for the socket's authenticated user, with `createdAt` and `updatedAt` serialised as ISO-8601 strings and any client-supplied `userId` ignored ([validated by: answers list_sessions for the authenticated user with ISO dates, forwarding limit and before while ignoring any client userId](../../src/transport/conversationList.acceptance.test.ts#L65)).
++- A store without `listFor` answers `{type: 'session_list', sessions: []}`, and a throwing `listFor` logs an error on the `ws` category and answers `{type: 'error', code: 'SERVER_ERROR'}` ([validated by: answers an empty session_list when the store has no listFor, and SERVER_ERROR with a ws error log when listFor throws](../../src/transport/conversationList.acceptance.test.ts#L106)).
++- The validator accepts an optional non-negative integer `limit` and an optional `before` cursor whose `sessionId` is 1–128 characters and whose `updatedAt` parses as a valid timestamp, rejecting any other `list_sessions` payload with `INVALID_MESSAGE` without calling `listFor` ([validated by: accepts a bare list_sessions frame and rejects a malformed limit or before with INVALID_MESSAGE without calling listFor](../../src/transport/conversationList.acceptance.test.ts#L135)).
+diff --git a/src/transport/conversationList.acceptance.test.ts b/src/transport/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..752b10e
+--- /dev/null
++++ b/src/transport/conversationList.acceptance.test.ts
+@@ -0,0 +1,170 @@
++import {connectClient, startEngineWith, stopEngines} from './wsTestSupport.js';
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++import type {SessionCursor, SessionListOptions, SessionStore, SessionSummary} from '../types/sessionStore.js';
++import {setLogger} from '../shared/logger.js';
++
++// Real upgrades over a real socket: what the list_sessions frame answers is the contract, and no double can observe it.
++
++interface Frame {
++  type: string;
++  sessionId?: string;
++  sessions?: Array<{sessionId: string; createdAt: string; updatedAt: string; entryCount: number}>;
++  code?: string;
++  message?: string;
++}
++
++const logLines: Array<{level: string; category: string; message: string; fields?: Record<string, unknown>}> = [];
++
++beforeEach(() => {
++  logLines.length = 0;
++  const record = (level: string) => (category: string, message: string, fields?: Record<string, unknown>) =>
++    void logLines.push({level, category, message, fields});
++  setLogger({debug: record('debug'), info: record('info'), warn: record('warn'), error: record('error')});
++});
++
++afterEach(async () => {
++  await stopEngines();
++  setLogger();
++});
++
++const startEngine = async (store: SessionStore, userId: string | number = 'u1') => {
++  const {url} = await startEngineWith({sessionStore: store, wsAuth: async () => ({id: userId})});
++  return url.replace('/hal/ws/c1', '/hal/ws');
++};
++
++const askAfterConnect = async (url: string, outbound: unknown): Promise<{connected: Frame; frames: Frame[]}> => {
++  const client = connectClient(url);
++  const frames: Frame[] = [];
++  let connected: Frame = {type: ''};
++  await new Promise<void>(resolve => {
++    client.on('message', raw => {
++      const frame = JSON.parse(String(raw)) as Frame;
++      if (frame.type !== 'connected') {
++        if (frame.type === 'pong') resolve();
++        else frames.push(frame);
++        return;
++      }
++      connected = frame;
++      client.send(typeof outbound === 'string' ? outbound : JSON.stringify(outbound));
++      client.send(JSON.stringify({type: 'ping', timestamp: 1}));
++    });
++  });
++  return {connected, frames};
++};
++
++// A store with only the five required members, so listFor can be omitted, recorded or made to throw.
++const delegatingTo = (inner: InMemorySessionStore): SessionStore => ({
++  create: inner.create.bind(inner),
++  get: inner.get.bind(inner),
++  delete: inner.delete.bind(inner),
++  count: inner.count.bind(inner),
++  clear: inner.clear.bind(inner),
++});
++
++describe('listing conversations over the WebSocket protocol', () => {
++  it('answers list_sessions for the authenticated user with ISO dates, forwarding limit and before while ignoring any client userId', async () => {
++    const inner = new InMemorySessionStore();
++    const seen: Array<{userId: string | number; options?: SessionListOptions}> = [];
++    const summaries: SessionSummary[] = [
++      {
++        sessionId: 's2',
++        createdAt: new Date('2026-01-01T00:00:00.000Z'),
++        updatedAt: new Date('2026-01-01T00:02:00.000Z'),
++        entryCount: 4,
++      },
++    ];
++    const store: SessionStore = {
++      ...delegatingTo(inner),
++      listFor: (userId, options) => {
++        seen.push({userId, options});
++        return summaries;
++      },
++    };
++    const url = await startEngine(store, 'u1');
++    const before: SessionCursor = {updatedAt: '2026-01-01T00:05:00.000Z', sessionId: 's3'};
++
++    const {frames} = await askAfterConnect(url, {type: 'list_sessions', limit: 10, before, userId: 'u2'});
++
++    expect({seen, frames}).toEqual({
++      seen: [{userId: 'u1', options: {limit: 10, before}}],
++      frames: [
++        {
++          type: 'session_list',
++          sessions: [
++            {
++              sessionId: 's2',
++              createdAt: '2026-01-01T00:00:00.000Z',
++              updatedAt: '2026-01-01T00:02:00.000Z',
++              entryCount: 4,
++            },
++          ],
++        },
++      ],
++    });
++  });
++
++  it('answers an empty session_list when the store has no listFor, and SERVER_ERROR with a ws error log when listFor throws', async () => {
++    const inner = new InMemorySessionStore();
++    const withoutList = await startEngine(delegatingTo(inner));
++    const failingList = await startEngine({
++      ...delegatingTo(inner),
++      listFor: () => Promise.reject(new Error('database offline')),
++    });
++
++    const unimplemented = await askAfterConnect(withoutList, {type: 'list_sessions'});
++    const failed = await askAfterConnect(failingList, {type: 'list_sessions'});
++
++    expect({
++      unimplemented: unimplemented.frames,
++      failed: failed.frames.map(frame => ({type: frame.type, code: frame.code})),
++      logged: logLines.filter(line => line.level === 'error' && line.category === 'ws'),
++    }).toEqual({
++      unimplemented: [{type: 'session_list', sessions: []}],
++      failed: [{type: 'error', code: 'SERVER_ERROR'}],
++      logged: [
++        {
++          level: 'error',
++          category: 'ws',
++          message: expect.any(String),
++          fields: expect.objectContaining({userId: 'u1', error: 'database offline'}),
++        },
++      ],
++    });
++  });
++
++  it('accepts a bare list_sessions frame and rejects a malformed limit or before with INVALID_MESSAGE without calling listFor', async () => {
++    const inner = new InMemorySessionStore();
++    let calls = 0;
++    const store: SessionStore = {
++      ...delegatingTo(inner),
++      listFor: () => {
++        calls += 1;
++        return [];
++      },
++    };
++    const url = await startEngine(store);
++    const badFrames = [
++      {type: 'list_sessions', limit: 'ten'},
++      {type: 'list_sessions', limit: -1},
++      {type: 'list_sessions', limit: 1.5},
++      {type: 'list_sessions', before: 'not-an-object'},
++      {type: 'list_sessions', before: {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: ''}},
++      {type: 'list_sessions', before: {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 'a'.repeat(129)}},
++      {type: 'list_sessions', before: {updatedAt: 'not-a-date', sessionId: 's1'}},
++      {type: 'list_sessions', before: {updatedAt: true, sessionId: 's1'}},
++    ];
++
++    const codes: Array<string | undefined> = [];
++    for (const bad of badFrames) {
++      const {frames} = await askAfterConnect(url, bad);
++      codes.push(frames[0]?.code);
++    }
++    const {frames: accepted} = await askAfterConnect(url, {type: 'list_sessions'});
++
++    expect({codes, accepted, calls}).toEqual({
++      codes: Array(badFrames.length).fill('INVALID_MESSAGE'),
++      accepted: [{type: 'session_list', sessions: []}],
++      calls: 1,
++    });
++  });
++});
+diff --git a/src/transport/ws/listSessionsPaging.test.ts b/src/transport/ws/listSessionsPaging.test.ts
+new file mode 100644
+index 0000000..5711ac6
+--- /dev/null
++++ b/src/transport/ws/listSessionsPaging.test.ts
+@@ -0,0 +1,33 @@
++import {validateMessage} from './validation.js';
++
++// @spec specs/hal-engine-conversation-list/spec.md#1
++it('preserves valid list_sessions paging and rejects malformed limits and cursors', () => {
++  const before = {sessionId: 's1', updatedAt: '2026-01-01T00:00:00.000Z'};
++  const valid = [{}, {limit: 0}, {limit: 201, before}, {before: {sessionId: 'a'.repeat(128), updatedAt: 0}}];
++  const invalid = [
++    {limit: -1},
++    {limit: 1.5},
++    {limit: '10'},
++    {limit: null},
++    {limit: Infinity},
++    {before: null},
++    {before: 'cursor'},
++    {before: {}},
++    {before: {...before, sessionId: ''}},
++    {before: {...before, sessionId: 'a'.repeat(129)}},
++    {before: {...before, updatedAt: 'not-a-date'}},
++    {before: {...before, updatedAt: true}},
++    {before: {...before, updatedAt: Infinity}},
++  ];
++
++  expect({
++    accepted: valid.map(paging => validateMessage({type: 'list_sessions', ...paging, userId: 'other'})),
++    rejected: invalid.map(paging => validateMessage({type: 'list_sessions', ...paging})),
++  }).toEqual({
++    accepted: valid.map(paging => ({valid: true, data: {type: 'list_sessions', ...paging}})),
++    rejected: invalid.map(paging => ({
++      valid: false,
++      error: expect.stringContaining('limit' in paging ? 'limit' : 'before'),
++    })),
++  });
++});
+diff --git a/src/transport/ws/listSessionsValidation.test.ts b/src/transport/ws/listSessionsValidation.test.ts
+new file mode 100644
+index 0000000..a0b9447
+--- /dev/null
++++ b/src/transport/ws/listSessionsValidation.test.ts
+@@ -0,0 +1,8 @@
++import {validateMessage} from './validation.js';
++
++// @spec specs/hal-engine-conversation-list/spec.md#1
++it('accepts list_sessions without paging and drops a supplied userId', () => {
++  const result = validateMessage({type: 'list_sessions', userId: 'another-user'});
++
++  expect(result).toEqual({valid: true, data: {type: 'list_sessions'}});
++});
+diff --git a/src/transport/ws/validation.ts b/src/transport/ws/validation.ts
+index 6e67a6a..8c80ff8 100644
+--- a/src/transport/ws/validation.ts
++++ b/src/transport/ws/validation.ts
+@@ -1,4 +1,4 @@
+-import type {IncomingMessage} from '../../types/messages.js';
++import type {IncomingMessage, ListSessionsMessage} from '../../types/messages.js';
+ 
+ const MAX_CONTENT_LENGTH = 10000;
+ 
+@@ -28,6 +28,8 @@ export function validateMessage(payload: unknown): ValidationResult {
+   switch (message.type) {
+     case 'user_message':
+       return validateUserMessage(message);
++    case 'list_sessions':
++      return validateListSessions(message);
+     case 'ping':
+       return validatePingMessage(message);
+     default:
+@@ -72,3 +74,29 @@ function validatePingMessage(message: Record<string, unknown>): ValidationResult
+     },
+   };
+ }
++
++function validateListSessions(message: Record<string, unknown>): ValidationResult {
++  const data: ListSessionsMessage = {type: 'list_sessions'};
++  if (message.limit !== undefined) {
++    if (typeof message.limit !== 'number' || !Number.isInteger(message.limit) || message.limit < 0) {
++      return {valid: false, error: 'list_sessions limit must be a non-negative integer'};
++    }
++    data.limit = message.limit;
++  }
++  if (message.before === undefined) return {valid: true, data};
++  if (typeof message.before !== 'object' || message.before === null) {
++    return {valid: false, error: 'list_sessions before must be a cursor'};
++  }
++  const {sessionId, updatedAt} = message.before as Record<string, unknown>;
++  if (
++    typeof sessionId !== 'string' ||
++    sessionId.length < 1 ||
++    sessionId.length > 128 ||
++    (typeof updatedAt !== 'string' && typeof updatedAt !== 'number') ||
++    !Number.isFinite(new Date(updatedAt).getTime())
++  ) {
++    return {valid: false, error: 'list_sessions before must have a sessionId and valid updatedAt'};
++  }
++  data.before = {sessionId, updatedAt};
++  return {valid: true, data};
++}
+diff --git a/src/types/messages.ts b/src/types/messages.ts
+index 525508b..91a1492 100644
+--- a/src/types/messages.ts
++++ b/src/types/messages.ts
+@@ -10,7 +10,13 @@ export interface PingMessage {
+   timestamp: number;
+ }
+ 
+-export type IncomingMessage = UserMessagePayload | PingMessage;
++export interface ListSessionsMessage {
++  type: 'list_sessions';
++  limit?: number;
++  before?: {sessionId: string; updatedAt: string | number};
++}
++
++export type IncomingMessage = UserMessagePayload | PingMessage | ListSessionsMessage;
+ 
+ export interface ConnectedMessage {
+   type: 'connected';
