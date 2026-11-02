@@ -1,0 +1,138 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..cb38cd3
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,27 @@
++# Definition of Done
++
++> what the hook receives is the usage of the final provider call alone.
++
++**Strategy: `direct`** — the seam exists. `createChatOrchestrator` takes a real `AIProvider` and an `afterModelResponse` hook, and a scripted provider can report known per-round usage without any mock framework.
++
++## Done when these pass
++
++- [ ] **reports the sum of usage over every provider call in a turn that ran two tool rounds** — three scripted provider calls report 14, 26 and 38 total tokens; the hook must receive their sum (60 / 18 / 78), not the last round's (30 / 8 / 38)
++      `src/orchestration/chatOrchestratorUsage.acceptance.test.ts`
++- [ ] **counts the rounds that reported usage when an intermediate round reports none, and reports nothing when none reported** — a silent middle round is skipped, not allowed to make the total `undefined` or `NaN`; a turn where no round reported still passes `undefined`
++      `src/orchestration/chatOrchestratorUsage.acceptance.test.ts`
++
++## Facets
++
++- [ ] Accumulate `outcome.usage` across rounds in `chatOrchestrator.ts` in place of `lastUsage = outcome.usage ?? lastUsage`, keeping `undefined` when no round reported
++- [ ] Make the hook's usage type say it is a turn total (`UsageMetadata` in `src/types/ai.ts`, `OrchestratorHooks.afterModelResponse`), or add a per-round argument if that shape is chosen
++- [ ] Replace the under-counting line in `specs/hal-engine-config-hooks/spec.md` with the new behaviour and link the tests above
++- [ ] CHANGELOG entry stating the change in what an existing consumer records (MINOR bump)
++
++## Out of scope
++
++- The audit entry or billing record itself; that is the consumer's concern
++- Token accounting for anything other than the provider calls the orchestrator makes
++- The `stop` chunk's own `usage` shape; this ticket only aggregates it
++- The `onError` `instanceof Error` gate, recorded as the other measured-semantics line in the same spec section
++- Coverage floors in `jest.config.js` and the CI job `Verify` (`.github/workflows/ci.yml`), step "Test (with coverage floor)", which runs `npm run test:coverage` on every push
+diff --git a/src/orchestration/chatOrchestratorUsage.acceptance.test.ts b/src/orchestration/chatOrchestratorUsage.acceptance.test.ts
+new file mode 100644
+index 0000000..abcb2f7
+--- /dev/null
++++ b/src/orchestration/chatOrchestratorUsage.acceptance.test.ts
+@@ -0,0 +1,99 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import {ToolRegistry} from './tools/registry.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, MessageChunk, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++
++// Each entry is one provider call: the chunks it streams, in order.
++function scriptedProvider(rounds: MessageChunk[][]): AIProvider {
++  let call = 0;
++  return {
++    async *sendMessage() {
++      yield* rounds[Math.min(call++, rounds.length - 1)];
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const toolRound = (id: string, usage?: UsageMetadata): MessageChunk[] => [
++  {type: 'tool_use', toolCall: {id, name: 'lookup', input: {}}},
++  {type: 'stop', stopReason: 'tool_use', usage},
++];
++
++const textRound = (text: string, usage?: UsageMetadata): MessageChunk[] => [
++  {type: 'text', text},
++  {type: 'stop', stopReason: 'end_turn', usage},
++];
++
++const registry = (): ToolRegistry => {
++  const tools = new ToolRegistry();
++  tools.register(
++    {name: 'lookup', description: 'Looks something up.', inputSchema: {type: 'object'}},
++    async () => 'found'
++  );
++  return tools;
++};
++
++const session = (): ChatSession => ({
++  sessionId: 's',
++  userId: 'u',
++  entries: [{role: 'user', content: 'go', timestamp: 't'}],
++});
++
++// Records what the hook receives for the turn it observes.
++const recordUsage = () => {
++  const seen: {usage?: UsageMetadata; called: boolean} = {called: false};
++  const hooks: OrchestratorHooks = {
++    afterModelResponse: async (_session, _text, usage) => {
++      seen.called = true;
++      seen.usage = usage;
++    },
++  };
++  return {seen, hooks};
++};
++
++const promptBuilder = new PromptBuilder({identity: 'Usage test.'});
++
++describe('afterModelResponse usage across tool rounds', () => {
++  it('reports the sum of usage over every provider call in a turn that ran two tool rounds', async () => {
++    const {seen, hooks} = recordUsage();
++    const provider = scriptedProvider([
++      toolRound('c1', {inputTokens: 10, outputTokens: 4, totalTokens: 14}),
++      toolRound('c2', {inputTokens: 20, outputTokens: 6, totalTokens: 26}),
++      textRound('final answer', {inputTokens: 30, outputTokens: 8, totalTokens: 38}),
++    ]);
++
++    await createChatOrchestrator(provider, promptBuilder, registry(), {hooks}).processMessage(session());
++
++    expect(seen.called).toBe(true);
++    expect(seen.usage).toEqual({inputTokens: 60, outputTokens: 18, totalTokens: 78});
++  });
++
++  it('counts the rounds that reported usage when an intermediate round reports none, and reports nothing when none reported', async () => {
++    const partial = recordUsage();
++    const partialProvider = scriptedProvider([
++      toolRound('c1', {inputTokens: 10, outputTokens: 4, totalTokens: 14}),
++      toolRound('c2'),
++      textRound('final answer', {inputTokens: 30, outputTokens: 8, totalTokens: 38}),
++    ]);
++
++    await createChatOrchestrator(partialProvider, promptBuilder, registry(), {hooks: partial.hooks}).processMessage(
++      session()
++    );
++
++    expect(partial.seen.usage).toEqual({inputTokens: 40, outputTokens: 12, totalTokens: 52});
++
++    const silent = recordUsage();
++    const silentProvider = scriptedProvider([toolRound('c1'), textRound('final answer')]);
++
++    await createChatOrchestrator(silentProvider, promptBuilder, registry(), {hooks: silent.hooks}).processMessage(
++      session()
++    );
++
++    expect(silent.seen.called).toBe(true);
++    expect(silent.seen.usage).toBeUndefined();
++  });
++});
