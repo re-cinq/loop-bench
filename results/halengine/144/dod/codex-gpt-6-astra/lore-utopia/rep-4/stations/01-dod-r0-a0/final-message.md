@@ -1,0 +1,1 @@
+All five tests ran and failed because `list_conversations` is unrecognized. The socket tests received `INVALID_MESSAGE` where they require a list, `UNSUPPORTED`, or `SERVER_ERROR`. I’ll now link the tests from the specs and record the remaining implementation and documentation work in `.lore/dod.md`.

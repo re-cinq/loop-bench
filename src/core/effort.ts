@@ -27,6 +27,8 @@ const GEMINI_DEFAULT_EFFORT: Record<string, string> = {
   "gemini-3.1-pro-preview": "high",
   "gemini-3-flash-preview": "high",
   "gemini-4-argon": "medium",
+  "gemini-4-carbon": "medium",
+  "gemini-3.8-flash": "high",
 };
 
 const DEFAULTS: Record<Harness, { table: Record<string, string>; source: string }> = {

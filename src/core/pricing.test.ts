@@ -17,6 +17,14 @@ describe("costOf", () => {
     expect(costOf("gemini", "gemini-4-argon", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(20.2, 9);
   });
 
+  it("gemini-4-carbon at Argon's December price: 1M input of which 1M cached plus 1M output is $20.20", () => {
+    expect(costOf("gemini", "gemini-4-carbon", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(20.2, 9);
+  });
+
+  it("gemini-3.8-flash at its January 2027 price: 1M input of which 1M cached plus 1M output is $7.65", () => {
+    expect(costOf("gemini", "gemini-3.8-flash", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(7.65, 9);
+  });
+
   it("gpt-5.6-sol at its pre-promotion price: 1M uncached input plus 1M reasoning is $35", () => {
     expect(costOf("codex", "gpt-5.6-sol", { ...EMPTY_USAGE, input_tokens: million, reasoning_tokens: million }).usd).toBeCloseTo(35, 9);
   });

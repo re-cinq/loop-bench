@@ -32,6 +32,10 @@ export const MARKET_PRICES: Record<Harness, Record<string, PricePerMillion>> = {
   },
   gemini: {
     "gemini-4-argon": { input: 4, output: 20, cacheRead: 0.2 },
+    // Announced at Argon's price, no Google page lists it yet (read 2026-11-01 from third-party sources).
+    "gemini-4-carbon": { input: 4, output: 20, cacheRead: 0.2 },
+    // $0.75/$3.75 until 2026-12-31, then this; the cache read is 10% of input like the other flash, not a published number.
+    "gemini-3.8-flash": { input: 1.5, output: 7.5, cacheRead: 0.15 },
     "gemini-3.1-pro-preview": { input: 2, output: 12, cacheRead: 0.2 },
     "gemini-3-flash-preview": { input: 0.5, output: 3, cacheRead: 0.05 },
   },
