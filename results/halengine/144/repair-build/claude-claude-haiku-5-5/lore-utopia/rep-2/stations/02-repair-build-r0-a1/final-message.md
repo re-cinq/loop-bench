@@ -1,0 +1,5 @@
+The branch has moved since CI judged it, so I changed nothing and ran nothing.
+
+CI judged `5cd4e6710184e4c23ab8d932710998781bdd6208`. One commit has landed on top of it, `4747c71 fix(transport): answer list_sessions off the lock (#144)`. Its message has no `[skip ci]`, so CI has not yet judged the new head. Its message also says it addresses the lint findings (shared test teardown, delegating store, early-return flattening, boolean-filled array), which is for CI to confirm on the new head. The `lore_get_ci_failures` lookup for branch `loop-bench/144` returned 404, so I could not read a verdict for the new head either. The lore trace queries also failed because no repo was passed, and I did not retry them since no fix is being made here.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}

@@ -1,0 +1,26 @@
+# Definition of Done
+
+> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
+
+**Strategy: `direct`** — The seam exists: `createChatOrchestrator` takes `hooks` and `processMessage` drives the real lifecycle, so the acceptance tests call the production entry point today and fail on behaviour.
+
+## Done when these pass
+
+- [ ] **reaches onError with the thrown error, and the caller still gets that rejection** — a `beforeSession` that throws makes `onError` fire once with the same error, and the caller still sees that rejection unchanged.
+      `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`
+
+- [ ] **runs onError and then afterSession, so a deployer can release what beforeSession allocated** — after a `beforeSession` throw the hook order is `beforeSession`, `onError`, `afterSession`.
+      `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`
+
+## Facets
+
+- [ ] Move the `beforeSession` call inside the `try` in `processMessageStream` so its throw reaches the existing `catch` and `finally` (`src/orchestration/chatOrchestrator.ts`).
+- [ ] Decide whether `afterSession` after a failed `beforeSession` needs to tell "never started" from "finished"; record the decision and what a hook can assume in `specs/hal-engine-config-hooks/spec.md`, replacing the recorded-flaw bullet.
+- [ ] Add a CHANGELOG entry stating the change for existing consumers (`onError` and `afterSession` now fire on a `beforeSession` throw).
+- [ ] Confirm the existing tests in `src/orchestration/chatOrchestrator.test.ts` and `src/config.test.ts` stay unedited and green.
+
+## Out of scope
+
+- The `error instanceof Error` gate on `onError` (its own issue).
+- Usage accounting across tool rounds (HALEngine#93).
+- The `afterModelResponse` `lastUsage` semantics recorded in the same spec.
