@@ -1,0 +1,179 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..d34ddac
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,37 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor without ever checking the declared `inputSchema`
++
++**Strategy: `direct`** — `ToolRegistry.execute` and `register` are already the entry points, and `createChatOrchestrator` already drives tool calls through `execute`, so every test calls real code today. Nothing validates input yet, so the executor runs on malformed input and the tests fail on that.
++
++## Done when these pass
++
++- [ ] **answers a call missing a required property with a rejection naming it, without running the executor** — a call with `{}` against a schema requiring `location` returns a `ToolResponse` naming `location` and `required`, and the executor runs zero times
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **names the property path and expected type for a wrong-typed value, and never echoes the value** — `{location: 4217}` is rejected with a result naming `location` and `string`, and the result does not contain `4217`
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **fails registration of a tool whose inputSchema cannot be compiled, and the error names the tool** — `register` throws, and the message contains `broken_tool`
++      `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **hands a rejected tool call back to the model so a corrected retry completes the turn** — through `processMessage`, a rejected call is followed by a corrected call, `processMessage` resolves with `done`, and the rejection text reaches the provider on the next round
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Compile each static tool schema once in `register`, with the compile error naming the tool
++- [ ] Reject in `execute` before the executor runs, returning a `ToolResponse` with the failing property paths and constraints
++- [ ] Re-resolve and compile a function-valued `ToolDefinitionSource` per call, cached by the resolved schema object
++- [ ] Keep `Unknown tool: <name>` thrown and unchanged (already true today, guard it in the implementation round)
++- [ ] Keep valid input with an unlisted extra property passed through to the executor unchanged, exactly once (already true today; not a red bar)
++- [ ] Log lines carry property paths and constraints, never values
++- [ ] Add the `ajv` dependency to `package.json` `dependencies`
++- [ ] Update `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, and `CHANGELOG.md`
++
++## Out of scope
++
++- Returning an unknown tool name to the model instead of throwing (tracked separately)
++- Validating tool output
++- Hallucination detection and an evaluation harness
++- Per-tool authorization
++- Retry, timeout, and rate limiting around tool execution
++- Any concrete tool implementation
++- Coercion, defaults, and `additionalProperties: false` injection; there is no opt-out flag
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..4460b08
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,18 @@
++# Tool Input Validation
++
++| Field  | Value |
++| ------ | ----- |
++| Issue  | 37    |
++| Status | Draft |
++
++`ToolRegistry.execute` checks the input of a tool call against the tool's declared `inputSchema` before the executor runs. A call the schema rejects never reaches the executor. The rejection is returned to the model as a tool result, so the model can correct the call within the tool-round budget instead of ending the turn.
++
++## Rejection
++
++- A call whose input omits a required property is answered with a `ToolResponse` whose `result` names that property and the `required` constraint, and the executor is not invoked ([validated by: answers a call missing a required property with a rejection naming it, without running the executor](../../src/orchestration/tools/registry.acceptance.test.ts#L28)).
++- A call whose input gives a property the wrong type is answered with a `ToolResponse` whose `result` names the property path and the expected type, and never contains the offending value ([validated by: names the property path and expected type for a wrong-typed value, and never echoes the value](../../src/orchestration/tools/registry.acceptance.test.ts#L43)).
++- The orchestrator hands a rejection to the model as a tool result, so a corrected retry within the tool-round budget completes the turn and `processMessage` resolves ([validated by: hands a rejected tool call back to the model so a corrected retry completes the turn](../../src/orchestration/tools/registry.acceptance.test.ts#L65)).
++
++## Registration
++
++- Registering a tool whose `inputSchema` cannot be compiled throws at `register`, not mid-conversation, and the error names the tool ([validated by: fails registration of a tool whose inputSchema cannot be compiled, and the error names the tool](../../src/orchestration/tools/registry.acceptance.test.ts#L54)).
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..cec0f52
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,106 @@
++import {ToolRegistry} from './registry.js';
++import {createChatOrchestrator} from '../chatOrchestrator.js';
++import {PromptBuilder} from '../../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../../types/ai.js';
++import type {ChatSession} from '../../types/session.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++const WEATHER = {
++  name: 'get_weather',
++  description: 'Get the current weather for a location.',
++  inputSchema: {
++    type: 'object',
++    properties: {location: {type: 'string'}},
++    required: ['location'],
++  },
++};
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++describe('ToolRegistry.execute input validation', () => {
++  it('answers a call missing a required property with a rejection naming it, without running the executor', async () => {
++    const registry = new ToolRegistry();
++    let executorCalls = 0;
++    registry.register(WEATHER, async () => {
++      executorCalls++;
++      return 'forecast';
++    });
++
++    const response = await registry.execute('get_weather', {});
++
++    expect(response.result).toContain('location');
++    expect(response.result).toContain('required');
++    expect(executorCalls).toBe(0);
++  });
++
++  it('names the property path and expected type for a wrong-typed value, and never echoes the value', async () => {
++    const registry = new ToolRegistry();
++    registry.register(WEATHER, async () => 'forecast');
++
++    const response = await registry.execute('get_weather', {location: 4217});
++
++    expect(response.result).toContain('location');
++    expect(response.result).toContain('string');
++    expect(response.result).not.toContain('4217');
++  });
++
++  it('fails registration of a tool whose inputSchema cannot be compiled, and the error names the tool', () => {
++    const registry = new ToolRegistry();
++
++    expect(() =>
++      registry.register(
++        {name: 'broken_tool', description: 'never compiles', inputSchema: {type: 'nonsense'}},
++        async () => 'unreachable'
++      )
++    ).toThrow(/broken_tool/);
++  });
++
++  it('hands a rejected tool call back to the model so a corrected retry completes the turn', async () => {
++    const registry = new ToolRegistry();
++    registry.register(WEATHER, async input => `forecast for ${(input.location as string) || 'Unknown'}`);
++
++    const calls = [
++      {id: 'call-1', name: 'get_weather', input: {}},
++      {id: 'call-2', name: 'get_weather', input: {location: 'Paris'}},
++    ];
++    const roundsSeen: string[][] = [];
++    let round = 0;
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        roundsSeen.push(
++          params.messages
++            .flatMap(m => (Array.isArray(m.content) && m.role === 'user' ? m.content : []))
++            .map(c => ('content' in c ? c.content : ''))
++        );
++        const current = round++;
++        if (current < calls.length) {
++          yield {type: 'tool_use', toolCall: calls[current]};
++          yield {type: 'stop', stopReason: 'tool_use'};
++          return;
++        }
++        yield {type: 'text', text: 'done'};
++        yield {type: 'stop', stopReason: 'end_turn'};
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++    const orchestrator = createChatOrchestrator(
++      provider,
++      new PromptBuilder({identity: 'You are a test assistant.'}),
++      registry
++    );
++
++    const text = await orchestrator.processMessage(createSession('weather?'));
++
++    expect(text).toBe('done');
++    expect(roundsSeen[1].join('\n')).toContain('location');
++  });
++});

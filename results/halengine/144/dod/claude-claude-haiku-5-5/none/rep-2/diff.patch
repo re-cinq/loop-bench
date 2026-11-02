@@ -1,0 +1,173 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..f6757ed
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,29 @@
++# Definition of Done
++
++> the browser holding the socket cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — The seam exists: `createServer` and a real WebSocket upgrade, as `wsTestSupport.ts` and `sessionResume.test.ts` already drive it, with `InMemorySessionStore.listFor` (#143, #146) already shipped. Nothing answers `list_conversations` on the socket yet, so the tests fail on the missing handler. `transport.history` is not in the option types yet, so the test passes it through a non-literal options object to keep the type check from failing for the wrong reason.
++
++## Done when these pass
++
++- [ ] **answers the connection's user's conversations newest first, with ISO-string times and no stream_end** — a `list_conversations` frame on a socket opened by `u1`, with history enabled, is answered with one `conversation_list` whose rows are `u1`'s seeded conversations, newest activity first, each time an ISO string.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **answers with the connecting user's own list even when the frame names another user** — a frame carrying `userId: 'u2'` is answered with `u1`'s list only; `u2`'s conversation never appears.
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `list_conversations` to `IncomingMessage` and `conversation_list` to `OutgoingMessage` in `src/types/messages.ts` (additive only).
++- [ ] `validation.ts`: a `list_conversations` case, `limit` an integer 1–200 when present, `before` a cursor when present; anything else is `INVALID_MESSAGE`.
++- [ ] `createMessageHandler` takes the session store and history options, and answers `list_conversations` off the per-session lock beside `ping`.
++- [ ] The user id comes from `ws.userId`, never the frame (test 2 pins this).
++- [ ] `HalEngineConfig.transport.history` (default off) threaded through `createServer`; with it off, the frame is answered with an `error` of code `UNSUPPORTED`.
++- [ ] A store without `listFor` is answered with an `error`, not an empty list.
++- [ ] Paging by `before` cursor, `limit` pass-through to `listFor`.
++- [ ] Spec, CHANGELOG, `example/full-config.ts` and `npm run docs:fix` as the ticket's documentation criteria.
++
++## Out of scope
++
++- The opt-in-off `UNSUPPORTED` answer, the store-without-`listFor` answer, the store-failure answer, the lock-bypass ordering, and the resume-by-`sessionId` round trip. The ticket states each of these; they are facets above, not acceptance tests in this round, to keep the red bar to the central claim.
++- A preview or title on the summaries, deleting a conversation from the client, server-side paging state, operator views of other users' conversations, and live sync between tabs (ticket #144 "Out of scope").
++- Red bar: run here as `node --experimental-vm-modules node_modules/jest/bin/jest.js src/transport/ws/conversationList.acceptance.test.ts`, both tests fail with `INVALID_MESSAGE` (unknown message type). CI runs the whole suite, this file included, in the `Verify` job of `.github/workflows/ci.yml`, step "Test (with coverage floor)": `npm run test:coverage`.
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..c428a23
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,132 @@
++import type {AddressInfo} from 'node:net';
++import {WebSocket} from 'ws';
++import type {Express} from 'express';
++import {createServer} from '../createServer.js';
++import type {HalServer} from '../createServer.js';
++import {HAL_WS_SUBPROTOCOL} from './subprotocol.js';
++import {answeringOrchestrator} from '../wsTestSupport.js';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import {setLogger} from '../../shared/logger.js';
++
++// Acceptance for #144: a client on the socket asks for its user's conversation list and is answered over that same socket.
++
++interface Row {
++  sessionId: string;
++  createdAt: unknown;
++  updatedAt: unknown;
++  entryCount: number;
++}
++
++interface Frame {
++  type: string;
++  sessionId?: string;
++  conversations?: Row[];
++  code?: string;
++}
++
++const servers: HalServer[] = [];
++const clients: WebSocket[] = [];
++
++// Silenced for the file: Jest isolates the module registry per file, so no restore is needed and no late close logs after the run.
++beforeAll(() => {
++  setLogger({debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined});
++});
++
++afterEach(async () => {
++  for (const client of clients.splice(0)) client.terminate();
++  for (const hal of servers.splice(0)) await hal.stop();
++});
++
++// Each conversation's activity is its newest entry, so these stamps fix the order the list must answer in.
++const seed = (store: InMemorySessionStore, userId: string, stamps: Array<[string, string]>): void => {
++  for (const [sessionId, timestamp] of stamps) {
++    store.create(sessionId, userId).entries.push({role: 'user', content: 'hi', timestamp});
++  }
++};
++
++const startWithHistory = async (store: InMemorySessionStore): Promise<string> => {
++  // Built as a variable so the option reaches createServer without tripping its excess-property check.
++  const options = {
++    app: (() => undefined) as unknown as Express,
++    wsAuth: async () => ({id: 'u1'}),
++    sessionStore: store,
++    orchestrator: answeringOrchestrator,
++    history: {enabled: true},
++  };
++  const hal = createServer(options);
++  await hal.start(0);
++  servers.push(hal);
++  const {port} = hal.server.address() as AddressInfo;
++  return `ws://127.0.0.1:${port}/hal/ws/c1`;
++};
++
++// Every frame the client receives, in order, so a test can take the next one whatever its type.
++const inboxOf = (client: WebSocket): {next: () => Promise<Frame>} => {
++  const queued: Frame[] = [];
++  let wake: (() => void) | undefined;
++  client.on('message', raw => {
++    queued.push(JSON.parse(String(raw)) as Frame);
++    wake?.();
++  });
++  const next = async (): Promise<Frame> => {
++    while (queued.length === 0) await new Promise<void>(resolve => (wake = () => resolve()));
++    return queued.shift() as Frame;
++  };
++  return {next};
++};
++
++// Opens a socket, reads its `connected` frame and asks for the list with the given frame body.
++const askForList = async (url: string, body: Record<string, unknown>) => {
++  const client = new WebSocket(url, [HAL_WS_SUBPROTOCOL, 't']);
++  clients.push(client);
++  const inbox = inboxOf(client);
++  await new Promise<void>(resolve => client.once('open', () => resolve()));
++  const connected = await inbox.next();
++  client.send(JSON.stringify({type: 'list_conversations', ...body}));
++  const reply = await inbox.next();
++  // The connection's own conversation is listed like any other, so the tests set it aside to read the seeded rows.
++  const others = (reply.conversations ?? []).filter(row => row.sessionId !== connected.sessionId);
++  return {reply, others};
++};
++
++const isoTime = (value: unknown): boolean => typeof value === 'string' && Number.isFinite(Date.parse(value));
++
++describe('a client lists its own conversations over the socket', () => {
++  it("answers the connection's user's conversations newest first, with ISO-string times and no stream_end", async () => {
++    const store = new InMemorySessionStore();
++    seed(store, 'u1', [
++      ['u1-oldest', '2026-01-01T00:00:00.000Z'],
++      ['u1-middle', '2026-02-01T00:00:00.000Z'],
++      ['u1-newest', '2026-03-01T00:00:00.000Z'],
++    ]);
++    const url = await startWithHistory(store);
++
++    const {reply, others} = await askForList(url, {});
++
++    expect({
++      type: reply.type,
++      code: reply.code,
++      order: others.map(row => row.sessionId),
++      isoTimes: others.every(row => isoTime(row.createdAt) && isoTime(row.updatedAt)),
++    }).toEqual({
++      type: 'conversation_list',
++      code: undefined,
++      order: ['u1-newest', 'u1-middle', 'u1-oldest'],
++      isoTimes: true,
++    });
++  });
++
++  it("answers with the connecting user's own list even when the frame names another user", async () => {
++    const store = new InMemorySessionStore();
++    seed(store, 'u1', [['u1-only', '2026-01-01T00:00:00.000Z']]);
++    seed(store, 'u2', [['u2-private', '2026-02-01T00:00:00.000Z']]);
++    const url = await startWithHistory(store);
++
++    const {reply, others} = await askForList(url, {userId: 'u2'});
++
++    expect({type: reply.type, order: others.map(row => row.sessionId)}).toEqual({
++      type: 'conversation_list',
++      order: ['u1-only'],
++    });
++  });
++});

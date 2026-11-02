@@ -1,0 +1,5 @@
+The branch moved after CI judged it, so I made no changes and ran nothing else.
+
+CI judged `5cd4e67` and reported eslint and test failures. Since then, one commit has landed on the branch: `794bb8e fix(transport): answer list_sessions and share test helpers (#144)`. It does not carry `[skip ci]`, so CI has not judged the new head. The branch is in sync with its upstream (`loop-bench/144...origin/loop-bench/144`, no commits ahead), so nothing of mine is stranded. The verdict's findings are against the older head and may already be addressed by that commit. The wait will re-read CI on `794bb8e` and send the branch back here only if it is still red.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e67 (new head 794bb8e has no [skip ci]); CI re-judges the head"}}

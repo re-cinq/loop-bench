@@ -1,0 +1,114 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..1d2f0a3
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,27 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — The seam exists: `createChatOrchestrator` and `processMessage` are the real entry points, and the hook calls are already observable through `OrchestratorHooks`. No new seam is needed.
++
++The red bar for these tests is shown by the Jest run in this pod (see the final message). CI's job that runs them is the `Test` step of `.github/workflows/ci.yml`, exposed to Lore as `hal-engine-jest`.
++
++## Done when these pass
++
++- [ ] **reaches onError with the thrown Error for the same session, and the caller still gets that rejection** — a throwing `beforeSession` hands `onError` the same session object and the thrown Error, and the caller's rejection is unchanged
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++- [ ] **still runs afterSession, so a hook that releases what beforeSession allocated is not skipped** — a throwing `beforeSession` still reaches `afterSession`, the decision recorded for this ticket
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] Move the `beforeSession` call inside the `try` in `processMessageStream` so its throw reaches `catch` (`onError`) and `finally` (`afterSession`, session save)
++- [ ] Keep the rejection the caller sees identical to today (the `throw error` in `catch` already does this)
++- [ ] Record in `specs/hal-engine-config-hooks/spec.md`: `afterSession` runs after a failed `beforeSession`, and the hook cannot tell from `session` alone whether the turn started, so a deployer must treat `afterSession` as "release if allocated"; replace the recorded-flaw line with this guarantee
++- [ ] Add the CHANGELOG entry: an existing consumer's `afterSession` and `onError` now fire when `beforeSession` throws
++
++## Out of scope
++
++- The `instanceof Error` gate on `onError` (its own issue; a thrown non-Error still bypasses `onError`)
++- Usage accounting across tool rounds (HALEngine#93)
++- Spec link (`validated by`) for the new guarantee: the statement does not exist until the spec is rewritten in the implementation round
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..f79c148
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,75 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++// Fixed: nothing asserts on it, and new Date() would tie the run to the clock.
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++// One expect per test needs the rejection as a value rather than a matcher.
++const outcomeOf = (call: Promise<unknown>): Promise<string> =>
++  call.then(() => 'resolved without throwing').catch((error: Error) => error.message);
++
++function createSession(): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content: 'hello', timestamp: SENT_AT}],
++  };
++}
++
++const provider: AIProvider = {
++  async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++    yield {type: 'text', text: 'hi'};
++    yield {type: 'stop', stopReason: 'end_turn'};
++  },
++  async generateStructured<T>(): Promise<T> {
++    return {} as T;
++  },
++};
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++const BEFORE_SESSION_ERROR = 'span allocation failed';
++
++describe('a beforeSession that throws', () => {
++  it('reaches onError with the thrown Error for the same session, and the caller still gets that rejection', async () => {
++    const seen: Array<{sameSession: boolean; message: string}> = [];
++    const session = createSession();
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        throw new Error(BEFORE_SESSION_ERROR);
++      },
++      onError: async (receivedSession, error) => {
++        seen.push({sameSession: receivedSession === session, message: error.message});
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, undefined, {hooks});
++    const outcome = await outcomeOf(orchestrator.processMessage(session));
++
++    expect({outcome, onError: seen}).toEqual({
++      outcome: BEFORE_SESSION_ERROR,
++      onError: [{sameSession: true, message: BEFORE_SESSION_ERROR}],
++    });
++  });
++
++  it('still runs afterSession, so a hook that releases what beforeSession allocated is not skipped', async () => {
++    let afterSessionCalled = false;
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        throw new Error(BEFORE_SESSION_ERROR);
++      },
++      onError: async () => {},
++      afterSession: async () => {
++        afterSessionCalled = true;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, undefined, {hooks});
++    const outcome = await outcomeOf(orchestrator.processMessage(createSession()));
++
++    expect({outcome, afterSessionCalled}).toEqual({outcome: BEFORE_SESSION_ERROR, afterSessionCalled: true});
++  });
++});
