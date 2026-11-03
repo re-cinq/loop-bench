@@ -1,0 +1,197 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..a0ab4b6
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,35 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — A seam already exists: the orchestrator's `processMessageStream` generator function has a try/catch/finally structure. The acceptance tests can call the real entry point today and fail on the current behaviour (beforeSession outside try), then pass once the call is moved inside.
++
++## Done when these pass
++
++- [ ] **beforeSession error reaches the caller as a rejection** — the error thrown from beforeSession still propagates to the caller, unchanged from today's behavior
++  `src/orchestration/beforeSessionError.acceptance.test.ts`
++
++- [ ] **beforeSession error triggers onError hook** — when beforeSession throws, the onError hook is called with the error
++  `src/orchestration/beforeSessionError.acceptance.test.ts`
++
++- [ ] **beforeSession error triggers afterSession hook** — when beforeSession throws, the afterSession hook is called
++  `src/orchestration/beforeSessionError.acceptance.test.ts`
++
++- [ ] **beforeSession error triggers both onError and afterSession in correct order** — when beforeSession throws, both hooks fire and onError fires before afterSession
++  `src/orchestration/beforeSessionError.acceptance.test.ts`
++
++- [ ] **non-throwing beforeSession behaves the same as before** — the existing behavior for a non-throwing beforeSession is unchanged, pinned by this test verifying the full hook order
++  `src/orchestration/beforeSessionError.acceptance.test.ts`
++
++## Facets
++
++- [ ] Move `beforeSession` call inside the `try` block in `src/orchestration/chatOrchestrator.ts` (line 91)
++- [ ] Verify all acceptance tests pass
++- [ ] Verify existing orchestration tests still pass (no regression)
++- [ ] Update `specs/hal-engine-config-hooks/spec.md` to document the new guarantee for when beforeSession throws
++
++## Out of scope
++
++- The `instanceof Error` gate on `onError` (its own issue)
++- Usage accounting across tool rounds (issue #93)
++- Changes to other hooks or lifecycle behavior
+diff --git a/src/orchestration/beforeSessionError.acceptance.test.ts b/src/orchestration/beforeSessionError.acceptance.test.ts
+new file mode 100644
+index 0000000..411e04e
+--- /dev/null
++++ b/src/orchestration/beforeSessionError.acceptance.test.ts
+@@ -0,0 +1,150 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++function createMockProvider(response: string): AIProvider {
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      yield {type: 'text', text: response};
++      yield {type: 'stop', stopReason: 'end_turn'};
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++const outcomeOf = (call: Promise<unknown>): Promise<string> =>
++  call.then(() => 'resolved without throwing').catch((error: Error) => error.message);
++
++describe('beforeSession error handling', () => {
++  it('beforeSession error reaches the caller as a rejection', async () => {
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        throw new Error('beforeSession failed');
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createMockProvider('ok'), promptBuilder, undefined, {hooks});
++    const outcome = await outcomeOf(orchestrator.processMessage(createSession('hello')));
++
++    expect(outcome).toBe('beforeSession failed');
++  });
++
++  it('beforeSession error triggers onError hook', async () => {
++    let onErrorCalled = false;
++    let errorMessage = '';
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        throw new Error('beforeSession error');
++      },
++      onError: async (_session, error) => {
++        onErrorCalled = true;
++        errorMessage = error.message;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createMockProvider('ok'), promptBuilder, undefined, {hooks});
++    const outcome = await outcomeOf(orchestrator.processMessage(createSession('hello')));
++
++    expect({outcome, onErrorCalled, errorMessage}).toEqual({
++      outcome: 'beforeSession error',
++      onErrorCalled: true,
++      errorMessage: 'beforeSession error',
++    });
++  });
++
++  it('beforeSession error triggers afterSession hook', async () => {
++    let afterSessionCalled = false;
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        throw new Error('beforeSession error');
++      },
++      afterSession: async () => {
++        afterSessionCalled = true;
++      },
++      onError: async () => {},
++    };
++
++    const orchestrator = createChatOrchestrator(createMockProvider('ok'), promptBuilder, undefined, {hooks});
++    const outcome = await outcomeOf(orchestrator.processMessage(createSession('hello')));
++
++    expect({outcome, afterSessionCalled}).toEqual({outcome: 'beforeSession error', afterSessionCalled: true});
++  });
++
++  it('beforeSession error triggers both onError and afterSession in correct order', async () => {
++    const callOrder: string[] = [];
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        throw new Error('beforeSession error');
++      },
++      onError: async () => {
++        callOrder.push('onError');
++      },
++      afterSession: async () => {
++        callOrder.push('afterSession');
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createMockProvider('ok'), promptBuilder, undefined, {hooks});
++    await outcomeOf(orchestrator.processMessage(createSession('hello')));
++
++    expect(callOrder).toEqual(['onError', 'afterSession']);
++  });
++
++  it('non-throwing beforeSession behaves the same as before', async () => {
++    const callOrder: string[] = [];
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        callOrder.push('beforeSession');
++      },
++      beforeUserInput: async (_s, msg) => {
++        callOrder.push('beforeUserInput');
++        return msg;
++      },
++      afterUserInput: async () => {
++        callOrder.push('afterUserInput');
++      },
++      beforeModelResponse: async (_s, p) => {
++        callOrder.push('beforeModelResponse');
++        return p;
++      },
++      afterModelResponse: async () => {
++        callOrder.push('afterModelResponse');
++      },
++      afterSession: async () => {
++        callOrder.push('afterSession');
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createMockProvider('ok'), promptBuilder, undefined, {hooks});
++    await orchestrator.processMessage(createSession('hello'));
++
++    expect(callOrder).toEqual([
++      'beforeSession',
++      'beforeUserInput',
++      'afterUserInput',
++      'beforeModelResponse',
++      'afterModelResponse',
++      'afterSession',
++    ]);
++  });
++});
