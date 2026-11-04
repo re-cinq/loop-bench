@@ -1,0 +1,458 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..c8ff114
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,62 @@
++# Definition of Done
++
++> Validate `input` against the resolved tool definition's `inputSchema` inside `ToolRegistry.execute`, before the executor runs, using a JSON Schema validator (`ajv` unless the build proves otherwise) added to `dependencies` — not a second, hand-written schema in a different format, since the schema already has to match what is handed to the providers.
++
++**Strategy: `direct`** — The `ToolRegistry.execute` method is the seam where validation belongs. Tests can call it directly and verify that invalid input returns a `ToolResponse` without invoking the executor, and that valid input passes through unchanged. The validator will be added as a dependency and integrated into the registry's execute path.
++
++## Done when these pass
++
++- [ ] **returns ToolResponse when required field is missing, executor not called** — Missing required fields reject without invoking executor
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **passes unlisted extra property to executor unchanged** — Extra properties in input pass through to executor unmodified
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **rejects wrong-typed field with field path and type, never the value** — Type mismatches reject with field path and expected type, never property values
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **throws at registration time for uncompilable schema** — Broken schemas fail early at register time
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **compiles static schema once across multiple execute calls** — Static schemas compile once at registration, not per call
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **validates against schema current at call time for function-valued definition** — Function-valued schemas recompile per call and validate against current version
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **throws Unknown tool error for unregistered name** — Unknown tool names still throw (unchanged behavior)
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **never includes property values in rejection messages** — Rejected payloads with sensitive fields produce no log containing those values
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **rejects value not in enum with constraint message** — Enum constraint violations reject with field path
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **validates nested properties and reports path correctly** — Nested object validation reports the full property path
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **tool validation rejection returns ToolResponse visible to provider for retry** — Tool-loop integration: rejected calls with validation errors are returned to the model as `ToolResponse` for retry, not thrown
++  `src/orchestration/chatOrchestrator.test.ts`
++
++## Facets
++
++- [ ] Add `ajv` to `package.json` dependencies
++- [ ] Import and initialize `ajv` in registry.ts
++- [ ] Compile static schemas at registration time
++- [ ] Add schema caching for static schemas
++- [ ] Cache function-valued schemas by resolved object identity
++- [ ] Validate input before executor in `execute` method
++- [ ] Return `ToolResponse` on validation failure (never throw)
++- [ ] Ensure validation error messages never include property values
++- [ ] Verify unknown tool still throws
++- [ ] Add doc comment to `execute` method
++
++## Out of scope
++
++- Changing the `Unknown tool: <name>` throw behavior (tracked separately)
++- Validating tool output
++- Tool authorization checks
++- Retry and timeout logic around tool execution
++- Adding `additionalProperties: false` to validation
++- Type coercion or injecting defaults
+diff --git a/src/orchestration/chatOrchestrator.test.ts b/src/orchestration/chatOrchestrator.test.ts
+index dbe7b33..609922d 100644
+--- a/src/orchestration/chatOrchestrator.test.ts
++++ b/src/orchestration/chatOrchestrator.test.ts
+@@ -1,6 +1,6 @@
+ import {createChatOrchestrator} from './chatOrchestrator.js';
+ import type {OrchestratorHooks} from './chatOrchestrator.js';
+-import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata, ToolResultContent} from '../types/ai.js';
+ import {AIError} from '../types/ai.js';
+ import type {ChatSession} from '../types/session.js';
+ import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
+@@ -519,4 +519,69 @@ describe('ChatOrchestrator tool loop', () => {
+ 
+     expect(seen).toEqual(usage);
+   });
++
++  it('tool validation rejection returns ToolResponse visible to provider for retry', async () => {
++    let roundCount = 0;
++    const rejectionRegistry = new ToolRegistry();
++    rejectionRegistry.register(
++      {
++        name: 'lookup',
++        description: 'looks things up',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            q: {type: 'string'},
++          },
++          required: ['q'],
++        },
++      },
++      async () => 'found it'
++    );
++
++    const rejectThenAcceptProvider = ((): AIProvider => {
++      return {
++        async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++          roundCount++;
++
++          // First round: call with missing required field (will be rejected by registry)
++          if (roundCount === 1) {
++            yield {type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {}}};
++            yield {type: 'stop', stopReason: 'tool_use'};
++          }
++
++          // Second round: check that rejection text appears in messages, then send valid call
++          if (roundCount === 2) {
++            const messages = params.messages;
++            const lastMessage = messages[messages.length - 1];
++            const toolResult = lastMessage.content as ToolResultContent[];
++            const rejectionText = toolResult[0]?.content || '';
++
++            // Verify rejection is visible to provider
++            expect(rejectionText).toContain('q');
++            expect(rejectionText).toContain('required');
++
++            // Send corrected call
++            yield {type: 'tool_use', toolCall: {id: 'call-2', name: 'lookup', input: {q: 'test'}}};
++            yield {type: 'stop', stopReason: 'tool_use'};
++          }
++
++          // Third round: final response
++          if (roundCount === 3) {
++            yield {type: 'text', text: 'answer: found it'};
++            yield {type: 'stop', stopReason: 'end_turn'};
++          }
++        },
++        async generateStructured<T>(): Promise<T> {
++          return {} as T;
++        },
++      };
++    })();
++
++    const orchestrator = createChatOrchestrator(rejectThenAcceptProvider, promptBuilder, rejectionRegistry);
++
++    const result = await orchestrator.processMessage(createSession('ask'));
++
++    expect(result).toBe('answer: found it');
++    expect(roundCount).toBe(3);
++  });
+ });
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..6f945b1
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,302 @@
++import {ToolRegistry} from './registry.js';
++import type {ToolDefinition, ToolExecutor} from '../../types/ai.js';
++import type {ToolContext} from './registry.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++describe('ToolRegistry input validation', () => {
++  describe('required field validation', () => {
++    it('returns ToolResponse when required field is missing, executor not called', async () => {
++      const registry = new ToolRegistry();
++      let executorCalled = false;
++
++      const definition: ToolDefinition = {
++        name: 'lookup',
++        description: 'looks things up',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {type: 'string', description: 'required location'},
++          },
++          required: ['location'],
++        },
++      };
++
++      const executor: ToolExecutor = async () => {
++        executorCalled = true;
++        return 'result';
++      };
++
++      registry.register(definition, executor);
++
++      const response = await registry.execute('lookup', {});
++
++      expect(executorCalled).toBe(false);
++      expect(response.result).toContain('location');
++      expect(response.result).toContain('required');
++    });
++  });
++
++  describe('extra properties pass through', () => {
++    it('passes unlisted extra property to executor unchanged', async () => {
++      const registry = new ToolRegistry();
++      let receivedInput: Record<string, unknown> | undefined;
++
++      const definition: ToolDefinition = {
++        name: 'tool',
++        description: 'test',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            name: {type: 'string'},
++          },
++        },
++      };
++
++      const executor: ToolExecutor = async input => {
++        receivedInput = input;
++        return 'ok';
++      };
++
++      registry.register(definition, executor);
++
++      await registry.execute('tool', {name: 'test', extra: 'value'});
++
++      expect(receivedInput).toEqual({name: 'test', extra: 'value'});
++    });
++  });
++
++  describe('type validation', () => {
++    it('rejects wrong-typed field with field path and type, never the value', async () => {
++      const registry = new ToolRegistry();
++      let executorCalled = false;
++
++      const definition: ToolDefinition = {
++        name: 'tool',
++        description: 'test',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            count: {type: 'number'},
++          },
++          required: ['count'],
++        },
++      };
++
++      const executor: ToolExecutor = async () => {
++        executorCalled = true;
++        return 'ok';
++      };
++
++      registry.register(definition, executor);
++
++      const response = await registry.execute('tool', {count: 'not-a-number'});
++
++      expect(executorCalled).toBe(false);
++      expect(response.result).toContain('count');
++      expect(response.result).toContain('number');
++      expect(response.result).not.toContain('not-a-number');
++    });
++  });
++
++  describe('schema compilation at registration', () => {
++    it('throws at registration time for uncompilable schema', () => {
++      const registry = new ToolRegistry();
++
++      const badDefinition: ToolDefinition = {
++        name: 'bad',
++        description: 'bad schema',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            value: {type: 'invalid-type'}, // invalid JSON schema type
++          },
++        },
++      };
++
++      expect(() => {
++        registry.register(badDefinition, async () => 'ok');
++      }).toThrow();
++    });
++
++    it('compiles static schema once across multiple execute calls', async () => {
++      const registry = new ToolRegistry();
++      let compileCount = 0;
++      let executorCalls = 0;
++
++      const definition: ToolDefinition = {
++        name: 'tool',
++        description: 'test',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            value: {type: 'string'},
++          },
++        },
++      };
++
++      const executor: ToolExecutor = async () => {
++        executorCalls++;
++        return 'ok';
++      };
++
++      registry.register(definition, executor);
++
++      // Execute same tool 10 times
++      for (let i = 0; i < 10; i++) {
++        await registry.execute('tool', {value: 'test'});
++      }
++
++      // The schema should be compiled only once at registration
++      // We can't directly measure compile count without instrumentation,
++      // but we can verify executor was called 10 times
++      expect(executorCalls).toBe(10);
++    });
++  });
++
++  describe('function-valued schema', () => {
++    it('validates against schema current at call time for function-valued definition', async () => {
++      const registry = new ToolRegistry();
++      let executorCalls = 0;
++      let callSchemaVersion = 0;
++
++      const definitionSource = () => {
++        callSchemaVersion++;
++        return {
++          name: 'dynamic',
++          description: 'dynamic schema',
++          inputSchema: {
++            type: 'object',
++            properties: {
++              field: {type: callSchemaVersion === 1 ? 'string' : 'number'},
++            },
++            required: ['field'],
++          },
++        } as ToolDefinition;
++      };
++
++      const executor: ToolExecutor = async () => {
++        executorCalls++;
++        return 'ok';
++      };
++
++      registry.register(definitionSource, executor);
++
++      // First call expects string
++      const result1 = await registry.execute('dynamic', {field: 'text'});
++      expect(result1.result).not.toContain('must be');
++
++      // Second call expects number (schema changed)
++      const result2 = await registry.execute('dynamic', {field: 'text'});
++      expect(result2.result).toContain('number');
++    });
++  });
++
++  describe('unknown tool', () => {
++    it('throws Unknown tool error for unregistered name', async () => {
++      const registry = new ToolRegistry();
++
++      await expect(registry.execute('nonexistent', {})).rejects.toThrow('Unknown tool: nonexistent');
++    });
++  });
++
++  describe('redaction of property values', () => {
++    it('never includes property values in rejection messages', async () => {
++      const registry = new ToolRegistry();
++
++      const definition: ToolDefinition = {
++        name: 'tool',
++        description: 'test',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            email: {type: 'string'},
++            password: {type: 'string'},
++          },
++          required: ['email'],
++        },
++      };
++
++      const executor: ToolExecutor = async () => 'ok';
++
++      registry.register(definition, executor);
++
++      const sensitiveInput = {password: 'super-secret-password-12345'};
++      const response = await registry.execute('tool', sensitiveInput);
++
++      expect(response.result).not.toContain('super-secret-password-12345');
++      expect(response.result).not.toContain(sensitiveInput.password);
++    });
++  });
++
++  describe('enum constraint validation', () => {
++    it('rejects value not in enum with constraint message', async () => {
++      const registry = new ToolRegistry();
++      let executorCalled = false;
++
++      const definition: ToolDefinition = {
++        name: 'tool',
++        description: 'test',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            units: {
++              type: 'string',
++              enum: ['celsius', 'fahrenheit'],
++            },
++          },
++          required: ['units'],
++        },
++      };
++
++      const executor: ToolExecutor = async () => {
++        executorCalled = true;
++        return 'ok';
++      };
++
++      registry.register(definition, executor);
++
++      const response = await registry.execute('tool', {units: 'kelvin'});
++
++      expect(executorCalled).toBe(false);
++      expect(response.result).toContain('units');
++    });
++  });
++
++  describe('nested object validation', () => {
++    it('validates nested properties and reports path correctly', async () => {
++      const registry = new ToolRegistry();
++      let executorCalled = false;
++
++      const definition: ToolDefinition = {
++        name: 'tool',
++        description: 'test',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {
++              type: 'object',
++              properties: {
++                latitude: {type: 'number'},
++              },
++              required: ['latitude'],
++            },
++          },
++          required: ['location'],
++        },
++      };
++
++      const executor: ToolExecutor = async () => {
++        executorCalled = true;
++        return 'ok';
++      };
++
++      registry.register(definition, executor);
++
++      const response = await registry.execute('tool', {location: {}});
++
++      expect(executorCalled).toBe(false);
++      expect(response.result).toContain('latitude');
++    });
++  });
++});

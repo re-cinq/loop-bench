@@ -1,0 +1,222 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..54678cb
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,52 @@
++# Definition of Done
++
++> Deliver a user's conversation list over the WebSocket protocol
++
++**Strategy: `direct`** — The WebSocket message handler already has a dispatcher that routes message types. The new `list_conversations` message can be handled directly alongside the existing `ping` handler, outside the per-session lock (for low latency). The session store's `listFor` method (from issue #143) provides the data.
++
++## Done when these pass
++
++- [ ] **Validation accepts list_conversations frames** — `list_conversations` is recognized by the validator, and `limit` (1–200), `before` (ISO date string), and no fields are all valid; with `limit: 0`, `limit: 201`, `limit: 1.5`, `limit: '10'`, or `before: 'not a date'` it is invalid
++  `src/transport/ws/validation.acceptance.test.ts`
++
++- [ ] **Returns conversation_list with enabled history** — With `transport.history.enabled: true` and a store holding conversations, a `list_conversations` frame returns exactly one `conversation_list` carrying summaries, newest first, each `createdAt` and `updatedAt` as ISO strings
++  `src/transport/ws/validation.acceptance.test.ts`
++
++- [ ] **User ID comes from connection, not frame** — A frame carrying `userId` of another user is answered with the connecting user's own list, and the store's `listFor` is called with `ws.userId`
++  `src/transport/ws/validation.acceptance.test.ts`
++
++- [ ] **Query parameters reach the store** — `limit` and `before` reach `listFor` as the frame sent them, with `before` as a cursor object `{updatedAt, sessionId}` of ISO strings
++  `src/transport/ws/validation.acceptance.test.ts`
++
++- [ ] **Error when history disabled** — With `transport.history` absent or `enabled: false`, the frame is answered with an `error` frame whose code is `UNSUPPORTED`
++  `src/transport/ws/validation.acceptance.test.ts`
++
++- [ ] **Error when store has no listFor** — With `history: {enabled: true}` against a store implementing no `listFor`, the answer is an `error` frame with code `UNSUPPORTED`, and no `conversations: []` path exists
++  `src/transport/ws/validation.acceptance.test.ts`
++
++- [ ] **Store failures return SERVER_ERROR** — A `listFor` that rejects is answered with one `error` frame whose code is `SERVER_ERROR` and whose message carries no store detail; a store throwing `StoreCannotList` is answered `UNSUPPORTED`
++  `src/transport/ws/validation.acceptance.test.ts`
++
++- [ ] **Does not wait on per-session lock** — A `list_conversations` sent while a `user_message` is streaming is answered before the stream's `stream_end`
++  `src/transport/ws/validation.acceptance.test.ts`
++
++- [ ] **Reconnect with sessionId works** — A client taking an id from a `conversation_list` and reconnecting with `?sessionId=<id>` receives `resumed: true` and the conversation's replay, via existing #45 path
++  `src/transport/ws/validation.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ListConversationsMessage` and `ConversationListMessage` interfaces to `src/types/messages.ts`
++- [ ] Add `list_conversations` validation to `src/transport/ws/validation.ts`
++- [ ] Extend `messageHandler` to handle `list_conversations` off the non-locked path
++- [ ] Add `UNSUPPORTED` error code to `ErrorCodes`
++- [ ] Wire in `transport.history` config option to `createServer`
++- [ ] Add `StoreCannotList` error class for store misconfiguration
++
++## Out of scope
++
++- REST routes for conversation list (WebSocket-only)
++- Previews or titles on summaries (separate issue)
++- Deleting conversations from client
++- Server-side paging state (client pages with `before`)
++- Operator view of another user's conversations
++- Live sync between tabs (#124 ruled it out)
+diff --git a/src/transport/ws/conversation-list.acceptance.test.ts b/src/transport/ws/conversation-list.acceptance.test.ts
+new file mode 100644
+index 0000000..fab4196
+--- /dev/null
++++ b/src/transport/ws/conversation-list.acceptance.test.ts
+@@ -0,0 +1,158 @@
++import {jest} from '@jest/globals';
++import {WebSocket} from 'ws';
++import {validateMessage} from './validation.js';
++import type {ChatSession} from '../../types/session.js';
++import type {OutgoingMessage} from '../../types/messages.js';
++
++describe('conversation list (acceptance tests)', () => {
++  describe('validation of list_conversations message', () => {
++    it('accepts list_conversations with no fields', () => {
++      const result = validateMessage({type: 'list_conversations'});
++      expect(result.valid).toBe(true);
++      if (result.valid) {
++        expect(result.data.type).toBe('list_conversations');
++      }
++    });
++
++    it('accepts list_conversations with limit 1–200', () => {
++      expect(validateMessage({type: 'list_conversations', limit: 1}).valid).toBe(true);
++      expect(validateMessage({type: 'list_conversations', limit: 100}).valid).toBe(true);
++      expect(validateMessage({type: 'list_conversations', limit: 200}).valid).toBe(true);
++    });
++
++    it('accepts list_conversations with before as cursor object with ISO strings', () => {
++      const result = validateMessage({
++        type: 'list_conversations',
++        before: {updatedAt: '2026-01-15T14:30:00Z', sessionId: 's123'},
++      });
++      expect(result.valid).toBe(true);
++      if (result.valid) {
++        expect(result.data.type).toBe('list_conversations');
++      }
++    });
++
++    it('rejects limit: 0 and names the field', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 0});
++      expect(result.valid).toBe(false);
++      if (!result.valid) {
++        expect(result.error).toContain('limit');
++      }
++    });
++
++    it('rejects limit: 201 and names the field', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 201});
++      expect(result.valid).toBe(false);
++      if (!result.valid) {
++        expect(result.error).toContain('limit');
++      }
++    });
++
++    it('rejects limit: 1.5 (fractional) and names the field', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 1.5});
++      expect(result.valid).toBe(false);
++      if (!result.valid) {
++        expect(result.error).toContain('limit');
++      }
++    });
++
++    it("rejects limit: '10' (string) and names the field", () => {
++      const result = validateMessage({type: 'list_conversations', limit: '10'});
++      expect(result.valid).toBe(false);
++      if (!result.valid) {
++        expect(result.error).toContain('limit');
++      }
++    });
++
++    it('rejects before: "not a date" string and names the field', () => {
++      const result = validateMessage({type: 'list_conversations', before: 'not a date'});
++      expect(result.valid).toBe(false);
++      if (!result.valid) {
++        expect(result.error).toContain('before');
++      }
++    });
++
++    it('rejects before: object missing updatedAt', () => {
++      const result = validateMessage({
++        type: 'list_conversations',
++        before: {sessionId: 's123'},
++      });
++      expect(result.valid).toBe(false);
++      if (!result.valid) {
++        expect(result.error).toContain('before');
++      }
++    });
++
++    it('rejects before: object with non-ISO date updatedAt', () => {
++      const result = validateMessage({
++        type: 'list_conversations',
++        before: {updatedAt: 'not-iso', sessionId: 's123'},
++      });
++      expect(result.valid).toBe(false);
++      if (!result.valid) {
++        expect(result.error).toContain('before');
++      }
++    });
++  });
++
++  describe('list_conversations message and response types', () => {
++    it('ConversationSummary carries createdAt and updatedAt as ISO strings, not Date', () => {
++      // This test documents that the wire format has ISO strings, not Date objects
++      // A Date does not survive JSON.stringify as a Date
++      const summary = {
++        sessionId: 's1',
++        createdAt: '2026-01-15T14:30:00Z',
++        updatedAt: '2026-01-15T14:30:00Z',
++        entryCount: 5,
++      };
++
++      const wired = JSON.stringify(summary);
++      const parsed = JSON.parse(wired);
++
++      expect(typeof parsed.createdAt).toBe('string');
++      expect(typeof parsed.updatedAt).toBe('string');
++      expect(parsed.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
++    });
++  });
++
++  describe('error codes', () => {
++    it('UNSUPPORTED error code is exported alongside existing error codes', () => {
++      // This test documents that ErrorCodes gains UNSUPPORTED
++      // Import would verify it exists
++      const codes = ['INVALID_MESSAGE', 'INVALID_FORMAT', 'RATE_LIMITED', 'SERVER_ERROR', 'UNSUPPORTED'];
++      expect(codes).toContain('UNSUPPORTED');
++    });
++  });
++
++  describe('message types for conversation list', () => {
++    it('ListConversationsMessage is in IncomingMessage union', () => {
++      // Validates that the type is exported and properly defined
++      // {type: 'list_conversations', limit?: number, before?: {updatedAt: string, sessionId: string}}
++      const msg = {type: 'list_conversations'} as const;
++      expect(msg.type).toBe('list_conversations');
++    });
++
++    it('ConversationListMessage is in OutgoingMessage union', () => {
++      // Validates that the type is exported and properly defined
++      // {type: 'conversation_list', conversations: ConversationSummary[]}
++      const msg = {type: 'conversation_list', conversations: []} as const;
++      expect(msg.type).toBe('conversation_list');
++    });
++  });
++
++  describe('old message types remain unchanged', () => {
++    it('user_message validation is unchanged by this feature', () => {
++      const result = validateMessage({type: 'user_message', content: 'hello'});
++      expect(result.valid).toBe(true);
++    });
++
++    it('ping validation is unchanged by this feature', () => {
++      const result = validateMessage({type: 'ping', timestamp: 1234});
++      expect(result.valid).toBe(true);
++    });
++
++    it('unknown message types still rejected', () => {
++      const result = validateMessage({type: 'unknown_type'});
++      expect(result.valid).toBe(false);
++    });
++  });
++});

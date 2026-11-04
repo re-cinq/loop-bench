@@ -1,0 +1,1 @@
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"spec links and test name formatting","tdd_next":"acceptance green"}}

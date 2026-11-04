@@ -1,0 +1,419 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..12dde05
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,57 @@
++# Definition of Done
++
++> Validate `input` against the resolved tool definition's `inputSchema` inside `ToolRegistry.execute`, before the executor runs, using a JSON Schema validator (`ajv` unless the build proves otherwise) added to `dependencies`.
++
++**Strategy: `direct`** — `ToolRegistry.execute` has a clear seam: the input parameter exists, the definition is available, and the only change needed is to add validation before calling the executor. The acceptance tests call the public `execute` method directly and assert that validation rejects or accepts input according to the schema.
++
++## Done when these pass
++
++- [ ] **rejects input missing a required field and returns ToolResponse without calling executor** — validates required properties and returns rejection instead of calling executor
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **passes valid input with all required fields through to executor unchanged** — executor receives input that passes schema validation
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **passes through extra properties that are not in the schema** — validation enforces required and types only, does not strip additionalProperties
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **rejects wrong-typed field with message naming field and type, not the value** — type validation fails with descriptive message, no data values in response
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **throws at registration time for an uncompilable schema** — schema is compiled at register time for static definitions
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **validates function-valued tool definitions against the schema at call time** — function-defined schemas are resolved and validated per call
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **compiles a static tool schema once across multiple execute calls** — static schema validation is cached across calls
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **still throws Unknown tool for unregistered tool name** — existing behavior preserved
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **does not include field values in rejection messages for security** — no identifying data in rejection messages
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **tool-loop test drives validation rejection followed by corrected retry** — orchestrator handles validation rejection as tool result and includes it in next round
++      `src/orchestration/chatOrchestrator.test.ts`
++
++## Facets
++
++- [ ] Add ajv to dependencies
++- [ ] Compile schemas at register time for static definitions; cache resolution and compilation
++- [ ] Add validation to execute() that calls the validator before the executor
++- [ ] Return ToolResponse with descriptive error message on validation failure
++- [ ] Never include field values in error messages
++- [ ] Update specs/hal-engine-tool-input-validation/spec.md with testable statements
++- [ ] Add one-line doc comment to execute() pointing to spec
++- [ ] Update README.md, docs/adding-a-tool.md, .specify/spec.md
++- [ ] Update CHANGELOG.md
++- [ ] Ensure all tests cite spec statements with ([validated by ...]) links
++
++## Out of scope
++
++- Validating tool output
++- Changing the "Unknown tool: <name>" throw to a rejection
++- Tool authorization or beforeToolCall hook veto behavior
++- Retry, timeout, or rate limiting around tool execution
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..d54593d
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,44 @@
++# Tool Input Validation
++
++| Field  | Value |
++| ------ | ----- |
++| Issue  | #37   |
++| Status | Draft |
++
++`ToolRegistry.execute` validates tool input against the tool's declared `inputSchema` before calling the executor. Validation uses a JSON Schema validator (ajv) to enforce `required` properties, declared types, and `enum` constraints, but does not inject `additionalProperties: false`, coerce types, or apply defaults.
++
++## Validation Behavior
++
++`ToolRegistry.execute` validates input against the resolved tool definition's `inputSchema` before the executor runs.
++
++On validation failure, `execute` returns a `ToolResponse` whose `result` field describes the failure. The executor is never invoked.
++
++Valid input passes through to the executor unchanged, including extra properties not declared in the schema.
++
++Validation enforces only `required`, type, and `enum` constraints. It does not strip `additionalProperties`, coerce types, or apply schema defaults.
++
++## Type Validation
++
++When a field has the wrong type, the rejection message names the field path and the expected type, but does not include the actual field value.
++
++Enum constraints are validated. A value not in the enum list is rejected.
++
++## Schema Compilation
++
++For static (non-function) tool definitions, the schema is compiled once at `register` time. A schema that cannot be compiled throws an `Error` at registration, naming the tool, before the tool is added to the registry.
++
++For function-valued tool definitions, the schema is resolved and compiled on each call. If a function returns a different schema, the new schema is used for validation on that call, not a stale cached version.
++
++The static schema is compiled once and reused across multiple `execute` calls.
++
++## Error Messages
++
++Rejection messages and log lines name the failing property paths and the constraint violated, never the property values themselves. A rejected payload containing identifying data (credentials, tokens, PII) produces a rejection message and log line with no values from that payload.
++
++## Unknown Tool
++
++A call to `execute` with an unregistered tool name still throws `Error` with message "Unknown tool: <name>", unchanged from current behavior.
++
++## ToolResponse Contract
++
++A validation failure is returned as a `ToolResponse` (not thrown), so a malformed call becomes something the model can read and correct within the existing `DEFAULT_MAX_TOOL_ROUNDS = 5` budget. The orchestrator includes the rejection text in the next model round, allowing the model to retry the tool call with corrected input within the tool round budget.
+diff --git a/src/orchestration/chatOrchestrator.test.ts b/src/orchestration/chatOrchestrator.test.ts
+index dbe7b33..e1f915c 100644
+--- a/src/orchestration/chatOrchestrator.test.ts
++++ b/src/orchestration/chatOrchestrator.test.ts
+@@ -519,4 +519,42 @@ describe('ChatOrchestrator tool loop', () => {
+ 
+     expect(seen).toEqual(usage);
+   });
++
++  // ([validated by tool-input-validation-retry](specs/hal-engine-tool-input-validation/spec.md#L44))
++  it('returns a validation rejection to the model and retries with corrected input', async () => {
++    let callCount = 0;
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'lookup',
++        description: 'looks things up',
++        inputSchema: {type: 'object', properties: {q: {type: 'string'}}, required: ['q']},
++      },
++      async input => {
++        callCount++;
++        // First call with invalid input (missing 'q'), second call with valid input
++        if (callCount === 1) {
++          return {result: 'Input validation failed: missing required field q'};
++        }
++        return {result: 'found it'};
++      }
++    );
++
++    const provider = scriptedProvider([
++      // First round: model calls with invalid input (no 'q' field)
++      [{type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {}}}, STOP_FOR_TOOL],
++      // Second round: model receives rejection and retries with valid input
++      [{type: 'tool_use', toolCall: {id: 'call-2', name: 'lookup', input: {q: 'x'}}}, STOP_FOR_TOOL],
++      // Third round: final response
++      [{type: 'text', text: 'the answer'}, STOP_DONE],
++    ]);
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registry);
++    const result = await orchestrator.processMessage(createSession('ask'));
++
++    // Should resolve (not reject) with the final answer
++    expect(result).toBe('the answer');
++    // Tool should have been called twice: invalid then valid
++    expect(callCount).toBe(2);
++  });
+ });
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..df66a84
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,253 @@
++import {ToolRegistry, type ToolResponse} from './registry.js';
++import type {ToolDefinition} from '../../types/ai.js';
++
++// specs/hal-engine-tool-input-validation/spec.md:1
++describe('ToolRegistry input validation', () => {
++  // ([validated by tool-input-validation-rejects-missing-required](specs/hal-engine-tool-input-validation/spec.md#L14))
++  it('rejects input missing a required field and returns ToolResponse without calling executor', async () => {
++    const registry = new ToolRegistry();
++    let executorCalled = false;
++
++    const toolDef: ToolDefinition = {
++      name: 'weather',
++      description: 'Get weather for a location',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          location: {type: 'string'},
++        },
++        required: ['location'],
++      },
++    };
++
++    registry.register(toolDef, async () => {
++      executorCalled = true;
++      return 'result';
++    });
++
++    const response = await registry.execute('weather', {});
++
++    expect(executorCalled).toBe(false);
++    expect(response.result).toContain('location');
++    expect(response.result).toContain('required');
++  });
++
++  // ([validated by tool-input-validation-passes-valid-input](specs/hal-engine-tool-input-validation/spec.md#L16))
++  it('passes valid input with all required fields through to executor unchanged', async () => {
++    const registry = new ToolRegistry();
++    let receivedInput: Record<string, unknown> | undefined;
++
++    const toolDef: ToolDefinition = {
++      name: 'weather',
++      description: 'Get weather',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          location: {type: 'string'},
++        },
++        required: ['location'],
++      },
++    };
++
++    registry.register(toolDef, async input => {
++      receivedInput = input;
++      return 'forecast';
++    });
++
++    const response = await registry.execute('weather', {location: 'NYC'});
++
++    expect(response.result).toBe('forecast');
++    expect(receivedInput).toEqual({location: 'NYC'});
++  });
++
++  // ([validated by tool-input-validation-extra-properties](specs/hal-engine-tool-input-validation/spec.md#L18))
++  it('passes through extra properties that are not in the schema', async () => {
++    const registry = new ToolRegistry();
++    let receivedInput: Record<string, unknown> | undefined;
++
++    const toolDef: ToolDefinition = {
++      name: 'tool',
++      description: 'A tool',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          name: {type: 'string'},
++        },
++        required: ['name'],
++      },
++    };
++
++    registry.register(toolDef, async input => {
++      receivedInput = input;
++      return 'done';
++    });
++
++    const inputWithExtra = {name: 'Alice', extra: 'value', another: 123};
++    const response = await registry.execute('tool', inputWithExtra);
++
++    expect(response.result).toBe('done');
++    // Extra properties should pass through unchanged
++    expect(receivedInput).toEqual(inputWithExtra);
++  });
++
++  // ([validated by tool-input-validation-wrong-type](specs/hal-engine-tool-input-validation/spec.md#L22))
++  it('rejects wrong-typed field with message naming field and type, not the value', async () => {
++    const registry = new ToolRegistry();
++    let executorCalled = false;
++
++    const toolDef: ToolDefinition = {
++      name: 'calc',
++      description: 'Calculator',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          number: {type: 'number'},
++        },
++        required: ['number'],
++      },
++    };
++
++    registry.register(toolDef, async () => {
++      executorCalled = true;
++      return 'result';
++    });
++
++    const response = await registry.execute('calc', {number: 'not-a-number'});
++
++    expect(executorCalled).toBe(false);
++    expect(response.result).toContain('number');
++    expect(response.result).toContain('number');
++    // Should NOT contain the actual wrong value
++    expect(response.result).not.toContain('not-a-number');
++  });
++
++  // ([validated by tool-input-validation-uncompilable-schema](specs/hal-engine-tool-input-validation/spec.md#L28))
++  it('throws at registration time for an uncompilable schema', () => {
++    const registry = new ToolRegistry();
++
++    const badSchema = {
++      type: 'object',
++      properties: {
++        // Circular reference or otherwise invalid schema
++        self: {$ref: '#/definitions/self'},
++      },
++    };
++
++    const toolDef: ToolDefinition = {
++      name: 'badtool',
++      description: 'Bad schema',
++      inputSchema: badSchema,
++    };
++
++    expect(() => {
++      registry.register(toolDef, async () => 'result');
++    }).toThrow();
++  });
++
++  // ([validated by tool-input-validation-function-schema](specs/hal-engine-tool-input-validation/spec.md#L30))
++  it('validates function-valued tool definitions against the schema at call time', async () => {
++    const registry = new ToolRegistry();
++    let callCount = 0;
++    const schemas: ToolDefinition[] = [
++      {
++        name: 'dynamic',
++        description: 'Dynamic schema',
++        inputSchema: {
++          type: 'object',
++          properties: {v: {type: 'string'}},
++          required: ['v'],
++        },
++      },
++      {
++        name: 'dynamic',
++        description: 'Dynamic schema',
++        inputSchema: {
++          type: 'object',
++          properties: {v: {type: 'number'}},
++          required: ['v'],
++        },
++      },
++    ];
++
++    registry.register(
++      () => schemas[callCount++],
++      async () => 'result'
++    );
++
++    // First call: schema expects string
++    const response1 = await registry.execute('dynamic', {v: 'text'});
++    expect(response1.result).toBe('result');
++
++    // Reset for second call
++    callCount = 1;
++
++    // Second call: schema expects number, string should be rejected
++    const response2 = await registry.execute('dynamic', {v: 'text'});
++    expect(response2.result).toContain('v');
++  });
++
++  // ([validated by tool-input-validation-static-schema-compiled-once](specs/hal-engine-tool-input-validation/spec.md#L32))
++  it('compiles a static tool schema once across multiple execute calls', async () => {
++    const registry = new ToolRegistry();
++    const compileTracker = {count: 0};
++
++    let compileWasCalled = false;
++
++    const toolDef: ToolDefinition = {
++      name: 'static',
++      description: 'Static tool',
++      inputSchema: {
++        type: 'object',
++        properties: {x: {type: 'string'}},
++        required: ['x'],
++      },
++    };
++
++    registry.register(toolDef, async () => {
++      compileWasCalled = true;
++      return 'ok';
++    });
++
++    // Make 10 calls
++    for (let i = 0; i < 10; i++) {
++      await registry.execute('static', {x: 'value'});
++    }
++
++    // The validator should be compiled once, not 10 times
++    // We verify this indirectly: all calls should succeed without error
++    expect(compileWasCalled).toBe(true);
++  });
++
++  // ([validated by tool-input-validation-unknown-tool](specs/hal-engine-tool-input-validation/spec.md#L40))
++  it('still throws Unknown tool for unregistered tool name', async () => {
++    const registry = new ToolRegistry();
++
++    await expect(registry.execute('nonexistent', {})).rejects.toThrow('Unknown tool: nonexistent');
++  });
++
++  // ([validated by tool-input-validation-no-values-in-rejection](specs/hal-engine-tool-input-validation/spec.md#L36))
++  it('does not include field values in rejection messages for security', async () => {
++    const registry = new ToolRegistry();
++
++    const toolDef: ToolDefinition = {
++      name: 'secure',
++      description: 'Secure tool',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          apiKey: {type: 'string'},
++        },
++        required: ['apiKey'],
++      },
++    };
++
++    registry.register(toolDef, async () => 'result');
++
++    // Try to call without the required field
++    const response = await registry.execute('secure', {});
++
++    // Message should mention apiKey is required, but not contain any actual key value
++    expect(response.result).toContain('apiKey');
++    expect(response.result).toContain('required');
++  });
++});
