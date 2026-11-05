@@ -1,7 +1,7 @@
-Committed and pushed `6a53d7c`: invalid static schemas now fail registration with the tool name.
+Committed and pushed `efb131c`: static tool registration now rejects invalid schemas and names the tool.
 
-One test went red, then green after implementation and refactoring. No regressions reported; acceptance tests remain CI’s responsibility. Branch is clean, pushed, and current with `main`.
+One test went red, then green; no regressions observed. Acceptance tests remain CI’s responsibility. Main is merged; the working tree is clean and fully pushed.
 
-Next: retain validators and validate execution input. No unrelated smells identified.
+Next: retain validators and validate execution input. No unrelated smells addressed.
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Reject invalid static schemas at registration with the tool name","tdd_next":"Retain compiled validators and reject invalid execution input"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Reject invalid static schemas at registration with a tool-named error","tdd_next":"Retain compiled validators and validate input before execution"}}

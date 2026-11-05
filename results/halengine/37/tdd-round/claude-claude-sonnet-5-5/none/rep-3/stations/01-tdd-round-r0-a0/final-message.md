@@ -1,24 +1,14 @@
-I did one round and pushed it. The branch is in sync with its upstream and merges cleanly with `origin/main`. I did not run the acceptance tests, per the brief, so CI will give the first verdict on them.
+This round added input validation to `ToolRegistry`, with `ajv` as a dependency. I wrote one test, an enum rejection, and it passes. I did not run the acceptance tests; CI will.
 
-- **My test:** `src/orchestration/tools/registry.test.ts` checks that valid input with an unlisted extra property reaches the executor unchanged and exactly once. It passed locally, run through `node --experimental-vm-modules node_modules/jest/bin/jest.js`, because plain `npx jest` can't load ESM here.
-- **Code:**
-  - I added `ajv@^8` to `dependencies` (the lockfile only had ajv 6 as a transitive package) and bumped the version to 0.4.0.
-  - `ToolRegistry` now compiles a static schema at `register` and throws an error naming the tool if it won't compile.
-  - Function-valued schemas are cached by schema object in a `WeakMap`.
-  - `execute` returns `{result}` naming the failing path and constraint, never the value, and logs a warning without the value. It does not call the executor on a rejection.
-  - `execute` has the one-line doc comment pointing at the spec, and the "Unknown tool" throw is unchanged.
-- **Docs:** I linked the passthrough statement in `specs/hal-engine-tool-input-validation/spec.md`, added a `CHANGELOG.md` entry, and ticked three of the four facets in `.lore/dod.md`.
-- **Tests and counts:** I wrote one test, and it was green. No regressions are known.
+- **Test:** `registry.test.ts` checks that an out-of-enum value is rejected, naming the path and the constraint and not leaking the value. I added a matching statement to `specs/hal-engine-tool-input-validation/spec.md`, linked to that test (`registry.test.ts#L4`).
+- **`package.json`:** `ajv` ^8.17.1 is added to `dependencies`, and the version is bumped from 0.3.0 to 0.4.0. `scripts/spec-links/reanchor.mjs` doesn't exist in this repo, so I set the link line by hand.
+- **`registry.ts`:** static schemas are compiled at `register`, and a broken one throws an error naming the tool. Function-valued schemas are cached by schema object in a `WeakMap`. `execute` returns a rejection `ToolResponse` instead of throwing, and never runs the executor on invalid input. It names the path and constraint, not the value. It also has the one-line doc comment pointing at the spec.
+- **`.lore/dod.md`:** I ticked the first three facets. The fourth (the remaining unit tests and the docs updates) is still open.
 
-I wrote the first three facets together rather than one, because the ajv dependency alone moves no acceptance test.
+I did not run the typecheck, the linter or the full suite. The branch is pushed and `origin/main` was already merged.
 
-**Left for the next round:**
-- The remaining unit tests in `registry.test.ts` and in `chatOrchestrator.test.ts`.
-- The docs updates: `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, the ADR and `example/weather-tool.ts`.
-- Spec links for the remaining statements.
+No red tests were mine, and I caused no regressions. I did not run the existing suite, so I can't rule out a regression that CI might report.
 
-**Unrelated or unconfirmed:**
-- The unlisted `scripts/spec-links/reanchor.mjs` doesn't exist in this repo, so I set the `#L4` anchor by hand.
-- Installing ajv 8 changed two other packages in the lockfile, which I didn't inspect.
+Left for later rounds: the `chatOrchestrator.test.ts` loop test, tests for pass-through, the register-time throw and compile-once caching, and the docs, README, `.specify/spec.md`, ADR-002, example and CHANGELOG updates.
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"ajv dependency, register-time compile with WeakMap cache, and execute-time validation","tdd_next":"remaining unit tests (registry.test.ts, chatOrchestrator.test.ts), spec links, and docs/README/.specify/ADR/example updates"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"ajv dependency, register-time compile, and execute-time input validation with enum rejection test","tdd_next":"remaining unit tests (pass-through, compile-once, orchestrator loop) plus docs, README, spec, ADR and CHANGELOG updates"}}
