@@ -1,0 +1,156 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..0aa6b6b
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,28 @@
++# Definition of Done
++
++> A client cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — `createServer` with a real WebSocket upgrade is an existing seam; the new `history` option and `list_conversations` frame are absent, so the tests fail on behaviour (the frame is answered `INVALID_MESSAGE`).
++
++## Done when these pass
++
++- [ ] **validates list_conversations** — bare frame valid; `limit` 0/201/1.5/'10' and `before: 'not a date'` invalid, with the field named.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **answers with one conversation_list of the connecting user only** — newest first, ISO times, a frame `userId` of another user ignored.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **passes limit and the connection user to listFor** — asserted on the recorded argument, not the frame's `userId`.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **answers UNSUPPORTED when history is off or the store cannot list** — one `error` frame, no list.
++      `src/transport/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] `validateMessage` accepts/rejects `list_conversations`; types added to `messages.ts`
++- [ ] `ErrorCodes.UNSUPPORTED`, `transport.history` threaded through config and `createServer`
++- [ ] Handler answers the list off the lock, from `ws.userId`
++- [ ] Specs, docs (`npm run docs:fix`), CHANGELOG; spec statements get `validated by` links to this file
++
++## Out of scope
++
++- Previews/titles, deleting from the client, server-side paging state, operator views, live tab sync.
++- Not pinned here (left to rounds): `SERVER_ERROR` on a rejecting store, `StoreCannotList`, answering during a streaming turn, the reconnect-by-id end to end, startup warning.
+diff --git a/src/transport/conversationList.acceptance.test.ts b/src/transport/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..c6a86b4
+--- /dev/null
++++ b/src/transport/conversationList.acceptance.test.ts
+@@ -0,0 +1,116 @@
++import {WebSocket} from 'ws';
++import {validateMessage} from './ws/validation.js';
++import {connectClient, startEngineWith, stopEngines} from './wsTestSupport.js';
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++import type {SessionListOptions, SessionStore} from '../types/sessionStore.js';
++import {setLogger} from '../shared/logger.js';
++
++// Real upgrades over a real socket: the list is the connection's own, and only a real upgrade can say whose that is.
++// Spec anchor: specs/hal-engine-websocket-protocol/spec.md (list_conversations / conversation_list, #144).
++
++interface Frame {
++  type: string;
++  code?: string;
++  message?: string;
++  conversations?: Array<{sessionId: string; createdAt: string; updatedAt: string; entryCount: number}>;
++}
++
++beforeAll(() => {
++  setLogger({debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined});
++});
++
++afterAll(() => {
++  setLogger();
++});
++
++afterEach(stopEngines);
++
++// A ping sent after the request is a barrier: its pong can only follow the request's answer.
++const askForList = (url: string, request: Record<string, unknown>): Promise<Frame[]> => {
++  const client: WebSocket = connectClient(url);
++  const frames: Frame[] = [];
++  return new Promise<Frame[]>(resolve => {
++    client.on('message', raw => {
++      const frame = JSON.parse(String(raw)) as Frame;
++      frames.push(frame);
++      if (frame.type === 'connected') {
++        client.send(JSON.stringify(request));
++        client.send(JSON.stringify({type: 'ping', timestamp: 1}));
++      }
++      if (frame.type === 'pong') resolve(frames.filter(seen => seen.type !== 'connected' && seen.type !== 'pong'));
++    });
++  });
++};
++
++// Two earlier conversations of u1, one of someone else, created in a known order.
++const seededStore = async (): Promise<InMemorySessionStore> => {
++  const store = new InMemorySessionStore();
++  store.create('older', 'u1');
++  await new Promise(resolve => setTimeout(resolve, 5));
++  store.create('other-users', 'u2');
++  store.create('newer', 'u1');
++  return store;
++};
++
++describe('conversation list over the websocket (#144)', () => {
++  it('validates list_conversations: bare frame valid, a bad limit or before invalid and named', () => {
++    expect(validateMessage({type: 'list_conversations'}).valid).toBe(true);
++
++    for (const bad of [{limit: 0}, {limit: 201}, {limit: 1.5}, {limit: '10'}]) {
++      const result = validateMessage({type: 'list_conversations', ...bad});
++      expect(result.valid).toBe(false);
++      if (!result.valid) expect(result.error).toContain('limit');
++    }
++    const badBefore = validateMessage({type: 'list_conversations', before: 'not a date'});
++    expect(badBefore.valid).toBe(false);
++    if (!badBefore.valid) expect(badBefore.error).toContain('before');
++  });
++
++  it('answers with one conversation_list of the connecting user only, newest first, ISO times, whatever userId the frame carries', async () => {
++    const store = await seededStore();
++    const {url} = await startEngineWith({sessionStore: store, history: {enabled: true}} as never);
++
++    const frames = await askForList(url, {type: 'list_conversations', userId: 'u2'});
++
++    expect(frames.map(frame => frame.type)).toEqual(['conversation_list']);
++    const rows = frames[0].conversations ?? [];
++    // The connection's own fresh session is listed too, and is the newest.
++    expect(rows.map(row => row.sessionId).slice(1)).toEqual(['newer', 'older']);
++    expect(rows).toHaveLength(3);
++    expect(rows.map(row => row.sessionId)).not.toContain('other-users');
++    for (const row of rows) {
++      expect(new Date(row.createdAt).toISOString()).toBe(row.createdAt);
++      expect(new Date(row.updatedAt).toISOString()).toBe(row.updatedAt);
++    }
++  });
++
++  it('passes limit and the connection user to listFor, never the userId from the frame', async () => {
++    const calls: Array<{userId: string | number; options?: SessionListOptions}> = [];
++    const inner = new InMemorySessionStore();
++    const store = Object.assign(inner, {
++      listFor: (userId: string | number, options?: SessionListOptions) => {
++        calls.push({userId, options});
++        return [];
++      },
++    }) as SessionStore;
++    const {url} = await startEngineWith({sessionStore: store, history: {enabled: true}} as never);
++
++    await askForList(url, {type: 'list_conversations', userId: 'u2', limit: 7});
++
++    expect(calls).toHaveLength(1);
++    expect(calls[0].userId).toBe('u1');
++    expect(calls[0].options?.limit).toBe(7);
++  });
++
++  it('answers UNSUPPORTED, with no list, when history is off or the store cannot list', async () => {
++    const off = await startEngineWith({sessionStore: new InMemorySessionStore()});
++    const offFrames = await askForList(off.url, {type: 'list_conversations'});
++    expect(offFrames.map(frame => [frame.type, frame.code])).toEqual([['error', 'UNSUPPORTED']]);
++
++    const store = new InMemorySessionStore();
++    Reflect.set(store, 'listFor', undefined);
++    const noList = await startEngineWith({sessionStore: store, history: {enabled: true}} as never);
++    const noListFrames = await askForList(noList.url, {type: 'list_conversations'});
++    expect(noListFrames.map(frame => [frame.type, frame.code])).toEqual([['error', 'UNSUPPORTED']]);
++  });
++});

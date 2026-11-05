@@ -1,0 +1,232 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..4bb0212
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,27 @@
++# Definition of Done
++
++> A consumer has `store.listFor(userId)`. It does not give a **client** anything: the browser holding the socket cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — `validateMessage`, `createServer` and the real WebSocket upgrade already exist, so the tests drive them today and fail because `list_conversations` is an unknown type and `transport.history` does not exist.
++
++## Done when these pass
++
++- [ ] **accepts a bare list_conversations and names the field of any bad limit or before** — validation: limit integer 1-200, `before` parseable, else `INVALID_MESSAGE` naming the field.
++  `src/transport/conversationListFrame.acceptance.test.ts`
++- [ ] **answers the connecting user their own conversations, newest first, whatever userId the frame carries** — one `conversation_list` with ISO times, `listFor` called with `ws.userId`, `limit`/`before` passed through.
++  `src/transport/conversationListFrame.acceptance.test.ts`
++- [ ] **answers one UNSUPPORTED error, never a list, when history is off or the store cannot list** — opt-in flag off, or no `listFor`.
++  `src/transport/conversationListFrame.acceptance.test.ts`
++- [ ] **answers a list request while a user_message is still streaming, before its stream_end** — answered off the per-session lock.
++  `src/transport/conversationListFrame.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the two frame types, `ErrorCodes.UNSUPPORTED` and the validation case.
++- [ ] Add `transport.history` and thread it through `createServer` into `createMessageHandler` with the store.
++- [ ] Answer `list_conversations` beside `ping`, off the lock, with the three refusals/answers above.
++- [ ] Not pinned here, still owed by the ticket: `listFor` rejection as `SERVER_ERROR` / `StoreCannotList` as `UNSUPPORTED`, resume-by-id from a row, `ConnectedMessage` unchanged, CHANGELOG, `example/full-config.ts` + `npm run docs:fix`, remaining spec text.
++
++## Out of scope
++
++- Previews or titles, deleting a conversation from the client, server-held paging state, operator views of other users, live sync between tabs.
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..14e88ba 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -160,6 +160,15 @@ Application-level heartbeat. The server MUST respond with a `pong` message echoi
+ | `type`      | string | Yes      | `"ping"`                          |
+ | `timestamp` | number | Yes      | Client timestamp in milliseconds  |
+ 
++### 4.3 list_conversations
++
++Asks for the connection's authenticated user's own conversations (re-cinq/HALEngine#144). The frame has no user id field: the list is always the connection's user's.
++
++- `limit`, when present, is an integer 1-200 and `before`, when present, a string `Date.parse` accepts; anything else is `INVALID_MESSAGE` naming the field ([validated by: accepts a bare list_conversations and names the field of any bad limit or before](../../src/transport/conversationListFrame.acceptance.test.ts#L74)).
++- It is answered with one `conversation_list` frame of the connecting user's summaries, newest first, with ISO-string times, taken from `ws.userId` and never from the frame ([validated by: answers the connecting user their own conversations, newest first, whatever userId the frame carries](../../src/transport/conversationListFrame.acceptance.test.ts#L91)).
++- With `transport.history` off, or a store that cannot list, it is answered with one `error` frame coded `UNSUPPORTED` and never an empty list ([validated by: answers one UNSUPPORTED error, never a list, when history is off or the store cannot list](../../src/transport/conversationListFrame.acceptance.test.ts#L121)).
++- It is answered off the per-session lock, so it does not wait for a streaming turn's `stream_end` ([validated by: answers a list request while a user_message is still streaming, before its stream_end](../../src/transport/conversationListFrame.acceptance.test.ts#L137)).
++
+ ## 5. Server-to-Client Messages
+ 
+ ### 5.1 connected
+diff --git a/src/transport/conversationListFrame.acceptance.test.ts b/src/transport/conversationListFrame.acceptance.test.ts
+new file mode 100644
+index 0000000..bdc2b0d
+--- /dev/null
++++ b/src/transport/conversationListFrame.acceptance.test.ts
+@@ -0,0 +1,173 @@
++import {once} from 'node:events';
++import type {WebSocket} from 'ws';
++import {connectClient, deferred, startEngineWith, stopEngines} from './wsTestSupport.js';
++import {validateMessage} from './ws/validation.js';
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++import type {ChatOrchestrator} from '../orchestration/chatOrchestrator.js';
++import type {MessageChunk} from '../types/ai.js';
++import type {SessionListOptions, SessionStore} from '../types/sessionStore.js';
++
++// Acceptance for #144: a client asks over its own authenticated socket which conversations it has.
++
++interface Frame {
++  type: string;
++  code?: string;
++  message?: string;
++  conversations?: Array<{sessionId: string; createdAt: string; updatedAt: string; entryCount: number}>;
++}
++
++const HISTORY_ON = {history: {enabled: true}};
++const FAIL_FAST_MS = 5_000;
++
++const entryAt = (timestamp: string) => ({role: 'user' as const, content: 'hi', timestamp});
++
++// Two earlier conversations of u1 and one of someone else, written through the real store.
++const seededStore = (): {
++  store: SessionStore;
++  asked: Array<{userId: string | number; options?: SessionListOptions}>;
++} => {
++  const store = new InMemorySessionStore();
++  store.create('old', 'u1').entries.push(entryAt('2026-01-01T00:00:00.000Z'));
++  store.create('mid', 'u1').entries.push(entryAt('2026-01-02T00:00:00.000Z'));
++  store.create('theirs', 'u2').entries.push(entryAt('2026-01-03T00:00:00.000Z'));
++  const asked: Array<{userId: string | number; options?: SessionListOptions}> = [];
++  const list = store.listFor.bind(store);
++  store.listFor = (userId, options) => {
++    asked.push({userId, options});
++    return list(userId, options);
++  };
++  return {store, asked};
++};
++
++const withoutListFor = (): SessionStore => {
++  const store = new InMemorySessionStore();
++  return {
++    create: (id, userId, options) => store.create(id, userId, options),
++    get: id => store.get(id),
++    delete: id => store.delete(id),
++    count: () => store.count(),
++    clear: () => store.clear(),
++  };
++};
++
++// Sends one frame once connected and collects frames until the barrier ping's pong.
++const ask = async (url: string, frame: unknown): Promise<Frame[]> => {
++  const client = connectClient(url);
++  const frames: Frame[] = [];
++  await new Promise<void>(resolve => {
++    client.on('message', raw => {
++      const received = JSON.parse(String(raw)) as Frame;
++      frames.push(received);
++      if (received.type === 'connected') {
++        client.send(JSON.stringify(frame));
++        client.send(JSON.stringify({type: 'ping', timestamp: 1}));
++      }
++      if (received.type === 'pong') resolve();
++    });
++  });
++  return frames.filter(f => f.type !== 'connected' && f.type !== 'pong');
++};
++
++describe('listing conversations over the socket', () => {
++  afterEach(stopEngines);
++
++  it('accepts a bare list_conversations and names the field of any bad limit or before', () => {
++    const verdicts = [
++      {type: 'list_conversations'},
++      {type: 'list_conversations', limit: 200},
++      {type: 'list_conversations', limit: 0},
++      {type: 'list_conversations', limit: 201},
++      {type: 'list_conversations', limit: 1.5},
++      {type: 'list_conversations', limit: '10'},
++      {type: 'list_conversations', before: 'not a date'},
++    ].map(frame => {
++      const result = validateMessage(frame);
++      return result.valid ? 'valid' : (/limit|before/.exec(result.error)?.[0] ?? result.error);
++    });
++
++    expect(verdicts).toEqual(['valid', 'valid', 'limit', 'limit', 'limit', 'limit', 'before']);
++  });
++
++  it(
++    'answers the connecting user their own conversations, newest first, whatever userId the frame carries',
++    async () => {
++      const {store, asked} = seededStore();
++      const {url} = await startEngineWith({sessionStore: store, ...HISTORY_ON});
++      const cursor = {updatedAt: '2026-06-01T00:00:00.000Z', sessionId: 'x'};
++
++      const frames = await ask(url, {type: 'list_conversations', userId: 'u2', limit: 5, before: cursor});
++      const [list] = frames;
++
++      expect({
++        types: frames.map(f => f.type),
++        ids: list.conversations?.map(c => c.sessionId).slice(1),
++        count: list.conversations?.length,
++        isoTimes: list.conversations?.every(
++          c =>
++            new Date(c.createdAt).toISOString() === c.createdAt && new Date(c.updatedAt).toISOString() === c.updatedAt
++        ),
++        asked: asked.map(({userId, options}) => ({userId, ...options})),
++      }).toEqual({
++        types: ['conversation_list'],
++        ids: ['mid', 'old'],
++        count: 3,
++        isoTimes: true,
++        asked: [{userId: 'u1', limit: 5, before: cursor}],
++      });
++    },
++    FAIL_FAST_MS
++  );
++
++  it(
++    'answers one UNSUPPORTED error, never a list, when history is off or the store cannot list',
++    async () => {
++      const off = await startEngineWith({sessionStore: seededStore().store});
++      const cannot = await startEngineWith({sessionStore: withoutListFor(), ...HISTORY_ON});
++
++      const answers = [
++        await ask(off.url, {type: 'list_conversations'}),
++        await ask(cannot.url, {type: 'list_conversations'}),
++      ].map(frames => frames.map(f => `${f.type}:${f.code ?? ''}`));
++
++      expect(answers).toEqual([['error:UNSUPPORTED'], ['error:UNSUPPORTED']]);
++    },
++    FAIL_FAST_MS
++  );
++
++  it(
++    'answers a list request while a user_message is still streaming, before its stream_end',
++    async () => {
++      const held = deferred();
++      const slow: ChatOrchestrator = {
++        processMessage: async () => 'hi',
++        async *processMessageStream(): AsyncGenerator<MessageChunk> {
++          yield {type: 'text', text: 'hi'};
++          await held.until;
++          yield {type: 'stop', stopReason: 'end_turn'};
++        },
++      };
++      const {url} = await startEngineWith({sessionStore: seededStore().store, orchestrator: slow, ...HISTORY_ON});
++      const client: WebSocket = connectClient(url);
++      const seen: string[] = [];
++      const listed = new Promise<void>(resolve => {
++        client.on('message', raw => {
++          const {type} = JSON.parse(String(raw)) as Frame;
++          seen.push(type);
++          if (type === 'connected') client.send(JSON.stringify({type: 'user_message', content: 'go'}));
++          if (type === 'entry_delta') client.send(JSON.stringify({type: 'list_conversations'}));
++          if (type === 'conversation_list' || type === 'error') resolve();
++        });
++      });
++
++      await listed;
++      held.release();
++      if (!seen.includes('stream_end')) await once(client, 'message');
++
++      expect(seen.filter(t => t === 'conversation_list' || t === 'stream_end')).toEqual([
++        'conversation_list',
++        'stream_end',
++      ]);
++    },
++    FAIL_FAST_MS
++  );
++});

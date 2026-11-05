@@ -1,0 +1,9 @@
+I closed one facet this round: a test that a function-valued tool is validated against the schema returned for that call, not a cached one. It is committed and pushed. The branch is not ahead of its upstream, and `origin/main` had nothing new to merge.
+
+- **Test:** it is in `src/orchestration/tools/registry.test.ts`. It runs green locally, along with the existing pass-through test in that file. The implementation already did this, so I never saw the test fail first, and it pins existing behaviour rather than driving new code.
+- **Spec link:** I added the `validated by` link on the matching statement in `specs/hal-engine-tool-input-validation/spec.md`. `scripts/spec-links/reanchor.mjs` doesn't exist in this repo, so I set the `#L25` anchor by hand.
+- **`.lore/dod.md`:** I ticked the new facet and narrowed the remaining one to the unknown-tool pin, compile-once, no-value-leak in logs and the orchestrator retry test. The docs, README, `.specify/spec.md`, ADR, example and CHANGELOG updates are still listed in that remaining facet.
+- **CI:** the brief reported a red build on `ffe27298` (typecheck, eslint, test). The earlier commit `ed7d07e` already fixed the ajv import, the error cause and the acceptance-test lint, so I made no further changes for it. I ran none of the acceptance tests and no typecheck or lint here, so CI's verdict on this push is the next word.
+- **Red tests:** none were mine this round, and none were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"function-valued tool schema validated per call (registry.test.ts + spec link)","tdd_next":"unknown-tool pin, compile-once test, no-value-leak log test, chatOrchestrator retry test, then docs/README/.specify/ADR/example/CHANGELOG"}}

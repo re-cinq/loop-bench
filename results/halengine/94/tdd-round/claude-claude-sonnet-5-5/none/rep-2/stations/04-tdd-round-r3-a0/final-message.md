@@ -1,0 +1,3 @@
+The prettier failure looks like a CI timeout, not a formatting finding. The log says "All matched files use Prettier code style!" and the step then timed out after 10 minutes. I changed nothing this round, because there is no file or line to repair. The branch is up to date with `origin/main` and not ahead of its upstream. All three facets in `.lore/dod.md` are already ticked. I ran no tests, and the formatter had nothing to check. No tests were red this round, so none were mine and none were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

@@ -1,0 +1,1 @@
+The test is green. Refactor review found no duplication or useful extraction in this small change, so I’m keeping it inline. I’ll finish the spec traceability, changelog, and checklist, then format, rerun this test file, and push.

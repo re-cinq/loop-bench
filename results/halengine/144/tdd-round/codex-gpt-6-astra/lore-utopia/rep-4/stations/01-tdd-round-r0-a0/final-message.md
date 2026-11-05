@@ -1,4 +1,5 @@
-{"type":"thread.started","thread_id":"01a19968-a56e-7f13-9255-107abb9798c5"}
-{"type":"turn.started"}
-{"type":"error","message":"You’ve hit your usage limit. Visit https://chatgpt.com/settings/usage to purchase more credits or try again at Nov 4th, 2026 8:08 AM."}
-{"type":"turn.failed","error":{"message":"You’ve hit your usage limit. Visit https://chatgpt.com/settings/usage to purchase more credits or try again at Nov 4th, 2026 8:08 AM."}}
+Blocked: the acceptance tests contradict #144. They require `list_sessions`/`session_list`, listing without opt-in, and an empty list when `listFor` is absent. The ticket requires `list_conversations`/`conversation_list`, opt-in history, and `UNSUPPORTED`.
+
+Your instructions require stopping when acceptance tests are wrong. No files changed, tests run, or commits pushed. CI lookup returned “branch not found”; red-test and regression counts are unknown.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance tests contradict ticket #144 on frame names, opt-in authorization, and missing-store behavior; the acceptance contract needs correction."}}
