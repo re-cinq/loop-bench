@@ -1,0 +1,9 @@
+This round added the orchestrator retry test and repaired the spec link anchors. It is committed and pushed, and the branch is level with its upstream.
+
+- **New test:** `chatOrchestrator.test.ts` now has a test where the model makes a schema-rejected call, then a corrected retry. It asserts `processMessage` resolves and that the rejection text reaches the provider on the next round. I ran it alone and it passes. It never failed first, because the orchestrator already behaved this way.
+- **Spec links:** `specs/hal-engine-tool-input-validation/spec.md` has a new statement for this test. Five of its `registry.test.ts` links pointed one line too high, which I corrected. The nested citation on the function-valued statement was malformed, so I split it into two statements. `check-spec-links` and `check-spec-anchor-names` both pass now.
+- **CI verdict:** I did not re-run typecheck or eslint here. The typecheck errors in the brief were about `Ajv` being a type and `instancePath` missing. They look stale, because HEAD already uses a named `Ajv` import and the installed ajv types include those fields. The eslint spec-link errors were the off-by-one anchors above. The new CI run should confirm this.
+- **Red tests:** none of the brief's failures were regressions I caused. The other tests in the file and `registry.acceptance.test.ts` were not run here, as instructed.
+- **Left for the next round:** `example/weather-tool.ts`, `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `adrs/ADR-002-response-validation.md` and `CHANGELOG.md`. `.lore/dod.md` is updated to say so.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"orchestrator retry test after schema rejection + spec link anchor repair","tdd_next":"update example/weather-tool.ts, docs/adding-a-tool.md, README.md, .specify/spec.md, ADR-002, CHANGELOG.md"}}

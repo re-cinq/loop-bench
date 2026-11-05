@@ -1,0 +1,10 @@
+This round fixed the CI findings and closed one test facet: the static schema is compiled once. The five tests in `registry.test.ts` pass locally. I didn't run the acceptance tests, typecheck or eslint here, so CI is the judge of those. The commit is pushed and the branch is up to date with `origin/main`.
+
+- **ajv import:** the named `Ajv` import failed at runtime under Jest ESM and at typecheck under NodeNext. I restored the default-import form (`AjvModule.default`), which should clear the typecheck errors and the suite load failures. The `instancePath` and `missingProperty` typecheck errors look like cascades from that import, but I haven't confirmed that.
+- **eslint `max-expects`:** I split the function-valued test into two, each with one `expect`. The two now share a helper.
+- **New test:** a static tool's `inputSchema` is read only at `register` time across ten `execute` calls (`registry.test.ts#L63`). I linked it in `specs/hal-engine-tool-input-validation/spec.md`, where I also moved the function-valued link to `#L50`. `scripts/spec-links/reanchor.mjs` doesn't exist in this repo, so I fixed the links by hand.
+- **`.lore/dod.md`:** this round's facet is ticked. The remaining unit tests (wrong-type, register throw, log leak), the orchestrator retry test and the docs, README, `.specify/spec.md`, ADR-002, example and CHANGELOG updates are still open.
+
+Red tests this round: 0 of mine, 0 regressions. The CI failures came from the previous round's own import and test changes.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Ajv default-import repair, max-expects split, static schema compiled-once test","tdd_next":"remaining unit tests (wrong-type, register throw, log leak), orchestrator retry test, then docs/README/.specify/ADR-002/example/CHANGELOG updates"}}
