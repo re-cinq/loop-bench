@@ -1,0 +1,8 @@
+I made no code changes this round because CI's red verdict doesn't point at anything to fix. The `test` step on 13ab565 hit its 15-minute timeout after the whole suite had run: the coverage table printed, then Jest hung on a log from the `src/transport/ws` connection handler ("Cannot log after tests are done"). No failing test was named.
+
+- **Red tests:** 0 were mine and 0 were regressions. This branch's diff doesn't touch `src/transport`. The orchestrator change (`addRoundUsage` and the `TurnUsage` type) can't keep a socket open. Looking at the scripted provider, the acceptance test ends cleanly once it runs out of rounds.
+- **What I committed:** I added the hang to `.lore/dod.md` as an unchecked facet so the next run of the build can show whether it was a runner hang. I didn't run Prettier on that file. I committed, pushed, and merged `origin/main`, which brought in nothing new. `git status` shows the branch level with its upstream.
+- **No tests ran here:** there was no new behaviour to write a test for, and the round brief didn't list any specific findings.
+- **Unrelated problem I left alone:** a transport `ws` suite leaves an async handle open after its tests finish, which can keep Jest from exiting. That suite isn't part of this ticket.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"recorded CI test-step hang after suite completion (no branch-caused red test)","tdd_next":"acceptance green"}}

@@ -1,0 +1,169 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..effb00c
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,35 @@
++# Definition of Done
++
++> "`ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor without ever checking the declared `inputSchema`"
++
++**Strategy: `direct`** — the seam exists: `ToolRegistry.execute` is a public method on `ToolRegistry` that can be called directly in tests, and `createChatOrchestrator` provides the end-to-end seam for the integration test.
++
++## Done when these pass
++
++- [ ] **returns a ToolResponse naming the missing required field and does not invoke the executor** — `execute` with `{}` against a schema requiring `location` returns a ToolResponse whose `result` contains "location" and whose executor call count is 0
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **returns a ToolResponse with the field path in the message but not the offending value when a property has the wrong type** — `execute` with `{name: 12345}` against a schema requiring `name` as string returns a ToolResponse containing "name" but not "12345", executor count 0
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **feeds the validation failure back to the model as a ToolResponse so processMessage resolves through a rejected tool call** — provider calls search with `{q: 99}` (number, not string) in round 1; orchestrator feeds the rejection ToolResponse back; provider returns text in round 2; `processMessage` resolves with executor call count 0
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ajv` to `dependencies` in `package.json` (it is already in `node_modules` as a transitive dep but not declared)
++- [ ] In `ToolRegistry`, compile schemas at `register` time (static) or per call (function-valued); inject `Ajv` validator
++- [ ] In `execute`, run compiled validate; on failure return `{result: <ajv error text>}` without calling executor
++- [ ] Ensure rejection messages include property path and constraint but not property values
++- [ ] Add a one-line doc comment on `execute` pointing at `specs/hal-engine-tool-input-validation/spec.md`
++- [ ] Update `docs/adding-a-tool.md`, `README.md`, and `.specify/spec.md` per ticket
++- [ ] Add `CHANGELOG.md` entry for the MINOR version bump
++- [ ] Confirm `npm run build && node --input-type=module -e "import('./dist/index.js')"` exits 0
++
++## Out of scope
++
++- `Unknown tool: <name>` throw stays unchanged (intentional — tracked separately)
++- Validating tool output
++- Per-tool authorization
++- Retry, timeout, rate limiting around tool execution
++- Schema compilation caching by object identity for function-valued tools (can be added as an optimization)
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..855bf63
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,16 @@
++# Tool Input Validation
++
++| Field  | Value   |
++| ------ | ------- |
++| Issue  | #37     |
++| Status | Shipped |
++
++`ToolRegistry.execute` validates the input it receives against the tool's declared `inputSchema` before invoking the executor. A call whose input does not satisfy the schema returns a `ToolResponse` whose `result` names the failing constraint; the executor is never invoked. Because the failure is a returned value rather than a thrown error, the model receives the rejection as a tool result and can retry within the existing `DEFAULT_MAX_TOOL_ROUNDS` budget.
++
++## Validation contract
++
++When `execute` is called with input that is missing a required property, it returns a `ToolResponse` whose `result` names that property, and the executor is never invoked. ([validated by: returns a ToolResponse naming the missing required field and does not invoke the executor](../../src/orchestration/tools/registry.acceptance.test.ts#L9))
++
++When `execute` is called with a property whose value has the wrong type, it returns a `ToolResponse` whose `result` contains the property path but not the offending value, and the executor is never invoked. Rejection messages never echo input values to prevent identifying data from leaking through error text. ([validated by: returns a ToolResponse with the field path in the message but not the offending value when a property has the wrong type](../../src/orchestration/tools/registry.acceptance.test.ts#L32))
++
++A validation failure is returned as a `ToolResponse`, not thrown, so `processMessage` resolves when the model retries with valid input after receiving the rejection as a tool result. ([validated by: feeds the validation failure back to the model as a ToolResponse so processMessage resolves through a rejected tool call](../../src/orchestration/tools/registry.acceptance.test.ts#L58))
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..1b2e145
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,100 @@
++import {ToolRegistry} from './registry.js';
++import {createChatOrchestrator} from '../chatOrchestrator.js';
++import {PromptBuilder} from '../../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../../types/ai.js';
++
++const promptBuilder = new PromptBuilder({identity: 'test'});
++
++describe('ToolRegistry input validation', () => {
++  it('returns a ToolResponse naming the missing required field and does not invoke the executor', async () => {
++    let executorCalls = 0;
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'weather',
++        description: 'get weather',
++        inputSchema: {type: 'object', properties: {location: {type: 'string'}}, required: ['location']},
++      },
++      async () => {
++        executorCalls++;
++        return 'sunny';
++      }
++    );
++
++    const response = await registry.execute('weather', {});
++
++    expect({result: response.result, calls: executorCalls}).toMatchObject({
++      result: expect.stringMatching(/location/i),
++      calls: 0,
++    });
++  });
++
++  it('returns a ToolResponse with the field path in the message but not the offending value when a property has the wrong type', async () => {
++    let executorCalls = 0;
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'greet',
++        description: 'greet a user',
++        inputSchema: {type: 'object', properties: {name: {type: 'string'}}, required: ['name']},
++      },
++      async () => {
++        executorCalls++;
++        return 'hello';
++      }
++    );
++
++    const response = await registry.execute('greet', {name: 12345});
++
++    expect({
++      hasField: response.result.includes('name'),
++      hasValue: response.result.includes('12345'),
++      calls: executorCalls,
++    }).toEqual({hasField: true, hasValue: false, calls: 0});
++  });
++});
++
++describe('ToolRegistry validation end-to-end', () => {
++  it('feeds the validation failure back to the model as a ToolResponse so processMessage resolves through a rejected tool call', async () => {
++    let executorCalls = 0;
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'search',
++        description: 'run a search',
++        inputSchema: {type: 'object', properties: {q: {type: 'string'}}, required: ['q']},
++      },
++      async () => {
++        executorCalls++;
++        return 'found it';
++      }
++    );
++
++    let round = 0;
++    const provider: AIProvider = {
++      async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        round++;
++        if (round === 1) {
++          yield {type: 'tool_use', toolCall: {id: 'tc1', name: 'search', input: {q: 99}}};
++          yield {type: 'stop', stopReason: 'tool_use'};
++        } else {
++          yield {type: 'text', text: 'done'};
++          yield {type: 'stop', stopReason: 'end_turn'};
++        }
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++
++    const session = {
++      sessionId: 's1',
++      userId: 'u1',
++      entries: [{role: 'user' as const, content: 'search', timestamp: '2026-01-01T00:00:00.000Z'}],
++    };
++
++    const result = await createChatOrchestrator(provider, promptBuilder, registry).processMessage(session);
++
++    expect({executorCalls, result}).toEqual({executorCalls: 0, result: 'done'});
++  });
++});

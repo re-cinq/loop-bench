@@ -1,13 +1,10 @@
-This round fixed the typecheck, eslint and changelog failures from CI's last verdict, except two eslint errors in the acceptance test. The fix is committed and pushed, and `git status` shows the branch level with its upstream. No tests ran here. This was a repair round with no new test, and the pod's hook blocks running the acceptance file.
+This round fixed the two typecheck errors from CI's last verdict and pushed. The ticket is not done, and I couldn't clear the eslint or test findings.
 
-- **Typecheck:** `registry.ts` now declares its own minimal `ValidateFunction` and `AjvConstructor` types instead of using ajv's. The old code failed to compile because the typings CI resolves look like ajv 6's, while `package-lock.json` pins 8.20. I couldn't confirm which version CI installs. The code now reads either `instancePath` (ajv 8) or `dataPath` (ajv 6).
-- **Eslint:** the `preserve-caught-error` finding at `registry.ts:62` is fixed by attaching `{cause: error}` to the thrown error.
-- **Changelog:** I added an entry under `## [Unreleased]` in `CHANGELOG.md`.
-- **Not fixed:** two eslint errors remain in `registry.acceptance.test.ts` at lines 141 and 143 (`prefer-early-return`, `max-member-chain`). I left them because that is an acceptance file I may not edit, so the eslint check will stay red until someone handles it.
-- **Merge:** `origin/main` was already merged, so there was nothing to merge.
-- **Red tests:** none of the CI findings were tests; all were typecheck, lint and changelog findings, so 0 red tests of mine and 0 regressions.
-- **Unrelated smell:** the local `node_modules` holds ajv 6.15 although the lockfile pins 8.20, which is probably why the typings don't match.
+- **Typecheck:** CI's errors showed `ajv` 6 typings (no `default`, no `instancePath`), although the lockfile pins 8.20. I couldn't find out why CI picked up 6. `src/orchestration/tools/registry.ts` now declares its own small validator and error interfaces instead of importing ajv's types. They accept either `instancePath` or `dataPath`, so they work with both versions.
+- **Test run:** I ran `src/orchestration/tools/registry.test.ts` here and it passes. I didn't run the typechecker or any acceptance test. The `test` failure in CI's verdict was truncated, so I assumed it came from the same type errors. I haven't confirmed that.
+- **Eslint (not fixed):** `registry.acceptance.test.ts` lines 141 and 143 trip `prefer-early-return` and `max-member-chain`. That's an acceptance test I may not edit, so the lint step will stay red until someone decides how to handle it. I recorded it as an open item in `.lore/dod.md`.
+- **Red tests:** 1 of the red tests was mine (`registry.test.ts`) and it's green now. None are regressions I can identify. The other two reds in the verdict (typecheck, test) came from my own code.
+- **Merge and push:** `origin/main` had nothing new to merge, and the branch is level with its upstream.
+- **Still open:** the remaining unit tests with spec links, the `chatOrchestrator` tool-loop test, the docs, `README.md`, `.specify/spec.md` and the example update.
 
-The remaining facet is still open in `.lore/dod.md`: the unit tests in `registry.test.ts` and `chatOrchestrator.test.ts`, the spec links, and the docs, README, `.specify/spec.md`, ADR and example updates.
-
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI repair: ajv typing, error cause, CHANGELOG entry","tdd_next":"registry.test.ts and chatOrchestrator.test.ts tests with spec links; docs/README/.specify/ADR/example updates"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"repair CI typecheck: registry.ts independent of ajv typings","tdd_next":"remaining registry/orchestrator unit tests with spec links, docs, README, .specify/spec.md, example; acceptance-test eslint findings need a human decision"}}

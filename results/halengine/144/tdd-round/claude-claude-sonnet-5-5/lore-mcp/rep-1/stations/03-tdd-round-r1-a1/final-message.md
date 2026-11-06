@@ -1,0 +1,9 @@
+This round fixed the duplicate-code lint findings from CI's last verdict. The prefer-early-return finding is still open, and the other red checks are unconfirmed.
+
+- **Fix:** I moved `delegatingTo` and a `closeAll` teardown helper into `src/transport/wsTestSupport.ts`. `sessionResume.test.ts` now imports them instead of repeating the acceptance file's helpers. I didn't edit the acceptance test. The change is committed and pushed, and the branch needed no merge from `origin/main`.
+- **Test run:** `sessionResume.test.ts` passes, 25 of 25. I ran that file with jest and nothing else. I did not run the acceptance tests, lint, the typechecker or the full suite.
+- **Which checks are still red:** The brief covers the earlier push `c99e185`, and its output was truncated. A lookup for the current CI verdict failed because the branch wasn't found. Of the four failing checks (eslint, test, spec-names, changelog), I only handled eslint's duplicate-code findings. The spec links and changelog entry were already in the previous commit `590d2ea`. I haven't confirmed whether test and spec-names are now green.
+- **Left open:** eslint also flagged a prefer-early-return finding in the acceptance file. Fixing it means editing that file, which I may not do, so it needs your decision. I added it to `.lore/dod.md` as an unchecked item.
+- **Failures this round:** none were mine, and I saw no regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI lint duplicate-code leftovers (shared test helpers)","tdd_next":"re-check CI verdict; acceptance file prefer-early-return needs a decision"}}

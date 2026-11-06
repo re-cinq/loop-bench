@@ -1,0 +1,10 @@
+This round fixed the lint findings that weren't in the acceptance file. It's committed and pushed, the branch merges cleanly with `origin/main`, and it isn't ahead of upstream. The test runner is Jest here, not vitest, so I ran the existing `validation.test.ts` and `sessionResume.test.ts` with it. I didn't run the acceptance tests or the linter, as instructed. This was a lint-fix round, so I wrote no new test. The red tests and regressions are 0 and 0.
+
+- **`validation.ts`:** the three-way switch on `message.type` is now a lookup table. The cursor validator sits below its caller, the vague `data` name is gone, and the nested ifs are flattened. I guarded the lookup with `Object.hasOwn` so a `type` like `constructor` can't hit a prototype property.
+- **`wsTestSupport.ts`:** `delegatingTo` now uses bound methods, so it no longer clones the acceptance file's copy. `closeAll` no longer has a nested loop or the three-hop member chain.
+- **Still open:** the `prefer-early-return` finding in `conversationList.acceptance.test.ts` (old line 67). Fixing it means editing an acceptance test, which I won't do. I left it as the unticked item in `.lore/dod.md` for a decision.
+- **Clone against the acceptance file:** the acceptance file still holds its own copy of `delegatingTo`, so CI may report the `no-duplicate-code` finding on it again. If it does, that is a second finding in the acceptance file that I can't fix without editing it.
+
+Unrelated smell, not acted on: the ticket and the repo's `dod.md` use different frame names (`list_conversations`/`conversation_list` versus `list_sessions`/`session_list`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI lint fixes in validation.ts and wsTestSupport.ts","tdd_next":"re-check CI verdict; acceptance file's own prefer-early-return finding needs a decision"}}

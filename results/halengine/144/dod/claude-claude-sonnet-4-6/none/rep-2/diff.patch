@@ -1,0 +1,185 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..e3cbcc5
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,43 @@
++# Definition of Done
++
++> A consumer may have no such route to extend: an engine deployment behind an api with a session store and no conversation endpoints of its own has nothing to add this to. The engine already knows who is connected and already replays a conversation on resume; answering "which conversations do I have" over the same socket is the smaller surface.
++
++**Strategy: `direct`** — The seam already exists: `validateMessage` and `createMessageHandler` are both callable directly from their modules, and neither currently handles `list_conversations`, so tests calling the expected behavior fail on the absent behavior.
++
++## Done when these pass
++
++- [ ] **accepts list_conversations as valid, and rejects invalid limit or before with the field name** — `validateMessage` accepts `{type: 'list_conversations'}` and rejects invalid `limit` (0, 201, 1.5, `'10'`) or unparseable `before`, each error naming the field
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **answers conversation_list with ISO-string dates when history is enabled** — with `history: {enabled: true}` and a store holding three conversations, one `list_conversations` frame is answered with exactly one `conversation_list` carrying three summaries whose `createdAt` and `updatedAt` are ISO strings, and no `stream_end`
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **answers UNSUPPORTED when history is not configured** — without the `history` option, `list_conversations` is answered with an `error` frame whose code is `UNSUPPORTED` and no `conversation_list`
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **answers list_conversations before the streaming turn's stream_end, without queueing on the lock** — a `list_conversations` sent while a `user_message` is streaming on the same session is answered before that turn's `stream_end`
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] `src/types/messages.ts`: add `ListConversationsMessage`, `ConversationListMessage`, `ConversationSummary`, `ConversationCursor` interfaces; extend `IncomingMessage` and `OutgoingMessage` unions — additive only, no existing line touched
++- [ ] `src/types/session.ts`: add `UNSUPPORTED` to `ErrorCodes`
++- [ ] `src/transport/ws/validation.ts`: add `list_conversations` case — `limit` integer 1–200, `before` a valid cursor object; `INVALID_MESSAGE` naming the field on violation
++- [ ] `src/config.ts` / `HalEngineConfig`: add `transport.history?: {enabled: boolean}`; warn at startup when `history` is on but `resume` is off
++- [ ] `src/transport/ws/messageHandler.ts`: `createMessageHandler` gains `store` and `options` params; handles `list_conversations` off the per-session lock — calls `store.listFor(ws.userId, {limit, before})` and sends `conversation_list`; with `history` absent or `listFor` missing sends `UNSUPPORTED`; store rejection sends `SERVER_ERROR`; `StoreCannotList` sends `UNSUPPORTED`
++- [ ] `src/transport/ws/sender.ts`: add `sendConversationList` helper
++- [ ] Validation tests stay green: run `src/transport/ws/validation.test.ts`
++- [ ] Handler tests stay green: run `src/transport/ws/messageHandler.test.ts`
++- [ ] `specs/hal-engine-websocket-protocol/spec.md`: add § list_conversations (§ 4.3) and § conversation_list (§ 5.9) with field tables, the authorisation rule, and the GDPR note; add `([validated by ...])` citations
++- [ ] `docs/getting-started.md`: regenerated via `example/full-config.ts` + `npm run docs:fix`
++- [ ] `CHANGELOG.md`: entry under `## [Unreleased]`
++- [ ] MINOR version bump (new optional config, two additive frames, one new error code)
++
++## Out of scope
++
++- Picking/switching a conversation in-band (the client reconnects with `?sessionId=<id>` via the existing #45 path; no new transport code)
++- Conversation titles or previews (own issue)
++- Deleting a conversation from the client
++- Server-side paging state
++- An operator view of another user's conversations
++- Live sync between open tabs (#124 ruled this out)
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..55f01f6
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,130 @@
++/**
++ * Acceptance tests for re-cinq/HALEngine#144: conversation list over WebSocket.
++ *
++ * @spec specs/hal-engine-websocket-protocol/spec.md
++ */
++import {WebSocket} from 'ws';
++import {validateMessage} from './validation.js';
++import {createMessageHandler as _createMessageHandler} from './messageHandler.js';
++import type {ChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import type {ChatSession} from '../../types/session.js';
++import type {SessionStore} from '../../types/sessionStore.js';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import {deferred} from '../wsTestSupport.js';
++import type {MessageChunk} from '../../types/ai.js';
++
++// Cast to the new three-argument signature this ticket adds; the extra args are accepted at JS runtime
++// and silently ignored until the implementation lands.
++const createMessageHandler = _createMessageHandler as unknown as (
++  orchestrator: ChatOrchestrator,
++  store: SessionStore,
++  options?: {history?: {enabled: boolean}}
++) => (ws: WebSocket, session: ChatSession, rawMessage: unknown, signal?: AbortSignal) => Promise<void>;
++
++type Frame = {type: string; [key: string]: unknown};
++
++const afterPending = () => new Promise<void>(resolve => setImmediate(resolve));
++
++describe('list_conversations — WebSocket delivery (#144)', () => {
++  describe('validation', () => {
++    it('accepts {type: list_conversations} as valid, and rejects invalid limit or before with the field name', () => {
++      expect(validateMessage({type: 'list_conversations'})).toMatchObject({valid: true});
++
++      for (const badLimit of [0, 201, 1.5, '10']) {
++        expect(validateMessage({type: 'list_conversations', limit: badLimit})).toMatchObject({
++          valid: false,
++          error: expect.stringContaining('limit'),
++        });
++      }
++
++      expect(validateMessage({type: 'list_conversations', before: 'not a date'})).toMatchObject({
++        valid: false,
++        error: expect.stringContaining('before'),
++      });
++    });
++  });
++
++  describe('handler', () => {
++    const silentOrchestrator: ChatOrchestrator = {
++      processMessageStream: async function* (): AsyncGenerator<MessageChunk> {},
++    } as unknown as ChatOrchestrator;
++
++    it('answers conversation_list with ISO-string dates when history is enabled', async () => {
++      const store = new InMemorySessionStore();
++      store.create('sess-a', 'u1');
++      store.create('sess-b', 'u1');
++      store.create('sess-c', 'u1');
++
++      const handle = createMessageHandler(silentOrchestrator, store, {history: {enabled: true}});
++      const sent: Frame[] = [];
++      const ws = {userId: 'u1', send: (raw: string) => sent.push(JSON.parse(raw) as Frame)} as unknown as WebSocket;
++      const session: ChatSession = {sessionId: 's1', userId: 'u1', entries: []};
++
++      await handle(ws, session, {type: 'list_conversations'});
++
++      const listFrame = sent.find(f => f.type === 'conversation_list') as
++        {conversations: Array<{sessionId: string; createdAt: string; updatedAt: string}>} | undefined;
++      expect(listFrame).toBeDefined();
++      expect(listFrame!.conversations).toHaveLength(3);
++      expect(sent.map(f => f.type)).not.toContain('stream_end');
++      const {createdAt, updatedAt} = listFrame!.conversations[0];
++      expect(typeof createdAt).toBe('string');
++      expect(new Date(createdAt).toISOString()).toBe(createdAt);
++      expect(typeof updatedAt).toBe('string');
++      expect(new Date(updatedAt).toISOString()).toBe(updatedAt);
++    });
++
++    it('answers UNSUPPORTED when history is not configured', async () => {
++      const store = new InMemorySessionStore();
++      const handle = createMessageHandler(silentOrchestrator, store);
++      const sent: Frame[] = [];
++      const ws = {userId: 'u1', send: (raw: string) => sent.push(JSON.parse(raw) as Frame)} as unknown as WebSocket;
++      const session: ChatSession = {sessionId: 's1', userId: 'u1', entries: []};
++
++      await handle(ws, session, {type: 'list_conversations'});
++
++      const errFrame = sent.find(f => f.type === 'error') as {code: string} | undefined;
++      expect(errFrame).toBeDefined();
++      expect(errFrame!.code).toBe('UNSUPPORTED');
++      expect(sent.map(f => f.type)).not.toContain('conversation_list');
++    });
++
++    it("answers list_conversations before the streaming turn's stream_end, without queueing on the lock", async () => {
++      const gate = deferred();
++      const store = new InMemorySessionStore();
++      store.create('sess-u1', 'u1');
++
++      const streamingOrchestrator: ChatOrchestrator = {
++        processMessageStream: async function* (): AsyncGenerator<MessageChunk> {
++          yield {type: 'text', text: 'thinking…'};
++          await gate.until;
++          yield {type: 'stop', stopReason: 'end_turn'};
++        },
++      } as unknown as ChatOrchestrator;
++
++      const handle = createMessageHandler(streamingOrchestrator, store, {history: {enabled: true}});
++      const sent: Frame[] = [];
++      const ws = {
++        userId: 'u1',
++        readyState: WebSocket.OPEN as number,
++        send: (raw: string) => sent.push(JSON.parse(raw) as Frame),
++      } as unknown as WebSocket;
++      const session: ChatSession = {sessionId: 's1', userId: 'u1', entries: []};
++
++      const streaming = handle(ws, session, {type: 'user_message', content: 'hello'});
++      await afterPending();
++
++      // Sent while the user_message is still streaming; must resolve before stream_end.
++      await handle(ws, session, {type: 'list_conversations'});
++
++      const listIdx = sent.findIndex(f => f.type === 'conversation_list');
++      const streamEndIdx = sent.findIndex(f => f.type === 'stream_end');
++      expect(listIdx).toBeGreaterThanOrEqual(0);
++      expect(streamEndIdx).toBe(-1); // stream_end must not have arrived yet
++
++      gate.release();
++      await streaming;
++      expect(sent.map(f => f.type)).toContain('stream_end');
++    });
++  });
++});

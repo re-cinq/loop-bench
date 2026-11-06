@@ -1,0 +1,3 @@
+The fix is pushed. The only change was replacing `new Date().toISOString()` with a fixed timestamp string `'2024-01-01T00:00:00.000Z'` in the test file, which satisfies the `re-lint/no-nondeterministic-tests` ESLint rule.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replaced new Date().toISOString() with fixed timestamp in onErrorNonError.acceptance.test.ts to satisfy re-lint/no-nondeterministic-tests"}}

@@ -1,0 +1,3 @@
+The fix is pushed. The CI failure was a stale spec anchor: `#L40` pointed at the test name but the actual test (`runs onError and afterSession when beforeSession throws`) is at line 34 in the acceptance test file. Running `npm run spec:names -- --fix` corrected it to `#L34`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec anchor: repoint #L40 to #L34 in spec.md","tdd_next":"acceptance green"}}

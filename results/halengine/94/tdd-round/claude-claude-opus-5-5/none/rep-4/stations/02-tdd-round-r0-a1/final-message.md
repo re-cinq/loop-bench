@@ -1,0 +1,13 @@
+I closed the spec facet: `specs/hal-engine-config-hooks/spec.md` now states the `beforeSession`-throw behaviour as a guarantee instead of listing it as a known flaw. The branch is pushed, already up to date with `origin/main`, and not ahead of its upstream.
+
+- **New test:** `a throwing beforeSession skips every later hook and the provider, then calls onError and afterSession` in `src/orchestration/chatOrchestrator.test.ts:375`. It checks that a throwing `beforeSession` still rejects to the caller, and that only `onError` and then `afterSession` run after it — no other hook fires and the provider is never called.
+- **Red phase:** last round already moved `beforeSession` inside the `try`, so the test could not fail against the current code. To prove it catches the bug, I moved the call back above the `try` for a moment: the test failed (no hooks ran after the throw), and passed once the code was restored. The whole `chatOrchestrator.test.ts` file passes (25 tests). I did not run the acceptance test.
+- **Spec:** a new section, "A `beforeSession` that throws", holds two linked statements. The first says the error still reaches the caller and both `onError` and `afterSession` fire. The second answers the ticket's open question: `afterSession` can't tell from its arguments that `beforeSession` failed, so it should release only what `beforeSession` actually allocated. What it can rely on is that nothing ran in between.
+- **Intro count:** I removed the old line from "Measured semantics" and changed "three properties" to "two" so the count stays right. The rest of that intro ("This issue changes none of them") is left for its own facet, which is still unchecked in `.lore/dod.md`.
+- **Spec anchor:** this repo's test list has no `spec` field to stamp, so the link to the spec is the inline `validated by` link only. `scripts/spec-links/reanchor.mjs` doesn't exist here, so I checked the line links by hand and they are correct.
+- **Red tests:** there is no CI verdict yet for this push, so 0 red tests were mine and 0 were regressions.
+- **Smells (not acted on):** the acceptance test and `chatOrchestrator.test.ts` each define their own copy of `createSession` and `createMockProvider`.
+
+Next round: add the CHANGELOG entry for existing consumers.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update specs/hal-engine-config-hooks/spec.md with the new guarantee for beforeSession","tdd_next":"Document in the CHANGELOG what changes for an existing consumer"}}

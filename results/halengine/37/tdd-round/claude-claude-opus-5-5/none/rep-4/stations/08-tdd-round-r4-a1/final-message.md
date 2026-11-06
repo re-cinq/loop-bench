@@ -1,0 +1,10 @@
+This round added one test, pinning that `execute` still throws `Unknown tool: <name>` for a name that was never registered. It's committed and pushed, the branch is up to date with `origin/main`, and nothing is left unpushed.
+
+- **The test:** added to `src/orchestration/tools/registry.test.ts:104`. The code already throws this, so the test passes against it as it stands. To check that it actually catches a change, I temporarily changed the message in `registry.ts`: the test went red, and it went green again once I restored the original. All 7 tests in that file pass. I ran no other tests.
+- **Spec:** the unknown-tool statement in `specs/hal-engine-tool-input-validation/spec.md` now links to the new test. The new test moved the `register` test down, so I updated its link to `#L116`. The spec's status stays "In Progress".
+- **Checklist:** I ticked this facet in `.lore/dod.md`.
+- **The red CI build:** the failures in the round brief are from commit `45c4fd6`. The fix had already been pushed as `f05e7b4`, which imports the validator under the `ajv8` package alias, so there was nothing to change there this round. CI hasn't reported on that fix yet. Of the failures listed, the type errors and test failures were from this ticket's own code, and none were regressions in existing tests.
+- **Acceptance test lint errors:** the two lint errors at `registry.acceptance.test.ts:141` and `:143` are in the acceptance test itself. I didn't touch them because rounds don't edit acceptance tests. They're already in `.lore/dod.md` as something the test's author has to fix, and until they do, the lint check will keep failing.
+- **Smells I noticed but didn't act on:** none.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Pin in registry.test.ts: Unknown tool: <name> still throws","tdd_next":"Add a tool-loop test in chatOrchestrator.test.ts (rejected call, then corrected retry)"}}

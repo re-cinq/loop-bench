@@ -1,0 +1,113 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..69d5f4d
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,25 @@
++# Definition of Done
++
++> `afterModelResponse` is called once per user message after the round loop exits, and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++
++**Strategy: `direct`** — `createChatOrchestrator` is an importable function that accepts a scripted provider and hooks; the `afterModelResponse` hook receives usage as a plain value, so a two-round turn with known per-round counts can assert the hook receives their sum rather than the last round's figure alone.
++
++## Done when these pass
++
++- [ ] **reports summed token counts when both tool rounds reported usage** — drives a scripted provider through one tool round (round 1 usage: 10 in / 5 out / 15 total) and one final round (round 2 usage: 20 in / 8 out / 28 total); asserts the hook receives `{inputTokens: 30, outputTokens: 13, totalTokens: 43}`.
++  `src/orchestration/usage-accumulation.acceptance.test.ts`
++
++## Facets
++
++- [ ] Change `lastUsage = outcome.usage ?? lastUsage` in `chatOrchestrator.ts` to accumulate: add each round's tokens to a running total rather than replacing.
++- [ ] Ensure a round that reports no usage contributes nothing (not NaN) to the running total, and a turn where no round reported any usage still passes `undefined` to the hook.
++- [ ] Update `specs/hal-engine-config-hooks/spec.md` — replace the recorded under-counting bullet in "Measured semantics" with the new summed-usage behaviour and add its `([validated by ...])` citation.
++- [ ] Add a CHANGELOG entry under the next MINOR version noting that `afterModelResponse` now receives the total across all provider calls in a turn (a behaviour change for existing consumers of tool-heavy turns).
++- [ ] Verify the existing test "keeps the usage an earlier round reported when a later round reports none" (`src/orchestration/chatOrchestrator.test.ts`) still passes — its assertion is compatible with accumulation and must not be edited.
++
++## Out of scope
++
++- Audit entries or billing records — those are consumers' concern.
++- Token accounting for anything other than the provider calls the orchestrator makes.
++- The `stop` chunk's own `usage` shape — providers already populate this; the ticket only aggregates it.
++- The `catch` gate on `error instanceof Error` and the `onError` path — separate issue, recorded as out-of-scope in the same spec.
+diff --git a/src/orchestration/usage-accumulation.acceptance.test.ts b/src/orchestration/usage-accumulation.acceptance.test.ts
+new file mode 100644
+index 0000000..6259c47
+--- /dev/null
++++ b/src/orchestration/usage-accumulation.acceptance.test.ts
+@@ -0,0 +1,76 @@
++// specs/hal-engine-config-hooks — Measured semantics: summed usage across tool rounds
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, UsageMetadata} from '../types/ai.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {ChatSession} from '../types/session.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++const scriptedProvider = (rounds: MessageChunk[][]): AIProvider => {
++  let round = 0;
++  return {
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++};
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++const TOOL_CALL: MessageChunk = {type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {q: 'x'}}};
++
++const registryWithLookup = (): ToolRegistry => {
++  const registry = new ToolRegistry();
++  registry.register({name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}}, async () => ({
++    result: 'found',
++  }));
++  return registry;
++};
++
++describe('afterModelResponse usage accumulation', () => {
++  it('reports summed token counts when both tool rounds reported usage', async () => {
++    const round1Usage: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++    const round2Usage: UsageMetadata = {inputTokens: 20, outputTokens: 8, totalTokens: 28};
++    let reportedUsage: UsageMetadata | undefined;
++
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, usage) => {
++        reportedUsage = usage;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(
++      scriptedProvider([
++        [TOOL_CALL, {type: 'stop', stopReason: 'tool_use', usage: round1Usage}],
++        [
++          {type: 'text', text: 'done'},
++          {type: 'stop', stopReason: 'end_turn', usage: round2Usage},
++        ],
++      ]),
++      promptBuilder,
++      registryWithLookup(),
++      {hooks}
++    );
++
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(reportedUsage).toEqual({
++      inputTokens: round1Usage.inputTokens + round2Usage.inputTokens,
++      outputTokens: round1Usage.outputTokens + round2Usage.outputTokens,
++      totalTokens: round1Usage.totalTokens + round2Usage.totalTokens,
++    });
++  });
++});
