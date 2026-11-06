@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-11-06 22:47 UTC: 2132 loops over 556 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-11-06 22:48 UTC: 2133 loops over 557 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -196,7 +196,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $6.12 ($1.40–$16.34, sd $5.29) | 3.6 min (1.2 min–11.4 min, sd 3.9 min) | 1.0 (1.0–1.0, sd 0.0) | 1.2 (1.0–2.0, sd 0.4) | 1.8 (1.0–2.0, sd 0.4) | 5/5 | 2 (2–3, sd 0) (0.02 (0.00–0.11, sd 0.04)) | +125/−0 |
 | #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $2.92 ($1.76–$4.73, sd $1.11) | 1.6 min (1.3 min–1.8 min, sd 0.2 min) | 1.0 (1.0–1.0, sd 0.0) | 1.4 (1.0–2.0, sd 0.5) | 1.8 (1.0–2.0, sd 0.4) | 5/5 | 2 (2–3, sd 0) (0.04 (0.00–0.11, sd 0.05)) | +113/−0 |
 | #93 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $3.16 ($1.56–$7.21, sd $2.08) | 1.5 min (1.3 min–1.7 min, sd 0.1 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.6 (1.0–2.0, sd 0.5) | 5/5 | 2 (2–3, sd 0) (0.02 (0.00–0.11, sd 0.04)) | +118/−0 |
-| #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.48 | 21.0 min | — | — | — | 1/1 | 3 (0.11) | +117/−2 |
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $1.52 ($0.43–$5.77, sd $2.13) | 4.4 min (1.3 min–16.9 min, sd 6.2 min) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 5/5 | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +115/−1 |
 | #93 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -1015,6 +1015,7 @@ What the columns mean:
 | #93 small | dod | `claude-haiku-5-5` (claude) | with Lore | station_done ×5 |
 | #93 small | dod | `claude-haiku-5-5` (claude) | Lore on Utopia | station_done ×5 |
 | #93 small | dod | `claude-haiku-5-5` (claude) | without Lore | station_done ×5 |
+| #93 small | dod | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #93 small | dod | `claude-opus-5-5` (claude) | without Lore | station_done ×5 |
 | #93 small | dod | `claude-sonnet-4-6` (claude) | without Lore | station_done ×2, retry_budget ×2 |
 | #93 small | dod | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
