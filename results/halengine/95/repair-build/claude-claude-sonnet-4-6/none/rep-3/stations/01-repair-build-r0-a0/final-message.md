@@ -1,0 +1,3 @@
+The fix is committed and pushed. The issue was `new Date()` on line 12 of `onErrorNonError.acceptance.test.ts`, which the `re-lint/no-nondeterministic-tests` rule flags as making the test non-repeatable. Replaced it with the fixed timestamp `'2024-01-01T00:00:00.000Z'`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replaced new Date().toISOString() with a fixed timestamp in onErrorNonError.acceptance.test.ts to satisfy re-lint/no-nondeterministic-tests"}}

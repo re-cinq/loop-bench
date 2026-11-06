@@ -1,0 +1,10 @@
+This round added the helper that adds up token usage across tool rounds. It's committed and pushed, the branch already matched `origin/main`, and `git status` shows nothing left unpushed. The hook still gets only the last round's usage: the orchestrator doesn't call the new helper yet, so both acceptance tests stay red until the next round does that.
+
+- **Red:** I added two tests to `src/orchestration/orchestratorHelpers.test.ts`. One checks that each token field is summed across rounds and that a round with no usage is skipped. The other checks that the result stays `undefined` when no round reported anything. Both failed because the helper didn't exist yet.
+- **Green:** I added `addRoundUsage(total, round)` to `src/orchestration/orchestratorHelpers.ts`. A round with no usage leaves the total unchanged, and the first round that reports becomes the starting total. The new test file passed 6/6 when run on its own with jest. No refactor was needed.
+- **Spec:** I added a statement to `specs/hal-engine-config-hooks/spec.md` saying rounds without usage add nothing and a turn where nothing reported gets no usage. It links to both new tests at L29 and L40, which I checked. There is no `scripts/spec-links/reanchor.mjs` in this repo. The tests list has no `spec` field to stamp either, so I recorded the anchor through the spec link only.
+- **`.lore/dod.md`:** I ticked the summing facet and added a new unchecked one: replace `lastUsage = outcome.usage ?? lastUsage` in `processMessage` with `addRoundUsage`.
+
+Red tests: 2, both mine and both now green. No CI verdict exists yet, so no regressions have been reported. I didn't run the acceptance tests, the full suite, lint or the typechecker, as the round rules require. I noticed no unrelated smells.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do","tdd_next":"Wire addRoundUsage into processMessage behind an explicitly named total-usage contract on afterModelResponse"}}

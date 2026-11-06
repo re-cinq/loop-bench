@@ -1,0 +1,134 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..f5c4922
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,37 @@
++# Definition of Done
++
++> every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade
++
++**Strategy: `direct`** — `validateMessage` and `createMessageHandler` are callable entry points today; the tests call them with the future signature (using a type cast so ts-jest compiles them) and fail because the behaviour is absent, not because an import is broken.
++
++## Done when these pass
++
++- [ ] **accepts a bare list_conversations frame and rejects one with an out-of-range limit** — `validateMessage` accepts `{type:'list_conversations'}` and rejects `limit:0` / `limit:201` with an error naming the field
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **answers list_conversations with one conversation_list frame when history is enabled, using the connection userId** — with `history:{enabled:true}` and three sessions for the authenticated user, the handler sends exactly one `conversation_list` frame carrying three summaries whose `createdAt`/`updatedAt` are ISO strings, with no `stream_end`; a spurious `userId` field in the frame does not change whose list is returned
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **answers list_conversations with an UNSUPPORTED error when history is not configured** — without the history option, the handler responds with an `error` frame whose code is `UNSUPPORTED` and no `conversation_list`
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ListConversationsMessage` to `IncomingMessage` and `ConversationListMessage`/`ConversationSummary`/`ConversationCursor` to `OutgoingMessage` in `src/types/messages.ts` (additive only)
++- [ ] Add `UNSUPPORTED` to `ErrorCodes` in `src/types/session.ts`
++- [ ] Add `list_conversations` case to `validateMessage` in `src/transport/ws/validation.ts`: accept bare frame; reject `limit` ≤ 0 or > 200; reject `before` with an unusable `updatedAt`; reject cursor with only one half present
++- [ ] Update `createMessageHandler` to accept `(orchestrator, store, options)` and handle `list_conversations` on the non-locked path alongside `ping`
++- [ ] Thread `sessionStore` and `transport.history` through `createServer` into `createMessageHandler`
++- [ ] Add `transport.history?: {enabled: boolean}` to `HalEngineConfig` in `src/config.ts`
++- [ ] Handle store with no `listFor` → `UNSUPPORTED`; `listFor` rejection → `SERVER_ERROR`; export `StoreCannotList` and map it to `UNSUPPORTED` instead
++- [ ] Add spec statements to `specs/hal-engine-websocket-protocol/spec.md` (§ Conversation list) and add `([validated by: ...])` citations pointing at the acceptance test lines
++- [ ] Add `§ Conversation list` to `docs/getting-started.md` via `example/full-config.ts` + `npm run docs:fix`
++- [ ] Add `CHANGELOG.md` entry under `## [Unreleased]`
++- [ ] MINOR version bump
++
++## Out of scope
++
++- Pagination correctness (limit/before passed through to `listFor`) — covered by store-layer tests in `specs/hal-engine-conversation-list/`
++- Non-blocking ordering guarantee (answered before `stream_end` of a concurrent `user_message`) — behaviour follows naturally from routing `list_conversations` outside the per-session lock alongside `ping`; pinned by the existing "answers a ping at once while a run is pending" test pattern
++- Resume path end-to-end (`?sessionId=` from a list row) — existing session-resume tests already cover this
++- Live sync, operator views, delete-from-client, paging state held server-side
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..841562d
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,85 @@
++import {validateMessage} from './validation.js';
++import {createMessageHandler} from './messageHandler.js';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import type {ChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import type {SessionStore} from '../../types/sessionStore.js';
++import type {ChatSession} from '../../types/session.js';
++import {WebSocket} from 'ws';
++
++// Never called — these tests send list_conversations, not user_message.
++const noop: ChatOrchestrator = {
++  processMessage: async () => '',
++  async *processMessageStream() {},
++};
++
++// Future signature: createMessageHandler gains (store, options) when the ticket lands.
++// The cast lets the tests compile and fail on behaviour, not on a missing overload.
++type FutureCreateMessageHandler = (
++  orchestrator: ChatOrchestrator,
++  store: SessionStore,
++  options?: {history?: {enabled: boolean}}
++) => ReturnType<typeof createMessageHandler>;
++
++const createHandlerWith = createMessageHandler as unknown as FutureCreateMessageHandler;
++
++function collectFrames(): {ws: WebSocket; frames: () => Array<Record<string, unknown>>} {
++  const sent: Array<Record<string, unknown>> = [];
++  const ws = {
++    send: (raw: string) => sent.push(JSON.parse(raw) as Record<string, unknown>),
++  } as unknown as WebSocket;
++  return {ws, frames: () => sent};
++}
++
++// specs/hal-engine-websocket-protocol — conversation list section (to be added during implementation)
++describe('conversation list over WebSocket (acceptance)', () => {
++  it('accepts a bare list_conversations frame and rejects one with an out-of-range limit', () => {
++    expect(validateMessage({type: 'list_conversations'})).toMatchObject({valid: true});
++
++    const tooLow = validateMessage({type: 'list_conversations', limit: 0});
++    expect(tooLow).toMatchObject({valid: false, error: expect.stringContaining('limit')});
++
++    const tooHigh = validateMessage({type: 'list_conversations', limit: 201});
++    expect(tooHigh).toMatchObject({valid: false, error: expect.stringContaining('limit')});
++  });
++
++  it('answers list_conversations with one conversation_list frame when history is enabled, using the connection userId', async () => {
++    const store = new InMemorySessionStore();
++    store.create('s1', 'u1');
++    store.create('s2', 'u1');
++    store.create('s3', 'u1');
++    store.create('sX', 'other'); // must not appear in u1's list
++
++    const handle = createHandlerWith(noop, store, {history: {enabled: true}});
++    const {ws, frames} = collectFrames();
++    const session: ChatSession = {sessionId: 'conn1', userId: 'u1', entries: []};
++
++    // frame carries a spurious userId — the list must be the connection owner's, never the frame field's
++    await handle(ws, session, {type: 'list_conversations', userId: 'other'});
++
++    const all = frames();
++    const listFrame = all.find(f => f.type === 'conversation_list') as
++      {conversations: Array<{createdAt: unknown; updatedAt: unknown}>} | undefined;
++
++    expect(listFrame).toBeDefined();
++    expect(listFrame!.conversations).toHaveLength(3);
++    expect(all.some(f => f.type === 'stream_end')).toBe(false);
++    expect(typeof listFrame!.conversations[0].createdAt).toBe('string');
++    expect(typeof listFrame!.conversations[0].updatedAt).toBe('string');
++  });
++
++  it('answers list_conversations with an UNSUPPORTED error when history is not configured', async () => {
++    const store = new InMemorySessionStore();
++    const handle = createHandlerWith(noop, store); // no history option
++
++    const {ws, frames} = collectFrames();
++    const session: ChatSession = {sessionId: 'conn1', userId: 'u1', entries: []};
++
++    await handle(ws, session, {type: 'list_conversations'});
++
++    const all = frames();
++    const err = all.find(f => f.type === 'error') as {code: string} | undefined;
++
++    expect(err?.code).toBe('UNSUPPORTED');
++    expect(all.some(f => f.type === 'conversation_list')).toBe(false);
++  });
++});
