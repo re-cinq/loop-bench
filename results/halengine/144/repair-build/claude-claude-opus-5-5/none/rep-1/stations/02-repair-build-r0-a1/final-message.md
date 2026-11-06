@@ -1,0 +1,3 @@
+CI's red verdict is for commit 5cd4e67, but the branch has moved since then. Commit 5ed7d74 ("feat(transport): answer list_sessions off the turn lock; share ws test helpers (#144)") was pushed on top of it without `[skip ci]`, and it's already on the remote branch. CI hasn't checked that new head yet, so I changed nothing and ran nothing.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}
