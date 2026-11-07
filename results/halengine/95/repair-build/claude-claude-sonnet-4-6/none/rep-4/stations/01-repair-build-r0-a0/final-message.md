@@ -1,0 +1,3 @@
+The fix is pushed. The ESLint failure was caused by `new Date()` on line 12 of `src/orchestration/onErrorNonError.acceptance.test.ts`, which the `re-lint/no-nondeterministic-tests` rule rejects. Replaced it with the static string `'2024-01-01T00:00:00.000Z'`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replaced new Date().toISOString() with static timestamp in onErrorNonError.acceptance.test.ts to satisfy re-lint/no-nondeterministic-tests"}}

@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-11-06 22:48 UTC: 2133 loops over 557 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-11-07 06:19 UTC: 2170 loops over 570 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -21,12 +21,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #37 medium | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.08 | 12.5 min | 1.0 | 1.0 | 2.0 | 0/1 | 3 (0.08) | +197/−0 |
 | #37 medium | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 0/3 | 0.0 (0.0–0.0, sd 0.0) | $0.04 ($0.00–$0.07, sd $0.03) | 15.1 min (11.4 min–21.7 min, sd 4.7 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.3 (1.0–2.0, sd 0.5) | 0/3 | 3 (3–3, sd 0) (0.08 (0.08–0.08, sd 0.00)) | +123/−0 |
 | #37 medium | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.08 ($0.06–$0.13, sd $0.03) | 10.2 min (2.0 min–15.0 min, sd 4.4 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 0/5 | 3 (3–3, sd 0) (0.08 (0.08–0.08, sd 0.00)) | +109/−0 |
-| #37 medium | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #37 medium | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.23 | 19.8 min | — | — | — | 0/1 | 4 (0.07) | +245/−0 |
 | #37 medium | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.28 ($0.20–$0.57, sd $0.14) | 22.5 min (17.8 min–34.2 min, sd 5.9 min) | 1.0 (1.0–1.0, sd 0.0) | 1.5 (1.0–2.0, sd 0.5) | 2.0 (2.0–2.0, sd 0.0) | 0/5 | 3 (3–4, sd 0) (0.07 (0.07–0.08, sd 0.00)) | +221/−0 |
 | #37 medium | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #37 medium | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 0/3 | 0.0 (0.0–0.0, sd 0.0) | $0.07 ($0.00–$0.22, sd $0.10) | 32.8 min (22.9 min–39.7 min, sd 7.2 min) | — | — | — | 0/3 | 3 (3–4, sd 0) (0.08 (0.07–0.08, sd 0.00)) | +149/−0 |
+| #37 medium | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.09 ($0.00–$0.24, sd $0.11) | 30.2 min (20.3 min–39.7 min, sd 7.4 min) | — | — | — | 0/5 | 3 (3–4, sd 0) (0.08 (0.07–0.08, sd 0.00)) | +136/−0 |
 | #37 medium | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.23 | 1.0 min | 1.0 | 1.0 | 2.0 | 0/1 | 3 (0.08) | +147/−0 |
 | #37 medium | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.17 ($0.08–$0.22, sd $0.05) | 8.7 min (0.6 min–15.6 min, sd 6.6 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 0/5 | 3 (3–3, sd 0) (0.08 (0.08–0.08, sd 0.00)) | +130/−0 |
@@ -81,12 +81,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #37 medium | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.06 | 1.1 min | 2.0 | 2.0 | 2.0 | — | 8 (0.46) | +348/−17 |
 | #37 medium | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 0/3 | 1.0 (1.0–1.0, sd 0.0) | $0.04 ($0.02–$0.10, sd $0.04) | 12.3 min (11.8 min–12.7 min, sd 0.4 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.3 (2.0–3.0, sd 0.5) | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +364/−17 |
 | #37 medium | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.05 ($0.02–$0.06, sd $0.02) | 7.2 min (0.8 min–21.6 min, sd 8.2 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +348/−17 |
-| #37 medium | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #37 medium | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.53 | 20.5 min | — | — | — | — | 8 (0.46) | +377/−17 |
 | #37 medium | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.20 ($0.09–$0.48, sd $0.15) | 18.7 min (1.4 min–33.1 min, sd 10.1 min) | 4.0 | 3.0 | 3.0 | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +370/−17 |
 | #37 medium | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #37 medium | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 1/3 | 0.7 (0.0–1.0, sd 0.5) | $0.39 ($0.18–$0.82, sd $0.30) | 14.9 min (3.8 min–21.5 min, sd 7.9 min) | — | — | — | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +368/−17 |
+| #37 medium | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 1/5 | 0.8 (0.0–1.0, sd 0.4) | $0.51 ($0.18–$0.95, sd $0.32) | 24.4 min (3.8 min–54.4 min, sd 16.5 min) | — | — | — | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +361/−17 |
 | #37 medium | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.18 | 17.5 min | 2.0 | 2.0 | 2.0 | — | 8 (0.46) | +365/−17 |
 | #37 medium | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.13 ($0.09–$0.21, sd $0.04) | 12.1 min (1.0 min–17.2 min, sd 5.8 min) | 2.0 (1.0–3.0, sd 0.6) | 2.0 (2.0–2.0, sd 0.0) | 2.2 (2.0–3.0, sd 0.4) | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +359/−17 |
@@ -138,12 +138,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #37 medium | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.07 | 34.4 min | 2.0 | 2.0 | 2.0 | — | 8 (0.46) | +379/−17 |
 | #37 medium | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 0/3 | 0.7 (0.0–1.0, sd 0.5) | $0.07 ($0.00–$0.14, sd $0.06) | 31.2 min (22.7 min–35.9 min, sd 6.0 min) | 2.7 (2.0–4.0, sd 0.9) | 2.3 (2.0–3.0, sd 0.5) | 2.7 (2.0–3.0, sd 0.5) | — | 8 (7–8, sd 0) (0.44 (0.38–0.46, sd 0.04)) | +382/−15 |
 | #37 medium | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (0.0–2.0, sd 0.6) | $0.09 ($0.00–$0.20, sd $0.07) | 37.2 min (21.7 min–51.8 min, sd 10.2 min) | 2.4 (2.0–4.0, sd 0.8) | 2.2 (2.0–3.0, sd 0.4) | 2.8 (2.0–3.0, sd 0.4) | — | 8 (8–9, sd 0) (0.48 (0.46–0.54, sd 0.03)) | +397/−12 |
-| #37 medium | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #37 medium | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.26 | 58.7 min | — | — | — | — | 8 (0.46) | +416/−17 |
 | #37 medium | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 2/5 | 2.0 (0.0–5.0, sd 1.8) | $1.02 ($0.00–$2.57, sd $1.05) | 103.2 min (33.4 min–231.6 min, sd 67.6 min) | 2.0 | 2.0 | 3.0 | — | 8 (7–9, sd 1) (0.46 (0.38–0.54, sd 0.05)) | +435/−13 |
 | #37 medium | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #37 medium | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 0/3 | 0.0 (0.0–0.0, sd 0.0) | $0.00 ($0.00–$0.00, sd $0.00) | 40.2 min (38.0 min–41.5 min, sd 1.6 min) | — | — | — | — | 12 (8–14, sd 3) (0.65 (0.46–0.79, sd 0.14)) | +424/−20 |
+| #37 medium | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.00 ($0.00–$0.00, sd $0.00) | 40.2 min (38.0 min–41.8 min, sd 1.6 min) | — | — | — | — | 12 (8–14, sd 2) (0.66 (0.46–0.79, sd 0.11)) | +421/−20 |
 | #37 medium | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 1/1 | 3.0 | $1.08 | 22.1 min | — | — | — | — | 8 (0.46) | +421/−17 |
 | #37 medium | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 3/5 | 7.0 (3.0–12.0, sd 3.0) | $1.47 ($0.69–$2.39, sd $0.62) | 112.8 min (68.6 min–224.0 min, sd 59.1 min) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (3.0–5.0, sd 0.9) | 3.8 (3.0–4.0, sd 0.4) | — | 11 (8–14, sd 3) (0.64 (0.46–0.79, sd 0.15)) | +511/−25 |
@@ -201,7 +201,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $1.52 ($0.43–$5.77, sd $2.13) | 4.4 min (1.3 min–16.9 min, sd 6.2 min) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 5/5 | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +115/−1 |
 | #93 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 4 | 0/4 | 0.0 (0.0–0.0, sd 0.0) | $1.79 ($0.00–$6.37, sd $2.67) | 21.4 min (4.2 min–40.9 min, sd 17.2 min) | 1.0 | 2.0 | 2.0 | 4/4 | 3 (2–3, sd 1) (0.06 (0.00–0.11, sd 0.06)) | +119/−1 |
+| #93 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $1.43 ($0.00–$6.37, sd $2.49) | 25.1 min (4.2 min–40.9 min, sd 17.1 min) | 1.0 | 2.0 | 2.0 | 5/5 | 3 (2–3, sd 0) (0.07 (0.00–0.11, sd 0.05)) | +115/−0 |
 | #93 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.16 | 17.1 min | 1.0 | 1.0 | 1.0 | 1/1 | 2 (0.00) | +94/−0 |
 | #93 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.69 ($0.15–$2.76, sd $1.04) | 0.9 min (0.7 min–1.0 min, sd 0.1 min) | 1.0 (1.0–1.0, sd 0.0) | 1.4 (1.0–2.0, sd 0.5) | 1.2 (1.0–2.0, sd 0.4) | 5/5 | 2 (2–3, sd 0) (0.02 (0.00–0.11, sd 0.04)) | +92/−0 |
@@ -261,7 +261,7 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 3/5 | 0.4 (0.0–1.0, sd 0.5) | $0.20 ($0.08–$0.26, sd $0.06) | 16.2 min (1.1 min–24.8 min, sd 8.0 min) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (7–8, sd 0) (0.35 (0.27–0.36, sd 0.04)) | +150/−5 |
 | #93 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 4 | 3/4 | 0.3 (0.0–1.0, sd 0.4) | $0.27 ($0.14–$0.47, sd $0.14) | 11.1 min (2.2 min–20.0 min, sd 8.4 min) | — | — | — | — | 7 (7–8, sd 0) (0.30 (0.27–0.36, sd 0.04)) | +152/−5 |
+| #93 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 4/5 | 0.2 (0.0–1.0, sd 0.4) | $0.24 ($0.11–$0.47, sd $0.14) | 12.9 min (2.2 min–20.0 min, sd 8.3 min) | — | — | — | — | 7 (7–8, sd 0) (0.31 (0.27–0.36, sd 0.04)) | +153/−5 |
 | #93 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.08 | 0.7 min | 4.0 | 4.0 | 4.0 | — | 7 (0.27) | +141/−5 |
 | #93 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 2/5 | 0.6 (0.0–1.0, sd 0.5) | $0.09 ($0.08–$0.12, sd $0.02) | 8.3 min (0.7 min–14.6 min, sd 6.3 min) | 4.6 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | 3.8 (3.0–4.0, sd 0.4) | — | 7 (7–8, sd 0) (0.31 (0.27–0.36, sd 0.04)) | +150/−5 |
@@ -313,12 +313,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 5 | 4/5 | 1.6 (1.0–2.0, sd 0.5) | $0.23 ($0.14–$0.39, sd $0.09) | 5.5 min (3.0 min–7.5 min, sd 1.8 min) | 4.4 (4.0–5.0, sd 0.5) | 4.2 (4.0–5.0, sd 0.4) | 3.6 (3.0–4.0, sd 0.5) | — | 7 (7–9, sd 1) (0.28 (0.27–0.33, sd 0.02)) | +157/−7 |
 | #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 4 | 3/4 | 1.8 (1.0–4.0, sd 1.3) | $0.25 ($0.13–$0.52, sd $0.16) | 5.0 min (2.2 min–7.8 min, sd 2.0 min) | 4.3 (4.0–5.0, sd 0.4) | 4.3 (4.0–5.0, sd 0.4) | 4.0 (4.0–4.0, sd 0.0) | — | 9 (7–13, sd 2) (0.43 (0.27–0.67, sd 0.15)) | +186/−18 |
 | #93 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 4/5 | 2.4 (0.0–4.0, sd 1.4) | $0.26 ($0.03–$0.41, sd $0.13) | 6.2 min (2.3 min–10.8 min, sd 3.3 min) | 4.4 (4.0–5.0, sd 0.5) | 4.2 (3.0–5.0, sd 0.7) | 3.8 (3.0–4.0, sd 0.4) | — | 8 (6–12, sd 2) (0.36 (0.18–0.70, sd 0.18)) | +173/−14 |
-| #93 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #93 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.28 | 40.5 min | — | — | — | — | 11 (0.38) | +221/−11 |
 | #93 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 3/5 | 2.4 (1.0–7.0, sd 2.3) | $0.91 ($0.29–$1.93, sd $0.55) | 81.7 min (39.4 min–150.6 min, sd 40.2 min) | 4.0 (4.0–4.0, sd 0.0) | 4.5 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | — | 11 (7–13, sd 2) (0.38 (0.27–0.54, sd 0.09)) | +190/−13 |
 | #93 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #93 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 4 | 0/4 | 1.0 (1.0–1.0, sd 0.0) | $0.51 ($0.15–$0.87, sd $0.31) | 60.3 min (48.1 min–74.8 min, sd 9.5 min) | — | — | — | — | 8 (7–8, sd 0) (0.34 (0.27–0.36, sd 0.04)) | +171/−10 |
+| #93 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.47 ($0.15–$0.87, sd $0.29) | 63.2 min (48.1 min–74.8 min, sd 10.3 min) | — | — | — | — | 8 (7–8, sd 0) (0.35 (0.27–0.36, sd 0.04)) | +171/−10 |
 | #93 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 2.0 | $0.32 | 85.3 min | 5.0 | 5.0 | 4.0 | — | 7 (0.27) | +165/−7 |
 | #93 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 5/5 | 1.4 (1.0–2.0, sd 0.5) | $0.33 ($0.20–$0.59, sd $0.14) | 12.3 min (2.2 min–38.0 min, sd 13.5 min) | 5.0 (5.0–5.0, sd 0.0) | 4.8 (4.0–5.0, sd 0.4) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (6–10, sd 1) (0.27 (0.21–0.30, sd 0.03)) | +163/−7 |
@@ -370,12 +370,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.07 | 11.4 min | 1.0 | 1.0 | 1.0 | 1/1 | 3 (0.13) | +89/−1 |
 | #94 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 4 | 0/4 | 0.0 (0.0–0.0, sd 0.0) | $0.07 ($0.07–$0.08, sd $0.00) | 8.8 min (1.0 min–11.7 min, sd 4.5 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.5 (1.0–2.0, sd 0.5) | 4/4 | 2 (2–2, sd 0) (0.00 (0.00–0.00, sd 0.00)) | +102/−0 |
 | #94 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.07 ($0.06–$0.08, sd $0.01) | 5.1 min (0.7 min–12.1 min, sd 5.2 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.6 (1.0–2.0, sd 0.5) | 5/5 | 2 (2–2, sd 0) (0.00 (0.00–0.00, sd 0.00)) | +102/−0 |
-| #94 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #94 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.16 | 38.8 min | — | — | — | 1/1 | 3 (0.13) | +81/−0 |
 | #94 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.34 ($0.28–$0.37, sd $0.03) | 11.1 min (0.9 min–18.3 min, sd 8.3 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 5/5 | 3 (3–3, sd 0) (0.13 (0.13–0.13, sd 0.00)) | +89/−0 |
 | #94 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #94 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 4 | 0/4 | 0.0 (0.0–0.0, sd 0.0) | $0.33 ($0.24–$0.53, sd $0.12) | 20.5 min (18.7 min–21.5 min, sd 1.1 min) | — | — | — | 4/4 | 3 (2–3, sd 1) (0.06 (0.00–0.13, sd 0.06)) | +101/−1 |
+| #94 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.31 ($0.24–$0.53, sd $0.11) | 20.5 min (18.7 min–21.5 min, sd 1.0 min) | — | — | — | 5/5 | 3 (2–3, sd 0) (0.07 (0.00–0.13, sd 0.06)) | +98/−1 |
 | #94 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.13 | 16.6 min | 1.0 | 1.0 | 2.0 | 1/1 | 2 (0.00) | +73/−0 |
 | #94 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.13 ($0.12–$0.15, sd $0.01) | 6.1 min (0.5 min–14.3 min, sd 6.7 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.4 (1.0–2.0, sd 0.5) | 5/5 | 2 (2–3, sd 0) (0.05 (0.00–0.13, sd 0.06)) | +77/−0 |
@@ -430,12 +430,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.29 ($0.19–$0.61, sd $0.16) | 1.5 min (0.7 min–2.8 min, sd 0.7 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.6 (4.0–5.0, sd 0.5) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +137/−27 |
 | #94 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 6 | 0/6 | 1.0 (1.0–1.0, sd 0.0) | $0.24 ($0.18–$0.31, sd $0.04) | 0.9 min (0.8 min–1.0 min, sd 0.1 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +137/−27 |
 | #94 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.71 ($0.18–$1.62, sd $0.62) | 0.9 min (0.8 min–1.0 min, sd 0.1 min) | 4.8 (4.0–5.0, sd 0.4) | 5.0 (5.0–5.0, sd 0.0) | 4.8 (4.0–5.0, sd 0.4) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +140/−27 |
-| #94 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.17 | 19.5 min | — | — | — | — | 8 (0.75) | +137/−27 |
 | #94 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.17 ($0.14–$0.19, sd $0.02) | 4.4 min (0.8 min–18.6 min, sd 7.1 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +138/−27 |
 | #94 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #94 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 0/3 | 1.0 (1.0–1.0, sd 0.0) | $0.27 ($0.23–$0.32, sd $0.04) | 1.4 min (1.3 min–1.6 min, sd 0.1 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +138/−27 |
+| #94 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.27 ($0.23–$0.32, sd $0.03) | 1.4 min (1.2 min–1.6 min, sd 0.1 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +141/−27 |
 | #94 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.09 | 0.9 min | 5.0 | 5.0 | 5.0 | — | 8 (0.75) | +134/−27 |
 | #94 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.08 ($0.06–$0.08, sd $0.01) | 3.2 min (0.7 min–12.7 min, sd 4.7 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +135/−27 |
@@ -487,12 +487,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 5 | 1/5 | 1.2 (1.0–2.0, sd 0.4) | $0.19 ($0.13–$0.24, sd $0.04) | 2.9 min (2.0 min–3.6 min, sd 0.7 min) | 2.4 (2.0–4.0, sd 0.8) | 3.6 (3.0–4.0, sd 0.5) | 3.8 (3.0–4.0, sd 0.4) | — | 6 (5–7, sd 1) (0.35 (0.30–0.38, sd 0.03)) | +113/−6 |
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.21 ($0.16–$0.25, sd $0.04) | 3.2 min (2.6 min–3.9 min, sd 0.5 min) | 3.2 (2.0–5.0, sd 1.5) | 4.2 (3.0–5.0, sd 0.7) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (5–8, sd 1) (0.60 (0.38–0.75, sd 0.18)) | +119/−11 |
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 2/5 | 1.0 (1.0–1.0, sd 0.0) | $0.17 ($0.13–$0.21, sd $0.03) | 2.8 min (2.1 min–3.9 min, sd 0.6 min) | 4.6 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 6 (5–8, sd 1) (0.53 (0.38–0.75, sd 0.18)) | +107/−13 |
-| #94 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #94 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 1/1 | 1.0 | $0.48 | 77.5 min | — | — | — | — | 8 (0.75) | +155/−25 |
 | #94 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 2/5 | 1.0 (0.0–2.0, sd 0.9) | $0.45 ($0.00–$0.94, sd $0.39) | 54.6 min (34.6 min–74.2 min, sd 15.5 min) | 4.5 (4.0–5.0, sd 0.5) | 4.5 (4.0–5.0, sd 0.5) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (7–8, sd 0) (0.72 (0.63–0.75, sd 0.05)) | +169/−23 |
 | #94 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #94 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 4 | 1/4 | 1.0 (0.0–2.0, sd 0.7) | $0.36 ($0.00–$1.01, sd $0.39) | 65.3 min (29.5 min–96.1 min, sd 25.3 min) | — | — | — | — | 7 (5–8, sd 2) (0.56 (0.38–0.75, sd 0.19)) | +115/−16 |
+| #94 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 1/5 | 0.8 (0.0–2.0, sd 0.7) | $0.29 ($0.00–$1.01, sd $0.38) | 59.4 min (29.5 min–96.1 min, sd 25.6 min) | — | — | — | — | 6 (5–8, sd 1) (0.52 (0.33–0.75, sd 0.19)) | +123/−14 |
 | #94 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 3.0 | $0.28 | 85.7 min | 4.0 | 5.0 | 4.0 | — | 5 (0.38) | +85/−3 |
 | #94 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 5/5 | 2.4 (2.0–3.0, sd 0.5) | $0.27 ($0.22–$0.30, sd $0.03) | 44.8 min (2.5 min–65.2 min, sd 21.8 min) | 5.0 (5.0–5.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 5 (5–5, sd 0) (0.38 (0.38–0.38, sd 0.00)) | +86/−3 |
@@ -544,12 +544,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #95 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.07 | 1.0 min | 1.0 | 1.0 | 2.0 | 1/1 | 2 (0.00) | +115/−0 |
 | #95 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 4 | 0/4 | 0.0 (0.0–0.0, sd 0.0) | $0.05 ($0.00–$0.08, sd $0.03) | 11.4 min (1.0 min–21.4 min, sd 7.2 min) | 1.0 (1.0–1.0, sd 0.0) | 1.3 (1.0–2.0, sd 0.4) | 2.0 (2.0–2.0, sd 0.0) | 4/4 | 2 (2–2, sd 0) (0.00 (0.00–0.00, sd 0.00)) | +100/−0 |
 | #95 small | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.06 ($0.04–$0.07, sd $0.01) | 12.9 min (10.7 min–21.2 min, sd 4.1 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 5/5 | 2 (2–2, sd 0) (0.00 (0.00–0.00, sd 0.00)) | +113/−0 |
-| #95 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #95 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.40 | 19.2 min | — | — | — | 1/1 | 3 (0.13) | +93/−6 |
 | #95 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.37 ($0.28–$0.42, sd $0.05) | 14.6 min (1.0 min–19.5 min, sd 6.9 min) | 1.0 (1.0–1.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 5/5 | 3 (2–3, sd 0) (0.07 (0.00–0.13, sd 0.06)) | +97/−2 |
 | #95 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #95 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 0/3 | 0.0 (0.0–0.0, sd 0.0) | $0.50 ($0.39–$0.57, sd $0.08) | 8.1 min (2.8 min–18.3 min, sd 7.2 min) | — | — | — | 3/3 | 2 (2–3, sd 0) (0.04 (0.00–0.13, sd 0.06)) | +114/−0 |
+| #95 small | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.40 ($0.24–$0.57, sd $0.13) | 12.5 min (2.8 min–21.4 min, sd 7.9 min) | — | — | — | 5/5 | 3 (2–3, sd 0) (0.07 (0.00–0.13, sd 0.06)) | +122/−1 |
 | #95 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.12 | 0.5 min | 1.0 | 1.0 | 2.0 | 1/1 | 2 (0.00) | +76/−0 |
 | #95 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.13 ($0.12–$0.15, sd $0.01) | 6.1 min (0.5 min–16.2 min, sd 6.8 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.4 (1.0–2.0, sd 0.5) | 5/5 | 2 (2–3, sd 0) (0.03 (0.00–0.13, sd 0.05)) | +78/−0 |
@@ -604,12 +604,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #95 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.03 | 0.7 min | 4.0 | 5.0 | 4.0 | — | 8 (0.75) | +148/−24 |
 | #95 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 4 | 2/4 | 0.5 (0.0–1.0, sd 0.5) | $0.03 ($0.02–$0.03, sd $0.00) | 3.4 min (0.6 min–11.4 min, sd 4.7 min) | 4.5 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +146/−24 |
 | #95 small | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.02 ($0.01–$0.03, sd $0.01) | 7.0 min (0.6 min–11.6 min, sd 5.2 min) | 4.0 (4.0–4.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +145/−24 |
-| #95 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #95 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.16 | 1.0 min | — | — | — | — | 8 (0.75) | +146/−24 |
 | #95 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 3/5 | 0.4 (0.0–1.0, sd 0.5) | $0.13 ($0.10–$0.16, sd $0.02) | 8.9 min (0.7 min–40.9 min, sd 16.0 min) | 4.0 (4.0–4.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +146/−24 |
 | #95 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #95 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 3/3 | 0.0 (0.0–0.0, sd 0.0) | $0.14 ($0.14–$0.16, sd $0.01) | 7.5 min (0.8 min–20.9 min, sd 9.5 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +145/−24 |
+| #95 small | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 4/5 | 0.2 (0.0–1.0, sd 0.4) | $0.14 ($0.14–$0.16, sd $0.01) | 12.4 min (0.6 min–38.9 min, sd 15.4 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +145/−24 |
 | #95 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.06 | 0.7 min | 5.0 | 5.0 | 4.0 | — | 8 (0.75) | +145/−24 |
 | #95 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 4/5 | 0.2 (0.0–1.0, sd 0.4) | $0.05 ($0.05–$0.05, sd $0.00) | 5.9 min (0.7 min–14.3 min, sd 6.3 min) | 4.0 (4.0–4.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +145/−24 |
@@ -661,12 +661,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #95 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.06 | 45.6 min | 2.0 | 3.0 | 4.0 | — | 8 (0.75) | +189/−23 |
 | #95 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 1/3 | 1.3 (0.0–3.0, sd 1.2) | $0.12 ($0.00–$0.29, sd $0.12) | 34.5 min (22.1 min–47.4 min, sd 10.3 min) | 4.0 (3.0–5.0, sd 0.8) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (5–8, sd 1) (0.63 (0.38–0.75, sd 0.18)) | +178/−19 |
 | #95 small | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 3/5 | 1.6 (0.0–3.0, sd 1.2) | $0.14 ($0.00–$0.27, sd $0.10) | 43.7 min (20.1 min–61.6 min, sd 14.3 min) | 4.2 (4.0–5.0, sd 0.4) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 6 (5–8, sd 1) (0.45 (0.30–0.75, sd 0.16)) | +174/−11 |
-| #95 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #95 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 1/1 | 2.0 | $0.83 | 78.3 min | — | — | — | — | 8 (0.75) | +205/−38 |
 | #95 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 2/5 | 1.2 (0.0–2.0, sd 0.7) | $0.54 ($0.00–$1.13, sd $0.37) | 59.2 min (40.2 min–77.2 min, sd 14.4 min) | 4.0 (3.0–5.0, sd 1.0) | 4.0 (4.0–4.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +184/−24 |
 | #95 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #95 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 0/3 | 0.3 (0.0–1.0, sd 0.5) | $0.25 ($0.00–$0.76, sd $0.36) | 46.0 min (36.1 min–61.9 min, sd 11.3 min) | — | — | — | — | 6 (6–7, sd 0) (0.32 (0.30–0.33, sd 0.02)) | +157/−8 |
+| #95 small | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.2 (0.0–1.0, sd 0.4) | $0.15 ($0.00–$0.76, sd $0.30) | 42.3 min (32.8 min–61.9 min, sd 10.2 min) | — | — | — | — | 7 (6–8, sd 1) (0.41 (0.30–0.75, sd 0.17)) | +166/−11 |
 | #95 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 1/1 | 1.0 | $0.36 | 52.1 min | 4.0 | 4.0 | 4.0 | — | 6 (0.33) | +204/−8 |
 | #95 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 5/5 | 2.4 (2.0–3.0, sd 0.5) | $0.39 ($0.27–$0.48, sd $0.08) | 59.6 min (50.5 min–68.8 min, sd 7.6 min) | 4.0 (4.0–4.0, sd 0.0) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 7 (6–8, sd 1) (0.41 (0.30–0.75, sd 0.17)) | +178/−12 |
@@ -718,12 +718,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.24 | 13.9 min | 1.0 | 1.0 | 1.0 | 0/1 | 2 (0.00) | +239/−0 |
 | #144 large | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 0/3 | 0.0 (0.0–0.0, sd 0.0) | $0.04 ($0.00–$0.06, sd $0.03) | 15.1 min (11.5 min–22.1 min, sd 4.9 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 0/3 | 2 (2–2, sd 0) (0.00 (0.00–0.00, sd 0.00)) | +117/−0 |
 | #144 large | dod | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.08 ($0.00–$0.16, sd $0.06) | 14.1 min (11.2 min–21.3 min, sd 3.7 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 0/5 | 2 (2–2, sd 0) (0.00 (0.00–0.00, sd 0.00)) | +158/−0 |
-| #144 large | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #144 large | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.00 | 37.9 min | — | — | — | 0/1 | 3 (0.04) | +306/−0 |
 | #144 large | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | dod | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.40 ($0.22–$0.79, sd $0.22) | 19.0 min (17.7 min–20.3 min, sd 0.9 min) | 1.0 | 1.0 | 1.0 | 2/5 | 3 (3–3, sd 0) (0.04 (0.04–0.04, sd 0.00)) | +337/−25 |
 | #144 large | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #144 large | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 0/3 | 0.0 (0.0–0.0, sd 0.0) | $0.00 ($0.00–$0.00, sd $0.00) | 38.8 min (37.1 min–41.3 min, sd 1.9 min) | — | — | — | 0/3 | 2 (2–3, sd 0) (0.01 (0.00–0.04, sd 0.02)) | +184/−0 |
+| #144 large | dod | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.27 ($0.00–$1.34, sd $0.53) | 32.7 min (6.8 min–41.3 min, sd 13.0 min) | — | — | — | 0/5 | 2 (2–3, sd 0) (0.02 (0.00–0.04, sd 0.02)) | +201/−13 |
 | #144 large | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.29 | 17.2 min | 1.0 | 1.0 | 1.0 | 0/1 | 3 (0.04) | +189/−0 |
 | #144 large | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | dod | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.29 ($0.22–$0.32, sd $0.04) | 6.2 min (1.2 min–14.4 min, sd 5.9 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 0/5 | 3 (2–3, sd 0) (0.02 (0.00–0.04, sd 0.02)) | +210/−13 |
@@ -778,12 +778,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.17 | 2.9 min | 2.0 | 2.0 | 2.0 | — | 13 (0.32) | +370/−23 |
 | #144 large | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 3 | 0/3 | 1.0 (1.0–1.0, sd 0.0) | $0.02 ($0.02–$0.02, sd $0.00) | 12.3 min (12.1 min–12.6 min, sd 0.2 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 12 (11–12, sd 0) (0.29 (0.29–0.30, sd 0.00)) | +388/−22 |
 | #144 large | repair-build | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.05 ($0.02–$0.18, sd $0.07) | 9.9 min (2.7 min–12.7 min, sd 3.7 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 13 (12–13, sd 0) (0.31 (0.29–0.32, sd 0.01)) | +406/−32 |
-| #144 large | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #144 large | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.10 | 19.6 min | — | — | — | — | 14 (0.31) | +403/−52 |
 | #144 large | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 3/5 | 0.4 (0.0–1.0, sd 0.5) | $0.43 ($0.10–$0.75, sd $0.28) | 12.3 min (2.0 min–34.2 min, sd 12.9 min) | 2.0 | 2.0 | 2.0 | — | 14 (13–14, sd 0) (0.30 (0.28–0.31, sd 0.02)) | +439/−72 |
 | #144 large | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #144 large | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 0/3 | 0.7 (0.0–1.0, sd 0.5) | $0.15 ($0.00–$0.32, sd $0.13) | 27.0 min (18.7 min–40.1 min, sd 9.4 min) | — | — | — | — | 12 (12–12, sd 0) (0.29 (0.29–0.29, sd 0.00)) | +406/−34 |
+| #144 large | repair-build | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.8 (0.0–1.0, sd 0.4) | $0.40 ($0.00–$1.24, sd $0.44) | 25.5 min (18.7 min–40.1 min, sd 7.6 min) | — | — | — | — | 12 (12–12, sd 0) (0.29 (0.29–0.29, sd 0.00)) | +407/−34 |
 | #144 large | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.26 | 2.0 min | — | — | — | — | 12 (0.29) | +395/−32 |
 | #144 large | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 1.0 (1.0–1.0, sd 0.0) | $0.29 ($0.23–$0.33, sd $0.04) | 8.2 min (1.6 min–33.6 min, sd 12.7 min) | 2.0 (2.0–2.0, sd 0.0) | 1.8 (1.0–2.0, sd 0.4) | 2.0 (2.0–2.0, sd 0.0) | — | 12 (12–12, sd 0) (0.29 (0.29–0.29, sd 0.00)) | +392/−32 |
@@ -835,12 +835,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 2.0 | $0.16 | 24.8 min | 2.0 | 2.0 | 2.0 | — | 13 (0.28) | +438/−32 |
 | #144 large | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 2 | 0/2 | 1.5 (1.0–2.0, sd 0.5) | $0.11 ($0.07–$0.15, sd $0.04) | 51.2 min (33.5 min–68.9 min, sd 17.7 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | — | 11 (11–11, sd 0) (0.21 (0.21–0.21, sd 0.00)) | +371/−46 |
 | #144 large | tdd-round | `claude-haiku-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.6 (0.0–1.0, sd 0.5) | $0.04 ($0.00–$0.08, sd $0.04) | 30.9 min (21.1 min–44.6 min, sd 8.7 min) | 1.2 (1.0–2.0, sd 0.4) | 1.2 (1.0–2.0, sd 0.4) | 1.2 (1.0–2.0, sd 0.4) | — | 8 (6–15, sd 3) (0.21 (0.15–0.30, sd 0.05)) | +310/−12 |
-| #144 large | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #144 large | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.00 | 38.6 min | — | — | — | — | 11 (0.25) | +432/−6 |
 | #144 large | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `claude-opus-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 0/5 | 0.8 (0.0–3.0, sd 1.2) | $0.44 ($0.00–$1.75, sd $0.68) | 46.0 min (34.2 min–61.0 min, sd 11.9 min) | 2.0 | 2.0 | 2.0 | — | 17 (11–22, sd 4) (0.23 (0.21–0.26, sd 0.02)) | +564/−106 |
 | #144 large | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
-| #144 large | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 3 | 0/3 | 0.3 (0.0–1.0, sd 0.5) | $0.34 ($0.00–$1.03, sd $0.48) | 45.6 min (36.5 min–58.6 min, sd 9.5 min) | — | — | — | — | 13 (10–18, sd 4) (0.28 (0.26–0.31, sd 0.02)) | +529/−75 |
+| #144 large | tdd-round | `claude-sonnet-4-6` (claude) | high (claude CLI default) | without Lore | baseline | 4 | 0/4 | 0.3 (0.0–1.0, sd 0.4) | $0.26 ($0.00–$1.03, sd $0.44) | 44.2 min (36.5 min–58.6 min, sd 8.5 min) | — | — | — | — | 12 (10–18, sd 3) (0.27 (0.25–0.31, sd 0.02)) | +525/−57 |
 | #144 large | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | with Lore | baseline | 1 | 0/1 | 5.0 | $1.23 | 43.6 min | — | — | — | — | 20 (0.26) | +646/−196 |
 | #144 large | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `claude-sonnet-5-5` (claude) | medium (claude CLI default) | without Lore | baseline | 5 | 4/5 | 5.4 (1.0–8.0, sd 2.4) | $1.10 ($0.17–$2.21, sd $0.65) | 74.5 min (34.6 min–103.4 min, sd 24.3 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 17 (15–20, sd 2) (0.28 (0.26–0.30, sd 0.02)) | +563/−137 |
@@ -903,8 +903,9 @@ What the columns mean:
 | #37 medium | dod | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
 | #37 medium | dod | `claude-haiku-5-5` (claude) | Lore on Utopia | station_done ×1, retry_budget ×1, dod_scoped_out ×1 |
 | #37 medium | dod | `claude-haiku-5-5` (claude) | without Lore | station_done ×5 |
+| #37 medium | dod | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #37 medium | dod | `claude-opus-5-5` (claude) | without Lore | station_done ×5 |
-| #37 medium | dod | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×2, station_done ×1 |
+| #37 medium | dod | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×3, station_done ×2 |
 | #37 medium | dod | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #37 medium | dod | `claude-sonnet-5-5` (claude) | without Lore | station_done ×5 |
 | #37 medium | dod | `gpt-5.6-luna` (codex) | with Lore | station_done ×5 |
@@ -933,8 +934,9 @@ What the columns mean:
 | #37 medium | repair-build | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
 | #37 medium | repair-build | `claude-haiku-5-5` (claude) | Lore on Utopia | station_done ×3 |
 | #37 medium | repair-build | `claude-haiku-5-5` (claude) | without Lore | station_done ×5 |
+| #37 medium | repair-build | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #37 medium | repair-build | `claude-opus-5-5` (claude) | without Lore | station_done ×5 |
-| #37 medium | repair-build | `claude-sonnet-4-6` (claude) | without Lore | station_done ×2, green ×1 |
+| #37 medium | repair-build | `claude-sonnet-4-6` (claude) | without Lore | station_done ×4, green ×1 |
 | #37 medium | repair-build | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #37 medium | repair-build | `claude-sonnet-5-5` (claude) | without Lore | station_done ×5 |
 | #37 medium | repair-build | `gpt-5.6-luna` (codex) | with Lore | station_done ×5 |
@@ -972,8 +974,9 @@ What the columns mean:
 | #37 medium | tdd-round | `claude-haiku-5-5` (claude) | with Lore | retry_budget ×1 |
 | #37 medium | tdd-round | `claude-haiku-5-5` (claude) | Lore on Utopia | retry_budget ×3 |
 | #37 medium | tdd-round | `claude-haiku-5-5` (claude) | without Lore | retry_budget ×5 |
+| #37 medium | tdd-round | `claude-opus-5-5` (claude) | with Lore | retry_budget ×1 |
 | #37 medium | tdd-round | `claude-opus-5-5` (claude) | without Lore | retry_budget ×3, green ×2 |
-| #37 medium | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×3 |
+| #37 medium | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×5 |
 | #37 medium | tdd-round | `claude-sonnet-5-5` (claude) | with Lore | green ×1 |
 | #37 medium | tdd-round | `claude-sonnet-5-5` (claude) | without Lore | retry_budget ×1, green ×3, round_budget ×1 |
 | #37 medium | tdd-round | `glm-5.3-flash` (claude) | without Lore | green ×4, retry_budget ×1 |
@@ -1017,7 +1020,7 @@ What the columns mean:
 | #93 small | dod | `claude-haiku-5-5` (claude) | without Lore | station_done ×5 |
 | #93 small | dod | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #93 small | dod | `claude-opus-5-5` (claude) | without Lore | station_done ×5 |
-| #93 small | dod | `claude-sonnet-4-6` (claude) | without Lore | station_done ×2, retry_budget ×2 |
+| #93 small | dod | `claude-sonnet-4-6` (claude) | without Lore | station_done ×2, retry_budget ×3 |
 | #93 small | dod | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #93 small | dod | `claude-sonnet-5-5` (claude) | without Lore | station_done ×5 |
 | #93 small | dod | `gpt-5.6-luna` (codex) | with Lore | station_done ×5 |
@@ -1053,7 +1056,7 @@ What the columns mean:
 | #93 small | repair-build | `claude-haiku-5-5` (claude) | without Lore | green ×4, station_done ×1 |
 | #93 small | repair-build | `claude-opus-5-5` (claude) | with Lore | green ×1 |
 | #93 small | repair-build | `claude-opus-5-5` (claude) | without Lore | station_done ×2, green ×3 |
-| #93 small | repair-build | `claude-sonnet-4-6` (claude) | without Lore | green ×3, station_done ×1 |
+| #93 small | repair-build | `claude-sonnet-4-6` (claude) | without Lore | green ×4, station_done ×1 |
 | #93 small | repair-build | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #93 small | repair-build | `claude-sonnet-5-5` (claude) | without Lore | green ×2, station_done ×3 |
 | #93 small | repair-build | `gpt-5.6-luna` (codex) | with Lore | station_done ×2, green ×3 |
@@ -1092,8 +1095,9 @@ What the columns mean:
 | #93 small | tdd-round | `claude-haiku-5-5` (claude) | with Lore | green ×4, retry_budget ×1 |
 | #93 small | tdd-round | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×3, retry_budget ×1 |
 | #93 small | tdd-round | `claude-haiku-5-5` (claude) | without Lore | green ×4, retry_budget ×1 |
+| #93 small | tdd-round | `claude-opus-5-5` (claude) | with Lore | retry_budget ×1 |
 | #93 small | tdd-round | `claude-opus-5-5` (claude) | without Lore | green ×3, retry_budget ×2 |
-| #93 small | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×4 |
+| #93 small | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×5 |
 | #93 small | tdd-round | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #93 small | tdd-round | `claude-sonnet-5-5` (claude) | without Lore | green ×5 |
 | #93 small | tdd-round | `glm-5.3-flash` (claude) | without Lore | green ×5 |
@@ -1132,8 +1136,9 @@ What the columns mean:
 | #94 small | dod | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
 | #94 small | dod | `claude-haiku-5-5` (claude) | Lore on Utopia | station_done ×4 |
 | #94 small | dod | `claude-haiku-5-5` (claude) | without Lore | station_done ×5 |
+| #94 small | dod | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #94 small | dod | `claude-opus-5-5` (claude) | without Lore | station_done ×5 |
-| #94 small | dod | `claude-sonnet-4-6` (claude) | without Lore | station_done ×4 |
+| #94 small | dod | `claude-sonnet-4-6` (claude) | without Lore | station_done ×5 |
 | #94 small | dod | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #94 small | dod | `claude-sonnet-5-5` (claude) | without Lore | station_done ×5 |
 | #94 small | dod | `gpt-5.6-luna` (codex) | with Lore | station_done ×5 |
@@ -1163,8 +1168,9 @@ What the columns mean:
 | #94 small | repair-build | `claude-haiku-5-5` (claude) | with Lore | station_done ×5 |
 | #94 small | repair-build | `claude-haiku-5-5` (claude) | Lore on Utopia | station_done ×6 |
 | #94 small | repair-build | `claude-haiku-5-5` (claude) | without Lore | station_done ×5 |
+| #94 small | repair-build | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #94 small | repair-build | `claude-opus-5-5` (claude) | without Lore | station_done ×5 |
-| #94 small | repair-build | `claude-sonnet-4-6` (claude) | without Lore | station_done ×3 |
+| #94 small | repair-build | `claude-sonnet-4-6` (claude) | without Lore | station_done ×5 |
 | #94 small | repair-build | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #94 small | repair-build | `claude-sonnet-5-5` (claude) | without Lore | station_done ×5 |
 | #94 small | repair-build | `gpt-5.6-luna` (codex) | with Lore | station_done ×5 |
@@ -1203,8 +1209,9 @@ What the columns mean:
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | with Lore | retry_budget ×4, green ×1 |
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | Lore on Utopia | retry_budget ×5 |
 | #94 small | tdd-round | `claude-haiku-5-5` (claude) | without Lore | retry_budget ×3, green ×2 |
+| #94 small | tdd-round | `claude-opus-5-5` (claude) | with Lore | green ×1 |
 | #94 small | tdd-round | `claude-opus-5-5` (claude) | without Lore | green ×2, retry_budget ×3 |
-| #94 small | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×3, green ×1 |
+| #94 small | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×4, green ×1 |
 | #94 small | tdd-round | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #94 small | tdd-round | `claude-sonnet-5-5` (claude) | without Lore | green ×5 |
 | #94 small | tdd-round | `glm-5.3-flash` (claude) | without Lore | green ×5 |
@@ -1243,8 +1250,9 @@ What the columns mean:
 | #95 small | dod | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
 | #95 small | dod | `claude-haiku-5-5` (claude) | Lore on Utopia | station_done ×3, retry_budget ×1 |
 | #95 small | dod | `claude-haiku-5-5` (claude) | without Lore | station_done ×5 |
+| #95 small | dod | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #95 small | dod | `claude-opus-5-5` (claude) | without Lore | station_done ×5 |
-| #95 small | dod | `claude-sonnet-4-6` (claude) | without Lore | station_done ×3 |
+| #95 small | dod | `claude-sonnet-4-6` (claude) | without Lore | station_done ×5 |
 | #95 small | dod | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #95 small | dod | `claude-sonnet-5-5` (claude) | without Lore | station_done ×5 |
 | #95 small | dod | `gpt-5.6-luna` (codex) | with Lore | station_done ×5 |
@@ -1273,8 +1281,9 @@ What the columns mean:
 | #95 small | repair-build | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
 | #95 small | repair-build | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×2, station_done ×2 |
 | #95 small | repair-build | `claude-haiku-5-5` (claude) | without Lore | green ×5 |
+| #95 small | repair-build | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #95 small | repair-build | `claude-opus-5-5` (claude) | without Lore | green ×3, station_done ×2 |
-| #95 small | repair-build | `claude-sonnet-4-6` (claude) | without Lore | green ×3 |
+| #95 small | repair-build | `claude-sonnet-4-6` (claude) | without Lore | green ×4, station_done ×1 |
 | #95 small | repair-build | `claude-sonnet-5-5` (claude) | with Lore | green ×1 |
 | #95 small | repair-build | `claude-sonnet-5-5` (claude) | without Lore | station_done ×1, green ×4 |
 | #95 small | repair-build | `gpt-5.6-luna` (codex) | with Lore | green ×3, station_done ×2 |
@@ -1312,8 +1321,9 @@ What the columns mean:
 | #95 small | tdd-round | `claude-haiku-5-5` (claude) | with Lore | retry_budget ×1 |
 | #95 small | tdd-round | `claude-haiku-5-5` (claude) | Lore on Utopia | green ×1, retry_budget ×2 |
 | #95 small | tdd-round | `claude-haiku-5-5` (claude) | without Lore | retry_budget ×2, green ×3 |
+| #95 small | tdd-round | `claude-opus-5-5` (claude) | with Lore | green ×1 |
 | #95 small | tdd-round | `claude-opus-5-5` (claude) | without Lore | green ×2, retry_budget ×3 |
-| #95 small | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×3 |
+| #95 small | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×5 |
 | #95 small | tdd-round | `claude-sonnet-5-5` (claude) | with Lore | green ×1 |
 | #95 small | tdd-round | `claude-sonnet-5-5` (claude) | without Lore | green ×5 |
 | #95 small | tdd-round | `glm-5.3-flash` (claude) | without Lore | green ×5 |
@@ -1352,8 +1362,9 @@ What the columns mean:
 | #144 large | dod | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
 | #144 large | dod | `claude-haiku-5-5` (claude) | Lore on Utopia | station_done ×2, retry_budget ×1 |
 | #144 large | dod | `claude-haiku-5-5` (claude) | without Lore | station_done ×4, retry_budget ×1 |
+| #144 large | dod | `claude-opus-5-5` (claude) | with Lore | retry_budget ×1 |
 | #144 large | dod | `claude-opus-5-5` (claude) | without Lore | station_done ×5 |
-| #144 large | dod | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×3 |
+| #144 large | dod | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×4, station_done ×1 |
 | #144 large | dod | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #144 large | dod | `claude-sonnet-5-5` (claude) | without Lore | station_done ×5 |
 | #144 large | dod | `gpt-5.6-luna` (codex) | with Lore | station_done ×5 |
@@ -1382,8 +1393,9 @@ What the columns mean:
 | #144 large | repair-build | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
 | #144 large | repair-build | `claude-haiku-5-5` (claude) | Lore on Utopia | station_done ×3 |
 | #144 large | repair-build | `claude-haiku-5-5` (claude) | without Lore | station_done ×5 |
+| #144 large | repair-build | `claude-opus-5-5` (claude) | with Lore | station_done ×1 |
 | #144 large | repair-build | `claude-opus-5-5` (claude) | without Lore | green ×3, station_done ×2 |
-| #144 large | repair-build | `claude-sonnet-4-6` (claude) | without Lore | station_done ×2, retry_budget ×1 |
+| #144 large | repair-build | `claude-sonnet-4-6` (claude) | without Lore | station_done ×4, retry_budget ×1 |
 | #144 large | repair-build | `claude-sonnet-5-5` (claude) | with Lore | station_done ×1 |
 | #144 large | repair-build | `claude-sonnet-5-5` (claude) | without Lore | station_done ×5 |
 | #144 large | repair-build | `gpt-5.6-luna` (codex) | with Lore | station_done ×5 |
@@ -1421,8 +1433,9 @@ What the columns mean:
 | #144 large | tdd-round | `claude-haiku-5-5` (claude) | with Lore | retry_budget ×1 |
 | #144 large | tdd-round | `claude-haiku-5-5` (claude) | Lore on Utopia | retry_budget ×2 |
 | #144 large | tdd-round | `claude-haiku-5-5` (claude) | without Lore | retry_budget ×5 |
+| #144 large | tdd-round | `claude-opus-5-5` (claude) | with Lore | retry_budget ×1 |
 | #144 large | tdd-round | `claude-opus-5-5` (claude) | without Lore | retry_budget ×5 |
-| #144 large | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×3 |
+| #144 large | tdd-round | `claude-sonnet-4-6` (claude) | without Lore | retry_budget ×4 |
 | #144 large | tdd-round | `claude-sonnet-5-5` (claude) | with Lore | retry_budget ×1 |
 | #144 large | tdd-round | `claude-sonnet-5-5` (claude) | without Lore | green ×4, retry_budget ×1 |
 | #144 large | tdd-round | `gpt-5.6-luna` (codex) | with Lore | round_budget ×4, green ×1 |

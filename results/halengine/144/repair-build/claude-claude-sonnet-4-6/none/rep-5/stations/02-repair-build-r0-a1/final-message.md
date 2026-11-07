@@ -1,0 +1,3 @@
+Branch is pushed and up to date. The fix inverts the `if (frame.type !== 'connected')` guard in `askAfterConnect` to `if (frame.type === 'connected')` with an early return, letting the non-connected cases (pong, other frames) run flat — satisfying the `re-lint/prefer-early-return` rule. The other lint errors (duplicate code, no-flag-params) and the test failure were already fixed in the prior commit `0cd447f`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"prefer-early-return lint error in conversationList.acceptance.test.ts askAfterConnect: inverted outer if-guard from !== to === connected with early-return"}}

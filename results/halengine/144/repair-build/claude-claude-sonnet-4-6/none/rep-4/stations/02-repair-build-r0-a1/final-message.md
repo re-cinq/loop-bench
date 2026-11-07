@@ -1,0 +1,3 @@
+The branch moved since CI judged it — commit `83f2ff6` ("fix(transport): implement list_sessions handler and fix lint errors") was pushed after CI judged `5cd4e6710184e4c23ab8d932710998781bdd6208`, and that commit does not carry `[skip ci]`. CI has not yet judged the new head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}
