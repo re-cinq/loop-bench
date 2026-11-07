@@ -1,0 +1,5 @@
+I have fixed the lint failure in `src/orchestration/onErrorNonError.acceptance.test.ts` where the use of `new Date()` violated the `re-lint/no-nondeterministic-tests` rule. I replaced it with a fixed ISO string `2024-01-01T00:00:00.000Z`. Additionally, I added a test case for rejections with `undefined` to fully satisfy the ticket's acceptance criteria, ensuring that even `undefined` rejections are correctly wrapped in an `Error` before reaching the `onError` hook while still rethrowing the original value.
+
+I verified the fix by running the specific test suite locally, which now has 3 passing tests. I also ensured the file is correctly formatted and the branch is up to date with `main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"fixed lint failure in acceptance test by using deterministic timestamp and added coverage for undefined rejection"}}

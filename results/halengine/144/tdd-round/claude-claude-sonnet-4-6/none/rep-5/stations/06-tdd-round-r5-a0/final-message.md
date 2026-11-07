@@ -1,0 +1,3 @@
+Branch is up to date and pushed. The fix flipped the outer `if (frame.type === 'connected')` condition to `if (frame.type !== 'connected')`, guarding the non-connected path with early returns and letting the connected handler run flat — resolving the `re-lint/prefer-early-return` violation.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix ESLint prefer-early-return violation in conversationList acceptance test","tdd_next":"acceptance green"}}

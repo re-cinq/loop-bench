@@ -1,0 +1,3 @@
+The branch has moved past the judged SHA. The commit `17b475b5e33ff80a7f8a3d49dd0727b1ccfae33a` ("test(orchestrator): fix beforeSession acceptance test type error and expect count") was pushed after CI judged `c3cd08a9719fc2b94390d5b6e91bcbe417f649a3`, and it does not carry `[skip ci]`. CI has not yet judged the new head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past c3cd08a9719fc2b94390d5b6e91bcbe417f649a3; CI re-judges the head"}}
