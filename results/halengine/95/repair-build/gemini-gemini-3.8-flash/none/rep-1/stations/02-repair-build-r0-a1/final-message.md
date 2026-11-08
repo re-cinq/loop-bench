@@ -1,0 +1,3 @@
+The branch has moved past judged sha `48d6c74a6b0f7da5b8a9c423833b2caa7b443705` with commit `33efb386aa161f741ba8c7f9f74595949c9dfc5b` (`test(orchestrator): use deterministic timestamp in onError acceptance test`), which does not carry `[skip ci]`. Per instructions, changing nothing.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 48d6c74a6b0f7da5b8a9c423833b2caa7b443705; CI re-judges the head"}}

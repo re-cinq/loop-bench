@@ -1,0 +1,3 @@
+The branch has moved past the judged SHA `19eaa4dfdc1d7fee67a77a045b3b6ffe47e754bd` with commit `70945a16429abcf33efc184f1ddafdec7dbeb0e8` (`fix(orchestrator): link accumulateUsage tests to spec and assert in single expect`), which does not contain `[skip ci]`. As instructed, no changes or runs were made so that CI can re-judge the head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 19eaa4dfdc1d7fee67a77a045b3b6ffe47e754bd; CI re-judges the head"}}

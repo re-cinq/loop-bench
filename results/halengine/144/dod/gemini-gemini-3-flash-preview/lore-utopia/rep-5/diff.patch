@@ -1,0 +1,255 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..1327388
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,35 @@
++# Definition of Done
++
++> Deliver a user's conversation list over the WebSocket protocol
++
++**Strategy: `direct`** — A seam exists in `validateMessage` and `createMessageHandler` (via the `handle` function returned by it). The acceptance tests will call these entry points directly with real values to fail on missing behavior.
++
++## Done when these pass
++
++- [ ] **protocol message types** — `IncomingMessage` accepts `list_conversations` and `OutgoingMessage` includes `conversation_list` with summary payload types.
++      `src/types/messages.acceptance.test.ts`
++- [ ] **frame validation** — `validateMessage` accepts `list_conversations` and enforces `limit` (1-200) and cursor `before` (composite `updatedAt`/`sessionId`) constraints.
++      `src/transport/ws/validation.acceptance.test.ts`
++- [ ] **list handler logic** — `createMessageHandler` answers `list_conversations` with the authenticated user's list from the store, newest first, with ISO timestamps, only when enabled.
++      `src/transport/ws/messageHandler.acceptance.test.ts`
++- [ ] **unsupported/missing listFor** — `list_conversations` is answered with `UNSUPPORTED` when history is disabled or the store lacks `listFor`.
++      `src/transport/ws/messageHandler.acceptance.test.ts`
++- [ ] **lock-free handling** — `list_conversations` is answered while a `user_message` turn is still streaming on the same session.
++      `src/transport/ws/messageHandler.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `list_conversations` and `conversation_list` frames to protocol types
++- [ ] Add `UNSUPPORTED` error code to `ErrorCodes`
++- [ ] Implement `list_conversations` validation logic
++- [ ] Thread history configuration through `createMessageHandler`
++- [ ] Implement `list_conversations` handling logic using `ws.userId` and store's `listFor`
++- [ ] Ensure `list_conversations` bypasses the `PerSessionLock`
++
++## Out of scope
++
++- Preview or title on conversation summaries
++- Deleting conversations from the client
++- Server-side paging state
++- Operator view of other users' conversations
++- Live sync between open tabs
+diff --git a/src/transport/ws/messageHandler.acceptance.test.ts b/src/transport/ws/messageHandler.acceptance.test.ts
+new file mode 100644
+index 0000000..edfc54a
+--- /dev/null
++++ b/src/transport/ws/messageHandler.acceptance.test.ts
+@@ -0,0 +1,132 @@
++import {jest} from '@jest/globals';
++import type {WebSocket} from 'ws';
++import {createMessageHandler} from './messageHandler.js';
++import type {ChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import type {ChatSession, SessionSummary} from '../../types/session.js';
++import type {SessionStore} from '../../types/sessionStore.js';
++import type {OutgoingMessage} from '../../types/messages.js';
++import {deferred} from '../wsTestSupport.js';
++
++describe('conversation list handler logic', () => {
++  const setup = (config: {history?: {enabled: boolean}} = {history: {enabled: true}}) => {
++    const sent: OutgoingMessage[] = [];
++    const ws = {
++      send: (raw: string) => sent.push(JSON.parse(raw) as OutgoingMessage),
++      userId: 'u1',
++    } as unknown as WebSocket & {userId: string};
++
++    const listFor = jest.fn<SessionStore['listFor']>();
++    const store = {listFor} as unknown as SessionStore;
++    const orchestrator = {} as unknown as ChatOrchestrator;
++    const session: ChatSession = {sessionId: 's1', userId: 'u1', entries: []};
++
++    // Assuming createMessageHandler will be updated to take (orchestrator, store, options)
++    // For now, I'll write it as I expect it to be.
++    // @ts-expect-error - createMessageHandler signature will change
++    const handle = createMessageHandler(orchestrator, store, config);
++
++    return {ws, session, store, listFor, sent, handle};
++  };
++
++  it('answers list_conversations with the user list when enabled', async () => {
++    const {ws, session, listFor, sent, handle} = setup();
++    const summaries: SessionSummary[] = [
++      {
++        sessionId: 's2',
++        createdAt: new Date('2026-01-01T00:00:00Z'),
++        updatedAt: new Date('2026-01-01T01:00:00Z'),
++        entryCount: 5,
++      },
++    ];
++    listFor.mockResolvedValue(summaries);
++
++    await handle(ws, session, {type: 'list_conversations'});
++
++    expect(listFor).toHaveBeenCalledWith('u1', {limit: undefined, before: undefined});
++    expect(sent).toContainEqual({
++      type: 'conversation_list',
++      conversations: [
++        {
++          sessionId: 's2',
++          createdAt: '2026-01-01T00:00:00.000Z',
++          updatedAt: '2026-01-01T01:00:00.000Z',
++          entryCount: 5,
++        },
++      ],
++    });
++  });
++
++  it('uses ws.userId and ignores a userId in the frame', async () => {
++    const {ws, session, listFor, handle} = setup();
++    listFor.mockResolvedValue([]);
++
++    await handle(ws, session, {type: 'list_conversations', userId: 'other-user'});
++
++    expect(listFor).toHaveBeenCalledWith('u1', expect.anything());
++  });
++
++  it('answers with UNSUPPORTED when history is disabled', async () => {
++    const {ws, session, sent, handle} = setup({history: {enabled: false}});
++
++    await handle(ws, session, {type: 'list_conversations'});
++
++    expect(sent).toContainEqual(
++      expect.objectContaining({
++        type: 'error',
++        code: 'UNSUPPORTED',
++      })
++    );
++  });
++
++  it('answers with UNSUPPORTED when the store does not implement listFor', async () => {
++    const {ws, session, store, sent, handle} = setup();
++    // @ts-expect-error - deleting required method for test
++    delete (store as any).listFor;
++
++    await handle(ws, session, {type: 'list_conversations'});
++
++    expect(sent).toContainEqual(
++      expect.objectContaining({
++        type: 'error',
++        code: 'UNSUPPORTED',
++      })
++    );
++  });
++
++  it('answers list_conversations without waiting for the session lock', async () => {
++    const {ws, session, listFor, sent, handle} = setup();
++    listFor.mockResolvedValue([]);
++
++    // A fake long-running user_message that would hold the lock
++    const lockReleased = deferred();
++    // This is tricky to test "direct" without a real orchestrator that uses the lock.
++    // But the ticket says: "answering list_conversations on the non-locked path beside ping"
++    // So I will attempt to send a list_conversations WHILE a user_message is "running".
++
++    // In the real implementation, the handler for user_message will await the lock.
++    // If we call handle() twice, and the first one is a user_message,
++    // the second one (list_conversations) should complete even if the first is still pending.
++
++    // I'll need to mock the orchestrator to hang.
++    const orchestratorHangs = deferred();
++    const orchestrator = {
++      processMessageStream: jest.fn().mockImplementation(async function* () {
++        await orchestratorHangs.promise;
++        yield {type: 'stop', stopReason: 'end_turn'};
++      }),
++    } as unknown as ChatOrchestrator;
++
++    // @ts-expect-error - signature change
++    const lockedHandle = createMessageHandler(orchestrator, {listFor} as any, {history: {enabled: true}});
++
++    const userMsgPromise = lockedHandle(ws, session, {type: 'user_message', content: 'hello'});
++    const listMsgPromise = lockedHandle(ws, session, {type: 'list_conversations'});
++
++    // The list message should complete before we resolve the user message
++    await listMsgPromise;
++    expect(sent).toContainEqual(expect.objectContaining({type: 'conversation_list'}));
++
++    orchestratorHangs.resolve();
++    await userMsgPromise;
++  });
++});
+diff --git a/src/transport/ws/validation.acceptance.test.ts b/src/transport/ws/validation.acceptance.test.ts
+new file mode 100644
+index 0000000..a27be13
+--- /dev/null
++++ b/src/transport/ws/validation.acceptance.test.ts
+@@ -0,0 +1,32 @@
++import {validateMessage} from './validation.js';
++
++describe('conversation list frame validation', () => {
++  it('accepts a minimal list_conversations message', () => {
++    const result = validateMessage({type: 'list_conversations'});
++    expect(result).toEqual({valid: true, data: {type: 'list_conversations'}});
++  });
++
++  it('accepts a list_conversations message with limit and before cursor', () => {
++    const before = {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 's1'};
++    const result = validateMessage({type: 'list_conversations', limit: 50, before});
++    expect(result).toEqual({valid: true, data: {type: 'list_conversations', limit: 50, before}});
++  });
++
++  it('rejects invalid limit values', () => {
++    expect(validateMessage({type: 'list_conversations', limit: 0}).valid).toBe(false);
++    expect(validateMessage({type: 'list_conversations', limit: 201}).valid).toBe(false);
++    expect(validateMessage({type: 'list_conversations', limit: 1.5}).valid).toBe(false);
++    expect(validateMessage({type: 'list_conversations', limit: '10'}).valid).toBe(false);
++  });
++
++  it('rejects invalid before cursor', () => {
++    // Missing sessionId
++    expect(validateMessage({type: 'list_conversations', before: {updatedAt: '2026-01-01T00:00:00.000Z'}}).valid).toBe(
++      false
++    );
++    // Invalid date
++    expect(
++      validateMessage({type: 'list_conversations', before: {updatedAt: 'not-a-date', sessionId: 's1'}}).valid
++    ).toBe(false);
++  });
++});
+diff --git a/src/types/messages.acceptance.test.ts b/src/types/messages.acceptance.test.ts
+new file mode 100644
+index 0000000..b0a4ee6
+--- /dev/null
++++ b/src/types/messages.acceptance.test.ts
+@@ -0,0 +1,32 @@
++import type {IncomingMessage, OutgoingMessage} from './messages.js';
++
++describe('conversation list protocol message types', () => {
++  it('defines the list_conversations incoming message', () => {
++    // @ts-expect-error - list_conversations not yet in IncomingMessage
++    const msg: IncomingMessage = {
++      type: 'list_conversations',
++      limit: 20,
++      before: {
++        updatedAt: '2026-01-01T00:00:00.000Z',
++        sessionId: 's1',
++      },
++    };
++    expect(msg.type).toBe('list_conversations');
++  });
++
++  it('defines the conversation_list outgoing message', () => {
++    // @ts-expect-error - conversation_list not yet in OutgoingMessage
++    const msg: OutgoingMessage = {
++      type: 'conversation_list',
++      conversations: [
++        {
++          sessionId: 's1',
++          createdAt: '2026-01-01T00:00:00.000Z',
++          updatedAt: '2026-01-01T00:00:01.000Z',
++          entryCount: 2,
++        },
++      ],
++    };
++    expect(msg.type).toBe('conversation_list');
++  });
++});
