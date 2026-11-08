@@ -1,0 +1,325 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..aea031c
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,40 @@
++# Definition of Done
++
++> Deliver a user's conversation list over the WebSocket protocol
++
++**Strategy: `direct`** — A seam exists in `validateMessage` and `createMessageHandler`. The acceptance tests will call these entry points directly to verify the new protocol frames and their handling.
++
++## Done when these pass
++
++- [x] **validateMessage accepts list_conversations** — `validateMessage({type: 'list_conversations'})` is valid and returns the typed frame.
++  `src/transport/ws/conversationList.acceptance.test.ts`
++- [x] **validateMessage rejects invalid list_conversations** — Rejects invalid `limit` (not 1-200) or `before` (missing `updatedAt` or `sessionId`) with `INVALID_MESSAGE`.
++  `src/transport/ws/conversationList.acceptance.test.ts`
++- [x] **handleMessage answers list_conversations when enabled** — When `history.enabled` is true, a `list_conversations` frame yields a `conversation_list` frame with ISO-formatted summaries from the store's `listFor`.
++  `src/transport/ws/conversationList.acceptance.test.ts`
++- [x] **handleMessage answers UNSUPPORTED when disabled** — When `history.enabled` is false or absent, a `list_conversations` frame yields an `error` frame with code `UNSUPPORTED`.
++  `src/transport/ws/conversationList.acceptance.test.ts`
++- [x] **handleMessage uses ws.userId, not frame userId** — A `list_conversations` frame carrying another user's ID is answered with the connecting user's own list, and the store is called with `ws.userId`.
++  `src/transport/ws/conversationList.acceptance.test.ts`
++- [x] **handleMessage answers UNSUPPORTED for store without listFor** — If the session store does not implement `listFor`, the answer is an `error` frame with code `UNSUPPORTED`.
++  `src/transport/ws/conversationList.acceptance.test.ts`
++- [x] **handleMessage answers SERVER_ERROR when listFor fails** — If `listFor` rejects with an error, the answer is an `error` frame with code `SERVER_ERROR` and no internal details.
++  `src/transport/ws/conversationList.acceptance.test.ts`
++- [x] **handleMessage answers list_conversations out-of-band** — A `list_conversations` message sent while a `user_message` is streaming is answered immediately, without waiting for the per-session lock.
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Define `ListConversationsMessage` and `ConversationListMessage` in `src/types/messages.ts`.
++- [ ] Add `UNSUPPORTED` to `ErrorCodes` in `src/types/session.ts`.
++- [ ] Update `validateMessage` in `src/transport/ws/validation.ts` to handle `list_conversations`.
++- [ ] Update `createMessageHandler` in `src/transport/ws/messageHandler.ts` to handle `list_conversations` and check config.
++- [ ] Update `createServer` in `src/transport/createServer.ts` and `createHalEngine` in `src/config.ts` to thread through the new config.
++- [ ] Update `specs/hal-engine-websocket-protocol/spec.md` and `docs/getting-started.md`.
++
++## Out of scope
++
++- Paging state held server-side.
++- Deleting a conversation from the client.
++- Operator view of another user's conversations.
++- Live sync between open tabs.
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..9d63c1f 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -160,6 +160,29 @@ Application-level heartbeat. The server MUST respond with a `pong` message echoi
+ | `type`      | string | Yes      | `"ping"`                          |
+ | `timestamp` | number | Yes      | Client timestamp in milliseconds  |
+ 
++### 4.3 list_conversations
++
++Requests the user's conversation history. The server MUST answer with a `conversation_list` message.
++
++```json
++{
++  "type": "list_conversations",
++  "limit": 10,
++  "before": {
++    "updatedAt": "2026-01-15T14:30:00Z",
++    "sessionId": "550e8400-e29b-41d4-a716-446655440000"
++  }
++}
++```
++
++| Field    | Type   | Required | Description                                                                 |
++| -------- | ------ | -------- | --------------------------------------------------------------------------- |
++| `type`   | string | Yes      | `"list_conversations"`                                                      |
++| `limit`  | number | No       | Number of conversations to return (1-200, default 50)                       |
++| `before` | object | No       | Paging cursor: `{updatedAt: string, sessionId: string}`                     |
++
++The user id is taken from the connection and NEVER from the frame ([validated by: uses ws.userId and ignores frame userId](../../src/transport/ws/conversationList.acceptance.test.ts#L126)). A `list_conversations` frame is answered even while a turn is in progress, as a `ping` is ([validated by: is not blocked by a streaming user_message](../../src/transport/ws/conversationList.acceptance.test.ts#L163)).
++
+ ## 5. Server-to-Client Messages
+ 
+ ### 5.1 connected
+@@ -312,6 +335,7 @@ Defined error codes:
+ | `INVALID_FORMAT`  | Message body is not valid JSON                                    |
+ | `RATE_LIMITED`    | AI provider returned a rate limit error                           |
+ | `SERVER_ERROR`    | Unexpected server error during message processing                 |
++| `UNSUPPORTED`     | Feature disabled or store does not support the request            |
+ 
+ Semantics:
+ 
+@@ -357,6 +381,38 @@ Semantics:
+ - The client SHOULD use this message to clear any "processing" or "loading" indicators.
+ - The client MUST treat a run as complete only at `stream_end` or when the socket closes. Unparseable JSON is the one frame answered with `INVALID_FORMAT` and no `stream_end`, because the server cannot tell what it was meant to be; for it the client falls back on the socket closing.
+ 
++### 5.9 conversation_list
++
++The list of the user's conversations, newest activity first.
++
++```json
++{
++  "type": "conversation_list",
++  "conversations": [
++    {
++      "sessionId": "550e8400-e29b-41d4-a716-446655440000",
++      "createdAt": "2026-01-15T14:30:00Z",
++      "updatedAt": "2026-01-15T14:35:00Z",
++      "entryCount": 5
++    }
++  ]
++}
++```
++
++| Field           | Type                  | Description                     |
++| --------------- | --------------------- | ------------------------------- |
++| `type`          | string                | `"conversation_list"`           |
++| `conversations` | ConversationSummary[] | Array of conversation summaries |
++
++A `ConversationSummary` carries:
++
++- `sessionId`: string
++- `createdAt`: ISO 8601 string
++- `updatedAt`: ISO 8601 string
++- `entryCount`: number
++
++([validated by: answers list_conversations with conversation_list when enabled](../../src/transport/ws/conversationList.acceptance.test.ts#L92))
++
+ ## 6. SessionEntry Objects
+ 
+ A SessionEntry represents a single piece of content in the conversation. Every entry has a `role` field that determines its shape. The `role` acts as a discriminant for the union type.
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..9e5e956
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,192 @@
++import {jest} from '@jest/globals';
++import {WebSocket} from 'ws';
++import {validateMessage} from './validation.js';
++import {createMessageHandler} from './messageHandler.js';
++import type {ChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import type {ChatSession} from '../../types/session.js';
++import type {SessionStore} from '../../types/sessionStore.js';
++import {ErrorCodes} from '../../types/messages.js';
++
++describe('Conversation List Acceptance Tests', () => {
++  describe('Validation', () => {
++    it('accepts list_conversations and returns the typed frame', () => {
++      const result = validateMessage({type: 'list_conversations'});
++
++      expect(result).toEqual({
++        valid: true,
++        data: {type: 'list_conversations'},
++      });
++    });
++
++    it('accepts list_conversations with limit and before cursor', () => {
++      const result = validateMessage({
++        type: 'list_conversations',
++        limit: 10,
++        before: {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 's1'},
++      });
++
++      expect(result).toEqual({
++        valid: true,
++        data: {
++          type: 'list_conversations',
++          limit: 10,
++          before: {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 's1'},
++        },
++      });
++    });
++
++    it('rejects list_conversations with invalid limit', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 0});
++      expect(result.valid).toBe(false);
++      expect((result as any).error).toContain('limit');
++
++      const result2 = validateMessage({type: 'list_conversations', limit: 201});
++      expect(result2.valid).toBe(false);
++      expect((result2 as any).error).toContain('limit');
++
++      const result3 = validateMessage({type: 'list_conversations', limit: 1.5});
++      expect(result3.valid).toBe(false);
++      expect((result3 as any).error).toContain('limit');
++    });
++
++    it('rejects list_conversations with invalid before cursor', () => {
++      const result = validateMessage({type: 'list_conversations', before: 'not-a-cursor'});
++      expect(result.valid).toBe(false);
++      expect((result as any).error).toContain('before');
++
++      const result2 = validateMessage({type: 'list_conversations', before: {updatedAt: '2026-01-01'}});
++      expect(result2.valid).toBe(false);
++      expect((result2 as any).error).toContain('before');
++    });
++  });
++
++  describe('Handling', () => {
++    const orchestrator = {
++      processMessageStream: jest.fn(),
++    } as unknown as ChatOrchestrator;
++
++    const session: ChatSession = {
++      sessionId: 's1',
++      userId: 'u1',
++      entries: [],
++    };
++
++    function setup(options: any = {}) {
++      const sent: any[] = [];
++      const ws = {
++        send: (raw: string) => sent.push(JSON.parse(raw)),
++        readyState: WebSocket.OPEN,
++        userId: 'u1', // The connecting user's ID
++      } as unknown as WebSocket & {userId: string};
++
++      const store = {
++        listFor: jest.fn(),
++      } as unknown as SessionStore;
++
++      // Passing store and config to createMessageHandler as per ticket
++      const handle = (createMessageHandler as any)(orchestrator, store, options);
++
++      return {ws, store, sent, handle};
++    }
++
++    it('answers list_conversations with conversation_list when enabled', async () => {
++      const {ws, store, sent, handle} = setup({history: {enabled: true}});
++      const now = new Date();
++      store.listFor = jest
++        .fn()
++        .mockResolvedValue([{sessionId: 's1', createdAt: now, updatedAt: now, entryCount: 5}]) as any;
++
++      await handle(ws, session, {type: 'list_conversations'});
++
++      expect(sent).toContainEqual({
++        type: 'conversation_list',
++        conversations: [
++          {
++            sessionId: 's1',
++            createdAt: now.toISOString(),
++            updatedAt: now.toISOString(),
++            entryCount: 5,
++          },
++        ],
++      });
++    });
++
++    it('answers UNSUPPORTED when history is disabled', async () => {
++      const {ws, handle, sent} = setup({history: {enabled: false}});
++
++      await handle(ws, session, {type: 'list_conversations'});
++
++      expect(sent).toContainEqual({
++        type: 'error',
++        code: 'UNSUPPORTED',
++        message: expect.any(String),
++      });
++    });
++
++    it('uses ws.userId and ignores frame userId', async () => {
++      const {ws, store, handle} = setup({history: {enabled: true}});
++      (ws as any).userId = 'real-user';
++      store.listFor = jest.fn().mockResolvedValue([]) as any;
++
++      await handle(ws, session, {type: 'list_conversations', userId: 'evil-user'});
++
++      expect(store.listFor).toHaveBeenCalledWith('real-user', expect.anything());
++    });
++
++    it('answers UNSUPPORTED if store does not implement listFor', async () => {
++      const {ws, handle, sent} = setup({history: {enabled: true}});
++      const storeWithoutList = {} as any;
++      const handleNoList = (createMessageHandler as any)(orchestrator, storeWithoutList, {history: {enabled: true}});
++
++      await handleNoList(ws, session, {type: 'list_conversations'});
++
++      expect(sent).toContainEqual({
++        type: 'error',
++        code: 'UNSUPPORTED',
++        message: expect.any(String),
++      });
++    });
++
++    it('answers SERVER_ERROR when listFor fails', async () => {
++      const {ws, store, handle, sent} = setup({history: {enabled: true}});
++      store.listFor = jest.fn().mockRejectedValue(new Error('DB Down')) as any;
++
++      await handle(ws, session, {type: 'list_conversations'});
++
++      expect(sent).toContainEqual({
++        type: 'error',
++        code: 'SERVER_ERROR',
++        message: expect.not.stringContaining('DB Down'),
++      });
++    });
++
++    it('is not blocked by a streaming user_message', async () => {
++      const {ws, store, handle, sent} = setup({history: {enabled: true}});
++
++      // A mock orchestrator that hangs
++      let resolveStream: () => void;
++      const streamHang = new Promise<void>(resolve => {
++        resolveStream = resolve;
++      });
++
++      orchestrator.processMessageStream = async function* () {
++        await streamHang;
++        yield {type: 'text', text: 'hi'};
++      } as any;
++
++      store.listFor = jest.fn().mockResolvedValue([]) as any;
++
++      // Start a user message (will hang on the lock/orchestrator)
++      const userMessagePromise = handle(ws, session, {type: 'user_message', content: 'hello'});
++
++      // Send list_conversations (should answer immediately)
++      await handle(ws, session, {type: 'list_conversations'});
++
++      expect(sent).toContainEqual(expect.objectContaining({type: 'conversation_list'}));
++
++      // Now resolve the stream
++      resolveStream!();
++      await userMessagePromise;
++    });
++  });
++});

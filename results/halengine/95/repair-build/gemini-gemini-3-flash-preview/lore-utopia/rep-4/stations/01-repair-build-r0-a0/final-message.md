@@ -1,0 +1,3 @@
+I have fixed the lint error in the acceptance test file `src/orchestration/onErrorNonError.acceptance.test.ts` by replacing the non-deterministic `new Date().toISOString()` with a fixed ISO string. This satisfies the `re-lint/no-nondeterministic-tests` rule that caused the CI failure. I verified that the tests still pass and that the implementation correctly handles non-`Error` rejections by wrapping them in an `Error` with the original value as the `cause`, as specified in the ticket.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed non-deterministic test lint error in onErrorNonError.acceptance.test.ts by using a fixed timestamp."}}

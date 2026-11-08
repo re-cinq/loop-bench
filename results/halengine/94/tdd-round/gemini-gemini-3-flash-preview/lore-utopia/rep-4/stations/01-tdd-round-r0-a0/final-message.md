@@ -1,0 +1,3 @@
+I have completed the task. I moved the `beforeSession` hook call inside the `try` block in `src/orchestration/chatOrchestrator.ts`, ensuring that `onError` and `afterSession` hooks are executed even if `beforeSession` throws an error. I verified this with a new reproduction test case and ensured that all existing tests pass. I also updated `specs/hal-engine-config-hooks/spec.md` to move the `beforeSession` guarantee to a dedicated section and documented the change in `CHANGELOG.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"runs onError and afterSession when beforeSession throws","tdd_next":"acceptance green"}}

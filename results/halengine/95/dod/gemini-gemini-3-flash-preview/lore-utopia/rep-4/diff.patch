@@ -1,0 +1,240 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..514fa17
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,30 @@
++# Definition of Done
++
++> The orchestrator's `catch` gates `onError` on `error instanceof Error`. A rejection that is not an `Error` — a thrown string, a plain object, a value from a library that rejects with its own shape — bypasses `onError` entirely while still propagating to the caller.
++
++**Strategy: `direct`** — The orchestrator already has an `onError` hook and a `catch` block. I can write acceptance tests that provide a provider or hook that rejects with non-Error values and assert that `onError` is called with a wrapped error.
++
++## Done when these pass
++
++- [ ] **calls onError for string rejection** — A provider rejecting with a string calls `onError` once, with an `Error` whose `cause` is that string, and the caller still receives the original string.
++      `src/orchestration/onError-non-error.acceptance.test.ts`
++- [ ] **calls onError for object rejection** — A provider rejecting with a plain object calls `onError` with an `Error` whose `cause` is that object, and the caller receives the original object.
++      `src/orchestration/onError-non-error.acceptance.test.ts`
++- [ ] **calls onError for undefined rejection** — A provider rejecting with `undefined` calls `onError` with an `Error` whose `cause` is `undefined`, and the caller receives `undefined`.
++      `src/orchestration/onError-non-error.acceptance.test.ts`
++- [ ] **calls onError for null rejection** — A provider rejecting with `null` calls `onError` with an `Error` whose `cause` is `null`, and the caller receives `null`.
++      `src/orchestration/onError-non-error.acceptance.test.ts`
++- [ ] **passes Error instance directly to onError** — A rejection that is already an `Error` reaches `onError` as the same instance, not a wrapper.
++      `src/orchestration/onError-non-error.acceptance.test.ts`
++
++## Facets
++
++- [x] Create acceptance tests for non-Error rejections (string, object, undefined, null)
++- [x] Verify tests fail because non-Error rejections bypass the `onError` hook
++- [ ] Update `src/orchestration/chatOrchestrator.ts` to wrap non-Error rejections
++- [x] Update `specs/hal-engine-config-hooks/spec.md` and `CHANGELOG.md`
++
++## Out of scope
++
++- `beforeSession` escaping the `try` (its own issue)
++- usage accounting across tool rounds (HALEngine#93)
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index eab0af2..b1014bf 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -24,6 +24,7 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Fixed
+ 
++- `onError` hook now fires for rejections that are not `Error` instances (thrown strings, plain objects, `null`, `undefined`). The value is wrapped in an `Error` whose `cause` is the original rejection, preserving type safety for the hook while keeping the raw value reachable. The rejection the caller receives is unchanged.
+ - `onError` and `afterSession` hooks now fire when `beforeSession` throws, matching the guarantee the hook names imply. Previously, a throw from `beforeSession` escaped the `try`/`finally` block entirely, so neither hook ran. **Migration note**: if your `afterSession` hook assumed it would only be called after a full session turn, it will now also be called when `beforeSession` itself fails — the hook can inspect the session to detect this case (no entries beyond the initial user message will have been processed).
+ 
+ ## [0.3.0] - 2026-09-29
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 66ff9d3..bc46060 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -21,8 +21,6 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L195)).
+ 
+-## Measured semantics — out of scope
++## Error Handling
+ 
+-This property of `src/orchestration/chatOrchestrator.ts` is recorded so the hook features that follow specify against real behaviour. This issue does not change it; that is a separate, out-of-scope change owned by no issue in this epic.
+-
+-- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
++- Every rejection calls `onError`: if the rejection is not already an `Error` instance it is wrapped in one, with the original rejection as its `cause`, so a hook typed against `Error` keeps compiling and the original value remains reachable ([validated by: calls onError for string rejection](../../src/orchestration/onError-non-error.acceptance.test.ts#L33), [validated by: calls onError for object rejection](../../src/orchestration/onError-non-error.acceptance.test.ts#L62), [validated by: calls onError for undefined rejection](../../src/orchestration/onError-non-error.acceptance.test.ts#L89), [validated by: calls onError for null rejection](../../src/orchestration/onError-non-error.acceptance.test.ts#L118), [validated by: passes Error instance directly to onError](../../src/orchestration/onError-non-error.acceptance.test.ts#L147)).
+diff --git a/src/orchestration/onError-non-error.acceptance.test.ts b/src/orchestration/onError-non-error.acceptance.test.ts
+new file mode 100644
+index 0000000..c891269
+--- /dev/null
++++ b/src/orchestration/onError-non-error.acceptance.test.ts
+@@ -0,0 +1,171 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++function createRejectingProvider(rejection: unknown): AIProvider {
++  return {
++    // eslint-disable-next-line require-yield
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      throw rejection;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++describe('onError for non-Error rejections', () => {
++  // specs/hal-engine-config-hooks/spec.md#9
++  it('calls onError for string rejection', async () => {
++    let callCount = 0;
++    let capturedError: Error | undefined;
++    const hooks: OrchestratorHooks = {
++      onError: async (_session, error) => {
++        callCount++;
++        capturedError = error;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createRejectingProvider('string boom'), promptBuilder, undefined, {
++      hooks,
++    });
++
++    let outcome: unknown;
++    try {
++      await orchestrator.processMessage(createSession('hello'));
++    } catch (e) {
++      outcome = e;
++    }
++
++    expect(outcome).toBe('string boom');
++    expect(callCount).toBe(1);
++    expect(capturedError).toBeInstanceOf(Error);
++    expect(capturedError?.message).toBe('string boom');
++    expect(capturedError?.cause).toBe('string boom');
++  });
++
++  // specs/hal-engine-config-hooks/spec.md#9
++  it('calls onError for object rejection', async () => {
++    const rejection = {reason: 'object boom'};
++    let callCount = 0;
++    let capturedError: Error | undefined;
++    const hooks: OrchestratorHooks = {
++      onError: async (_session, error) => {
++        callCount++;
++        capturedError = error;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createRejectingProvider(rejection), promptBuilder, undefined, {hooks});
++
++    let outcome: unknown;
++    try {
++      await orchestrator.processMessage(createSession('hello'));
++    } catch (e) {
++      outcome = e;
++    }
++
++    expect(outcome).toBe(rejection);
++    expect(callCount).toBe(1);
++    expect(capturedError).toBeInstanceOf(Error);
++    expect(capturedError?.cause).toBe(rejection);
++  });
++
++  // specs/hal-engine-config-hooks/spec.md#9
++  it('calls onError for undefined rejection', async () => {
++    let callCount = 0;
++    let capturedError: Error | undefined;
++    const hooks: OrchestratorHooks = {
++      onError: async (_session, error) => {
++        callCount++;
++        capturedError = error;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createRejectingProvider(undefined), promptBuilder, undefined, {hooks});
++
++    let outcome: unknown;
++    let thrown = false;
++    try {
++      await orchestrator.processMessage(createSession('hello'));
++    } catch (e) {
++      outcome = e;
++      thrown = true;
++    }
++
++    expect(thrown).toBe(true);
++    expect(outcome).toBeUndefined();
++    expect(callCount).toBe(1);
++    expect(capturedError).toBeInstanceOf(Error);
++    expect(capturedError?.cause).toBeUndefined();
++  });
++
++  // specs/hal-engine-config-hooks/spec.md#9
++  it('calls onError for null rejection', async () => {
++    let callCount = 0;
++    let capturedError: Error | undefined;
++    const hooks: OrchestratorHooks = {
++      onError: async (_session, error) => {
++        callCount++;
++        capturedError = error;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createRejectingProvider(null), promptBuilder, undefined, {hooks});
++
++    let outcome: unknown;
++    let thrown = false;
++    try {
++      await orchestrator.processMessage(createSession('hello'));
++    } catch (e) {
++      outcome = e;
++      thrown = true;
++    }
++
++    expect(thrown).toBe(true);
++    expect(outcome).toBeNull();
++    expect(callCount).toBe(1);
++    expect(capturedError).toBeInstanceOf(Error);
++    expect(capturedError?.cause).toBeNull();
++  });
++
++  // specs/hal-engine-config-hooks/spec.md#9
++  it('passes Error instance directly to onError', async () => {
++    const error = new Error('actual error');
++    let callCount = 0;
++    let capturedError: Error | undefined;
++    const hooks: OrchestratorHooks = {
++      onError: async (_session, e) => {
++        callCount++;
++        capturedError = e;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(createRejectingProvider(error), promptBuilder, undefined, {hooks});
++
++    let outcome: unknown;
++    try {
++      await orchestrator.processMessage(createSession('hello'));
++    } catch (e) {
++      outcome = e;
++    }
++
++    expect(outcome).toBe(error);
++    expect(callCount).toBe(1);
++    expect(capturedError).toBe(error);
++  });
++});

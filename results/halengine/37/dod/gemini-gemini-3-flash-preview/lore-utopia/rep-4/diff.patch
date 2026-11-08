@@ -1,0 +1,358 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..8032b97
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,44 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`). Every tool declares a JSON Schema (`src/types/ai.ts`) that is handed verbatim to both providers, but nothing validates what comes back from the model.
++
++**Strategy: `direct`** — The `ToolRegistry` and `ChatOrchestrator` already exist and provide clear entry points for acceptance tests. We will use the existing `ToolRegistry.execute` and `ChatOrchestrator.processMessage` to observe the absence of validation.
++
++## Done when these pass
++
++- [ ] **Reject missing required field** — A tool requiring `location` string returns a rejection `ToolResponse` when called with empty input, and the executor is not called.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **Pass through extra properties** — Valid input with an unlisted extra property is passed to the executor unchanged.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **Reject wrong type** — A number passed where a string is required is rejected with a message naming the field path and expected type, without containing the value.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **Validate static tool registration** — `register` throws at registration time for an uncompilable schema, naming the tool.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **Validate function-valued tool** — A dynamic tool whose schema changes between calls is validated against the current schema.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **Redact values in rejection** — Rejection messages do not contain the offending input values.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **End-to-end tool loop recovery** — The orchestrator drives a provider through a validation failure followed by a successful retry.
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] Create `specs/hal-engine-tool-input-validation/spec.md` with draft requirements.
++- [ ] Add acceptance tests for `ToolRegistry` validation logic.
++- [ ] Add acceptance tests for schema compilation and caching.
++- [ ] Add end-to-end acceptance test for orchestrator recovery.
++- [ ] Verify rejection messages redact sensitive values.
++
++## Out of scope
++
++- Validating tool output.
++- Hallucination detection or evaluation harness.
++- Per-tool authorization.
++- Retry, timeout, or rate limiting around execution.
++- Changing the `Unknown tool: <name>` throw behavior.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..349efe6
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,29 @@
++# Tool Input Validation
++
++| Field  | Value |
++| ------ | ----- |
++| Issue  | #37   |
++| Status | Draft |
++
++The `ToolRegistry` ensures that tool inputs conform to the `inputSchema` declared in the tool's definition before invoking the tool's executor. This validation prevents malformed calls from reaching executors and provides structured feedback to the AI model.
++
++## Validation Logic
++
++The registry validates `input` against the resolved tool definition's `inputSchema` inside `ToolRegistry.execute()`.
++
++1. **Schema enforcement**: Validation enforces `required` properties, declared types, and `enum` values. ([validated by registry.acceptance.test.ts#L11](../../src/orchestration/tools/registry.acceptance.test.ts#L11)), ([validated by registry.acceptance.test.ts#L60](../../src/orchestration/tools/registry.acceptance.test.ts#L60))
++2. **Extra properties**: Unlisted extra properties are passed through to the executor unchanged. Validation does not inject `additionalProperties: false`. ([validated by registry.acceptance.test.ts#L35](../../src/orchestration/tools/registry.acceptance.test.ts#L35))
++3. **No coercion**: Validation does not coerce types or apply default values from the schema.
++4. **Error response**: On validation failure, `execute()` returns a `ToolResponse` where `result` describes the failure. The executor is never invoked. ([validated by registry.acceptance.test.ts#L11](../../src/orchestration/tools/registry.acceptance.test.ts#L11))
++5. **Redaction**: Rejection messages and log lines name the failing property paths and the constraint that failed, but never the property **value**. ([validated by registry.acceptance.test.ts#L134](../../src/orchestration/tools/registry.acceptance.test.ts#L134))
++
++## Compilation and Caching
++
++To ensure performance and catch errors early:
++
++1. **Static tools**: A static tool's schema is compiled once at `register()` time. If the schema is uncompilable, `register()` throws an error naming the tool. ([validated by registry.acceptance.test.ts#L83](../../src/orchestration/tools/registry.acceptance.test.ts#L83))
++2. **Dynamic tools**: A schema produced by a function-valued `ToolDefinitionSource` is resolved and compiled per call, cached by the resolved schema object to avoid redundant compilation for identical schemas. ([validated by registry.acceptance.test.ts#L99](../../src/orchestration/tools/registry.acceptance.test.ts#L99))
++
++## Orchestration Flow
++
++A tool call that fails validation becomes a tool result in the conversation. The AI model receives the rejection text as the tool's output, allowing it to correct the call in the next round. This process is bounded by the existing maximum tool round limit. ([validated by chatOrchestrator.acceptance.test.ts#L38](../../src/orchestration/chatOrchestrator.acceptance.test.ts#L38))
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..6f7675f
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,104 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {jest} from '@jest/globals';
++
++const SENT_AT = '2026-11-08T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++const scriptedProvider = (
++  rounds: MessageChunk[][],
++  onSendMessage?: (params: SendMessageParams) => void
++): AIProvider => {
++  let round = 0;
++
++  return {
++    async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      onSendMessage?.(params);
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++};
++
++describe('ChatOrchestrator Tool Loop Recovery (Acceptance)', () => {
++  const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++  it('drives a provider through a rejected tool call followed by a corrected retry ([validated by specs/hal-engine-tool-input-validation/spec.md#L29])', async () => {
++    const registry = new ToolRegistry();
++    const executor = jest.fn().mockResolvedValue('Final Answer');
++
++    registry.register(
++      {
++        name: 'weather',
++        description: 'Get weather',
++        inputSchema: {
++          type: 'object',
++          properties: {location: {type: 'string'}},
++          required: ['location'],
++        },
++      },
++      executor as any
++    );
++
++    const rounds: MessageChunk[][] = [
++      // Round 0: Model makes a malformed call (missing location)
++      [
++        {type: 'tool_use', toolCall: {id: 'call-1', name: 'weather', input: {}}},
++        {type: 'stop', stopReason: 'tool_use'},
++      ],
++      // Round 1: Model sees the rejection and corrects it
++      [
++        {type: 'tool_use', toolCall: {id: 'call-2', name: 'weather', input: {location: 'London'}}},
++        {type: 'stop', stopReason: 'tool_use'},
++      ],
++      // Round 2: Model finishes
++      [
++        {type: 'text', text: 'It is sunny in London.'},
++        {type: 'stop', stopReason: 'end_turn'},
++      ],
++    ];
++
++    const sentParams: SendMessageParams[] = [];
++    const provider = scriptedProvider(rounds, params => {
++      // Deep clone to capture state at this round
++      sentParams.push(JSON.parse(JSON.stringify(params)));
++    });
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registry);
++    const result = await orchestrator.processMessage(createSession('What is the weather?'));
++
++    // Verify the orchestrator resolved successfully
++    expect(result).toBe('It is sunny in London.');
++
++    // Verify the executor was only called once (for the second, valid call)
++    expect(executor).toHaveBeenCalledTimes(1);
++    expect(executor).toHaveBeenCalledWith({location: 'London'}, expect.anything());
++
++    // Verify what was sent to the provider in Round 1 (should contain the rejection)
++    const round1Params = sentParams[1];
++    const lastMessage = round1Params.messages[round1Params.messages.length - 1];
++    expect(lastMessage.role).toBe('user');
++    expect((lastMessage as any).content[0].type).toBe('tool_result');
++    expect((lastMessage as any).content[0].content).toContain('location');
++    expect((lastMessage as any).content[0].content).toContain('required');
++
++    // Verify what was sent to the provider in Round 2 (should contain the success)
++    const round2Params = sentParams[2];
++    const secondLastMessage = round2Params.messages[round2Params.messages.length - 1];
++    expect(secondLastMessage.role).toBe('user');
++    expect((secondLastMessage as any).content[0].type).toBe('tool_result');
++    expect((secondLastMessage as any).content[0].content).toBe('Final Answer');
++  });
++});
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..8bea2dd
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,157 @@
++import {ToolRegistry} from './registry.js';
++import {jest} from '@jest/globals';
++
++describe('ToolRegistry Input Validation (Acceptance)', () => {
++  let registry: ToolRegistry;
++
++  beforeEach(() => {
++    registry = new ToolRegistry();
++  });
++
++  it('rejects missing required field ([validated by specs/hal-engine-tool-input-validation/spec.md#L14], [validated by specs/hal-engine-tool-input-validation/spec.md#L17])', async () => {
++    const executor = jest.fn().mockResolvedValue('success');
++    registry.register(
++      {
++        name: 'test_tool',
++        description: 'A test tool',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {type: 'string'},
++          },
++          required: ['location'],
++        },
++      },
++      executor as any
++    );
++
++    const response = await registry.execute('test_tool', {});
++
++    expect(response.result).toContain('location');
++    expect(response.result).toContain('required');
++    expect(executor).not.toHaveBeenCalled();
++  });
++
++  it('passes through extra properties unchanged ([validated by specs/hal-engine-tool-input-validation/spec.md#L15])', async () => {
++    const executor = jest.fn().mockResolvedValue('success');
++    const input = {location: 'London', extra: 'property'};
++    registry.register(
++      {
++        name: 'test_tool',
++        description: 'A test tool',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {type: 'string'},
++          },
++        },
++      },
++      executor as any
++    );
++
++    await registry.execute('test_tool', input);
++
++    expect(executor).toHaveBeenCalledWith(expect.objectContaining(input), undefined);
++    // Use toEqual to ensure no coercion or defaults were added
++    const callInput = executor.mock.calls[0][0];
++    expect(callInput).toEqual(input);
++  });
++
++  it('rejects wrong-typed field and names the field path and expected type ([validated by specs/hal-engine-tool-input-validation/spec.md#L14])', async () => {
++    const executor = jest.fn().mockResolvedValue('success');
++    registry.register(
++      {
++        name: 'test_tool',
++        description: 'A test tool',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            count: {type: 'number'},
++          },
++        },
++      },
++      executor as any
++    );
++
++    const response = await registry.execute('test_tool', {count: 'five'});
++
++    expect(response.result).toContain('count');
++    expect(response.result).toContain('number');
++    expect(executor).not.toHaveBeenCalled();
++  });
++
++  it('throws at registration time for an uncompilable schema ([validated by specs/hal-engine-tool-input-validation/spec.md#L24])', () => {
++    const executor = jest.fn().mockResolvedValue('success');
++    const invalidSchema = {type: 'invalid_type'};
++
++    expect(() => {
++      registry.register(
++        {
++          name: 'bad_tool',
++          description: 'A tool with a bad schema',
++          inputSchema: invalidSchema as any,
++        },
++        executor as any
++      );
++    }).toThrow(/bad_tool/);
++  });
++
++  it('validates against the current schema for function-valued tool definitions ([validated by specs/hal-engine-tool-input-validation/spec.md#L25])', async () => {
++    const executor = jest.fn().mockResolvedValue('success');
++    let requiredField = 'first';
++
++    registry.register(
++      () => ({
++        name: 'dynamic_tool',
++        description: 'A dynamic tool',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            [requiredField]: {type: 'string'},
++          },
++          required: [requiredField],
++        },
++      }),
++      executor as any
++    );
++
++    // First call with 'first' required
++    const res1 = await registry.execute('dynamic_tool', {first: 'val'});
++    expect(res1.result).toBe('success');
++
++    // Change requirement to 'second'
++    requiredField = 'second';
++    const res2 = await registry.execute('dynamic_tool', {first: 'val'});
++    expect(res2.result).toContain('second');
++    expect(res2.result).toContain('required');
++    expect(executor).toHaveBeenCalledTimes(1); // Only the first call should have succeeded
++  });
++
++  it('still throws Unknown tool for unregistered name', async () => {
++    await expect(registry.execute('non_existent', {})).rejects.toThrow('Unknown tool: non_existent');
++  });
++
++  it('redacts input values from rejection messages ([validated by specs/hal-engine-tool-input-validation/spec.md#L18])', async () => {
++    const secretValue = 'SSN-123-456';
++    const executor = jest.fn().mockResolvedValue('success');
++    registry.register(
++      {
++        name: 'secure_tool',
++        description: 'A secure tool',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            id: {type: 'number'},
++          },
++        },
++      },
++      executor as any
++    );
++
++    const response = await registry.execute('secure_tool', {id: secretValue});
++
++    expect(response.result).toContain('id');
++    expect(response.result).not.toContain(secretValue);
++    expect(executor).not.toHaveBeenCalled();
++  });
++});
