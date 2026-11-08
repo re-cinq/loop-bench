@@ -1,0 +1,176 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..cd3a15a
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,28 @@
++# Definition of Done
++
++> afterModelResponse is called once per user message after the round loop exits, and is passed the lastUsage local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++
++**Strategy: `direct`** — The `afterModelResponse` hook is an existing public seam. I will write acceptance tests that provide a scripted provider with multiple rounds of known usage and verify that the hook receives the correct aggregated total and per-round breakdown.
++
++## Done when these pass
++
++- [ ] **reports aggregated usage for tool-heavy turns** — A turn with multiple tool rounds reports the sum of tokens across all rounds and the individual round breakdown.
++      `src/orchestration/usageReporting.acceptance.test.ts`
++- [ ] **reports correctly when some rounds have no usage** — If some rounds report no usage, they are ignored in the sum, and the total is still correctly calculated from the other rounds.
++      `src/orchestration/usageReporting.acceptance.test.ts`
++- [ ] **reports single round usage identically to today** — A turn with no tool calls reports the same usage fields as today, and the per-round breakdown contains that single round.
++      `src/orchestration/usageReporting.acceptance.test.ts`
++- [ ] **existing usage tests stay green** — The existing test that pins the "last usage" behavior (which will be updated to sum) must pass with the new behavior.
++      `src/orchestration/chatOrchestrator.test.ts`
++
++## Facets
++
++- [ ] Define `AggregatedUsage` in `src/orchestration/chatOrchestrator.ts` extending `UsageMetadata`.
++- [ ] Update `OrchestratorHooks.afterModelResponse` signature to use `AggregatedUsage`.
++- [ ] Refactor `chatOrchestrator.ts` to accumulate usage across rounds.
++- [ ] Update `specs/hal-engine-config-hooks/spec.md` and `CHANGELOG.md`.
++
++## Out of scope
++
++- Token accounting for anything other than provider calls.
++- Audit or billing implementation itself.
+diff --git a/src/orchestration/usageReporting.acceptance.test.ts b/src/orchestration/usageReporting.acceptance.test.ts
+new file mode 100644
+index 0000000..48297a6
+--- /dev/null
++++ b/src/orchestration/usageReporting.acceptance.test.ts
+@@ -0,0 +1,136 @@
++import {describe, it, expect} from '@jest/globals';
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {ToolResponse} from './tools/registry.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++const scriptedProvider = (rounds: MessageChunk[][]): AIProvider => {
++  let round = 0;
++  return {
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      for (const chunk of rounds[round++] ?? []) yield chunk;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++};
++
++const registryReturning = (response: ToolResponse): ToolRegistry => {
++  const registry = new ToolRegistry();
++  registry.register(
++    {name: 'lookup', description: 'looks things up', inputSchema: {type: 'object'}},
++    async () => response
++  );
++  return registry;
++};
++
++const TOOL_CALL: MessageChunk = {type: 'tool_use', toolCall: {id: 'call-1', name: 'lookup', input: {q: 'x'}}};
++const STOP_FOR_TOOL = (usage?: UsageMetadata): MessageChunk => ({type: 'stop', stopReason: 'tool_use', usage});
++const STOP_DONE = (usage?: UsageMetadata): MessageChunk => ({type: 'stop', stopReason: 'end_turn', usage});
++
++describe('Usage Reporting (Acceptance)', () => {
++  it('reports aggregated usage for tool-heavy turns', async () => {
++    // specs/hal-engine-config-hooks/spec.md#3
++    const usage1: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++    const usage2: UsageMetadata = {inputTokens: 20, outputTokens: 10, totalTokens: 30};
++
++    let reportedUsage: any;
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, usage) => {
++        reportedUsage = usage;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(
++      scriptedProvider([
++        [TOOL_CALL, STOP_FOR_TOOL(usage1)],
++        [{type: 'text', text: 'done'}, STOP_DONE(usage2)],
++      ]),
++      promptBuilder,
++      registryReturning({result: 'found it'}),
++      {hooks}
++    );
++
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(reportedUsage).toBeDefined();
++    expect(reportedUsage.inputTokens).toBe(30);
++    expect(reportedUsage.outputTokens).toBe(15);
++    expect(reportedUsage.totalTokens).toBe(45);
++    expect(reportedUsage.rounds).toHaveLength(2);
++    expect(reportedUsage.rounds[0]).toEqual(usage1);
++    expect(reportedUsage.rounds[1]).toEqual(usage2);
++  });
++
++  it('reports correctly when some rounds have no usage', async () => {
++    // specs/hal-engine-config-hooks/spec.md#3
++    const usage1: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++
++    let reportedUsage: any;
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, usage) => {
++        reportedUsage = usage;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(
++      scriptedProvider([
++        [TOOL_CALL, STOP_FOR_TOOL(usage1)],
++        [{type: 'text', text: 'done'}, STOP_DONE(undefined)],
++      ]),
++      promptBuilder,
++      registryReturning({result: 'found it'}),
++      {hooks}
++    );
++
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(reportedUsage.inputTokens).toBe(10);
++    expect(reportedUsage.rounds).toHaveLength(2);
++    expect(reportedUsage.rounds[0]).toEqual(usage1);
++    expect(reportedUsage.rounds[1]).toBeUndefined();
++  });
++
++  it('reports single round usage identically to today', async () => {
++    // specs/hal-engine-config-hooks/spec.md#3
++    const usage: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++
++    let reportedUsage: any;
++    const hooks: OrchestratorHooks = {
++      afterModelResponse: async (_session, _text, usage) => {
++        reportedUsage = usage;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(
++      scriptedProvider([[{type: 'text', text: 'hi'}, STOP_DONE(usage)]]),
++      promptBuilder,
++      undefined,
++      {hooks}
++    );
++
++    await orchestrator.processMessage(createSession('ask'));
++
++    expect(reportedUsage.inputTokens).toBe(10);
++    expect(reportedUsage.outputTokens).toBe(5);
++    expect(reportedUsage.totalTokens).toBe(15);
++    // The "unambiguous" requirement means it should have rounds even for single round.
++    expect(reportedUsage.rounds).toHaveLength(1);
++    expect(reportedUsage.rounds[0]).toEqual(usage);
++  });
++});

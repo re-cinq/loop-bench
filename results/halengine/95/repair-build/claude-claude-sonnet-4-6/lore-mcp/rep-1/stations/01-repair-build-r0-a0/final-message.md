@@ -1,0 +1,3 @@
+Fixed the ESLint error by replacing `new Date().toISOString()` with a fixed timestamp `'2024-01-01T00:00:00.000Z'` on line 12 of the test file. The `re-lint/no-nondeterministic-tests` rule prohibits `new Date()` in tests because it makes them non-repeatable.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replaced new Date().toISOString() with fixed timestamp in onErrorNonError.acceptance.test.ts to satisfy re-lint/no-nondeterministic-tests"}}

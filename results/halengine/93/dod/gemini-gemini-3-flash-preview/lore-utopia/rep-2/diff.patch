@@ -1,0 +1,256 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..319c12f
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,28 @@
++# Definition of Done
++
++> `afterModelResponse` hook now receives an aggregated usage object that sums token counts across every provider call in a turn, instead of just the last round.
++
++**Strategy: `direct`** — The `afterModelResponse` hook is already a seam in `createChatOrchestrator`. The acceptance tests will call the orchestrator with a scripted provider and verify the hook receives the expected aggregated usage.
++
++## Done when these pass
++
++- [ ] **reports cumulative usage across tool rounds** — A turn with two tool rounds sums usage from all three provider calls (initial + 2 tool rounds).
++  `src/orchestration/usage-reporting.acceptance.test.ts`
++- [ ] **reports single round usage for direct answers** — A turn with no tools reports exactly one round's usage, maintaining backwards compatibility with `UsageMetadata`.
++  `src/orchestration/usage-reporting.acceptance.test.ts`
++- [ ] **ignores rounds with missing usage in the sum** — Rounds without usage metadata do not affect the sum or cause it to be undefined/NaN.
++  `src/orchestration/usage-reporting.acceptance.test.ts`
++- [ ] **reports nothing if no rounds reported usage** — If no provider call returns usage, the hook receives `undefined`.
++  `src/orchestration/usage-reporting.acceptance.test.ts`
++
++## Facets
++
++- [ ] Define `AggregatedUsage` type in `src/types/ai.ts` that extends `UsageMetadata` and adds a `rounds` array.
++- [ ] Update `OrchestratorHooks['afterModelResponse']` signature to use `AggregatedUsage`.
++- [ ] Update `ChatOrchestrator` to accumulate usage in a list and sum it before calling the hook.
++- [ ] Update `specs/hal-engine-config-hooks/spec.md` and `CHANGELOG.md` (already drafted, verify final state).
++
++## Out of scope
++
++- Token accounting for non-provider call overhead.
++- Changes to the `stop` chunk itself (providers continue to populate it as they do today).
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index fda97c4..9291949 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -16,6 +16,7 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Changed
+ 
++- `afterModelResponse` hook now receives an aggregated usage object that sums token counts across every provider call in a turn, instead of just the last round. The reported object is backwards-compatible with `UsageMetadata` but includes a new `rounds` field containing the breakdown per round. For a turn that called tools, the reported tokens will now be higher than before, reflecting the total cost of the turn.
+ - Every `SessionStore` member is now `Awaitable<T>` (`T | Promise<T>`) rather than a bare `T`, so a store backed by a database is expressible for the first time. `Awaitable` is exported from the package root. **A synchronous implementation needs no change** — `T` is assignable to `T | Promise<T>` in a return position — and `InMemorySessionStore` is unedited. The WebSocket connection handler now awaits `create` and the release that follows a close: it pauses the socket across the await so a frame sent before `connected` arrives is buffered rather than dropped, attaches its `close` listener before the await so a socket that closes mid-create leaves no session behind, and catches a rejection from either call so one store failure closes one socket instead of ending the process with an unhandled rejection. **Migration note**: the `connected` frame now arrives one tick later, after the awaited `create`, so a client that waits for it (as the protocol already requires) sees no difference; only code that assumed the frame was emitted synchronously with the upgrade does.
+ - **The engine no longer erases a conversation when its socket closes.** The WebSocket close handler called `sessionStore.delete(sessionId)` unconditionally, which meant that behind a durable store every conversation was written and then destroyed the moment the customer closed their tab — the opposite of what this engine's own documentation promised. `SessionStore.delete` now has no engine-internal caller at all and is purely your erasure primitive. The credentials the socket carried are cleared from the session on close, since they were issued for a request that is over; the entries are untouched. **Migration note**: to restore the old behaviour exactly, pass `onDisconnect: sessionId => store.delete(sessionId)` — that one line is the whole migration. If you rely on the default store not growing, note that it is now bounded by `maxAgeMs` (eight hours) rather than by the close handler; that is a memory bound, not a retention policy, and the retention decision remains yours.
+ 
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 2749d18..7fa572f 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -25,4 +25,4 @@
+ These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
+ 
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+-- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed an aggregated usage object — a sum across tool rounds and the individual rounds themselves — so a deployer using the hook for billing or audit sees the full turn cost ([validated by: reports cumulative usage across tool rounds](../../src/orchestration/usage-reporting.acceptance.test.ts#L28)).
+diff --git a/src/orchestration/usage-reporting.acceptance.test.ts b/src/orchestration/usage-reporting.acceptance.test.ts
+new file mode 100644
+index 0000000..d050f51
+--- /dev/null
++++ b/src/orchestration/usage-reporting.acceptance.test.ts
+@@ -0,0 +1,194 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++
++/**
++ * The expected new type for aggregated usage.
++ * It extends UsageMetadata to be backwards compatible with consumers
++ * who only read the total counts, but adds a 'rounds' field for granularity.
++ */
++interface AggregatedUsage extends UsageMetadata {
++  rounds: UsageMetadata[];
++}
++
++describe('Usage Reporting Acceptance', () => {
++  const promptBuilder = new PromptBuilder({identity: 'test'});
++  const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++  function createSession(): ChatSession {
++    return {
++      sessionId: 's1',
++      userId: 'u1',
++      entries: [{role: 'user', content: 'hello', timestamp: SENT_AT}],
++    };
++  }
++
++  it('reports cumulative usage across tool rounds', async () => {
++    // Round 1 usage
++    const usage1: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++    // Round 2 usage
++    const usage2: UsageMetadata = {inputTokens: 8, outputTokens: 4, totalTokens: 12};
++
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        // If it's the first call (no tool results yet)
++        if (params.messages.length === 1) {
++          yield {type: 'tool_use', toolCall: {id: 'tc1', name: 'test_tool', input: {}}};
++          yield {type: 'stop', stopReason: 'tool_use', usage: usage1};
++        } else {
++          yield {type: 'text', text: 'final answer'};
++          yield {type: 'stop', stopReason: 'end_turn', usage: usage2};
++        }
++      },
++      async generateStructured() {
++        return {} as any;
++      },
++    };
++
++    const toolRegistry = new ToolRegistry();
++    toolRegistry.register(
++      {
++        name: 'test_tool',
++        description: 'test',
++        inputSchema: {},
++      },
++      async () => 'tool result'
++    );
++
++    let reportedUsage: any;
++    const hooks = {
++      afterModelResponse: async (_session: ChatSession, _text: string, usage?: any) => {
++        reportedUsage = usage;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, toolRegistry, {hooks});
++    const session = createSession();
++
++    // Consume the generator to trigger the orchestrator
++    for await (const _ of orchestrator.processMessageStream(session)) {
++    }
++
++    // Should be sum of usage1 and usage2: 18, 9, 27
++    // and should contain the individual rounds.
++    expect(reportedUsage).toMatchObject({
++      inputTokens: 18,
++      outputTokens: 9,
++      totalTokens: 27,
++      rounds: [usage1, usage2],
++    });
++  });
++
++  it('reports single round usage for direct answers', async () => {
++    // specs/hal-engine-config-hooks/spec.md#1
++    const usage: UsageMetadata = {inputTokens: 5, outputTokens: 2, totalTokens: 7};
++    const provider: AIProvider = {
++      async *sendMessage(): AsyncGenerator<MessageChunk> {
++        yield {type: 'text', text: 'direct answer'};
++        yield {type: 'stop', stopReason: 'end_turn', usage};
++      },
++      async generateStructured() {
++        return {} as any;
++      },
++    };
++
++    let reportedUsage: any;
++    const hooks = {
++      afterModelResponse: async (_session: ChatSession, _text: string, usage?: any) => {
++        reportedUsage = usage;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, undefined, {hooks});
++    const session = createSession();
++
++    for await (const _ of orchestrator.processMessageStream(session)) {
++    }
++
++    expect(reportedUsage).toMatchObject({
++      inputTokens: 5,
++      outputTokens: 2,
++      totalTokens: 7,
++      rounds: [usage],
++    });
++  });
++
++  it('ignores rounds with missing usage in the sum', async () => {
++    const usage1: UsageMetadata = {inputTokens: 10, outputTokens: 5, totalTokens: 15};
++    // Round 2 reports NO usage
++
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        if (params.messages.length === 1) {
++          yield {type: 'tool_use', toolCall: {id: 'tc1', name: 'test_tool', input: {}}};
++          yield {type: 'stop', stopReason: 'tool_use', usage: usage1};
++        } else {
++          yield {type: 'text', text: 'final answer'};
++          yield {type: 'stop', stopReason: 'end_turn'}; // No usage
++        }
++      },
++      async generateStructured() {
++        return {} as any;
++      },
++    };
++
++    const toolRegistry = new ToolRegistry();
++    toolRegistry.register(
++      {
++        name: 'test_tool',
++        description: 'test',
++        inputSchema: {},
++      },
++      async () => 'tool result'
++    );
++
++    let reportedUsage: any;
++    const hooks = {
++      afterModelResponse: async (_session: ChatSession, _text: string, usage?: any) => {
++        reportedUsage = usage;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, toolRegistry, {hooks});
++    const session = createSession();
++
++    for await (const _ of orchestrator.processMessageStream(session)) {
++    }
++
++    expect(reportedUsage).toMatchObject({
++      inputTokens: 10,
++      outputTokens: 5,
++      totalTokens: 15,
++      rounds: [usage1],
++    });
++  });
++
++  it('reports nothing if no rounds reported usage', async () => {
++    const provider: AIProvider = {
++      async *sendMessage(): AsyncGenerator<MessageChunk> {
++        yield {type: 'text', text: 'answer'};
++        yield {type: 'stop', stopReason: 'end_turn'}; // No usage
++      },
++      async generateStructured() {
++        return {} as any;
++      },
++    };
++
++    let reportedUsage: any;
++    const hooks = {
++      afterModelResponse: async (_session: ChatSession, _text: string, usage?: any) => {
++        reportedUsage = usage;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, undefined, {hooks});
++    const session = createSession();
++
++    for await (const _ of orchestrator.processMessageStream(session)) {
++    }
++
++    expect(reportedUsage).toBeUndefined();
++  });
++});

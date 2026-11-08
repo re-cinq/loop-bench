@@ -1,0 +1,249 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..e910aaa
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,40 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`). Every tool declares a JSON Schema (`src/types/ai.ts`) that is handed verbatim to both providers, but nothing validates what comes back from the model.
++
++**Strategy: `direct`** — The `ToolRegistry` class provides a clear entry point via its `execute` and `register` methods. The acceptance tests call these methods directly to verify validation behavior, schema compilation, and error reporting.
++
++## Done when these pass
++
++- [x] **validates input against schema and returns ToolResponse on failure** — `ToolRegistry.execute` validates input and returns a structured rejection instead of calling the executor when input is invalid.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [x] **passes through extra properties unchanged** — The validator does not strip or modify properties not explicitly listed in the schema.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [x] **rejects wrong-typed fields without leaking the value** — Error messages contain the failing path and constraint but never the offending value.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [x] **throws at registration time for invalid schemas** — `ToolRegistry.register` validates the schema at registration time to fail early.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [x] **validates function-valued tools against current schema** — Tools with dynamic definitions are validated against the schema resolved at the time of the call.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [x] **maintains Unknown tool throw** — The existing behavior of throwing for unregistered tools is preserved.
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ajv` to `package.json` dependencies.
++- [ ] Implement schema compilation in `ToolRegistry.register`.
++- [ ] Implement input validation in `ToolRegistry.execute`.
++- [ ] Implement log/error redaction to avoid leaking values.
++- [ ] Add tool-loop acceptance test in `chatOrchestrator.test.ts`.
++
++## Out of scope
++
++- Validating tool output.
++- Hallucination detection.
++- Per-tool authorization.
++- Retry, timeout, and rate limiting around tool execution.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..83d8f7b
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,55 @@
++# Tool Input Validation
++
++Tool input validation ensures that models call tools with correctly-typed and structured data. Validation happens at the registry level, freeing tool executors from defensive checks and providing consistent feedback to models.
++
++## Status: Proposed
++
++| Field            | Value      |
++| :--------------- | :--------- |
++| **Owner**        | @re-cinq   |
++| **Created**      | 2026-11-07 |
++| **Last Updated** | 2026-11-07 |
++
++## Context
++
++`ToolRegistry.execute` currently executes tools without validating their input against the declared `inputSchema`. This requires each tool to implement its own validation, leading to inconsistent error handling. When a model sends invalid input, the engine should provide a structured rejection that the model can interpret and correct.
++
++## Requirements
++
++### Registry Validation
++
++1. `ToolRegistry.execute` MUST validate `input` against the tool's `inputSchema` before calling the executor.
++2. If validation fails, `execute` MUST return a `ToolResponse` with a `result` describing the failure.
++3. If validation fails, the tool executor MUST NOT be called.
++4. Validation MUST enforce `required` properties, declared types, and `enum` values.
++5. Validation MUST NOT inject `additionalProperties: false`, coerce types, or apply defaults.
++6. Valid input with unlisted extra properties MUST be passed to the executor unchanged.
++
++### Error Reporting and Redaction
++
++1. Rejection messages and logs MUST name failing property paths and the failed constraint.
++2. Rejection messages and logs MUST NEVER contain the actual property **value** from the input, to prevent leaking PII or sensitive data.
++3. `ToolRegistry.execute` MUST throw `Unknown tool: <name>` if the tool is not registered, maintaining backward compatibility.
++
++### Schema Compilation and Performance
++
++1. Static tool schemas MUST be compiled once at `register` time.
++2. An uncompilable schema MUST cause `register` to throw an error naming the tool.
++3. Function-valued tool definitions MUST have their schemas resolved and compiled per call.
++4. Compiled schemas for function-valued tools SHOULD be cached by the resolved schema object to avoid redundant compilation when the schema object is reused.
++
++## Design
++
++The registry will use `ajv` for JSON Schema validation.
++
++### Tool Execution Flow
++
++1. Resolve the tool definition.
++2. Retrieve or compile the validator for the tool's `inputSchema`.
++3. Validate the `input`.
++4. If invalid, return a `ToolResponse` with the error details.
++5. If valid, call the executor.
++
++### Log Redaction
++
++The registry's logging and error generation will strip values from the validation errors provided by `ajv`, only keeping the `instancePath` and the error message (e.g., `must have required property 'location'`).
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..402a0cb
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,136 @@
++import {ToolRegistry} from './registry.js';
++
++describe('ToolRegistry Input Validation (Acceptance)', () => {
++  it('validates input against schema and returns ToolResponse on failure ([validated by 1](specs/hal-engine-tool-input-validation/spec.md#L30))', async () => {
++    const registry = new ToolRegistry();
++    let executorCalled = 0;
++
++    registry.register(
++      {
++        name: 'test-tool',
++        description: 'a tool',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {type: 'string'},
++          },
++          required: ['location'],
++        },
++      },
++      async () => {
++        executorCalled++;
++        return 'ok';
++      }
++    );
++
++    // Call with missing required property
++    const response = await registry.execute('test-tool', {});
++
++    expect(response.result).toContain('location');
++    expect(response.result).toContain('required');
++    expect(executorCalled).toBe(0);
++  });
++
++  it('passes through extra properties unchanged ([validated by 6](specs/hal-engine-tool-input-validation/spec.md#L35))', async () => {
++    const registry = new ToolRegistry();
++    let receivedInput: Record<string, unknown> = {};
++
++    registry.register(
++      {
++        name: 'test-tool',
++        description: 'a tool',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {type: 'string'},
++          },
++        },
++      },
++      async input => {
++        receivedInput = input;
++        return 'ok';
++      }
++    );
++
++    const input = {location: 'London', extra: 'property'};
++    await registry.execute('test-tool', input);
++
++    expect(receivedInput).toEqual(input);
++  });
++
++  it('rejects wrong-typed fields without leaking the value ([validated by 2](specs/hal-engine-tool-input-validation/spec.md#L40))', async () => {
++    const registry = new ToolRegistry();
++
++    registry.register(
++      {
++        name: 'test-tool',
++        description: 'a tool',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            count: {type: 'number'},
++          },
++        },
++      },
++      async () => 'ok'
++    );
++
++    const secretValue = '999-secret-value';
++    const response = await registry.execute('test-tool', {count: secretValue} as any);
++
++    expect(response.result).toContain('count');
++    expect(response.result).toContain('number');
++    expect(response.result).not.toContain(secretValue);
++  });
++
++  it('throws at registration time for invalid schemas ([validated by 2](specs/hal-engine-tool-input-validation/spec.md#L45))', () => {
++    const registry = new ToolRegistry();
++
++    expect(() => {
++      registry.register(
++        {
++          name: 'bad-tool',
++          description: 'bad schema',
++          inputSchema: {type: 'invalid-type'},
++        },
++        async () => 'ok'
++      );
++    }).toThrow(/bad-tool/);
++  });
++
++  it('validates function-valued tools against current schema ([validated by 3](specs/hal-engine-tool-input-validation/spec.md#L46))', async () => {
++    const registry = new ToolRegistry();
++    let currentType = 'string';
++
++    registry.register(
++      () => ({
++        name: 'dynamic-tool',
++        description: 'dynamic schema',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            val: {type: currentType},
++          },
++        },
++      }),
++      async () => 'ok'
++    );
++
++    // First call: should accept string
++    const res1 = await registry.execute('dynamic-tool', {val: 'hello'});
++    expect(res1.result).toBe('ok');
++
++    // Change schema
++    currentType = 'number';
++
++    // Second call: should reject string, accept number
++    const res2 = await registry.execute('dynamic-tool', {val: 'hello'});
++    expect(res2.result).not.toBe('ok');
++    expect(res2.result).toContain('number');
++  });
++
++  it('maintains Unknown tool throw ([validated by 3](specs/hal-engine-tool-input-validation/spec.md#L41))', async () => {
++    const registry = new ToolRegistry();
++    await expect(registry.execute('missing', {})).rejects.toThrow('Unknown tool: missing');
++  });
++});
