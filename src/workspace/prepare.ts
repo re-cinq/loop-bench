@@ -34,14 +34,12 @@ export async function prepareRunWorkspace(input: WorkspaceInput): Promise<RunWor
   await git(["clone", "--quiet", "--bare", input.mirrorDir, originDir], input.runDir);
   await git(["update-ref", "refs/heads/main", input.baseSha], originDir);
   await git(["symbolic-ref", "HEAD", "refs/heads/main"], originDir);
-  await git(["for-each-ref", "--format=%(refname)", "refs/heads"], originDir).then((refs) =>
-    Promise.all(
-      refs
-        .split("\n")
-        .filter((ref) => ref !== "" && ref !== "refs/heads/main")
-        .map((ref) => git(["update-ref", "-d", ref], originDir)),
-    ),
-  );
+  const otherRefs = (await git(["for-each-ref", "--format=%(refname)", "refs/heads"], originDir)).split("\n").filter((ref) => ref !== "" && ref !== "refs/heads/main");
+
+  // One at a time: deletes in parallel race for packed-refs.lock, and the loser fails the loop before its first visit.
+  for (const ref of otherRefs) {
+    await git(["update-ref", "-d", ref], originDir);
+  }
   await git(["clone", "--quiet", originDir, targetDir], workspaceDir);
   await git(["config", "user.name", "loop-bench"], targetDir);
   await git(["config", "user.email", "loop-bench@localhost"], targetDir);
