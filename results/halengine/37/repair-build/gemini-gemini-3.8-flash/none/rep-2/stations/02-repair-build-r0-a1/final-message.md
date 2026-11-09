@@ -1,0 +1,3 @@
+The branch has moved since CI judged `7ccea884f1d7cb84a96ee5242a0436b047ec021b`. Commit `11beadb45c78dad8bf4944ac1b45bc28e196d5f2` (`fix(tools): import Ajv as default, attach cause in compileSchema, and fix acceptance test lint errors`) does not carry `[skip ci]`, so CI has not judged the new head yet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 7ccea884f1d7cb84a96ee5242a0436b047ec021b; CI re-judges the head"}}

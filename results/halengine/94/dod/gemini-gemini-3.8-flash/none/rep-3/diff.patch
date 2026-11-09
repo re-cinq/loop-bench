@@ -1,0 +1,107 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..787d016
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,22 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — the seam already exists. `createChatOrchestrator` returns an orchestrator whose `processMessage` calls installed `OrchestratorHooks`. A test can install a `beforeSession` that throws, drive `processMessage` through the real entry point, and observe that `onError` and `afterSession` do not fire today.
++
++## Done when these pass
++
++- [ ] **runs onError then afterSession when it throws, and still rejects to the caller** — a `beforeSession` that throws still rejects to the caller (unchanged from today), and now also runs `onError` with the thrown error and then `afterSession`. Fails today because both hooks are skipped: `onError` never fires and `callOrder` is `['beforeSession']`, not `['beforeSession', 'onError', 'afterSession']`.
++      `src/orchestration/beforeSessionThrow.acceptance.test.ts`
++
++## Facets
++
++- [ ] Move the `beforeSession` call inside the `try` block in `src/orchestration/chatOrchestrator.ts` so a throw reaches the same `catch` (`onError`) and `finally` (`afterSession`) as any other turn failure.
++- [ ] Confirm the non-throwing `beforeSession` path is unchanged — existing hook tests (`called before anything else`, `full lifecycle order`) stay green without edits.
++- [ ] Criterion 5, owned by the implementer: expand the new guarantee bullet in `specs/hal-engine-config-hooks/spec.md` with what a hook may assume about how much of the turn happened (how a cleanup hook tells "never allocated" from "allocated and finished" — the ticket asks this be decided and recorded), and add a CHANGELOG entry describing the behaviour change for an existing consumer. This DoD adds only the behavioural guarantee statement + its test citation.
++
++## Out of scope
++
++- The `instanceof Error` gate on `onError` (its own issue) — still recorded as a measured-semantics flaw in the spec.
++- Usage accounting across tool rounds (HALEngine#93).
++- The CHANGELOG entry and the "what a hook can assume" prose (implementer's, per acceptance criterion 5 — see Facets).
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..a4baa10 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -14,6 +14,7 @@
+ - A `beforeModelResponse` hook installed through config is handed the base system prompt built from `prompt`, proving the hook reaches the orchestrator and is wired into the prompt pipeline rather than only being stored on the config ([validated by: hands a config-installed beforeModelResponse hook the built base system prompt, not merely storing it](../../src/config.test.ts#L108)).
+ - The value the hook returns then replaces the system prompt the provider receives; this is exercised at the orchestrator layer because `HalEngineConfig.provider` takes a `ProviderConfig` and offers no seam to inject a recording provider through config ([validated by: replaces system prompt with returned value](../../src/orchestration/chatOrchestrator.test.ts#L194)).
+ - For a session that completes without error the hooks fire in the order `beforeSession` → `beforeUserInput` → `afterUserInput` → `beforeModelResponse` → `afterModelResponse` → `afterSession` ([validated by: fires the lifecycle hooks in documented order for a session that completes without error](../../src/config.test.ts#L132)).
++- A `beforeSession` that throws reaches the caller as a rejection, and also runs `onError` with the thrown error and then `afterSession`, because the call sits inside the same `try`/`finally` as the rest of the turn ([validated by: runs onError then afterSession when it throws, and still rejects to the caller](../../src/orchestration/beforeSessionThrow.acceptance.test.ts#L15)).
+ 
+ ## Engine startup
+ 
+@@ -21,8 +22,7 @@
+ 
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+ - `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/src/orchestration/beforeSessionThrow.acceptance.test.ts b/src/orchestration/beforeSessionThrow.acceptance.test.ts
+new file mode 100644
+index 0000000..834febf
+--- /dev/null
++++ b/src/orchestration/beforeSessionThrow.acceptance.test.ts
+@@ -0,0 +1,51 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {answering} from '../infrastructure/writeSignalTestSupport.js';
++import type {ChatSession} from '../types/session.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++const outcomeOf = (call: Promise<unknown>): Promise<string> =>
++  call.then(() => 'resolved without throwing').catch((error: Error) => error.message);
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++describe('ChatOrchestrator beforeSession hook failure', () => {
++  it('runs onError then afterSession when it throws, and still rejects to the caller', async () => {
++    const callOrder: string[] = [];
++    let onErrorArgs: {sessionId: string; message: string} | undefined;
++    let afterSessionSessionId: string | undefined;
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        callOrder.push('beforeSession');
++        throw new Error('beforeSession boom');
++      },
++      onError: async (session, error) => {
++        callOrder.push('onError');
++        onErrorArgs = {sessionId: session.sessionId, message: error.message};
++      },
++      afterSession: async session => {
++        callOrder.push('afterSession');
++        afterSessionSessionId = session.sessionId;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(answering('never'), promptBuilder, undefined, {hooks});
++    const session: ChatSession = {
++      sessionId: 's1',
++      userId: 'u1',
++      entries: [{role: 'user', content: 'hello', timestamp: SENT_AT}],
++    };
++
++    const outcome = await outcomeOf(orchestrator.processMessage(session));
++
++    expect({outcome, onErrorArgs, afterSessionSessionId, callOrder}).toEqual({
++      outcome: 'beforeSession boom',
++      onErrorArgs: {sessionId: 's1', message: 'beforeSession boom'},
++      afterSessionSessionId: 's1',
++      callOrder: ['beforeSession', 'onError', 'afterSession'],
++    });
++  });
++});
