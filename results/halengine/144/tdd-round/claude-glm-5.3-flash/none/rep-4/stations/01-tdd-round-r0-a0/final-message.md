@@ -1,0 +1,14 @@
+Round complete and pushed. Summary:
+
+**Facet closed:** validation of `list_sessions` frames (DoD facets 1+2 — the types are the validator's compile prerequisite).
+
+- **Red:** added 4 unit tests to `src/transport/ws/validation.test.ts` — bare frame accepted, epoch-number `updatedAt` cursor accepted, non-negative-integer `limit`, and the malformed-`before` refusals — all failing with `Unknown message type: list_sessions`. One case of mine was wrong and fixed in the test, not the code: `{updatedAt: 1.5}` is a finite epoch number the DoD reads as a usable moment.
+- **Green:** `ListSessionsMessage`/`SessionSummaryFrame`/`SessionListMessage` added to `src/types/messages.ts` (union members in both directions, re-exported from `src/index.ts` and `src/types/index.ts`), plus the `list_sessions` case in `src/transport/ws/validation.ts` — `limit` a non-negative integer, `before` an object with 1–128-char `sessionId` and an ISO-string-or-finite-number `updatedAt`, client-supplied fields like `userId` dropped by construction. 7/7 pass; the 3 pre-existing tests in the file stayed green.
+- **Spec:** added my citations to the validation statement in `specs/hal-engine-conversation-list/spec.md` (now naming the string-or-epoch `updatedAt` the tests pin) and repointed 3 stale citations that the previous round had written 2–6 lines above their tests, via the repo's `spec:names -- --fix` on that one file — repo-wide, that was the only drift.
+- **Delivery:** prettier run over the five changed `.ts` files (all unchanged — already conformant); branch merged with `origin/main` (already up to date) and pushed; `git status` shows the branch even with its upstream.
+- **No lore tools** (`lore-query-trace`/`lore_get_ci_failures`) exist in this pod's toolset; coverage of `validation.ts` was checked by reading its citations — only `validation.test.ts` and the acceptance test cite it, and my insertion sits below every existing link into that file.
+- **Red tests:** 0 regressions; my 4 are green. The 3 acceptance tests stay red by design — their facets (store threading, handler dispatch, docs) are the next rounds' work.
+
+Noticed, not acted on: `answerFrame` currently answers nothing for a valid frame that is neither `ping` nor `user_message`, which is exactly where next round's dispatch lands; and the ticket prose (`list_conversations`, `UNSUPPORTED`, a `transport.history` flag) disagrees with `.lore/dod.md` and the acceptance tests (`list_sessions`, `SERVER_ERROR`, no flag) — I followed the DoD and the tests, per the brief.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"list_sessions protocol types and frame validation","tdd_next":"thread sessionStore into createMessageHandler and answer list_sessions off the lock"}}

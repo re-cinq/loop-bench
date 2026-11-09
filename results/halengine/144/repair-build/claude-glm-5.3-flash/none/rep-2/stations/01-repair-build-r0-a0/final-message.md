@@ -1,0 +1,14 @@
+Done. Summary of the round:
+
+**What CI said (sha `5cd4e67`):** `test` — the acceptance suite got no answer at all to `list_sessions` (the branch had the types and the validator, but no handler wired to the store); `eslint` — 3 duplicate-code clones between `conversationList.acceptance.test.ts` and `sessionResume.test.ts`, a wrapped happy path at `conversationList.acceptance.test.ts:67`, and a boolean literal argument at `validation.test.ts:58`.
+
+**What I changed on `loop-bench/144` (commit `6c9f17c`, pushed):**
+- **Handler** (`src/transport/ws/messageHandler.ts`, `createServer.ts`): `createMessageHandler` now takes the session store; `list_sessions` is answered off the per-session lock beside `ping` — the user id is read from the socket (`ExtWebSocket.userId`), never from the frame; `limit`/`before` pass through to `store.listFor?.(userId, {limit, before})`; summaries go on the wire with ISO-string times; a store without `listFor` answers an empty `session_list`; a rejecting store logs on the `ws` category with the user id and raw error and answers a detail-free `error SERVER_ERROR`, socket still open.
+- **Lint**: the shared scaffolding (`eventually`, `trackServer`, `delegatingTo`, and a `stopEngines` that drains each server's sockets) moved into `wsTestSupport.ts` and both suites import it; the acceptance read now sends its barrier ping only after the answer frame arrives — that also removes a real frame-ordering race (a synchronous pong could outrun the async list answer when both frames coalesced into one TCP segment, which flaked only under parallel workers); the validator test asserts `allRejected: true` instead of `Array(9).fill(false)`.
+- **Specs**: 122 citations repointed with the repo's own `spec:names:fix` (run after Prettier settled), since both cited test files moved.
+
+**Verified here:** 161 tests pass across the 14 suites touching the changed modules (acceptance suite run three times for stability); `spec:names`, `check:spec-links`, `check:spec-status` and `repoint-spec-anchors --check origin/main` all pass; Prettier clean on the changed files. No linter or typecheck was run in this pod — CI judges those.
+
+**Delivered:** pushed to `origin/loop-bench/144`; `origin/main` merges clean ("Already up to date"); working tree clean and the branch is not ahead of its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"list_sessions had no handler (frames went unanswered) plus 8 lint errors; handler added off the session lock, test scaffolding deduped into wsTestSupport, boolean-literal assertion replaced, spec citations repointed"}}

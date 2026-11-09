@@ -1,0 +1,14 @@
+The round is committed and pushed: `dad0cce` is on `origin/loop-bench/144`, the tree is clean, the branch is up to date with its upstream, and `origin/main` merged with nothing to do (already up to date).
+
+**What this round did.** The brief named two red findings on my last push, and both are repaired:
+
+- **Acceptance write race (test job).** A bare `list_sessions` was answered, but its `session_list` lost a write race against the `pong` of the ping the harness sends right behind it — an answer-after-`await` cannot beat a synchronously-sent frame (I confirmed the ordering with a standalone socket probe, since the pod's hook refuses the acceptance file). The fix: each socket's immediate frames now chain onto the answers still owed it, in `answerBesideTheTurn`, so a later answer can never overtake an earlier one while frames still never queue behind a turn's lock.
+- **`tsc` error at `validation.ts(93,28)`.** The `list_sessions` limit refusal is now a `limit is number` predicate, so the frame's `limit` narrows instead of staying `{} | null`.
+
+**The round's own red→green.** New unit test `answers a ping sent after a pending list once that list is answered, in arrival order` in `messageHandler.test.ts` — red first (`pong 7` overtaking `session_list []`), green after the chain. Its spec statement went into the protocol spec's § 4.3 with its citation, and the nine citations the insertion shifted were re-pointed by hand (this repo's reanchor is `scripts/repoint-spec-anchors.mjs`, which skips branch-authored anchors, so I verified each bumped line lands on its test's declaration). `npm run check:spec-links`, `npm run spec:names` and `npm run check:spec-status` all pass.
+
+**Tests run here:** only my two files — `messageHandler.test.ts` (57 pass) and `validation.test.ts` (4 pass). No acceptance test, no lint, no typecheck, no build; CI judges the push. Red tests accounted for: 1 failure was this ticket's own acceptance test (the race above), 0 regressions of pre-existing tests. One consequence named, not acted on: a ping sent behind a hung `listFor` now waits on that list — the price of the ordering guarantee, noted in the code comment.
+
+`.lore/dod.md` carries the closed facet; the two open ones stand (the `transport.history` decision needs the ticket owner).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"immediate frames answered in arrival order, plus the two CI repairs (acceptance write race, validation.ts tsc error)","tdd_next":"pin the pre-change message literals as a fixture, or settle the recorded transport.history decision, which needs the ticket owner"}}

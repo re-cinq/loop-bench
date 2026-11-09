@@ -1,0 +1,5 @@
+The round is blocked by the red CI verdict. The brief shows at least eight MongoDB durability tests failing because the test server did not start within 10 seconds; the log is truncated, and Lore could not retrieve the full verdict for this branch. The resulting coverage failures appear consistent with those tests not running, but the available evidence does not identify a code fix.
+
+The displayed failures are in tests that predate this branch: **0 were written this round; at least 8 are pre-existing tests reporting failures**. Their cause has not been established as a branch regression. No files were changed, no tests were run locally, and nothing was committed or pushed.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI reports MongoDB startup timeouts, but the truncated log and unavailable full verdict do not identify a fix or establish the full failure list."}}

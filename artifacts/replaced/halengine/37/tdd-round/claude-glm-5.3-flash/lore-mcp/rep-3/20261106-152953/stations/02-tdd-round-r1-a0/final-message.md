@@ -1,0 +1,18 @@
+Pushed and confirmed: `Your branch is up to date with 'origin/loop-bench/37'`, working tree clean, and the branch sits on top of current `origin/main` (merge was a no-op, so the second push had nothing to send).
+
+## Round summary
+
+**Owed CI repairs first** (all findings from the round brief):
+- `typecheck` ×2 — `ajv` 8 has no named runtime export `Ajv`; switched to the default import, which also types `validate.errors` and removes the implicit-any parameter (`registry.ts:1-2`).
+- `eslint` ×4 — flipped the orchestrator test's round-2 branch into a guard clause (`prefer-early-return`), split `lastMessage.content[0]?.content` into destructured hops (`max-member-chain`), and killed the 23-line clone by rewriting `registry.test.ts` around helper-built schemas, different fixtures (`echo_location`, `fickle_lookup`, `region`/`units`), and a recording executor (`no-duplicate-code`).
+- `test` — `registry.test.ts` failed to load on the same import; the suite now runs.
+
+**This round's facet (red → green → refactor):** compile static `inputSchema` at `register` time and cache validators by schema object reference. The new test *compiles a static tool schema once at registration and reuses it across calls* went red against the per-call `compile` (10 compiles, expected 1); the fix compiles once at `register`, seeds a per-tool `WeakMap`, and resolves function-valued sources per call against the current schema object. *validates a function-valued source against the schema current at each call* pins that the cache keys on schema identity, not staleness. Rejection messages now carry the failing property path (`/ssn must be string`) without echoing values, closing facet 3's last gap. Spec statements 20–21 now cite both new tests; statement 12's moved link was re-anchored (`repoint-spec-anchors.mjs` confirms the other 404 anchors current). dod.md facets 2 and 3 ticked.
+
+**Red tests:** 0 of mine remain red. 1 CI failure remains that is not mine and not in the acceptance list: `providerFactory.test.ts` constructing a real `VertexAI` throws inside the SDK. I could not reproduce it locally (the identical constructor succeeds in this credential-less pod with the identical lockfile), the branch touches no provider file or overlapping dependency subtree (lock diff is ajv-only), and the error text was truncated in the brief, with no GitHub Actions run published for the branch sha to read. I am treating it as environmental/flaky and have not touched it; if the next push still shows it, its full log should be this branch's first read.
+
+**Named, not acted on:** `providerFactory.test.ts` builds a real `VertexAI` where a stub seam would keep CI credential-independent; `example/weather-tool.ts` still casts-and-defaults (that is facet 4's documented scope, next round along with the passthrough and unknown-tool tests, the `chatOrchestrator.test.ts` loop test, and the docs/README/.specify/ADR-002 updates).
+
+The only test run here was my own `registry.test.ts` by file, with a deadline; the acceptance tests, lint, typecheck and build are CI's to judge on the push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"register-time inputSchema compilation + WeakMap validator cache keyed by schema reference, plus all owed CI repairs (ajv import, eslint findings)","tdd_next":"facet 4: passthrough and unknown-tool tests in registry.test.ts, chatOrchestrator.test.ts loop test, and docs updates (weather-tool example, adding-a-tool.md, README, .specify, ADR-002)"}}

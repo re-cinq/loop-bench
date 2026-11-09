@@ -1,0 +1,5 @@
+Committed and pushed `595eb4d`. The registry now imports Ajv through its package entry point, and the spec status matches the reported lint requirement. The focused wrong-type test passed locally before and after the import change; the CI module-resolution failure did not reproduce locally, so this was not a complete red-green-refactor round.
+
+The truncated CI brief names one ticket acceptance suite and two pre-existing suites that failed to load. It does not establish the number of individual red tests; the coverage verdict remains for CI to confirm. No unrelated issues were addressed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cover a wrong-typed field without exposing its value and repair reported CI import and spec status findings","tdd_next":"Confirm CI coverage after the Ajv import repair"}}

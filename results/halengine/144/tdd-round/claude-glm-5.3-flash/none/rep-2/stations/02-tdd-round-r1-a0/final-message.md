@@ -1,0 +1,16 @@
+Round complete. Summary:
+
+**CI debt from the brief (fixed first, all of it):**
+- **spec-names** — the previous round's import insertion shifted `validation.test.ts`'s tests, stranding three `#Lnn` anchors. Repointed with the repo's own `npm run spec:names -- --fix`, verified 0 findings.
+- **eslint** — the three helper clones shared by `conversationList.acceptance.test.ts` and `sessionResume.test.ts` are hoisted into `wsTestSupport.ts` (`eventually`, `drainAndStop`, `delegatingStore`) with every acceptance assertion untouched; the wrapped happy path in `askAfterConnect` flipped to guard clauses; and from the truncated tail, by inspection: the nested `if` in `validation.ts` flattened, and the previous round's validator test reduced from 3 `expect`s to 1 (this repo's `max-expects` gate is 1 — that's why every test here asserts one composite object).
+- **changelog** — `## [Unreleased]` entry for the frames written for a package installer; the stale "nothing in the engine calls it yet" sentence amended; `check-changelog.sh origin/main` passes on the commit.
+
+**The round's facet (dod 3+4, plus facet 1's owed types):** `sessionStore` is threaded into `createMessageHandler` as an optional second argument and wired from `createServer`; `list_sessions` is answered on the non-locked path beside `ping`, reading the user from `session.userId` (a frame `userId` is stripped by the validator), forwarding `{limit, before}` as sent, serialised to ISO strings by `sendSessionList`. A store without `listFor` answers an empty list; a rejecting one answers one `SERVER_ERROR` frame carrying no store detail, logs on `ws`, socket stays open. `SessionSummaryFrame`/`SessionListMessage` join the unions, additive, re-exported.
+
+**Tests:** my new unit test was proven red (1 failed with the implementation stashed), then green — `messageHandler` + `validation`: 59 passed; `sessionResume` after the dedup: 25 passed. Red tests mine: 1 (turned green this round). Acceptance reds: the 3 in `conversationList.acceptance.test.ts`, red by design until now — CI judges whether the handler flipped them. Regressions I caused: 0. No eslint, tsc, or build ran in this pod.
+
+**Named, not acted on:** ticket #144's prose still disagrees with the branch it built — the frames are `list_sessions`/`session_list` (not `list_conversations`/`conversation_list`), a store without `listFor` answers an empty list (the acceptance test asserts it; the ticket's `UNSUPPORTED` criterion cannot be met without reddening it), and the ticket's `transport.history` opt-in with its GDPR note doesn't exist in any dod facet. Facet 5 (websocket-protocol spec frame tables + authorisation rule) is the next round's work; the `docs/getting-started.md`/`example/full-config.ts` regen the ticket lists is owed nowhere in dod.md; the MINOR bump is release-time.
+
+Committed as `a54eefd`, pushed, `origin/main` had not moved (behind=0), branch up to date with upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"answer list_sessions off the session lock (dod facets 3+4, plus facet 1's owed SessionSummaryFrame/SessionListMessage)","tdd_next":"facet 5: document list_sessions/session_list in specs/hal-engine-websocket-protocol/spec.md (frame tables, authorisation rule) and finish the conversation-list spec"}}

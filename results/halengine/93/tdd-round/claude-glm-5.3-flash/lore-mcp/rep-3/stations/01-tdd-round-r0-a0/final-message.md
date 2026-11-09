@@ -1,0 +1,15 @@
+The round is delivered. Summary:
+
+**What this round did (red → green → refactor, one behaviour):**
+- **RED** — wrote one failing test, `sums the rounds that reported and stays undefined until one does`, in `src/orchestration/orchestratorHelpers.test.ts:29`; confirmed it failed for the right reason (no such export — the behaviour did not exist).
+- **GREEN** — added `addRoundUsage` in `src/orchestration/orchestratorHelpers.ts:45`: folds one round's usage into the turn total, adding each token field only for rounds that report, returning `undefined` until one does. Re-ran the file: 5 passed.
+- **REFACTOR** — replaced final-round retention with the fold in `src/orchestration/chatOrchestrator.ts:119`, and made the contract say so: `afterModelResponse` now receives `turnUsage?: TurnUsage` (`src/types/ai.ts:84`, exported from the package root), so the signature itself answers "is this a sum". A no-tool turn still reports exactly what it did before (a single reported round folds to itself).
+- **Gates this change forces** — CHANGELOG entry under `[Unreleased]` with a migration note (check-changelog fires on any `src/` change); spec citations for the new test and the previously-uncited second acceptance test (require-spec-link is an eslint error); the across-rounds statements in the architecture spec reworded to the fold; CLAUDE.md's generated hook block resynced (docs:check compares it against the declaration).
+
+**Verification:** I ran only my test file, per the round contract — the acceptance tests and `chatOrchestrator.test.ts` are CI's to judge. I traced by hand that all four usage paths stay correct under the fold (the two existing guards and both acceptance tests). `loreg_et_ci_failures` returned 404 (branch not yet tracked) and no round brief existed, so I had no CI verdict to work from. Red tests of mine: none known. Regressions: none known.
+
+**Noted, not acted on:** (1) the second acceptance test had no spec citation before this round — pre-existing, fixed here as part of facet 4; (2) `TurnUsage` is a type alias, so the compiler still can't tell a per-round usage from a turn total — a nominal shape would, but the alternative signature (per-round breakdown) was rejected to keep the no-tool path byte-identical; (3) the ticket asks the GitHub issue to record why the other shape was rejected — I have no `gh`/token, so that half lives in the CHANGELOG's migration note instead.
+
+Committed as `f4311e0`, pushed, and `origin/main` merged in (nothing to merge — already up to date); `git status` confirms the branch is not ahead of its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"aggregate turn usage: addRoundUsage fold plus the TurnUsage contract wired into afterModelResponse, with spec citations and CHANGELOG updated","tdd_next":"CI verdict on the two acceptance tests; tick the preserved no-tool guard (facet 3) if green, else fix what CI names"}}

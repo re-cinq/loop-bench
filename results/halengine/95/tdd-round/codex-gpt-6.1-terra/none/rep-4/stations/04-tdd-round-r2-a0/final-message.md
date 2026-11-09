@@ -1,0 +1,5 @@
+The round is blocked. CI timed out after 15 minutes without identifying a failed test or a cause to fix. The remaining checklist facet requires running existing tests, but the round’s instructions permit running only a new test written this round. The existing implementation already passes an `Error` through unchanged, so I cannot write a failing test for that facet without inventing a failure.
+
+No files were changed, no tests were run locally, and no commit was made. The CI excerpt identifies **0 red tests written by this branch and 0 regressions**; its timeout does not establish that the suite passed. No unrelated smells were acted on.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI timed out without a diagnosed failure, and confirming existing tests is prohibited by the round's test restriction"}}

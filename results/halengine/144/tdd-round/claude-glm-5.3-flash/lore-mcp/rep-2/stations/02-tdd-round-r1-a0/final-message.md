@@ -1,0 +1,17 @@
+Branch is level with its upstream and merged with base — the round is delivered. Summary:
+
+**CI verdict cleared (the work this round owed first):**
+- `validation.ts` — the 3-way switch on `message.type` became a validator lookup table; the two dense cursor conditions became named predicates (`isNonNegativeInteger`, `parsesAsDate` over `isDateString`/`isEpochTime`); the nested cursor `if` flattened by letting `invalidCursor` absorb the `undefined` case. Behaviour byte-identical — all eight malformed-frame refusals still red-line through the acceptance suite.
+- Test-file duplicates — `eventually`, the draining teardown, and `delegatingTo` converged on `wsTestSupport.ts`; `sessionResume` now starts engines through `startEngineWith` and opens sockets through `connectClient`; its `deferredRelease` folded into the existing shared `deferred`. `stopEngines` gained the drain (each server sees its sockets close before it stops) so both suites keep their no-close-after-logger-restore invariant.
+- `conversationList.acceptance.test.ts:67` — the connect helper's happy path runs flat now; the dead `connected` capture no assertion read is gone. **No assertion changed in any acceptance test.**
+- `CHANGELOG.md` — `## [Unreleased]` entry for the two frames, written for an installer; `check-changelog` passes locally against the commit.
+
+**The round's facet (closed):** pinned that a `list_sessions` sent mid-turn is answered before that turn's `stream_end`, ahead of the pong, in arrival order — `messageHandler.test.ts:763`, cited on the previously-uncited spec statement §4.3 "A history request is not a turn". The pin arrived **green**: the per-socket answer chain it guards landed in the previous round's commit with the acceptance work, so there was no red phase to manufacture. I verified it has teeth instead: a scratch edit routing non-turn answers through the lock reddened exactly this test (`list s0` after `stream_end`) plus three sibling ordering pins; reverted before commit. Its ordering assertion is the load-bearing one.
+
+**Verification:** 83/83 green across the three files I touched (55 messageHandler incl. the new pin, 3 acceptance, 25 resume) — **0 red tests mine, 0 regressions**. `spec:names` / `check:spec-links` / `check:spec-status` all clean; my insertion shifted 115 existing citations and the repo's own `check-spec-anchor-names --fix` repointed them by test title. Prettier run over exactly the five changed TS files; no lint, no typecheck, no workspace build, no full suite in this pod, per the delivery contract.
+
+**Facet for next round:** pin that a socket closed before its `list_sessions` answer is ready neither sends nor logs it as a failure of a dead socket.
+
+**Named, not acted on:** `handlePing` sends raw `ws.send` instead of the sender module's `sendJson`; `ticket.md` still describes surface the branch deliberately didn't build (history opt-in flag, `UNSUPPORTED`/`StoreCannotList`, `list_conversations` naming — the branch's `dod.md` is the amended bar, but the ticket text and the code now disagree and someone should reconcile them); `startEngineWith` mints `/hal/ws/c1` where the resume suites used `/hal/ws` — inert while `wsAuth` ignores the path, surprising later.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"pin: list_sessions answered off the lock, before stream_end, in arrival order (spec §4.3 statement now cited)","tdd_next":"pin: a socket closed before its list_sessions answer neither sends nor logs a dead-socket failure"}}

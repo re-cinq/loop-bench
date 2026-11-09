@@ -1,0 +1,188 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..e063602
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,27 @@
++# Definition of Done
++
++> For a turn that called tools, it is the last leg of several, and the earlier rounds — including the one carrying the customer's question and the full tool results — are not counted anywhere.
++
++**Strategy: `direct`** — `createChatOrchestrator` accepts an `AIProvider` and real `ToolRegistry`; the ticket explicitly calls for a scripted provider with known counts. The acceptance fixture feeds chunks through that public entry point, executes arithmetic tools, and observes the hook without mocking the orchestrator or registry.
++
++## Done when these pass
++
++- [ ] **reports the sum of all three provider calls after two tool rounds** — one hook report sums all three token fields across three provider calls, with two tool results actually consumed.
++      `src/orchestration/turnUsage.acceptance.test.ts`
++- [ ] **sums reported rounds across missing usage and preserves absence when none report** — missing first, middle, or final usage does not lose reported counts; all-absent usage stays undefined and reported zero remains zero.
++      `src/orchestration/turnUsage.acceptance.test.ts`
++
++## Facets
++
++- [ ] Sum each provider round's reported token fields within the turn, keeping one hook call after the loop.
++- [ ] Ignore missing usage without losing previous totals, preserve undefined when no round reports, and preserve zero counts.
++- [ ] Keep the existing `receives collected response text and usage` test in `src/orchestration/chatOrchestrator.test.ts` unedited and passing.
++- [ ] Make the public hook signature unambiguously name total turn usage without introducing `any`; retain one usage argument, since a breakdown widens the surface unnecessarily for billing and budgeting.
++- [ ] Deliver a MINOR version bump and CHANGELOG entry explaining the larger totals existing consumers will record; keep the revised hook spec accurate.
++- [ ] Pass the repository's build, test, typecheck, eslint, and formatting CI gates.
++
++## Out of scope
++
++- Billing records, audit storage, non-provider token accounting, and changes to streamed stop-chunk usage.
++- Non-Error rejection handling, the other unlinked measured behavior in the hook spec; #93 does not change it.
++- A per-round usage breakdown or a new hook invocation per provider call.
+diff --git a/.lore/test-commands.yml b/.lore/test-commands.yml
+index a3e1278..cdb0126 100644
+--- a/.lore/test-commands.yml
++++ b/.lore/test-commands.yml
+@@ -16,6 +16,23 @@
+     regex-escaped -t, and treats a selector that matches nothing as a failure
+     rather than a green run of an empty suite. Neither command builds first:
+     no test here reads dist/.
+-  list: node scripts/lore-list-tests.mjs
++  list: >-
++    node scripts/lore-list-tests.mjs |
++    node --input-type=module -e '
++    import {readFileSync} from "node:fs";
++    const descriptors = JSON.parse(readFileSync(0, "utf8"));
++    for (const descriptor of descriptors) {
++      const source = readFileSync(descriptor.file, "utf8");
++      const lines = source.split("\n");
++      for (let index = 0; index < lines.length - 1; index++) {
++        const stamp = lines[index].match(/\/\/ spec: (specs\/\S+#\d+)/);
++        if (!stamp) continue;
++        const declaration = lines[index + 1].trim();
++        const quote = declaration[3];
++        const name = declaration.slice(4, declaration.indexOf(quote, 4));
++        if (descriptor.name.endsWith(name)) descriptor.spec = stamp[1];
++      }
++    }
++    process.stdout.write(JSON.stringify(descriptors) + "\n");'
+   run: node scripts/lore-run-test.mjs "{selector}"
+   coverage_format: lcov
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 2749d18..2151a89 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -22,7 +22,14 @@
+ 
+ ## Measured semantics — out of scope
+ 
+-These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++The error-handling property below remains outside the scope of the usage accounting change in #93.
+ 
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+-- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++
++## Turn usage accounting (#93)
++
++The chosen contract retains a single summed usage argument for billing and budgeting; a per-round breakdown was rejected because it adds public API surface without being needed for turn totals. The hook signature must identify this argument as total turn usage, and the release must carry a MINOR bump and a changelog entry explaining that existing consumers record larger totals on tool turns.
++
++- `afterModelResponse` fires once after the round loop and receives the fieldwise sum of usage from every provider call in the turn, including both tool rounds and the final answer ([validated by: reports the sum of all three provider calls after two tool rounds](../../src/orchestration/turnUsage.acceptance.test.ts#L68)).
++- Missing usage on any round is ignored when summing reported rounds; no reporting rounds yields `undefined`, while reported zero counts remain zero ([validated by: sums reported rounds across missing usage and preserves absence when none report](../../src/orchestration/turnUsage.acceptance.test.ts#L78)).
++- A turn with no tool calls retains its existing response text and usage value ([validated by: receives collected response text and usage](../../src/orchestration/chatOrchestrator.test.ts#L236)).
+diff --git a/src/orchestration/turnUsage.acceptance.test.ts b/src/orchestration/turnUsage.acceptance.test.ts
+new file mode 100644
+index 0000000..8144429
+--- /dev/null
++++ b/src/orchestration/turnUsage.acceptance.test.ts
+@@ -0,0 +1,99 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import {ToolRegistry} from './tools/registry.js';
++import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++
++const first = {inputTokens: 11, outputTokens: 3, totalTokens: 14};
++const second = {inputTokens: 23, outputTokens: 7, totalTokens: 30};
++const last = {inputTokens: 41, outputTokens: 13, totalTokens: 54};
++
++// The ticket's scripted provider supplies real chunks to the unmodified orchestrator and tool registry.
++async function reportTurn(rounds: (UsageMetadata | undefined)[]) {
++  let calls = 0;
++  const resultsReceived: string[] = [];
++  const reports: (UsageMetadata | undefined)[] = [];
++  const provider: AIProvider = {
++    async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      const round = calls++;
++      if (round >= rounds.length) throw new Error('Unexpected provider call');
++      const content = params.messages.at(-1)?.content;
++      if (Array.isArray(content)) {
++        for (const item of content) {
++          if (item.type === 'tool_result') resultsReceived.push(item.content);
++        }
++      }
++      if (round < rounds.length - 1) {
++        yield {type: 'tool_use', toolCall: {id: `call-${round}`, name: 'double', input: {value: round + 1}}};
++        yield {type: 'stop', stopReason: 'tool_use', usage: rounds[round]};
++      } else {
++        yield {type: 'text', text: 'done'};
++        yield {type: 'stop', stopReason: 'end_turn', usage: rounds[round]};
++      }
++    },
++    async generateStructured<T>(): Promise<T> {
++      throw new Error('This script uses streaming responses only');
++    },
++  };
++  const registry = new ToolRegistry();
++  registry.register(
++    {
++      name: 'double',
++      description: 'Double a number',
++      inputSchema: {type: 'object', properties: {value: {type: 'number'}}, required: ['value']},
++    },
++    async input => String(Number(input.value) * 2)
++  );
++  const orchestrator = createChatOrchestrator(
++    provider,
++    new PromptBuilder({identity: 'Calculate using tools.'}),
++    registry,
++    {
++      hooks: {
++        afterModelResponse: async (_session, _text, usage) => {
++          reports.push(usage);
++        },
++      },
++    }
++  );
++  const text = await orchestrator.processMessage({
++    sessionId: 'usage-acceptance',
++    userId: 'customer',
++    entries: [{role: 'user', content: 'Double one, then two.', timestamp: '2026-01-01T00:00:00.000Z'}],
++  });
++  return {calls, resultsReceived, reports, text};
++}
++
++describe('Turn usage acceptance', () => {
++  // spec: specs/hal-engine-config-hooks/spec.md#9
++  it('reports the sum of all three provider calls after two tool rounds', async () => {
++    expect(await reportTurn([first, second, last])).toEqual({
++      calls: 3,
++      resultsReceived: ['2', '4'],
++      reports: [{inputTokens: 75, outputTokens: 23, totalTokens: 98}],
++      text: 'done',
++    });
++  });
++
++  // spec: specs/hal-engine-config-hooks/spec.md#10
++  it('sums reported rounds across missing usage and preserves absence when none report', async () => {
++    const scripts = [
++      [undefined, second, last],
++      [first, undefined, last],
++      [first, second, undefined],
++      [undefined, undefined, undefined],
++      [undefined, {inputTokens: 0, outputTokens: 0, totalTokens: 0}, undefined],
++    ];
++    const reports = [];
++    for (const script of scripts) reports.push(await reportTurn(script));
++
++    expect(reports).toEqual(
++      [
++        {inputTokens: 64, outputTokens: 20, totalTokens: 84},
++        {inputTokens: 52, outputTokens: 16, totalTokens: 68},
++        {inputTokens: 34, outputTokens: 10, totalTokens: 44},
++        undefined,
++        {inputTokens: 0, outputTokens: 0, totalTokens: 0},
++      ].map(usage => ({calls: 3, resultsReceived: ['2', '4'], reports: [usage], text: 'done'}))
++    );
++  });
++});

@@ -1,0 +1,5 @@
+The acceptance test is wrong for the ticket’s stated contract, so I stopped without editing it or starting a round. [conversationList.acceptance.test.ts](/var/tmp/loop-bench/runs/5efc0fad69f2/workspace/target/src/transport/conversationList.acceptance.test.ts:134) requires an empty `session_list` when the store lacks `listFor`; the ticket explicitly requires an `UNSUPPORTED` error instead. It also tests `list_sessions` and `session_list`, while the ticket specifies `list_conversations` and `conversation_list`. The test does not exercise the required history opt-in.
+
+No tests were run and no changes were committed. CI’s verdict could not be retrieved: Lore reported the branch was not found, so the numbers of red tests and regressions are unknown.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test contradicts the ticket's required protocol and unsupported-store behavior"}}

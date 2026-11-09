@@ -1,0 +1,5 @@
+Committed and pushed `019efc7`. The CI findings were addressed: the acceptance test’s configuration and assertion count were corrected, the spec now describes partial setup and uses the coverage-appropriate status, and the changelog records the consumer-visible change. The branch is up to date with `origin/main` and its upstream.
+
+No tests were run locally. The behavior and its cleanup test were already present, so this visit did not produce a new failing test or complete a red-green-refactor cycle. The CI brief reported no failing tests: **0 identified as ours and 0 regressions**. The two out-of-scope issues remain the `instanceof Error` gate and usage accounting across tool rounds.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Document beforeSession failure cleanup and repair reported CI findings","tdd_next":"acceptance green"}}

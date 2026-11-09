@@ -1,0 +1,3 @@
+No files changed or tests run. I found the `tdd-loop` skill, but the required Lore tools are unavailable: I cannot query existing coverage or retrieve CI’s verdict, and no `round-brief.md` exists. Red-test and regression counts are unknown.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required lore-query-trace and lore_get_ci_failures tools are unavailable, and no round-brief.md supplies the CI verdict."}}

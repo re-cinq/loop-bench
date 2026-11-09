@@ -1,0 +1,153 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..0ef2ed4
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,27 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — the seam already exists: `ChatOrchestratorOptions.hooks` installs real hooks on the real orchestrator and `processMessage`/`processMessageStream` are the caller path, so the tests call the production entry point and fail on behaviour. No production code was written to reach it.
++
++## Done when these pass
++
++- [ ] **runs onError then afterSession when beforeSession throws, and the rejection still reaches the caller** — a throwing `beforeSession` reaches `onError` with the same `(session, error)` argument shape as any other orchestrator failure, `afterSession` runs after it, the rejection still propagates unchanged, and no other hook and no provider call happens
++  `src/orchestration/beforeSessionFailure.acceptance.test.ts`
++- [ ] **gives a stream consumer the same hooks and a session the failed turn never touched** — the same guarantee through `processMessageStream`, the entry point the WebSocket transport consumes: no chunk is emitted, the provider is never reached, and `afterSession` sees a session with no entry added, which is the "how much of the turn happened" fact the spec must state
++  `src/orchestration/beforeSessionFailure.acceptance.test.ts`
++
++## Facets
++
++- [ ] Move the `beforeSession` call inside the `try` in `src/orchestration/chatOrchestrator.ts` (`processMessageStream`), so a throw from it reaches the existing `catch` and `finally`
++- [ ] Decide the question the ticket poses — does `afterSession` want to run after a failed `beforeSession`, and what may it assume about a session the turn never started? — and record the answer in `specs/hal-engine-config-hooks/spec.md`, replacing the first recorded-flaw bullet under "Measured semantics" with the new guarantee (do not edit the `| Status |` row; the other two flaw bullets stay)
++- [ ] On that rewritten bullet, attach `([validated by: <test title>](../../src/orchestration/beforeSessionFailure.acceptance.test.ts#Lnn))` for each of the two tests above; the label must equal the test name and `node scripts/check-spec-anchor-names.mjs --fix` repoints the line numbers
++- [ ] CHANGELOG entry saying what changes for an existing consumer: `onError` and `afterSession` now fire on a failed `beforeSession`, so an `afterSession` that assumes the turn started needs to handle one that never did
++- [ ] Existing suite stays unedited and green: `src/orchestration/chatOrchestrator.test.ts`, `src/config.test.ts`
++- [ ] `npm run build`, `npm test`, `npm run typecheck`, `npm run eslint` (`--max-warnings 0`), `npm run prettier:check` — CI's checklist, run by CI on every push
++
++## Out of scope
++
++- The `instanceof Error` gate on `onError` in the `catch` — its own issue; the spec records it as a separate flaw
++- Usage accounting across tool rounds (HALEngine#93)
++- The other two recorded-semantics bullets in `specs/hal-engine-config-hooks/spec.md`
+diff --git a/src/orchestration/beforeSessionFailure.acceptance.test.ts b/src/orchestration/beforeSessionFailure.acceptance.test.ts
+new file mode 100644
+index 0000000..d1ef3f1
+--- /dev/null
++++ b/src/orchestration/beforeSessionFailure.acceptance.test.ts
+@@ -0,0 +1,114 @@
++// HALEngine#94: a throw from beforeSession must reach the same catch and finally as any other failure.
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++// One expect per test needs the rejection as a value rather than a matcher.
++const outcomeOf = (call: Promise<unknown>): Promise<string> =>
++  call.then(() => 'resolved without throwing').catch((error: Error) => error.message);
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++// Records whether the turn ever reached the model: a failed beforeSession must end it before that.
++const guardedProvider = (calls: string[]): AIProvider => ({
++  async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++    calls.push('sendMessage');
++    yield {type: 'text', text: 'the turn reached the provider'};
++    yield {type: 'stop', stopReason: 'end_turn'};
++  },
++  async generateStructured<T>(): Promise<T> {
++    return {} as T;
++  },
++});
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++const throwingBeforeSession =
++  (callOrder: string[]): OrchestratorHooks['beforeSession'] =>
++  async () => {
++    callOrder.push('beforeSession');
++    throw new Error('beforeSession failed');
++  };
++
++describe('ChatOrchestrator beforeSession failure (HALEngine#94)', () => {
++  it('runs onError then afterSession when beforeSession throws, and the rejection still reaches the caller', async () => {
++    const callOrder: string[] = [];
++    const providerCalls: string[] = [];
++    let onErrorSessionId: string | undefined;
++    let onErrorMessage: string | undefined;
++    const session = createSession('hello');
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: throwingBeforeSession(callOrder),
++      beforeUserInput: async (_session, msg) => {
++        callOrder.push('beforeUserInput');
++        return msg;
++      },
++      afterUserInput: async () => void callOrder.push('afterUserInput'),
++      beforeModelResponse: async (_session, systemPrompt) => {
++        callOrder.push('beforeModelResponse');
++        return systemPrompt;
++      },
++      afterModelResponse: async () => void callOrder.push('afterModelResponse'),
++      onError: async (hookedSession, error) => {
++        callOrder.push('onError');
++        onErrorSessionId = hookedSession.sessionId;
++        onErrorMessage = error.message;
++      },
++      afterSession: async () => void callOrder.push('afterSession'),
++    };
++
++    const orchestrator = createChatOrchestrator(guardedProvider(providerCalls), promptBuilder, undefined, {hooks});
++    const outcome = await outcomeOf(orchestrator.processMessage(session));
++
++    expect({outcome, callOrder, onErrorSessionId, onErrorMessage, providerCalls}).toEqual({
++      outcome: 'beforeSession failed',
++      callOrder: ['beforeSession', 'onError', 'afterSession'],
++      onErrorSessionId: 's1',
++      onErrorMessage: 'beforeSession failed',
++      providerCalls: [],
++    });
++  });
++
++  it('gives a stream consumer the same hooks and a session the failed turn never touched', async () => {
++    const callOrder: string[] = [];
++    const providerCalls: string[] = [];
++    const chunks: MessageChunk[] = [];
++    const session = createSession('hello');
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: throwingBeforeSession(callOrder),
++      onError: async () => void callOrder.push('onError'),
++      afterSession: async () => void callOrder.push('afterSession'),
++    };
++
++    const orchestrator = createChatOrchestrator(guardedProvider(providerCalls), promptBuilder, undefined, {hooks});
++
++    const outcome = await outcomeOf(
++      (async () => {
++        for await (const chunk of orchestrator.processMessageStream(session)) chunks.push(chunk);
++      })()
++    );
++
++    // One user entry in, one out: afterSession ran against a turn that never got past its first hook.
++    const entriesAfter = session.entries.length;
++
++    expect({outcome, chunks, callOrder, entriesAfter, providerCalls}).toEqual({
++      outcome: 'beforeSession failed',
++      chunks: [],
++      callOrder: ['beforeSession', 'onError', 'afterSession'],
++      entriesAfter: 1,
++      providerCalls: [],
++    });
++  });
++});

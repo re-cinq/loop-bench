@@ -1,0 +1,9 @@
+Round complete. Summary:
+
+**Facet closed:** the `instanceof Error` gate in the orchestrator's `catch` (`src/orchestration/chatOrchestrator.ts:149`). Every rejection now fires `onError`: a non-`Error` is wrapped with a readable `message` (the string itself, else its JSON, else its `String` form) and the original as `cause`; an `Error` passes through as the same instance; `throw error` is untouched, so the caller keeps the original rejection.
+
+**This round's test** — `wraps a non-Error rejection with the original as its cause and passes an Error through unchanged` in `chatOrchestrator.test.ts:311` — pins the `cause`/same-instance halves the acceptance tests don't. Verified honestly red (fix stashed → failed with `causeOf: undefined`), then green with the fix: 27/27, including the three facet-2 tests unedited. **Red tests: 1, mine. Regressions: 0.**
+
+Also this round: CHANGELOG `### Fixed` entry under `## [Unreleased]` (says what changes for an existing consumer), corrected the two spec anchors the previous round left off by one (`#L52→#L53`, `#L63→#L64` — the repo's convention anchors the `it(` declaration line, verified against `chatOrchestrator.test.ts#L116`), ticked all four facets in `.lore/dod.md`. The acceptance file itself was not run here — CI judges it on push. Unrelated smells: none noticed. Committed as `174a85c`, pushed, and the branch is up to date with `origin/main` (already was), clean tree, HEAD == upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"coerce non-Error rejections so onError always fires (with cause/same-instance pinned by unit test)","tdd_next":"acceptance green"}}

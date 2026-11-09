@@ -2,7 +2,7 @@
 // Read 2026-10-19 from:
 //   Anthropic: the Claude API model table (claude.com pricing).
 //   Google: https://ai.google.dev/gemini-api/docs/pricing (gemini-4-argon at its price from 2026-12-01, not the launch price).
-//   OpenAI: https://developers.openai.com/api/docs/pricing, Standard tier, <=272K input (gpt-5.6-sol at its pre-promotion $5/$30, not the promotion running through 2026-11-21).
+//   OpenAI: https://developers.openai.com/api/docs/pricing, Standard tier, <=272K input (gpt-5.6-sol at its pre-promotion $5/$30, not the promotion running through 2026-11-21); gpt-6.1-terra read 2026-11-02.
 //   Z.ai: https://docs.z.ai/guides/overview/pricing, read 2026-10-20 (cached input storage is free for a limited time; the bench sees no cache writes from GLM).
 import type { Harness } from "./harness-names.js";
 import type { Usage } from "./usage.js";
@@ -47,6 +47,7 @@ export const MARKET_PRICES: Record<Harness, Record<string, PricePerMillion>> = {
     "gpt-6-astra": { input: 10, output: 50, cacheRead: 1 },
     "gpt-6-luna": { input: 0.1, output: 0.5, cacheRead: 0.01 },
     "gpt-6.1-sol": { input: 2, output: 10, cacheRead: 0.1 },
+    "gpt-6.1-terra": { input: 1, output: 5, cacheRead: 0.05 },
   },
 };
 

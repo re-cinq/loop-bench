@@ -1,0 +1,17 @@
+The round is delivered: committed as `485ef8e`, pushed, and level with its upstream; `origin/main` merges clean (no drift to resolve).
+
+## What this round did
+
+**Diagnosis of CI's red `test` job.** The brief's log was truncated (no failing file named) and the branch's PR wasn't reachable through the lore API, so I traced it statically: the visible log showed every other file passing, and the acceptance suite's harness sends `list_sessions` then a `ping`, resolving on the `pong` while asserting `session_list` already arrived. Off-lock frames were dispatched fire-and-forget, so `pong` — sent synchronously — hit the wire before the list answer's microtask. This ticket's handler round introduced the first *asynchronous* off-lock frame; before it, the only off-lock frame (`ping`) answered synchronously, so answers left in order by accident. That race is what kept the three acceptance tests red on CI.
+
+**Red → green.** New unit test in `src/transport/ws/connectionHandler.test.ts:234` — off-lock frames dispatch one answer at a time, in arrival order (verified red: 2 dispatches while the first answer was pending). The fix: a per-socket dispatch chain in `connectionHandler` for frames that bypass the session's lock; a `user_message` still dispatches at once, pinned by a second guard test, so a ping is never held behind a run (§4.1 unchanged at handler level, where the existing tests pin it). Two existing signal tests read the mock synchronously and needed a microtask drain — their pinned property (signal identity) is intact. My file: 20/20 green.
+
+**CI findings owed.** Both eslint errors fixed: `toSummaryFrame` now sits below its caller in `sender.ts`; `stopEngines` asks for `wss` instead of chaining three hops.
+
+**Facet 5 closed.** `session_list` documented as §5.9 of `specs/hal-engine-websocket-protocol/spec.md` (field table, ISO-8601 strings, one frame per request, error semantics, the answer-order rule citing this round's test). The conversation-list spec's § Over the WebSocket protocol already landed with the handler round. `npm run spec:names`, `check:spec-links` and `check:spec-status` all pass locally (802 citations clean; the 24 drifted anchors my test insertions moved were repointed by `spec:names:fix`). Prettier ran over the changed files. dod.md: facet 5 ticked, the new ordering facet recorded as closed; the three "Done when these pass" boxes stay unticked for CI to judge.
+
+**Red tests:** 0 regressions — the red tests were this ticket's own three acceptance tests, red by design mid-ticket, and the ordering race that held them there is what this round fixed. CI now gets to say whether they're green.
+
+**Named, not acted on:** the MINOR version bump (previous round's item; still 0.5.0, bumps have landed in release PRs); the acceptance harness resolving on `pong` rather than the answer frame itself; `handlePing` bypassing `sendJson`; and the ticket criteria the dod's bar deliberately narrowed away (`transport.history` opt-in, `UNSUPPORTED`, `StoreCannotList`, the `docs:fix` regeneration) remain unbuilt on this branch.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"facets 5 and 6: session_list documented in the protocol spec, and off-lock frames answered in arrival order so the acceptance suite's pong synchronisation reads session_list first","tdd_next":"CI's verdict on the acceptance suite, then the MINOR version bump"}}

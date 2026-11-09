@@ -1,0 +1,15 @@
+Round complete and pushed. Summary:
+
+**Facet closed:** validate `list_sessions` frames in `src/transport/ws/validation.ts` (dod facet 2) — optional non-negative integer `limit`, optional `before` cursor requiring both `updatedAt` (parseable string/finite number) and `sessionId` (1–128 chars), unknown client fields like `userId` stripped, every rejection naming the offending field. The type work this forced as compile support: `ListSessionsMessage` added to `IncomingMessage` and re-exported from both barrels (`src/index.ts`, `src/types/index.ts`); the other two interfaces (`SessionSummaryFrame`, `SessionListMessage`) stay with the handling round, so facet 1 remains unticked.
+
+**The round's test:** one test in `src/transport/ws/validation.test.ts:24` — red for the expected reason (`Unknown message type: list_sessions`), then green after 48 lines of validator; refactor renamed one variable and moved a comment, bar stayed green (4 passed). Only that file was run, with a timeout; no acceptance test, lint, typecheck, or build ran here.
+
+**Traceability:** the validator statement in `specs/hal-engine-conversation-list/spec.md:76` now carries a second citation to my unit test beside the acceptance one (the repo's established multi-citation form); `check-spec-anchor-names` reports 795/795 citations naming their tests and `check-spec-links` reports 0 misplaced. The three acceptance-test citations in that section were committed with stale anchors (#L87/#L129/#L161, none landing on an `it` declaration) — I repointed them to #L93/#L134/#L163 as part of touching that section. No other spec cites a file I edited, and the existing `validation.test.ts` citations all sit above my insertion.
+
+**Red tests:** zero regressions — no CI verdict exists for this branch yet (Lore returns 404, no round brief), so nothing to compare against. The three acceptance tests remain red mid-ticket by design: they need the handler facet.
+
+**Noted, not acted on:** `handlePing` in `src/transport/ws/messageHandler.ts:334` sends a raw `JSON.stringify` instead of going through `sender.ts`'s `sendJson` — the smell sits exactly where next round's `session_list` send will land, and the docs/CHANGELOG/config facets (`docs:getting-started.md` via `example/full-config.ts`, `npm run docs:fix`) are still owed by dod.
+
+**Delivery:** committed `05e97a2`, pushed; branch is up to date with `origin/loop-bench/144`, clean, and `origin/main` merges as a no-op (no drift, so CI will run).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"validate list_sessions frames in validation.ts (dod facet 2, with ListSessionsMessage typed and re-exported)","tdd_next":"thread sessionStore into createMessageHandler and answer list_sessions off the per-session lock (dod facets 3+4, adding SessionSummaryFrame/SessionListMessage)"}}

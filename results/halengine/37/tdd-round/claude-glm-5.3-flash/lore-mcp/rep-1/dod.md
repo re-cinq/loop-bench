@@ -1,0 +1,37 @@
+# Definition of Done
+
+> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor
+> without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`).
+> Every tool declares a JSON Schema (`src/types/ai.ts`) that is handed verbatim to both
+> providers, but nothing validates what comes back from the model.
+
+**Strategy: `direct`** — `ToolRegistry.register`, `ToolRegistry.execute` and `createChatOrchestrator` already expose the exact entry points this ticket changes, so the acceptance tests call them directly today and fail because schema compilation and input validation are absent.
+
+## Done when these pass
+
+- [x] **rejects input missing a required property with a ToolResponse and never calls the executor** — `ToolRegistry.execute` validates `input` against `inputSchema`, returns a `ToolResponse` naming the missing required property, and does not invoke the executor.
+  `src/orchestration/tools/registry.acceptance.test.ts`
+
+- [x] **rejects a wrong-typed property naming the field and expected type without leaking the offending value to the result or logs** — `ToolRegistry.execute` rejects a property with the wrong JSON Schema type without calling the executor, names the failing field path and expected type in `result`, and omits the offending property value from both `result` and emitted log lines.
+  `src/orchestration/tools/registry.acceptance.test.ts`
+
+- [x] **throws at register time naming the tool when a static inputSchema cannot be compiled** — `ToolRegistry.register` compiles a static `ToolDefinition`'s `inputSchema` once at registration time and throws synchronously naming the tool when the schema is invalid.
+  `src/orchestration/tools/registry.acceptance.test.ts`
+
+- [x] **returns a schema rejection as a tool_result in the orchestrator loop so the model can correct the call on the next round** — `createChatOrchestrator` feeds a schema-rejected tool call's `ToolResponse.result` back to the provider as a `tool_result` without invoking the executor on the invalid call, allowing the model to retry with valid arguments and complete the turn.
+  `src/orchestration/tools/registry.acceptance.test.ts`
+
+## Facets
+
+- [x] Add `ajv` to `dependencies` in `package.json` and `package-lock.json` (`strict: false`, `validateFormats: false`, no coercion, no defaults, no injected `additionalProperties: false`) and bump the package version `MINOR`.
+- [x] Compile static `ToolDefinition.inputSchema` at `ToolRegistry.register` time (throwing an error naming the tool on invalid schemas) and cache compiled validators for function-valued `ToolDefinitionSource` schemas by schema object reference (`WeakMap`).
+- [x] Validate `input` in `ToolRegistry.execute` before invoking the executor, returning a `ToolResponse` (`{result}`) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at `specs/hal-engine-tool-input-validation/spec.md`.
+- [x] Add unit tests in `src/orchestration/tools/registry.test.ts` and `src/orchestration/chatOrchestrator.test.ts`, link the remaining statements in `specs/hal-engine-tool-input-validation/spec.md`, and update `example/weather-tool.ts`, `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `adrs/ADR-002-response-validation.md`, and `CHANGELOG.md`.
+  - `CHANGELOG.md` 0.4.0 entry was already written; this round added the pass-through, register-throw, compile-reuse-across-ten-calls and function-source-freshness unit tests in `registry.test.ts`, the `Unknown tool` pin, the orchestrator rejection/retry unit test in `chatOrchestrator.test.ts`, spec links for every statement (spec is now `Shipped`), the executor rewrite in `example/weather-tool.ts` (regenerated the `docs/adding-a-tool.md` doc block), the README/features, `.specify/spec.md` and `ADR-002-response-validation.md` updates, and repaired the red CI findings from the previous push (`registry.ts` ajv import not constructable under NodeNext plus a missing `cause`, the test-file duplication, `prefer-early-return`, `max-member-chain`). The ten-call test pins reuse by mutating the schema after `register` — this repo's ESM jest setup defines no `jest` global, so a literal compile-count spy was not available.
+- [x] Repair `package-lock.json` so `npm ci` can install the tree at all: the 4b0f86e rewrite dropped the `@emnapi/core`/`@emnapi/runtime` entries `@unrs/resolver-binding-wasm32-wasi` pins, which fails `npm ci` under npm 10 and 11 alike (CI's Install step reds before any check runs), and leaves any checkout that falls back to main's hoisted `ajv@6.15.0` typings compiling `registry.ts` against `dataPath`-era ajv 6 declarations — exactly the three typecheck errors CI reported. Lock regenerated with npm 10.9.4 (CI's npm) and verified with `npm ci --dry-run` under npm 10.9.4 and 11.6.2; `registry.ts`'s error and option typing made structural (`SchemaError`, `AJV_OPTIONS`) so it typechecks under either ajv major's bundled declarations, keeping the named `Ajv` import the locked ajv 8 typings require.
+- [x] **Tolerate either installed ajv major (6 or 8) in typings and runtime** — CI's environment compiles and tests against an install whose top-level `ajv` is 6.15.0 (main's hoisted eslint copy), and `registry.ts` only survived ajv 8. Fixed by importing `Ajv` as the default (constructable under ajv 6's `export =` typings, bound to the class at runtime under both majors) behind a local constructor shape, and by having `describeSchemaErrors` (now exported) read `instancePath ?? dataPath` so a rejection names the field path under either major's error object. Pinned by `renders ajv errors from either major shape, naming the field path and the constraint it failed` in `src/orchestration/tools/registry.test.ts`; verified via a paths-mapped `tsc` probe against the on-disk ajv 6 declarations (TS2693/TS2559 reproduce pre-fix, clean post-fix) plus the repo's own typecheck and the unit suite on ajv 8.20.0.
+  - Verification note, third round (corrected): the two earlier "phantom findings" notes this bullet replaced were wrong and must not be trusted. Ground truth re-established on 2026-11-07: the branch is live on the remote at `7aa3cb5` (`git ls-remote`), PR #84 was **never** merged (`origin/main` is still `8c3318e`, this branch's merge-base), and the brief's fingerprint is real, reproducible, and caused by an install state whose top-level `ajv` is **6.15.0** — under ajv 6's `export =` typings the named `Ajv` import is type-only, giving TS2693 at `new Ajv` (exactly `registry.ts(60,30)`), and its runtime errors carry `dataPath` (dot paths) with no `instancePath`, so the wrong-type rejection message lost the field name and the orchestration suites' assertion failures collapsed `src/orchestration/` coverage to ~7%. The providerFactory stack trace in the brief's log is jest's captured `console.warn` from the deprecated-SDK notice inside the VertexAI constructor and prints on a passing run. Fixed this round by making `registry.ts` ajv-major-agnostic (the last facet above); verified against both majors' typings with a paths-mapped `tsc` probe and against ajv 8.20.0 locally, where the suite is green.
+
+## Out of scope
+
+- Output validation and domain sanity checks (covered by ADR-002), MCP tool-server discovery and proxying (#42), per-tool authorization or `beforeToolCall` hooks (#40), retry/timeout/rate-limiting around tool execution, and concrete tool implementations.

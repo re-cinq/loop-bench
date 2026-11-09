@@ -1,0 +1,5 @@
+The acceptance test is wrong for ticket #144: it requires `list_sessions` / `session_list`, returns an empty list when the store cannot list, and enables listing without the ticket’s history opt-in. The ticket requires `list_conversations` / `conversation_list` and an `UNSUPPORTED` error in that case. It also asks the error log to include store error details, contrary to the ticket’s privacy requirement.
+
+I stopped without editing or running tests, as instructed for an incorrect acceptance test. Lore could not retrieve a CI verdict because it reported the branch was not found. The acceptance contract needs correction before a round can proceed.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test contradicts ticket #144's protocol, opt-in, and unsupported-store requirements."}}

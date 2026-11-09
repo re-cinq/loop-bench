@@ -1,0 +1,3 @@
+Pushed `b6505ea`: wired session-list handling and fixed the reported lint findings. All 86 scoped tests passed on rerun. Branch is current with `main`, clean, and fully pushed. CI must confirm lint and build.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Implemented missing session-list responses and repaired duplicated helpers, early-return structure, and boolean flag lint findings"}}

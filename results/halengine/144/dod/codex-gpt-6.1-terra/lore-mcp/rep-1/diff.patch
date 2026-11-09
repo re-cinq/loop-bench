@@ -1,0 +1,144 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..0bcee40
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,26 @@
++# Definition of Done
++
++> It does not give a **client** anything: the browser holding the socket cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — The validator and WebSocket server expose the real protocol boundary, and the in-memory session store supplies real conversation data.
++
++## Done when these pass
++
++- [ ] **validates conversation list requests and their composite cursors** — Validates the request and rejects malformed paging fields.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **delivers only the authenticated user’s summaries when history is enabled** — Sends only the connection user's metadata as wire summaries.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **refuses a conversation list when history is disabled** — Defaults to refusing disclosure with UNSUPPORTED.
++      `src/transport/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add the additive wire types and validate the request and composite cursor.
++- [ ] Wire the authenticated user's list through the server, including paging, opt-in, unsupported stores and safe store failure handling.
++- [ ] Answer lists outside the session lock and preserve the existing resume and replay path.
++- [ ] Document the protocol, retention, configuration, and release changes described in the ticket.
++- [ ] Cover remaining error, paging, concurrency and reconnect cases with focused tests.
++
++## Out of scope
++
++- Titles, previews, deletion, cross-user lists, server-side paging state and live tab synchronization.
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..6fdfa8b 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -655,3 +655,11 @@ After 5 failed attempts, the client MUST stop reconnecting and report a disconne
+ | Message validation       | `src/transport/ws/validation.ts`                  |
+ | Message handling         | `src/transport/ws/messageHandler.ts`              |
+ | Connection handler       | `src/transport/ws/connectionHandler.ts`           |
++
++## Conversation lists
++
++A `list_conversations` request accepts an optional integer `limit` from 1 to 200 and an optional `before` cursor containing a parseable ISO `updatedAt` and a `sessionId`; malformed fields are rejected, and unrelated fields are ignored ([validated by: validates conversation list requests and their composite cursors](../../src/transport/conversationList.acceptance.test.ts#L11)).
++
++When history is enabled, the server answers a request with one `conversation_list` containing only the authenticated connection user's summaries, with ISO timestamps and no conversation content; it never trusts a user id in the frame ([validated by: delivers only the authenticated user’s summaries when history is enabled](../../src/transport/conversationList.acceptance.test.ts#L72)).
++
++When history is disabled, the server answers a list request with an `UNSUPPORTED` error ([validated by: refuses a conversation list when history is disabled](../../src/transport/conversationList.acceptance.test.ts#L87)).
+diff --git a/src/transport/conversationList.acceptance.test.ts b/src/transport/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..425b120
+--- /dev/null
++++ b/src/transport/conversationList.acceptance.test.ts
+@@ -0,0 +1,90 @@
++import type {AddressInfo} from 'node:net';
++import type {Express} from 'express';
++import {WebSocket} from 'ws';
++import {createServer} from './createServer.js';
++import {HAL_WS_SUBPROTOCOL} from './ws/subprotocol.js';
++import {validateMessage} from './ws/validation.js';
++import {answeringOrchestrator} from './wsTestSupport.js';
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++
++// specs/hal-engine-websocket-protocol/spec.md#conversation-list-validation
++it('validates conversation list requests and their composite cursors', () => {
++  expect(validateMessage({type: 'list_conversations'})).toEqual({valid: true, data: {type: 'list_conversations'}});
++  for (const limit of [0, 201, 1.5, '10']) {
++    expect(validateMessage({type: 'list_conversations', limit})).toEqual({
++      valid: false,
++      error: expect.stringMatching(/limit/i),
++    });
++  }
++  for (const before of [
++    'not a date',
++    {updatedAt: 'bad', sessionId: 'a'},
++    {updatedAt: '2026-01-01T00:00:00.000Z'},
++    {sessionId: 'a'},
++  ]) {
++    expect(validateMessage({type: 'list_conversations', before})).toEqual({
++      valid: false,
++      error: expect.stringMatching(/before/i),
++    });
++  }
++  const before = {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 'a'};
++  expect(validateMessage({type: 'list_conversations', limit: 1, before, userId: 'other'})).toEqual({
++    valid: true,
++    data: {type: 'list_conversations', limit: 1, before},
++  });
++});
++
++async function request(history: boolean, payload: object): Promise<Array<Record<string, unknown>>> {
++  const store = new InMemorySessionStore();
++  store.create('owned', 'alice');
++  store.create('private', 'bob');
++  const options = {
++    app: (() => undefined) as unknown as Express,
++    wsAuth: async () => ({id: 'alice'}),
++    sessionStore: store,
++    orchestrator: answeringOrchestrator,
++    history: {enabled: history},
++  };
++  const server = createServer(options);
++  await server.start(0);
++  const {port} = server.server.address() as AddressInfo;
++  const client = new WebSocket(`ws://127.0.0.1:${port}/hal/ws`, [HAL_WS_SUBPROTOCOL, 'token']);
++  try {
++    return await new Promise((resolve, reject) => {
++      const frames: Array<Record<string, unknown>> = [];
++      client.on('error', reject);
++      client.on('message', raw => {
++        const frame = JSON.parse(String(raw)) as Record<string, unknown>;
++        if (frame.type === 'connected') {
++          client.send(JSON.stringify(payload));
++          client.send(JSON.stringify({type: 'ping', timestamp: 1}));
++        } else if (frame.type === 'pong') resolve(frames);
++        else frames.push(frame);
++      });
++    });
++  } finally {
++    client.terminate();
++    await server.stop();
++  }
++}
++
++// specs/hal-engine-websocket-protocol/spec.md#conversation-list-delivery
++it('delivers only the authenticated user’s summaries when history is enabled', async () => {
++  const frames = await request(true, {type: 'list_conversations', userId: 'bob'});
++  expect(frames).toEqual([{type: 'conversation_list', conversations: expect.any(Array)}]);
++  const rows = frames[0].conversations as Array<Record<string, unknown>>;
++  expect(rows).toHaveLength(2);
++  expect(rows.map(row => row.sessionId)).toContain('owned');
++  expect(rows.map(row => row.sessionId)).not.toContain('private');
++  for (const row of rows) {
++    expect(Object.keys(row).sort()).toEqual(['createdAt', 'entryCount', 'sessionId', 'updatedAt']);
++    expect(new Date(row.createdAt as string).toISOString()).toBe(row.createdAt);
++    expect(new Date(row.updatedAt as string).toISOString()).toBe(row.updatedAt);
++  }
++});
++
++// specs/hal-engine-websocket-protocol/spec.md#conversation-list-opt-in
++it('refuses a conversation list when history is disabled', async () => {
++  const frames = await request(false, {type: 'list_conversations'});
++  expect(frames).toEqual([{type: 'error', code: 'UNSUPPORTED', message: expect.any(String)}]);
++});

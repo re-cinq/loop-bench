@@ -1,0 +1,638 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..4aafb7c
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,91 @@
++# Definition of Done
++
++> #143 gives a consumer `store.listFor(userId)`. It does not give a **client** anything: the browser
++> holding the socket cannot reach the store, so every consumer that wants a history sidebar has to
++> stand up its own authenticated HTTP route over the same data the engine already authenticated on
++> the upgrade.
++
++**Strategy: `direct`** — the seam exists: `createServer` upgrades real sockets and #143's shipped
++`InMemorySessionStore.listFor` already answers, so every test drives a real WebSocket client against
++a real engine and fails today on the behaviour itself — each `list_conversations` frame is answered
++`INVALID_MESSAGE` as an unknown type — not on a missing seam. Six tests, because the ticket carries
++six distinct wire behaviours (the list and its paging, the authorisation rule, the three refusal
++paths, the lock ordering, static validation, and the row-to-resume loop); each bundles its whole
++scenario into one `expect`, per the repo's `max-expects` rule.
++
++## Done when these pass
++
++- [ ] **answers list_conversations with the list of the user on the connection, newest first, and
++      pages it with limit and before** — with `history: {enabled: true}`, the frame is answered by
++      exactly one `conversation_list` and no `stream_end`, rows newest first and headed by the
++      connection's own conversation, each row the store's summary with its two times as ISO strings
++      and no other fields, and `limit` and `before` reach `listFor` as the frame sent them, the
++      cursor read off the client's own first row
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **answers a frame naming another user with the list of the user on the connection, and asks
++      the store for that user** — a frame carrying `userId: '<another user>'` is answered with the
++      connecting user's own conversations only, and the recorded `listFor` argument is the
++      connection's user id, never the frame's
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **answers a history that is off, a store that cannot list, and a store that fails with one
++      error frame and never an empty list** — `history` absent and a store implementing no `listFor`
++      both get exactly one `error` coded `UNSUPPORTED` and no `conversation_list`; a `listFor` that
++      rejects gets one `SERVER_ERROR` whose message carries no store detail and no user content,
++      with the socket still answering and the failure logged with the session id
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **answers list_conversations while a turn on the same session is still streaming, before that
++      turn ends** — a history request is answered off the per-session lock, not queued behind the
++      streaming turn's `stream_end`
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **validates the frame whether or not history is on, refusing a bad limit or before with the
++      field named** — `limit` of 0, 201, 1.5 or `'10'`, a `before` that is not the composite cursor,
++      and a cursor with one half alone are each answered `INVALID_MESSAGE` naming the field, with
++      history on; with history off the same malformed frame still reads `INVALID_MESSAGE` rather
++      than `UNSUPPORTED`, because validation is static and the handler is what refuses
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++- [ ] **rejoins a conversation by an id taken from a list row, through the existing resume path** —
++      a client that takes a row's id from a `conversation_list` and reconnects with
++      `?sessionId=<id>` receives `resumed: true`, the entry count and the conversation's replay,
++      with no new transport code
++  `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++Smallest first; a round ticks the box it closed.
++
++- [ ] `src/types/messages.ts`, additive only: `ListConversationsMessage`, `ConversationListMessage`,
++  `ConversationCursor`, `ConversationSummary` and their two union members; no existing line moves
++- [ ] `src/types/session.ts`: `ErrorCodes.UNSUPPORTED` and the exported `StoreCannotList`, additive;
++  a store throwing `StoreCannotList` is answered `UNSUPPORTED` rather than `SERVER_ERROR` —
++  unit-tested beside the class, which the acceptance test cannot construct before it exists
++- [ ] `src/transport/ws/validation.ts`: the `list_conversations` case — `limit` an integer 1–200,
++  `before` a `{updatedAt, sessionId}` cursor of ISO strings, one half alone refused
++- [ ] `transport.history` (default off) in `HalEngineConfig` and `createServer`'s options, threaded
++  like `resume`; the engine warns at startup when history is on and resume is not
++- [ ] `src/transport/ws/messageHandler.ts`: answer `list_conversations` on the non-locked path
++  beside `ping`, the user id from `ws.userId`, `{limit, before}` passed to `listFor`, summaries as
++  ISO wire rows, the two refusal paths, and the failure logged with the session id and no user
++  content
++- [ ] The round's own unit tests beside the new code (validation, handler, config), run on their own
++- [ ] GDPR prose: the protocol spec's authorisation rule and no-content statements, and the
++  retention note mirrored on the new options type, pointing at re-cinq/HALEngine#41
++- [ ] `docs/getting-started.md` changed in `example/full-config.ts` and regenerated with
++  `npm run docs:fix`; a `CHANGELOG.md` entry under `## [Unreleased]`; MINOR version bump
++- [ ] `npm run verify` green, coverage floors for the touched groups held or risen, and the
++  protocol spec's new statements all cited with `Status` matching
++
++## Out of scope
++
++- A preview or title on the summaries (its own issue)
++- Deleting a conversation from the client — an erasure primitive on the wire needs its own
++  authorisation decision
++- Paging state held server-side; the client pages with `before`
++- An operator view of another user's conversations
++- Live sync between open tabs (#124)
++- A REST route over the same data — rejected by the ticket's own decision: the WebSocket is the
++  surface that is already authenticated
+diff --git a/specs/hal-engine-conversation-list/spec.md b/specs/hal-engine-conversation-list/spec.md
+index c9ee424..eb51192 100644
+--- a/specs/hal-engine-conversation-list/spec.md
++++ b/specs/hal-engine-conversation-list/spec.md
+@@ -68,3 +68,8 @@ Resume gets a client back into one conversation: the id it names, or the user's
+ ## When the store cannot answer
+ 
+ - A store whose collection fails rejects rather than answering a partial or empty list: what to show a user who may have conversations is the caller's decision, and an empty history is not a safe guess ([validated by: rejects rather than answering a partial list when the collection fails](../../src/infrastructure/stores/mongo/mongoConversationList.test.ts#L225)).
++
++## Over the WebSocket
++
++- The transport answers a client's `list_conversations` with one `conversation_list` of the asking user's own summaries, newest activity first, each row carrying the summary's four fields with its two times as ISO strings and nothing else ([validated by: answers list_conversations with the list of the user on the connection, newest first, and pages it with limit and before](../../src/transport/ws/conversationList.acceptance.test.ts#L192)).
++- A row reopens its conversation through the resume path that already exists: a client taking an id off a `conversation_list` row and reconnecting with `?sessionId=<id>` is answered `resumed: true` and the conversation's replay ([validated by: rejoins a conversation by an id taken from a list row, through the existing resume path](../../src/transport/ws/conversationList.acceptance.test.ts#L392)).
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..7c8fd39 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -160,6 +160,31 @@ Application-level heartbeat. The server MUST respond with a `pong` message echoi
+ | `type`      | string | Yes      | `"ping"`                          |
+ | `timestamp` | number | Yes      | Client timestamp in milliseconds  |
+ 
++### 4.3 list_conversations
++
++Asks for the authenticated user's own conversations, so a client can offer a history sidebar without standing up a second authenticated route over the same data. The feature is the deployer's opt-in: `transport.history`, default off, set beside `resume` in the engine config.
++
++```json
++{
++  "type": "list_conversations",
++  "limit": 50,
++  "before": { "updatedAt": "2026-03-01T12:00:00.000Z", "sessionId": "<uuid>" }
++}
++```
++
++| Field    | Type   | Required | Description                                                                    |
++| -------- | ------ | -------- | ------------------------------------------------------------------------------ |
++| `type`   | string | Yes      | `"list_conversations"`                                                         |
++| `limit`  | number | No       | At most this many rows, an integer from 1 to 200                                |
++| `before` | object | No       | The cursor of the last row seen: `updatedAt` and `sessionId`, both ISO strings   |
++
++Constraints:
++
++- The list is always the connection's own: the user id is taken from the connection, never from the frame, and a frame carrying an extra `userId` is answered with the connecting user's own list ([validated by: answers a frame naming another user with the list of the user on the connection, and asks the store for that user](../../src/transport/ws/conversationList.acceptance.test.ts#L239)).
++- The frame is valid whatever the deployment's `transport.history`, since validation is static and the handler is what refuses it: a `limit` that is not an integer from 1 to 200, a `before` that is not the `{updatedAt, sessionId}` cursor the store pages by, and a cursor carrying one half alone, are each `INVALID_MESSAGE` naming the field ([validated by: validates the frame whether or not history is on, refusing a bad limit or before with the field named](../../src/transport/ws/conversationList.acceptance.test.ts#L347)).
++- A `list_conversations` is answered at once, off the per-session lock: a history request is not a turn and must not queue behind a streaming answer ([validated by: answers list_conversations while a turn on the same session is still streaming, before that turn ends](../../src/transport/ws/conversationList.acceptance.test.ts#L302)).
++- When the answer cannot be given, the reply is one `error` frame and never a `conversation_list`: with `transport.history` off, against a store implementing no `listFor`, and when `listFor` fails ([validated by: answers a history that is off, a store that cannot list, and a store that fails with one error frame and never an empty list](../../src/transport/ws/conversationList.acceptance.test.ts#L261)).
++
+ ## 5. Server-to-Client Messages
+ 
+ ### 5.1 connected
+@@ -312,12 +337,14 @@ Defined error codes:
+ | `INVALID_FORMAT`  | Message body is not valid JSON                                    |
+ | `RATE_LIMITED`    | AI provider returned a rate limit error                           |
+ | `SERVER_ERROR`    | Unexpected server error during message processing                 |
++| `UNSUPPORTED`     | The message is valid but this deployment does not serve it        |
+ 
+ Semantics:
+ 
+ - A message the server cannot parse into a known type is answered with `INVALID_MESSAGE`, and no message stream is started for it ([validated by: rejects an unparseable message and never starts a stream](../../src/transport/ws/messageHandler.test.ts#L71)).
+ - A rate limit reported by the AI provider is surfaced as `RATE_LIMITED`, which tells the client the same request is worth retrying ([validated by: tells the client to retry when the provider is rate limited](../../src/transport/ws/messageHandler.test.ts#L311)).
+ - Any other failure raised while processing a message is reported as `SERVER_ERROR` ([validated by: reports any other failure as a server error](../../src/transport/ws/messageHandler.test.ts#L320)).
++- A `list_conversations` this deployment does not serve - `transport.history` off, or a store implementing no `listFor` - is answered `UNSUPPORTED` rather than an empty list, so a history view never renders silence as data ([validated by: answers a history that is off, a store that cannot list, and a store that fails with one error frame and never an empty list](../../src/transport/ws/conversationList.acceptance.test.ts#L261)).
+ 
+ ### 5.7 pong
+ 
+@@ -357,6 +384,36 @@ Semantics:
+ - The client SHOULD use this message to clear any "processing" or "loading" indicators.
+ - The client MUST treat a run as complete only at `stream_end` or when the socket closes. Unparseable JSON is the one frame answered with `INVALID_FORMAT` and no `stream_end`, because the server cannot tell what it was meant to be; for it the client falls back on the socket closing.
+ 
++### 5.9 conversation_list
++
++The answer to a `list_conversations` message (Section 4.3). Never sent unsolicited: a client asks, and one answer arrives per ask.
++
++```json
++{
++  "type": "conversation_list",
++  "conversations": [
++    {
++      "sessionId": "<uuid>",
++      "createdAt": "2026-03-01T12:00:00.000Z",
++      "updatedAt": "2026-03-01T12:05:00.000Z",
++      "entryCount": 7
++    }
++  ]
++}
++```
++
++| Field           | Type   | Description                                       |
++| --------------- | ------ | ------------------------------------------------- |
++| `type`          | string | `"conversation_list"`                             |
++| `conversations` | array  | The user's conversations, newest activity first   |
++
++Semantics:
++
++- Each row is the store's summary of one conversation - its id, its creation and activity times as ISO strings, and its entry count - and nothing else: one authenticated user's own conversation metadata, and no conversation content ([validated by: answers list_conversations with the list of the user on the connection, newest first, and pages it with limit and before](../../src/transport/ws/conversationList.acceptance.test.ts#L192)).
++- The conversation the connection is in is listed like any other, so a fresh connect sees a row of its own holding no entries.
++- A client pages by sending `before` with the cursor of the last row it saw, and the rows it named - `limit` and `before` - reach the store as the frame sent them ([validated by: answers list_conversations with the list of the user on the connection, newest first, and pages it with limit and before](../../src/transport/ws/conversationList.acceptance.test.ts#L192)).
++- Picking a conversation needs no new frame: the client reconnects with `?sessionId=<id>`, which the resume path answers with `resumed: true` and the conversation's replay ([validated by: rejoins a conversation by an id taken from a list row, through the existing resume path](../../src/transport/ws/conversationList.acceptance.test.ts#L392)).
++
+ ## 6. SessionEntry Objects
+ 
+ A SessionEntry represents a single piece of content in the conversation. Every entry has a `role` field that determines its shape. The `role` acts as a discriminant for the union type.
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..9ea4bac
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,434 @@
++import type {AddressInfo} from 'node:net';
++import {WebSocket} from 'ws';
++import type {Express} from 'express';
++import {createServer} from '../createServer.js';
++import type {HalServer, HalServerOptions} from '../createServer.js';
++import {HAL_WS_SUBPROTOCOL} from './subprotocol.js';
++import {deferred} from '../wsTestSupport.js';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import {createUserEntry} from '../../orchestration/entryFactories.js';
++import {appendEntry} from '../../orchestration/entryMutations.js';
++import type {ChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import type {MessageChunk} from '../../types/ai.js';
++import type {SessionEntry} from '../../types/session.js';
++import type {SessionListOptions, SessionStore, SessionSummary} from '../../types/sessionStore.js';
++import {setLogger} from '../../shared/logger.js';
++
++// A conversation list over the WebSocket, end to end: real upgrades, the shipped in-memory store, and the wire frames.
++
++interface ConversationSummary {
++  sessionId: string;
++  createdAt: string;
++  updatedAt: string;
++  entryCount: number;
++}
++
++interface WireFrame {
++  type: string;
++  code?: string;
++  message?: string;
++  sessionId?: string;
++  resumed?: boolean;
++  entryCount?: number;
++  index?: number;
++  entry?: SessionEntry;
++  conversations?: ConversationSummary[];
++}
++
++const LIMIT_MS = 2000;
++const engines: HalServer[] = [];
++const sockets: WebSocket[] = [];
++
++// Silenced for the whole file, except its error lines, which two assertions read back; teardown stays silent too.
++const errors: Array<Record<string, unknown>> = [];
++
++beforeAll(() => {
++  setLogger({
++    debug: () => undefined,
++    info: () => undefined,
++    warn: () => undefined,
++    error: (category, message, fields) => void errors.push({category, message, ...fields}),
++  });
++});
++
++beforeEach(() => {
++  errors.length = 0;
++});
++
++afterAll(() => setLogger());
++
++const eventually = async (check: () => boolean): Promise<void> => {
++  for (let attempt = 0; attempt < 50 && !check(); attempt++) await new Promise(resolve => setTimeout(resolve, 10));
++};
++
++const settle = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
++
++const answering: ChatOrchestrator = {
++  processMessage: async () => 'hi',
++  async *processMessageStream(): AsyncGenerator<MessageChunk> {
++    yield {type: 'text', text: 'hi'};
++    yield {type: 'stop', stopReason: 'end_turn'};
++  },
++};
++
++const USER_BY_TOKEN: Record<string, string> = {t1: 'user-1', t2: 'user-2'};
++
++const userOf = (protocols: string | undefined): string => {
++  const offered = protocols?.split(',').map(value => value.trim()) ?? [];
++  const token = offered.find(value => value.length > 0 && value !== HAL_WS_SUBPROTOCOL) ?? '';
++  return USER_BY_TOKEN[token] ?? 'user-1';
++};
++
++// The transport history switch this issue adds, typed here until the engine ships it.
++type HistoryOptions = HalServerOptions & {history?: {enabled: boolean}};
++
++const startEngine = async (options: {
++  store: SessionStore;
++  history?: {enabled: boolean};
++  resume?: {enabled: boolean};
++  orchestrator?: ChatOrchestrator;
++}): Promise<string> => {
++  const hal = createServer({
++    app: (() => undefined) as unknown as Express,
++    wsAuth: async request => ({id: userOf(request.headers['sec-websocket-protocol'])}),
++    orchestrator: options.orchestrator ?? answering,
++    sessionStore: options.store,
++    resume: options.resume,
++    history: options.history,
++  } as HistoryOptions);
++  await hal.start(0);
++  engines.push(hal);
++  const {port} = hal.server.address() as AddressInfo;
++  return `ws://127.0.0.1:${port}/hal/ws`;
++};
++
++const connect = (url: string, token = 't1'): WebSocket => {
++  const client = new WebSocket(url, [HAL_WS_SUBPROTOCOL, token]);
++  sockets.push(client);
++  return client;
++};
++
++const send = (client: WebSocket, frame: unknown): void => client.send(JSON.stringify(frame));
++
++// Records every frame the socket receives, and waits for the next one matching, failing with what did arrive.
++const listener = (client: WebSocket) => {
++  const frames: WireFrame[] = [];
++  client.on('message', raw => frames.push(JSON.parse(String(raw)) as WireFrame));
++  return {
++    frames,
++    next: (label: string, matches: (frame: WireFrame) => boolean, from = 0) =>
++      new Promise<{frame: WireFrame; after: number}>((resolve, reject) => {
++        const find = () => {
++          for (let at = from; at < frames.length; at++) if (matches(frames[at])) return at;
++          return -1;
++        };
++        const found = find();
++        if (found >= 0) {
++          resolve({frame: frames[found], after: found + 1});
++          return;
++        }
++        const timer = setTimeout(() => {
++          clearInterval(poll);
++          const seen = frames.map(frame => frame.type).join(', ') || 'nothing';
++          reject(new Error(`no ${label} arrived within ${LIMIT_MS}ms; the socket received: ${seen}`));
++        }, LIMIT_MS);
++        const poll = setInterval(() => {
++          const at = find();
++          if (at >= 0) {
++            clearTimeout(timer);
++            clearInterval(poll);
++            resolve({frame: frames[at], after: at + 1});
++          }
++        }, 5);
++      }),
++  };
++};
++
++const openConnection = async (url: string, token = 't1') => {
++  const client = connect(url, token);
++  const wire = listener(client);
++  const connected = await wire.next('the connected frame', frame => frame.type === 'connected');
++  return {client, wire, sessionId: connected.frame.sessionId ?? '', connected: connected.frame};
++};
++
++// Delegates to the store's own listFor, so the call arguments are recorded and the real listing still answers.
++const recordListFor = (
++  store: InMemorySessionStore
++): Array<{userId: string | number; options: SessionListOptions | undefined}> => {
++  const real = store.listFor.bind(store);
++  const calls: Array<{userId: string | number; options: SessionListOptions | undefined}> = [];
++  store.listFor = (userId, options) => {
++    calls.push({userId, options});
++    return real(userId, options);
++  };
++  return calls;
++};
++
++const asIso = (summary: SessionSummary) => ({
++  sessionId: summary.sessionId,
++  entryCount: summary.entryCount,
++  createdAt: summary.createdAt.toISOString(),
++  updatedAt: summary.updatedAt.toISOString(),
++});
++
++const errorAnswer = async (base: string): Promise<{frames: string[]; code: string}> => {
++  const {client, wire} = await openConnection(base);
++  send(client, {type: 'list_conversations'});
++  const answered = await wire.next('an error frame', frame => frame.type === 'error');
++  await settle(100);
++  return {frames: wire.frames.map(frame => frame.type), code: answered.frame.code ?? ''};
++};
++
++afterEach(async () => {
++  for (const client of sockets.splice(0)) client.terminate();
++  for (const hal of engines.splice(0)) {
++    const {wss} = hal;
++    await eventually(() => wss.clients.size === 0);
++    await hal.stop();
++  }
++});
++
++describe('a conversation list over the WebSocket', () => {
++  it('answers list_conversations with the list of the user on the connection, newest first, and pages it with limit and before', async () => {
++    const store = new InMemorySessionStore();
++    const listForCalls = recordListFor(store);
++    store.create('conv-old', 'user-1');
++    await settle(15);
++    store.create('conv-mid', 'user-1');
++    const base = await startEngine({store, history: {enabled: true}});
++    const {client, wire, sessionId} = await openConnection(base);
++
++    send(client, {type: 'list_conversations'});
++    const listed = await wire.next('a conversation_list frame', frame => frame.type === 'conversation_list');
++    const [head] = listed.frame.conversations ?? [];
++    send(client, {
++      type: 'list_conversations',
++      limit: 1,
++      before: {updatedAt: head?.updatedAt, sessionId: head?.sessionId},
++    });
++    const page = await wire.next(
++      'the page that follows the cursor',
++      frame => frame.type === 'conversation_list' && frame !== listed.frame
++    );
++    await settle(200);
++
++    expect({
++      listed: (listed.frame.conversations ?? []).map(row => row.sessionId),
++      firstPage: listed.frame.conversations,
++      paged: (page.frame.conversations ?? []).map(row => row.sessionId),
++      listFrames: wire.frames.filter(frame => frame.type === 'conversation_list').length,
++      streamEnds: wire.frames.filter(frame => frame.type === 'stream_end').length,
++      errors: wire.frames.filter(frame => frame.type === 'error').map(frame => frame.code),
++      bareCall: listForCalls[0],
++      pagedCall: listForCalls[1],
++    }).toEqual({
++      listed: [sessionId, 'conv-mid', 'conv-old'],
++      firstPage: store.listFor('user-1').map(asIso),
++      paged: ['conv-mid'],
++      listFrames: 2,
++      streamEnds: 0,
++      errors: [],
++      bareCall: {userId: 'user-1', options: {limit: undefined, before: undefined}},
++      pagedCall: {
++        userId: 'user-1',
++        options: {limit: 1, before: {updatedAt: head?.updatedAt, sessionId: head?.sessionId}},
++      },
++    });
++  });
++
++  it('answers a frame naming another user with the list of the user on the connection, and asks the store for that user', async () => {
++    const store = new InMemorySessionStore();
++    const listForCalls = recordListFor(store);
++    store.create('conv-of-user-2', 'user-2');
++    await settle(15);
++    store.create('conv-of-user-1', 'user-1');
++    const base = await startEngine({store, history: {enabled: true}});
++    const {client, wire, sessionId} = await openConnection(base);
++
++    send(client, {type: 'list_conversations', userId: 'user-2'});
++    const listed = await wire.next('a conversation_list frame', frame => frame.type === 'conversation_list');
++    await settle(100);
++
++    expect({
++      askedFor: listForCalls.map(call => call.userId),
++      rows: (listed.frame.conversations ?? []).map(row => row.sessionId),
++    }).toEqual({
++      askedFor: ['user-1'],
++      rows: [sessionId, 'conv-of-user-1'],
++    });
++  });
++
++  it('answers a history that is off, a store that cannot list, and a store that fails with one error frame and never an empty list', async () => {
++    const disabled = await errorAnswer(await startEngine({store: new InMemorySessionStore()}));
++
++    const bare: SessionStore = new InMemorySessionStore();
++    bare.listFor = undefined;
++    const cannotList = await errorAnswer(await startEngine({store: bare, history: {enabled: true}}));
++
++    const failing = new InMemorySessionStore();
++    const held = failing.create('conv-private', 'user-1');
++    appendEntry(held, createUserEntry('very-private-note'));
++    failing.listFor = () => Promise.reject(new Error('list failed: conversations collection unreachable'));
++    const failingBase = await startEngine({store: failing, history: {enabled: true}});
++    const connection = await openConnection(failingBase);
++    send(connection.client, {type: 'list_conversations'});
++    const failed = await connection.wire.next('an error frame', frame => frame.type === 'error');
++    send(connection.client, {type: 'ping', timestamp: 4321});
++    const pong = await connection.wire.next('a pong frame', frame => frame.type === 'pong');
++    await settle(100);
++
++    expect({
++      disabled,
++      cannotList,
++      failedCode: failed.frame.code,
++      contentLeaked:
++        String(failed.frame.message).includes('very-private-note') ||
++        String(failed.frame.message).includes('conversations collection') ||
++        JSON.stringify(errors).includes('very-private-note'),
++      loggedWithSessionId: errors.some(line => String(line.sessionId) === connection.sessionId),
++      framesAfterFailure: connection.wire.frames.map(frame => frame.type),
++      pongEchoed: pong.frame.timestamp,
++    }).toEqual({
++      disabled: {frames: ['connected', 'error'], code: 'UNSUPPORTED'},
++      cannotList: {frames: ['connected', 'error'], code: 'UNSUPPORTED'},
++      failedCode: 'SERVER_ERROR',
++      contentLeaked: false,
++      loggedWithSessionId: true,
++      framesAfterFailure: ['connected', 'error', 'pong'],
++      pongEchoed: 4321,
++    });
++  });
++
++  it('answers list_conversations while a turn on the same session is still streaming, before that turn ends', async () => {
++    const gate = deferred();
++    try {
++      const streaming: ChatOrchestrator = {
++        processMessage: async () => 'late',
++        async *processMessageStream(): AsyncGenerator<MessageChunk> {
++          yield {type: 'text', text: 'half'};
++          await gate.until;
++          yield {type: 'stop', stopReason: 'end_turn'};
++        },
++      };
++      const base = await startEngine({
++        store: new InMemorySessionStore(),
++        history: {enabled: true},
++        orchestrator: streaming,
++      });
++      const {client, wire, sessionId} = await openConnection(base);
++
++      send(client, {type: 'user_message', content: 'a long question'});
++      await wire.next('the turn to start', frame => frame.type === 'entry_upsert');
++      send(client, {type: 'list_conversations'});
++      const listed = await wire.next(
++        'a conversation_list frame while the turn is still streaming',
++        frame => frame.type === 'conversation_list'
++      );
++      const turnStillStreaming = !wire.frames.some(frame => frame.type === 'stream_end');
++      gate.release();
++      await wire.next('the turn to end', frame => frame.type === 'stream_end');
++
++      expect({
++        answered: (listed.frame.conversations ?? []).map(row => row.sessionId),
++        answeredBeforeTurnEnd: turnStillStreaming,
++        order: wire.frames
++          .map(frame => frame.type)
++          .filter(type => type === 'conversation_list' || type === 'stream_end' || type === 'error'),
++      }).toEqual({
++        answered: [sessionId],
++        answeredBeforeTurnEnd: true,
++        order: ['conversation_list', 'stream_end'],
++      });
++    } finally {
++      gate.release();
++    }
++  });
++
++  it('validates the frame whether or not history is on, refusing a bad limit or before with the field named', async () => {
++    const base = await startEngine({store: new InMemorySessionStore(), history: {enabled: true}});
++    const {client, wire} = await openConnection(base);
++    const cases: Array<[Record<string, unknown>, string]> = [
++      [{type: 'list_conversations', limit: 0}, 'limit'],
++      [{type: 'list_conversations', limit: 201}, 'limit'],
++      [{type: 'list_conversations', limit: 1.5}, 'limit'],
++      [{type: 'list_conversations', limit: '10'}, 'limit'],
++      [{type: 'list_conversations', before: 'not a date'}, 'before'],
++      [{type: 'list_conversations', before: {updatedAt: '2026-03-01T00:00:00.000Z'}}, 'before|sessionId'],
++      [{type: 'list_conversations', before: {sessionId: 'conv-old'}}, 'before|updatedAt'],
++    ];
++    const refusals: Array<{code: string; named: boolean}> = [];
++    let cursor = 0;
++    for (const [frame, field] of cases) {
++      send(client, frame);
++      const answered = await wire.next(
++        `an error for ${JSON.stringify(frame)}`,
++        frame => frame.type === 'error',
++        cursor
++      );
++      cursor = answered.after;
++      refusals.push({code: answered.frame.code ?? '', named: new RegExp(field).test(String(answered.frame.message))});
++    }
++    await settle(100);
++
++    const offBase = await startEngine({store: new InMemorySessionStore()});
++    const off = await openConnection(offBase);
++    send(off.client, {type: 'list_conversations', limit: 0});
++    const offAnswered = await off.wire.next('an error with history off', frame => frame.type === 'error');
++    await settle(100);
++
++    expect({
++      refusals,
++      historyOnList: wire.frames.some(frame => frame.type === 'conversation_list'),
++      offCode: offAnswered.frame.code,
++      offNamed: /limit/.test(String(offAnswered.frame.message)),
++    }).toEqual({
++      refusals: Array.from({length: cases.length}, () => ({code: 'INVALID_MESSAGE', named: true})),
++      historyOnList: false,
++      offCode: 'INVALID_MESSAGE',
++      offNamed: true,
++    });
++  });
++
++  it('rejoins a conversation by an id taken from a list row, through the existing resume path', async () => {
++    const base = await startEngine({
++      store: new InMemorySessionStore(),
++      history: {enabled: true},
++      resume: {enabled: true},
++    });
++    const first = await openConnection(base);
++    send(first.client, {type: 'user_message', content: 'hello'});
++    await first.wire.next('the turn to finish', frame => frame.type === 'stream_end');
++
++    send(first.client, {type: 'list_conversations'});
++    const listed = await first.wire.next('a conversation_list frame', frame => frame.type === 'conversation_list');
++    const row = listed.frame.conversations?.[0]?.sessionId ?? '';
++
++    first.client.close();
++    const again = await openConnection(`${base}?sessionId=${row}`);
++    await again.wire.next(
++      'the replayed user entry',
++      frame => frame.type === 'entry_upsert' && frame.entry?.role === 'user'
++    );
++    await again.wire.next(
++      'the replayed assistant entry',
++      frame => frame.type === 'entry_upsert' && frame.entry?.role === 'assistant'
++    );
++    await settle(100);
++
++    expect({
++      rowFromList: row,
++      rejoined: again.sessionId,
++      resumed: again.connected.resumed,
++      entryCount: again.connected.entryCount,
++      replay: again.wire.frames.filter(frame => frame.type === 'entry_upsert').map(frame => frame.entry?.role),
++      reconnectErrors: again.wire.frames.filter(frame => frame.type === 'error').map(frame => frame.code),
++    }).toEqual({
++      rowFromList: first.sessionId,
++      rejoined: first.sessionId,
++      resumed: true,
++      entryCount: 2,
++      replay: ['user', 'assistant'],
++      reconnectErrors: [],
++    });
++  });
++});

@@ -1,0 +1,15 @@
+Delivered. Commit `d331cb3` pushed to `loop-bench/144`; `origin/main` merged (already up to date — main is this branch's base); working tree clean, branch even with upstream.
+
+## Round summary
+
+**The CI-named findings (all fixed):**
+1. **Typecheck** — `wsTestSupport.ts`'s module-level `servers` was `Array<{stop: () => Promise<void>}>` where `drainClientsAndServers` takes `HalServer[]`. Retyped `Array<HalServer>`.
+2. **Red test step** — traced to mechanism, not a code bug: the suites' engines called `listen(0)` on every interface, and macOS lets a wildcard bind succeed on a port a *specific-address* listener already holds (Node's default `SO_REUSEADDR`), so a client dial to `127.0.0.1:<port>` is delivered to the foreign listener — observed answering `404 not found` — and the test times out. lsof proved the foreign listeners are this pod's own long-lived processes (ports 56690 and 50477 held by Claude/harness binaries). Reproduced three ways (~1 in 15 solo runs of `sessionResume.test.ts`, worse under parallel load). Repair: `HalServer.start` gains an optional `host`, and every suite's engine binds `127.0.0.1` — which the kernel never hands out from under a specific listener. The `start(taken)` refusal tests in `createServer.test.ts` got the host too, or the same overlap would have suppressed their expected `EADDRINUSE`.
+3. **Bonus facet** — § 4.3's off-lock statement (spec.md:186) was pinned nowhere; added a unit test (`answers a list_sessions while a turn holds the lock…`, messageHandler.test.ts:912), cited on the statement, verified to fail when I temporarily routed dispatch through `lock.run` (reverted exactly; 56 passed after).
+4. Comment inserts shifted 35 spec anchors — repointed via `spec:names --fix`; all spec gates green (`check:spec-links`, `check:spec-status`, `repoint-spec-anchors --check origin/main` exit 0). dod.md ticks the repairs and records the § 5.9 error-path unit-coverage facet still owed.
+
+**Red-test accounting:** 0 red tests were regressions from this branch's code — CI's failing-test step was the environment collision class above (the acceptance tests themselves were already green). My one new test pins existing behaviour and was red only against the deliberate lock probe. Coverage floors verified held from ci-3's own lcov artifacts.
+
+**Named, not acted on (unrelated smells):** `config.test.ts` still starts engines on their configured ports wildcard-bound (`engine.start()`, lines 40/72/202) — that suite doesn't dial them so the collision can't bite there, but the bind would be consistent; and the acceptance file plus several suites carry local `startEngine` copies that could dedupe into `wsTestSupport`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI-named typecheck repair (wsTestSupport HalServer[]), loopback engine binds closing the red test class (HalServer.start host param), §4.3 off-lock unit pin cited on the spec","tdd_next":"§5.9 error-path coverage at unit level: no-listFor answers session_list [] and rejecting listFor answers one SERVER_ERROR frame, so messageHandler's catch and ?? [] branches stop hanging on the acceptance file"}}

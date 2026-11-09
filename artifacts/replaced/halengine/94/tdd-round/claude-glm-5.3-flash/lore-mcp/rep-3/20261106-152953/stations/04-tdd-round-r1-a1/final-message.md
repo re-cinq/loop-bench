@@ -1,0 +1,14 @@
+This round found the work already on the branch. The brief named two CI findings against `0517c02`; the pushed HEAD `6cc322b` fixes exactly those, and I verified each fix by reading — this pod must not run `tsc`/`eslint`, and the only test this ticket owns is the dod-listed acceptance test that belongs to CI, so the round ran no tests here.
+
+**The two findings, verified against source:**
+
+- **typecheck `chatOrchestrator.beforeSession.acceptance.test.ts(30,3)`** — `PromptBuilderConfig` is `{identity, domainContext?, responseGuidelines?, toolPreamble?}` (`src/infrastructure/builders/promptBuilder.ts:1`), and the test now constructs `new PromptBuilder({identity: 'You are HAL.'})`. The `createChatOrchestrator(provider, promptBuilder, undefined, {hooks})` call matches the declared signature. Fixed.
+- **eslint `40:3 re-lint/max-expects`** — the test now carries exactly one `expect`, a single `toEqual` over an observed object. The rule allows max 1. Nothing else in the file is at risk: `_`-prefixed unused args pass (`argsIgnorePattern: '^_'`, the same pattern as tests that pass CI), there are no comments, nothing nondeterministic, and `require-spec-link` is satisfied — the spec links `#L32`, which is the `it(` line inside the test's span. Fixed.
+
+**Ticket state on the branch (all confirmed, not assumed):** `beforeSession` sits inside the `try` (`src/orchestration/chatOrchestrator.ts:92`), the spec carries the new guarantee and the what-a-hook-can-assume statement with line links that still land (`chatOrchestrator.ts#L150` = the `instanceof Error` gate, `#L148` = the `afterModelResponse` call), the CHANGELOG migration note is in `[Unreleased]`, all three facets are ticked in `.lore/dod.md`, Prettier is clean on all five changed files, `origin/main` is an ancestor of HEAD (no drift, nothing to merge), and the working tree is clean with the branch not ahead of its upstream — `6cc322b` is pushed. No new facet emerged; I have nothing to commit, so nothing was committed this round.
+
+**Red tests:** 0 mine, 0 regressions — the verdict named no failing test run, only static checks on a test file this ticket wrote, already fixed and pushed. CI has not yet judged `6cc322b` as far as I can tell (the brief's verdict predates it), so the build decides next.
+
+**Unrelated smells noticed, not acted on:** (1) the one-expect rewrite weakened the rejection assertion from identity (`toBe(errorToThrow)`) to deep equality — Jest compares Errors by message under `toEqual`, so a distinct Error with the same message would also pass; the criterion "still reaches the caller as a rejection" is still validated, but identity is no longer pinned. (2) The two recorded out-of-scope flaws (the `instanceof Error` gate on `onError`; per-round usage accounting) remain as the spec records them, each with its own issue.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

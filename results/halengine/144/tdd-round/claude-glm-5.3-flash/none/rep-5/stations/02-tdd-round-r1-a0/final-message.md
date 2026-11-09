@@ -1,0 +1,15 @@
+Round pushed and verified in sync with `origin/loop-bench/144`.
+
+**What this round did:**
+
+- **Facet closed** (the previous round's "next"): threaded the session store into `createMessageHandler` and answered `list_sessions` beside `ping`, off the per-session lock — `session_list` with ISO-8601 dates, `limit`/`before` forwarded as sent, the user id taken from the connection (never the frame, which the validator strips), no-`listFor` answered as an empty list, a rejecting `listFor` logged on the `ws` category with the user id and answered `SERVER_ERROR`. Ticked as facets 3+4 in `.lore/dod.md`.
+- **TDD**: wrote two failing unit tests in `messageHandler.test.ts` (answer contract; answered while a turn is still streaming, before its `stream_end`), ran them red, implemented the least code, green. 94 tests across the six suites my edits touch pass locally; the dod.md acceptance file was not run here — CI is its judge.
+- **All 12 CI eslint findings fixed**: the three duplicated helper blocks between `sessionResume.test.ts` and `conversationList.acceptance.test.ts` moved into `wsTestSupport.ts` (`eventually`, shared teardown with the drain, `delegatingStore`); `prefer-early-return` in `askAfterConnect`; `validation.ts` switch → lookup table, nested if flattened into `readLimit`/`readCursor`, vague `data` locals renamed; `validation.test.ts`'s 3-expect test is now one expect, `data` → `expected`. Assertions in the acceptance file are byte-identical.
+- **CI's other two failures**: the red test (the acceptance criterion red on the missing handler — this round's implementation answers it) and `changelog` (entry added under `## [Unreleased]`, written for a package installer; the stale "nothing calls it yet" sentence in the `listFor` bullet amended).
+- **Spec anchors**: the repoint fixer re-anchored 107 links (an added import line shifted `messageHandler.test.ts`); the conversation-list spec, skipped by the fixer as branch-authored, was re-pointed by hand (L93/L134/L163 → L59/L100/L129). Fixer re-run is a no-op, 0 unresolved.
+- **Regressions**: 0 red tests of mine, 0 regressions — the four suites sharing the reworked `stopEngines` teardown all pass.
+- Branch merged its base (origin/main is this branch's merge-base, so no drift) and is pushed; working tree clean.
+
+Named, not acted on: `deferredRelease` in `sessionResume.test.ts` near-duplicates `wsTestSupport`'s `deferred` (lint doesn't flag it); the ticket's remaining criteria beyond this branch's dod bar (`transport.history` opt-in, `UNSUPPORTED`/`StoreCannotList`, GDPR spec text, docs regen, MINOR bump) stay open.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"thread sessionStore into createMessageHandler and answer list_sessions off the turn lock","tdd_next":"document list_sessions and session_list in the websocket-protocol and conversation-list specs (dod facet 5)"}}
