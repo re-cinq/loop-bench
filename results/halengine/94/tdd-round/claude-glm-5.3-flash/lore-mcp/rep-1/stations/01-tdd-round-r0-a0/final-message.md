@@ -1,0 +1,11 @@
+Round complete and pushed. Summary:
+
+**Facet closed** — *Move `beforeSession` inside the `try` block in `chatOrchestrator.ts`* (`src/orchestration/chatOrchestrator.ts:91`), the green bar for the committed red acceptance test from `962a4fc`. A throw from `beforeSession` now reaches the same `catch`/`finally` as any other turn failure: the caller still receives the original rejection, `onError` fires with it, and `afterSession` and the session `save` run through the usual `finally`. I closed the two accompanying facets of the same change: the spec now carries the guarantee under its own **"When beforeSession throws"** section — stating what a cleanup hook can assume (no tools run, no provider called, no assistant entry) and that it cannot tell "never started" from "finished" — leaving only the two genuinely out-of-scope properties under "Measured semantics"; and the CHANGELOG gained a `### Fixed` entry with a migration note for existing consumers. All three `dod.md` facets are ticked.
+
+**Tests run here: none.** The pod's Bash hook refused the acceptance test file — it is CI's to run — so this round went from the code, the committed failing test, and CI's verdict on the push. The repo's file-reading spec checkers (`check-spec-links`, `check-spec-anchor-names`, `check-spec-status`) all pass on the touched spec, and prettier is clean. No existing test was edited (criterion 4 holds), so I expect zero regressions; CI's count will confirm.
+
+**Branch state** — pushed as `2cbf106`; `origin/main` merged cleanly (no drift); `git status` reports the branch up to date with its upstream. `lore_get_ci_failures` returned "branch not found" (no CI report yet) and no round brief existed, so there were no findings to repair.
+
+**Out-of-scope smells noticed, not acted on** — both already recorded in the spec's out-of-scope section: the `instanceof Error` gate on `onError` (its own issue) and `afterModelResponse` receiving per-round rather than summed usage (HALEngine#93). Nothing new.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"move beforeSession inside the try so onError and afterSession fire, with spec and CHANGELOG updated","tdd_next":"acceptance green"}}

@@ -1,0 +1,15 @@
+The round is done and pushed. Summary:
+
+**What CI's red actually was.** The brief's log excerpt truncated before the failure summary and `lore_get_ci_failures` could not resolve this branch (404), so I read the verdict from where CI ran it: the ci-6 workspace at 67b241c holds the coverage output of the completed run. Parsed against `jest.config.js`'s ratchet, the `test` step's red is the **coverage floor on `global` functions — 184/205 = 89.76% vs the 89.89-no, 89.79% floor** — not a red test. Cross-checking ci-1…ci-6 shows the breach arrived with a8d317d (the per-socket answer-queue commit): its defensive `answer.catch(() => undefined)` at `src/transport/ws/messageHandler.ts:66` is a function expression no test ever reaches, because `wsErrorHandler` settles every outcome itself. The previous round fixed a8d317d's red *test*; the floor breach from the same commit remained.
+
+**The round's one facet.** One new test in `src/transport/ws/messageHandler.test.ts` — `answers the frame behind an answer whose send threw: a failed error delivery does not stall the queue`: a socket that throws the moment an error frame is written rejects the answer twice over (the action's `sendError` and the handler's own), and the ping queued behind it still answers `pong`. Green on the file (59/59); mutation-verified — removing the catch reddens it, since the queue inherits the rejection and no pong lands — then restored, tree clean. Stated as a sixth constraint of the protocol spec's § 4.3 with the trailing citation at `messageHandler.test.ts#L979`. `spec:names` (805 citations resolve by name) and `check:spec-links` (0 misplaced across 1927 statements) pass; no existing #Lnn link shifted (the test appends below every cited line; prettier reported the file unchanged). `.lore/dod.md` carries the ticked facet.
+
+**Tests run here:** the pinned file plus the branch-touched suites used to rule a red test in or out (config, createServer, sessionResume, handshake, malformedUpgrade, validation, toolDeadline, messageHandler — all green). No acceptance test was run; CI judges those.
+
+**Red tests: 0 mine, 0 regressions** — the step's red was the ratchet.
+
+**Smells noticed, not acted on:** (1) `handleMessage` returns the un-caught promise — only the stored queue entry is caught — and `connectionHandler.ts:203` fires it without a catch, so a throw from the `sendError` inside `wsErrorHandler`'s catch would surface as an unhandled rejection in a real server; (2) `src/config.test.ts:198` still binds its port blocker on the wildcard, the exact pattern facet 35 fixed in createServer.test.ts; (3) `package-lock.json`'s version field says 0.5.0 against package.json's 0.6.0 — cosmetic, `npm ci` ignores it.
+
+Committed `45695e2`, pushed, branch not ahead of its upstream, `origin/main` already merged (up to date). Next round: CI's verdict on this push — acceptance green.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"repair the red build of 67b241c: cover the off-lock queue's defensive catch, the uncovered function that breached the global functions floor (89.76 vs 89.79) inside the test:coverage step","tdd_next":"acceptance green"}}

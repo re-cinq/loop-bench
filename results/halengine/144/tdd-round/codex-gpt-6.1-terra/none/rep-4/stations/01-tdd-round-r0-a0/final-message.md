@@ -1,0 +1,5 @@
+I could not start the round because the required Lore tools are unavailable in this session. There is no `round-brief.md`, so I could not obtain the previous CI verdict, and I could not run the required coverage-graph query before editing. No files were changed, no tests were run, and no commit was made.
+
+There is also a material conflict to resolve: the checked-in acceptance brief requires `list_sessions` and an empty list when `listFor` is missing, while the ticket requires `list_conversations` and an `UNSUPPORTED` error. No red tests were observed locally; I could not determine the number of regressions without the CI verdict.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Required Lore CI-verdict and coverage-graph tools are unavailable; the acceptance brief also conflicts with the ticket."}}

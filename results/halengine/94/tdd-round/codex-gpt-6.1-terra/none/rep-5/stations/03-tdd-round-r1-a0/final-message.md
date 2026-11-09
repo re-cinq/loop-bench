@@ -1,0 +1,5 @@
+The round is blocked: CI reports two errors in the acceptance test itself. Its `PromptBuilder` fixture uses an unsupported `baseSystemPrompt` property, and the test exceeds the repository’s one-assertion lint limit. Fixing both requires editing the acceptance test, which the round instructions prohibit when an acceptance test is wrong.
+
+I made no changes, ran no tests, and made no commit or push. CI reported one red test file written on this branch and no identified regression tests. It also reported the spec status and missing changelog entry; those remain unresolved because the required acceptance-test repair is blocked.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI requires changes to the acceptance test, but the round forbids editing an incorrect acceptance test."}}

@@ -1,0 +1,5 @@
+The acceptance test is invalid: [chatOrchestrator.beforeSession.acceptance.test.ts](/var/tmp/loop-bench/runs/15058131a741/workspace/target/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts:29) constructs `PromptBuilder` with `baseSystemPrompt`, but [PromptBuilderConfig](/var/tmp/loop-bench/runs/15058131a741/workspace/target/src/infrastructure/builders/promptBuilder.ts:1) requires `identity` and does not define that property. The acceptance test therefore cannot pass TypeScript checking as written.
+
+Per your instruction to stop when an acceptance test is wrong, I made no edits and ran no tests. The queried CI verdict reported no failures, so there were **0 reported red tests and 0 reported regressions**.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test constructs PromptBuilder with invalid configuration; it requires identity."}}

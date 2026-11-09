@@ -1,0 +1,5 @@
+Static tool schemas now compile at registration; invalid schemas throw an error naming the tool. The round’s one test failed before the change and passed afterward. The commit was pushed, and the branch is up to date with its upstream and `origin/main`.
+
+The next facet is execution-time validation. The test carries a spec anchor and citation, but the repository’s test-list script does not expose the anchor as a descriptor `spec` field; that traceability work remains open. CI’s previous verdict was unavailable because Lore could not find the branch, so regression counts from CI are unknown. The local red phase had one new failing test and no observed regressions. No unrelated smells were identified.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"compile static schemas at registration and reject invalid schemas","tdd_next":"validate input before invoking the executor"}}

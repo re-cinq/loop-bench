@@ -1,0 +1,17 @@
+Landed: `8eab660` pushed, upstream matches, working tree clean, and `origin/main` merged clean (already up to date).
+
+## What was red and what I did
+
+**`test` check** — the branch's committed red acceptance tests for `list_sessions` (previous round shipped types + validation; the verdict's "Next" was the handler):
+- `createMessageHandler(orchestrator, sessionStore?)` — `src/transport/ws/messageHandler.ts`, wired from `options.sessionStore` in `src/transport/createServer.ts:43`. All existing 1-arg callers keep working.
+- `list_sessions` answered beside `ping`: `answerSessionList` reads the user from `session.userId` (never the frame), calls `listFor(userId, {limit, before})` with both possibly `undefined`, serialises the summaries to ISO strings (`sendSessionList` in `sender.ts`), and never queues on the `PerSessionLock`. A store without `listFor` answers an empty list; a rejecting store answers exactly one `error` frame with `SERVER_ERROR` and logs on the `ws` category with `sessionId`, `userId` and the store message — socket stays open.
+- **A real defect the failing test exposed:** a probe showed the client receiving `pong` *before* the async answer, so the test's pong barrier (this repo's established idiom — `connectAndSettle` already relies on a pong trailing the replay) saw nothing. Cause, not symptom: non-locked frames were answered concurrently. They now answer in arrival order per socket via a chain in the handler — while a turn still queues only on the lock, so a list or ping answers immediately during a stream. The existing "answers a ping at once while a run is pending" tests still pass.
+
+**`eslint` check (8 errors)** — the three clone pairs against `sessionResume.test.ts` are gone: `eventually`, `delegatingTo` and the terminate-then-drain teardown moved into `src/transport/wsTestSupport.ts` and both suites import them (`wsTestSupport` is excluded from the coverage ratchet). `prefer-early-return` fixed by guard clauses in `askAfterConnect`; `no-flag-params` fixed with `Array.from({length: 9}, () => false)` (house pattern from `messageHandler.test.ts:621`).
+
+## Verification
+Ran exactly what CI named — `jest src/transport/conversationList.acceptance.test.ts src/transport/ws/validation.test.ts src/transport/sessionResume.test.ts` — plus the 9 other suites that exercise the changed handler/support code: **12 suites, 149 tests, all passing** (ts-jest type-checks each file it compiles, so these files also type-check). Prettier written and verified on all 7 changed files. No lint, build or typecheck run in this pod.
+
+One note: the ticket prose names `list_conversations`/`conversation_list`, an opt-in `transport.history` flag, and `UNSUPPORTED` for a store without `listFor`. The branch's committed tests, spec statements, CHANGELOG entry and `.lore/dod.md` settled on `list_sessions`/`session_list`, always available, and an empty list for a missing `listFor` — I followed the branch, which is what CI judges, and changed nothing the verdict did not name.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"list_sessions had no handler (red acceptance tests) and 8 lint errors; handler threaded off the lock with per-socket answer ordering, test helpers deduped into wsTestSupport"}}

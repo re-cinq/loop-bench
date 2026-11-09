@@ -1,0 +1,5 @@
+The round is blocked by CI’s MongoDB startup failures. The brief names at least eight failures in pre-existing durability tests, all reporting that the MongoDB instance failed to start within 10 seconds; the coverage failures follow those test failures. The brief is truncated, so the total number of red tests is unknown. It reports no red tests written in this round.
+
+The branch has no changes to the MongoDB fixture or store code, and the available verdict does not establish a cause or a safe code fix. I did not alter the existing tests or make a speculative unrelated change. No tests were run locally, and no commit was made.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI reports MongoDB startup timeouts in pre-existing tests, but the truncated verdict does not identify a cause or a safe code fix."}}

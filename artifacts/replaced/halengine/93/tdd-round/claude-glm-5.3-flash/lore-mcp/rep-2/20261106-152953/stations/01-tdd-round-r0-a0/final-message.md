@@ -1,0 +1,14 @@
+Round delivered and pushed (`d52cde2`), branch up to date with upstream, working tree clean.
+
+**What this round did** — the GREEN round for a ticket whose RED acceptance tests were defined by previous rounds:
+
+- **RED**: wrote one test, `sums each field over the rounds that reported and leaves a turn where none reported undefined` in `src/orchestration/orchestratorHelpers.test.ts:29`, pinning the pure summation contract; confirmed it failed for the expected reason (`no export named 'addRoundUsage'`).
+- **GREEN**: added `TurnUsage` (`src/types/ai.ts:84`, exported from the package root), the accumulator `addRoundUsage` (`src/orchestration/orchestratorHelpers.ts:46`), and wired the loop — `lastUsage = outcome.usage ?? lastUsage` became `turnUsage = addRoundUsage(turnUsage, outcome.usage)`, with `afterModelResponse` retyped to `usage?: TurnUsage` so the signature says "sum of the turn" without opening the orchestrator. The breakdown-plus-total shape from the ticket was rejected: the pre-written acceptance tests pin `toEqual` on exactly the three summed fields.
+- **REFACTOR**: no duplicated summation existed to collapse; helper placed beside its sibling `extractUsage`; regenerated the two generated docs blocks (`CLAUDE.md`, `specs/hal-engine-architecture/spec.md`) via the repo's doc-block tooling; hand-repointed the config-hooks spec's `chatOrchestrator.ts#L150` → `#L151` anchor, which the repoint script skipped because that spec's anchor set is authored on this branch.
+- **Delivery**: CHANGELOG entry under `Unreleased → Changed` stating what an existing consumer will now record (required — CI's `check-changelog` gate fails any `src/` change without one); `.lore/dod.md` facets all ticked; prettier run over the five changed TS files; committed and pushed.
+
+**Tests run here**: my helper file (green, 5/5, re-verified after formatting) plus `chatOrchestrator.test.ts` and `toolBudget.test.ts` (green, 40/40) — the latter two cover the unchanged no-tool regression guard and the budget-path usage test whose subject this round touched. The pod's policy refuses running the acceptance tests locally, so those two are CI's to judge on this push; by construction they should pass (the sums they assert are the exact operation my unit test pins). **Red tests: 0 mine, 0 regressions.**
+
+**Noted, not acted**: the repoint script's skip rule makes every future `chatOrchestrator.ts` edit on this branch require a manual anchor fix in the config-hooks spec; and `CHANGELOG.md`'s `Unreleased` section has grown to release size while `package.json` sits at 0.3.0 — a release-time concern outside this ticket.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"sum each token field only for provider rounds that report usage, preserving undefined when none do (TurnUsage contract, orchestrator wiring, regression guard kept, spec+CHANGELOG)","tdd_next":"acceptance green"}}

@@ -1,0 +1,1011 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..fd8d5b8
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,39 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor
++> without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`).
++> Every tool declares a JSON Schema (`src/types/ai.ts`) that is handed verbatim to both
++> providers, but nothing validates what comes back from the model.
++
++**Strategy: `direct`** — `ToolRegistry.register`, `ToolRegistry.execute` and `createChatOrchestrator` already expose the exact entry points this ticket changes, so the acceptance tests call them directly today and fail because schema compilation and input validation are absent.
++
++## Done when these pass
++
++- [ ] **rejects input missing a required property with a ToolResponse and never calls the executor** — `ToolRegistry.execute` validates `input` against `inputSchema`, returns a `ToolResponse` naming the missing required property, and does not invoke the executor.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **rejects a wrong-typed property naming the field and expected type without leaking the offending value to the result or logs** — `ToolRegistry.execute` rejects a property with the wrong JSON Schema type without calling the executor, names the failing field path and expected type in `result`, and omits the offending property value from both `result` and emitted log lines.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **throws at register time naming the tool when a static inputSchema cannot be compiled** — `ToolRegistry.register` compiles a static `ToolDefinition`'s `inputSchema` once at registration time and throws synchronously naming the tool when the schema is invalid.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **returns a schema rejection as a tool_result in the orchestrator loop so the model can correct the call on the next round** — `createChatOrchestrator` feeds a schema-rejected tool call's `ToolResponse.result` back to the provider as a `tool_result` without invoking the executor on the invalid call, allowing the model to retry with valid arguments and complete the turn.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [x] Add `ajv` to `dependencies` in `package.json` and `package-lock.json` (`strict: false`, `validateFormats: false`, no coercion, no defaults, no injected `additionalProperties: false`) and bump the package version `MINOR`.
++- [x] Compile static `ToolDefinition.inputSchema` at `ToolRegistry.register` time (throwing an error naming the tool on invalid schemas) and cache compiled validators for function-valued `ToolDefinitionSource` schemas by schema object reference (`WeakMap`).
++- [x] Validate `input` in `ToolRegistry.execute` before invoking the executor, returning a `ToolResponse` (`{result}`) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at `specs/hal-engine-tool-input-validation/spec.md`.
++- [x] Add unit tests in `src/orchestration/tools/registry.test.ts` and `src/orchestration/chatOrchestrator.test.ts`, link the remaining statements in `specs/hal-engine-tool-input-validation/spec.md`, and update `example/weather-tool.ts`, `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `adrs/ADR-002-response-validation.md`, and `CHANGELOG.md`.
++
++- [x] **Verify the round brief's CI findings against the current head** — the findings were genuine on `2fea0a3`, not stale: that commit's `registry.ts` still opened with `import {Ajv} from 'ajv'` and an `ErrorObject` type import (the TS2693/TS2339 sources), and its `providerFactory.test.ts` contained no peer stub at all. At head `adf7168` none of that code exists — ajv is required at runtime and typed structurally, so no ajv identifier appears in `registry.ts` or `registry.test.ts`, and `providerFactory.test.ts` stubs the SDKs through `requireOptionalPeer` before importing the factory. Both CI-named suites re-run green by file this round: `registry.test.ts` 5/5 and `providerFactory.test.ts` 5/5. CI's verdict on `adf7168` itself is not yet visible to the pod (the lore gateway does not resolve the branch), so the dod-tick push below re-runs CI on the repaired tree.
++
++- [x] **Repair the CI findings on `2fea0a3`** — `registry.ts` no longer resolves any type from the `ajv` package (the source of all three typecheck diagnostics): ajv is loaded through `createRequire` and typed structurally in the file, and `ToolRegistry` takes an injectable `SchemaCompiler` (default: the ajv compiler) so `registry.test.ts` counts compilations through the seam instead of `jest.spyOn(Ajv.prototype, 'compile')`; `providerFactory.test.ts` stubs the peer SDKs through the repo's established `requireOptionalPeer` seam so the shape test never constructs a real `VertexAI` (whose constructor `console.warn` is what threw in CI). Both suites green locally; the coverage floor recovers once the suites compile in CI.
++
++> Pod note: GitHub upstream has since merged an independent implementation of this ticket (sibling PR #84, issue #37 closed upstream), but this pod's `origin` mirror serves a `main` that predates that merge (tip `8c3318e`), so `git fetch origin main` stays a no-op and this branch remains the feature carrier here.
++
++## Out of scope
++
++- Output validation and domain sanity checks (covered by ADR-002), MCP tool-server discovery and proxying (#42), per-tool authorization or `beforeToolCall` hooks (#40), retry/timeout/rate-limiting around tool execution, and concrete tool implementations.
+diff --git a/.specify/spec.md b/.specify/spec.md
+index 0fc23c9..eade82c 100644
+--- a/.specify/spec.md
++++ b/.specify/spec.md
+@@ -26,7 +26,7 @@ Providers are abstractly defined via the `AIProvider` interface and instantiated
+ ### 2. Tool System
+ 
+ - Dynamic tool registration via `ToolRegistry`
+-- JSON Schema tool definitions, declared per tool and forwarded to the model; the schema describes the input the model should produce and is NOT enforced before the executor runs
++- JSON Schema tool definitions, declared per tool and forwarded to the model; `ToolRegistry.execute` validates input against the declared schema before the executor runs — a schema-invalid call returns a `ToolResponse` describing the failure to the model rather than throwing (so the tool-round bound is what stops a retry cycle from spinning), extra properties pass through to the executor unmodified
+ - Parallel tool execution within configurable tool loops
+ - Tool response normalization (supports both simple strings and structured content)
+ - Context-aware tool execution: the executor receives the caller's identity (`userId`, `sessionId`, `workspaceId`) and the auth headers the session carries, forwarded from the WebSocket upgrade or the HTTP chat request, not the conversation history
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index fa1a2d5..65f9662 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,6 +8,15 @@ package, not for somebody reading this repository's commit log.
+ 
+ ## [Unreleased]
+ 
++## [0.4.0] - 2026-11-06
++
++### Changed
++
++- Tool input is validated against the tool's declared `inputSchema` before the tool runs: a call the
++  schema rejects returns a readable rejection to the model as the tool result instead of throwing, so
++  the model can correct the call within the same conversation. Executors now receive only input the
++  schema accepts, so a tool that hand-checked its arguments stops needing to.
++
+ ## [0.3.0] - 2026-09-17
+ 
+ ### Changed
+diff --git a/README.md b/README.md
+index 590eb99..7c27a6e 100644
+--- a/README.md
++++ b/README.md
+@@ -7,7 +7,7 @@ HAL Engine extracts the core patterns of building an AI-powered chat backend int
+ ## Features
+ 
+ - **Multi-provider support**: AWS Bedrock and Google Vertex AI implemented, OpenAI and Anthropic stubbed, plus a built-in Mock. Scored per method in [Providers](#providers) — a provider can implement one of `AIProvider`'s two methods without the other
+-- **Tool system**: Register custom tools with a JSON Schema `inputSchema`, executed in parallel within a configurable tool loop. The schema is forwarded to the model to shape the call it produces; it is **not** enforced before your executor runs, so validate the input you are handed
++- **Tool system**: Register custom tools with a JSON Schema `inputSchema`, executed in parallel within a configurable tool loop. The schema is forwarded to the model and validated against the input before the executor runs; a schema-invalid call returns a descriptive rejection to the model so it can retry within the tool-round budget
+ - **Streaming**: Real-time WebSocket streaming with thinking tag parsing and entry-based protocol
+ - **Pluggable auth**: Bring your own WebSocket and HTTP authentication
+ - **Pluggable session store**: In-memory default, swap in Redis/database/etc.
+diff --git a/adrs/ADR-002-response-validation.md b/adrs/ADR-002-response-validation.md
+index fb8e64d..af91dc9 100644
+--- a/adrs/ADR-002-response-validation.md
++++ b/adrs/ADR-002-response-validation.md
+@@ -25,6 +25,8 @@ Proposed, not yet implemented:
+ - Add domain-specific sanity checks on tool results, since a schema-valid response can still be factually impossible.
+ - Route failures through the error-source decision tree the spike sets out, which asks in order: is the format valid, were the expected tools called, were the tool inputs valid, does tool output match ground truth, does the response match tool output.
+ 
++One part of this has since shipped by a narrower route, without adopting the ADR: tool input validation lives in `ToolRegistry.execute`, which validates the model-supplied input against each tool's declared JSON Schema using `ajv` (issue #37, shipped in 0.4.0). What remains proposed here is response validation, output sanity checks, and the error-source decision tree.
++
+ ## Rationale
+ 
+ Schema validation is cheap and catches the mechanical failures outright. The remaining classes need the decision tree, because the same observable symptom — a wrong answer — has different causes, and only the ordering of those questions separates them. Distinguishing an AI error from a data error is the specific need the spike was opened to address.
+diff --git a/docs/adding-a-tool.md b/docs/adding-a-tool.md
+index 87f1d1c..0954367 100644
+--- a/docs/adding-a-tool.md
++++ b/docs/adding-a-tool.md
+@@ -48,10 +48,10 @@ export const weatherTool: ToolDefinition = {
+ };
+ 
+ export const executeWeather: ToolExecutor = async input => {
+-  const location = (input.location as string) || 'Unknown';
+-  const units = (input.units as string) || 'celsius';
++  const location = input.location as string;
++  const units = (input.units as string) ?? 'celsius';
+ 
+-  // Replace with a real API call. `input` is untrusted: inputSchema shapes what the model sends, it does not enforce it.
++  // Replace with a real API call. `location` has already passed the declared inputSchema.
+   const result = {
+     location,
+     temperature: 18,
+@@ -133,8 +133,9 @@ type ToolExecutor = (input: Record<string, unknown>, context?: ToolContext) => P
+ The optional `context` provides `userId`, `sessionId`, `workspaceId`, and `authHeaders` for tools that need to make authenticated API calls.
+ 
+ - Return `JSON.stringify(result)` for most tools -- the result gets added to the conversation as a tool result message
+-- Cast input fields from `unknown` to their expected types
+-- Handle missing or unknown input gracefully (return a reasonable default or error message)
++- Cast input fields from `unknown` to their declared types — the registry has already validated that required fields are present, types match, and enum values are in range, so a cast is safe
++- Unknown keys may still be present in `input`; ignore them or use them as needed, but do not assume they have been stripped
++- A schema-invalid call never reaches the executor: the registry returns a descriptive rejection to the model, which can retry within the tool-round budget (`DEFAULT_MAX_TOOL_ROUNDS = 5`)
+ 
+ For tools that need to send messages directly to the client or suppress the AI's echo, return a `ToolResponse` object instead of a plain string. See [tool-responses.md](../specs/hal-engine-tool-responses/spec.md) for a full walkthrough.
+ 
+diff --git a/example/weather-tool.ts b/example/weather-tool.ts
+index 2679861..676155b 100644
+--- a/example/weather-tool.ts
++++ b/example/weather-tool.ts
+@@ -34,10 +34,10 @@ export const weatherTool: ToolDefinition = {
+ };
+ 
+ export const executeWeather: ToolExecutor = async input => {
+-  const location = (input.location as string) || 'Unknown';
+-  const units = (input.units as string) || 'celsius';
++  const location = input.location as string;
++  const units = (input.units as string) ?? 'celsius';
+ 
+-  // Replace with a real API call. `input` is untrusted: inputSchema shapes what the model sends, it does not enforce it.
++  // Replace with a real API call. `location` has already passed the declared inputSchema.
+   const result = {
+     location,
+     temperature: 18,
+diff --git a/package-lock.json b/package-lock.json
+index e69a45e..f311fd6 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,17 +1,18 @@
+ {
+   "name": "@re-cinq/hal-engine",
+-  "version": "0.3.0",
++  "version": "0.4.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "@re-cinq/hal-engine",
+-      "version": "0.3.0",
++      "version": "0.4.0",
+       "license": "Apache-2.0",
+       "dependencies": {
+         "@types/express": "^5.0.0",
+         "@types/node": "^26.5.1",
+         "@types/ws": "^8.5.10",
++        "ajv": "^8.20.0",
+         "cookie": "^2.0.1",
+         "cookie-parser": "^1.4.7",
+         "cors": "^2.8.5",
+@@ -822,6 +823,7 @@
+       "integrity": "sha512-RgHBCvtjbOK2gXSNBNIkNoEc9qoVEtau3hj8gEqKQuL3HZAibKarWFEI3Lfm6EYKkLalOh8eSrj9b+ch9H/VBA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@babel/code-frame": "^7.29.7",
+         "@babel/generator": "^7.29.7",
+@@ -1311,29 +1313,6 @@
+         "keyv": "^5.6.0"
+       }
+     },
+-    "node_modules/@emnapi/core": {
+-      "version": "1.10.0",
+-      "resolved": "https://registry.npmjs.org/@emnapi/core/-/core-1.10.0.tgz",
+-      "integrity": "sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==",
+-      "dev": true,
+-      "license": "MIT",
+-      "optional": true,
+-      "dependencies": {
+-        "@emnapi/wasi-threads": "1.2.1",
+-        "tslib": "^2.4.0"
+-      }
+-    },
+-    "node_modules/@emnapi/runtime": {
+-      "version": "1.10.0",
+-      "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.10.0.tgz",
+-      "integrity": "sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==",
+-      "dev": true,
+-      "license": "MIT",
+-      "optional": true,
+-      "dependencies": {
+-        "tslib": "^2.4.0"
+-      }
+-    },
+     "node_modules/@emnapi/wasi-threads": {
+       "version": "1.2.1",
+       "resolved": "https://registry.npmjs.org/@emnapi/wasi-threads/-/wasi-threads-1.2.1.tgz",
+@@ -1897,6 +1876,7 @@
+       "integrity": "sha512-rBTSSShrq7e4O+PWfeE4azH4/CWPNrC+VGxBXiW00o3vYVJnznsZiDayj3KC9JztIMVRZxZHn2nrDIUau/4j7A==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "workspaces": [
+         "examples/*"
+       ],
+@@ -4051,6 +4031,7 @@
+       "resolved": "https://registry.npmjs.org/@types/express/-/express-5.0.6.tgz",
+       "integrity": "sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA==",
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@types/body-parser": "*",
+         "@types/express-serve-static-core": "^5.0.0",
+@@ -4328,6 +4309,7 @@
+       "integrity": "sha512-zYvrmj9Yxd63UGaXw+kdt6A0F0s0qveJyuatIM77bYC2DE4pgmg7a50u8LR7PRtXd0x+h+Tl3eXabGm06SWd3Q==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@typescript-eslint/scope-manager": "8.70.0",
+         "@typescript-eslint/types": "8.70.0",
+@@ -4865,6 +4847,7 @@
+       "integrity": "sha512-lGq+9yr1/GuAWaVYIHRjvvySG5/4VfKIvC8EWxStPdcDh/Ka7FG3twP6v4d5BkravUilhIAsG4Qj83t02LWUPQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "acorn": "bin/acorn"
+       },
+@@ -4893,16 +4876,15 @@
+       }
+     },
+     "node_modules/ajv": {
+-      "version": "6.15.0",
+-      "resolved": "https://registry.npmjs.org/ajv/-/ajv-6.15.0.tgz",
+-      "integrity": "sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw==",
+-      "dev": true,
++      "version": "8.20.0",
++      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
++      "integrity": "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==",
+       "license": "MIT",
+       "dependencies": {
+-        "fast-deep-equal": "^3.1.1",
+-        "fast-json-stable-stringify": "^2.0.0",
+-        "json-schema-traverse": "^0.4.1",
+-        "uri-js": "^4.2.2"
++        "fast-deep-equal": "^3.1.3",
++        "fast-uri": "^3.0.1",
++        "json-schema-traverse": "^1.0.0",
++        "require-from-string": "^2.0.2"
+       },
+       "funding": {
+         "type": "github",
+@@ -5219,6 +5201,7 @@
+         }
+       ],
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "baseline-browser-mapping": "^2.11.20",
+         "caniuse-lite": "^1.0.30001810",
+@@ -5983,6 +5966,7 @@
+       "integrity": "sha512-NPXn6r5zl4uET1DAVPaOwzX3rut4c0wcmw3dWJAfOsTM5+TogXo0DDjz8pwm/hL8cyVNpHqeK4JpN0NjnyFFNw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "workspaces": [
+         "packages/*"
+       ],
+@@ -6068,6 +6052,30 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
++    "node_modules/eslint/node_modules/ajv": {
++      "version": "6.15.0",
++      "resolved": "https://registry.npmjs.org/ajv/-/ajv-6.15.0.tgz",
++      "integrity": "sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "fast-deep-equal": "^3.1.1",
++        "fast-json-stable-stringify": "^2.0.0",
++        "json-schema-traverse": "^0.4.1",
++        "uri-js": "^4.2.2"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/epoberezkin"
++      }
++    },
++    "node_modules/eslint/node_modules/json-schema-traverse": {
++      "version": "0.4.1",
++      "resolved": "https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz",
++      "integrity": "sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/espree": {
+       "version": "11.2.0",
+       "resolved": "https://registry.npmjs.org/espree/-/espree-11.2.0.tgz",
+@@ -6279,7 +6287,6 @@
+       "version": "3.1.3",
+       "resolved": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
+       "integrity": "sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==",
+-      "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/fast-json-stable-stringify": {
+@@ -6303,6 +6310,22 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/fast-uri": {
++      "version": "3.1.9",
++      "resolved": "https://registry.npmjs.org/fast-uri/-/fast-uri-3.1.9.tgz",
++      "integrity": "sha512-hS/0Wt3Ya043oKXs0sIxrMpKQITXhMLIrVAKKXi4gozGC9v7YRWVnXIZzjNPTO02M9BdxLCWqK1yRXgNziVyJQ==",
++      "funding": [
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/fastify"
++        },
++        {
++          "type": "opencollective",
++          "url": "https://opencollective.com/fastify"
++        }
++      ],
++      "license": "BSD-3-Clause"
++    },
+     "node_modules/fault": {
+       "version": "2.0.1",
+       "resolved": "https://registry.npmjs.org/fault/-/fault-2.0.1.tgz",
+@@ -7191,6 +7214,7 @@
+       "integrity": "sha512-3qrR8+ZXFnn7y0H2yjWQNkGGBLBY4zTRoTMAq9zJcgwLLtlyonfsCLviIXK9xuE2KgIyM+M36AFcoK2DgFR36w==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@jest/core": "30.5.1",
+         "@jest/types": "30.5.1",
+@@ -7455,6 +7479,7 @@
+       "integrity": "sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "engines": {
+         "node": ">=12"
+       },
+@@ -7843,6 +7868,7 @@
+       "integrity": "sha512-6f4qhJGIeR/ZvAkZByfpPw5H28SNEE4fgJ4GXxVuLMiEg7xWrAlUdm0crIJPY6dmykvgdM83ZRrWJXg11fQlYg==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "jscpd": "run-jscpd.js"
+       },
+@@ -8006,10 +8032,9 @@
+       "license": "MIT"
+     },
+     "node_modules/json-schema-traverse": {
+-      "version": "0.4.1",
+-      "resolved": "https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz",
+-      "integrity": "sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==",
+-      "dev": true,
++      "version": "1.0.0",
++      "resolved": "https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-1.0.0.tgz",
++      "integrity": "sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==",
+       "license": "MIT"
+     },
+     "node_modules/json-stable-stringify-without-jsonify": {
+@@ -8078,6 +8103,7 @@
+       "integrity": "sha512-CYDD3SOtsHtyXeEORYRx2qBtpDJFjRTGXUtmNEMGyzYOKj1TE3tycdlho7kA1Ufx9OYWZzg52QFBGALTirzDSw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@keyv/serialize": "^1.1.1"
+       }
+@@ -9881,6 +9907,15 @@
+         "node": ">=0.10.0"
+       }
+     },
++    "node_modules/require-from-string": {
++      "version": "2.0.2",
++      "resolved": "https://registry.npmjs.org/require-from-string/-/require-from-string-2.0.2.tgz",
++      "integrity": "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
+     "node_modules/resolve-cwd": {
+       "version": "3.0.0",
+       "resolved": "https://registry.npmjs.org/resolve-cwd/-/resolve-cwd-3.0.0.tgz",
+@@ -10494,6 +10529,7 @@
+       "integrity": "sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "engines": {
+         "node": ">=12"
+       },
+@@ -10708,6 +10744,7 @@
+       "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+       "dev": true,
+       "license": "Apache-2.0",
++      "peer": true,
+       "bin": {
+         "tsc": "bin/tsc",
+         "tsserver": "bin/tsserver"
+diff --git a/package.json b/package.json
+index 23db385..30008a7 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@re-cinq/hal-engine",
+-  "version": "0.3.0",
++  "version": "0.4.0",
+   "type": "module",
+   "description": "A generic AI chat server framework with pluggable providers, tools, and transport",
+   "license": "Apache-2.0",
+@@ -63,6 +63,7 @@
+     "@types/express": "^5.0.0",
+     "@types/node": "^26.5.1",
+     "@types/ws": "^8.5.10",
++    "ajv": "^8.20.0",
+     "cookie": "^2.0.1",
+     "cookie-parser": "^1.4.7",
+     "cors": "^2.8.5",
+diff --git a/specs/hal-engine-npm-release/spec.md b/specs/hal-engine-npm-release/spec.md
+index b5ef813..3609165 100644
+--- a/specs/hal-engine-npm-release/spec.md
++++ b/specs/hal-engine-npm-release/spec.md
+@@ -346,11 +346,11 @@ Delegating to a supplied logger initially bypassed both of the built-in emitter'
+ 
+ Measured before the fix, one config object produced `{"status":"","count":0}` through `createProvider` and `{"status":"configured","count":42}` through `createMockProvider`.
+ 
+-- The `mock` arm forwards `config` like the other four, so a configured structured response survives the factory ([validated by: forwards MockConfig, so a configured structured response survives the factory](../../src/providers/providerFactory.test.ts#L17)).
+-- A message the map does not name still falls back to schema-shaped defaults ([validated by: falls back to schema-shaped defaults for a message the map does not name](../../src/providers/providerFactory.test.ts#L24)).
+-- `createMockProvider`'s parameter stays optional - making it required would break the existing no-argument call sites to guard against a typo the new test catches - so a `mock` config carrying no map is accepted ([validated by: accepts a mock config carrying no map at all](../../src/providers/providerFactory.test.ts#L31)).
+-- Every arm returns a provider implementing both `AIProvider` methods ([validated by: dispatches each arm to a provider satisfying the full AIProvider interface](../../src/providers/providerFactory.test.ts#L37)).
+-- The `mock` arm reaches the mock rather than a neighbouring arm ([validated by: routes the mock arm to the mock, not to a neighbouring arm](../../src/providers/providerFactory.test.ts#L52)).
++- The `mock` arm forwards `config` like the other four, so a configured structured response survives the factory ([validated by: forwards MockConfig, so a configured structured response survives the factory](../../src/providers/providerFactory.test.ts#L33)).
++- A message the map does not name still falls back to schema-shaped defaults ([validated by: falls back to schema-shaped defaults for a message the map does not name](../../src/providers/providerFactory.test.ts#L40)).
++- `createMockProvider`'s parameter stays optional - making it required would break the existing no-argument call sites to guard against a typo the new test catches - so a `mock` config carrying no map is accepted ([validated by: accepts a mock config carrying no map at all](../../src/providers/providerFactory.test.ts#L47)).
++- Every arm returns a provider implementing both `AIProvider` methods ([validated by: dispatches each arm to a provider satisfying the full AIProvider interface](../../src/providers/providerFactory.test.ts#L53)).
++- The `mock` arm reaches the mock rather than a neighbouring arm ([validated by: routes the mock arm to the mock, not to a neighbouring arm](../../src/providers/providerFactory.test.ts#L68)).
+ - The mock is the only provider the tarball smoke test can exercise without a cloud account, which is why this lands before the smoke fixture is written.
+ - `structuredResponses` is honoured by both entry points, but it configures `generateStructured`, and nothing inside `createHalEngine` ever calls that method — the orchestrator only calls `sendMessage`. A consumer configuring the map through `createHalEngine` should learn that from the documentation rather than from a debugger.
+ 
+diff --git a/specs/hal-engine-providers/spec.md b/specs/hal-engine-providers/spec.md
+index 79f20b3..f60fc0d 100644
+--- a/specs/hal-engine-providers/spec.md
++++ b/specs/hal-engine-providers/spec.md
+@@ -251,7 +251,7 @@ const provider = createProvider({
+ 
+ There is no `responses` array and no cycling: the only knob is `structuredResponses`.
+ 
+-Both entry points honour it: the example above goes through `createProvider`, which once called `createMockProvider()` with no arguments and dropped the map ([validated by: forwards MockConfig, so a configured structured response survives the factory](../../src/providers/providerFactory.test.ts#L17)).
++Both entry points honour it: the example above goes through `createProvider`, which once called `createMockProvider()` with no arguments and dropped the map ([validated by: forwards MockConfig, so a configured structured response survives the factory](../../src/providers/providerFactory.test.ts#L33)).
+ 
+ It configures `generateStructured` only, and nothing inside `createHalEngine` calls that method - the orchestrator drives `sendMessage`. A consumer who sets `structuredResponses` and drives the engine over HTTP or a WebSocket will see mock chat responses and never a configured object; the map is for code calling the provider directly.
+ 
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..0310fe9
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,25 @@
++# Tool Input Validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | Shipped              |
++
++Every tool registered in `src/orchestration/tools/registry.ts` declares a JSON Schema `inputSchema` that is forwarded to the configured AI provider, and `ToolRegistry.execute` validates the model-supplied `input` against that schema before calling the tool's executor. When validation fails, `execute` returns a rejection `ToolResponse` describing what was wrong rather than throwing, so the orchestrator feeds the failure back to the model as a `tool_result` within the existing tool-round budget.
++
++## Validation at execute time
++
++- When `input` omits a property listed in `required`, `ToolRegistry.execute` returns a `ToolResponse` whose `result` names the missing property as required and never invokes the executor ([validated by: rejects input missing a required property with a ToolResponse and never calls the executor](../../src/orchestration/tools/registry.acceptance.test.ts#L16), [validated by: rejects missing required input without calling the executor](../../src/orchestration/tools/registry.test.ts#L19)).
++- When `input` supplies a property whose value does not match its declared JSON Schema type, `ToolRegistry.execute` returns a `ToolResponse` naming the failing field path and expected type without invoking the executor, and neither `result` nor the emitted log record contains the offending property value ([validated by: rejects a wrong-typed property naming the field and expected type without leaking the offending value to the result or logs](../../src/orchestration/tools/registry.acceptance.test.ts#L46)).
++- When `input` satisfies `required`, declared property types and `enum`, `ToolRegistry.execute` invokes the executor once and passes the input object through unchanged — including undeclared extra properties — without injecting `additionalProperties: false`, coercing types or applying defaults ([validated by: passes valid input with an unlisted extra property through to the executor unchanged, exactly once](../../src/orchestration/tools/registry.test.ts#L94)).
++- When `ToolRegistry.execute` is called with a tool name that has not been registered, it throws `Unknown tool: <name>` because an unregistered tool is a programming or configuration error rather than a recoverable input mistake ([validated by: throws Unknown tool for a name that was never registered](../../src/orchestration/tools/registry.test.ts#L110)).
++
++## Schema compilation and caching
++
++- A static `ToolDefinition` has its `inputSchema` compiled once at `register` time, so a schema that is not valid JSON Schema throws synchronously from `register` with an error message naming the offending tool ([validated by: throws at register time naming the tool when a static inputSchema cannot be compiled](../../src/orchestration/tools/registry.acceptance.test.ts#L94)).
++- A static tool's `inputSchema` is compiled at `register` time and reused on every `execute` call without re-reading or re-compiling `definition.inputSchema` ([validated by: compiles a static tool schema once at registration and reuses it across calls](../../src/orchestration/tools/registry.test.ts#L40)).
++- A function-valued `ToolDefinitionSource` resolves its definition on each `execute` call and validates against the `inputSchema` returned for that call, caching compiled validators by schema object reference (`WeakMap`) so distinct returned schemas each enforce their own rules ([validated by: validates a function-valued source against the schema current at each call](../../src/orchestration/tools/registry.test.ts#L59)).
++
++## Orchestrator tool-loop recovery
++
++- Because a schema rejection returns a `ToolResponse` instead of throwing, `src/orchestration/chatOrchestrator.ts` sends the rejection `result` back to the provider as a `tool_result` message, allowing the model to issue a corrected tool call on the next round and complete the turn within `maxToolRounds` ([validated by: returns a schema rejection as a tool_result in the orchestrator loop so the model can correct the call on the next round](../../src/orchestration/tools/registry.acceptance.test.ts#L112), [validated by: feeds a schema rejection to the provider as a tool_result and resolves the turn instead of rejecting](../../src/orchestration/chatOrchestrator.test.ts#L523)).
+diff --git a/src/orchestration/chatOrchestrator.test.ts b/src/orchestration/chatOrchestrator.test.ts
+index dbe7b33..b862c70 100644
+--- a/src/orchestration/chatOrchestrator.test.ts
++++ b/src/orchestration/chatOrchestrator.test.ts
+@@ -1,6 +1,6 @@
+ import {createChatOrchestrator} from './chatOrchestrator.js';
+ import type {OrchestratorHooks} from './chatOrchestrator.js';
+-import type {AIProvider, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
++import type {AIProvider, Message, MessageChunk, SendMessageParams, UsageMetadata} from '../types/ai.js';
+ import {AIError} from '../types/ai.js';
+ import type {ChatSession} from '../types/session.js';
+ import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
+@@ -519,4 +519,43 @@ describe('ChatOrchestrator tool loop', () => {
+ 
+     expect(seen).toEqual(usage);
+   });
++
++  it('feeds a schema rejection to the provider as a tool_result and resolves the turn instead of rejecting', async () => {
++    const validatingRegistry = new ToolRegistry();
++    validatingRegistry.register(
++      {
++        name: 'weather',
++        description: 'get weather',
++        inputSchema: {type: 'object', required: ['location'], properties: {location: {type: 'string'}}},
++      },
++      async () => 'sunny in London'
++    );
++    let round = 0;
++    let secondRoundMessages: Message[] = [];
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        round += 1;
++        if (round === 2) secondRoundMessages = params.messages;
++        if (round === 1) {
++          yield {type: 'tool_use', toolCall: {id: 'call-1', name: 'weather', input: {}}};
++          yield STOP_FOR_TOOL;
++          return;
++        }
++        yield {type: 'text', text: 'all done'};
++        yield STOP_DONE;
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++
++    const reply = await createChatOrchestrator(provider, promptBuilder, validatingRegistry).processMessage(
++      createSession('what is the weather?')
++    );
++
++    expect({
++      reply,
++      rejectionVisibleToProvider: JSON.stringify(secondRoundMessages).includes('location'),
++    }).toEqual({reply: 'all done', rejectionVisibleToProvider: true});
++  });
+ });
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..3a1599d
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,181 @@
++import {ToolRegistry} from './registry.js';
++import {createChatOrchestrator} from '../chatOrchestrator.js';
++import {PromptBuilder} from '../../infrastructure/builders/promptBuilder.js';
++import {setLogger} from '../../shared/logger.js';
++import type {Logger} from '../../shared/logger.js';
++import type {AIProvider, MessageChunk, SendMessageParams, ToolResultMessage} from '../../types/ai.js';
++import type {ChatSession} from '../../types/session.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++describe('ToolRegistry inputSchema validation acceptance', () => {
++  afterEach(() => {
++    setLogger(undefined);
++  });
++
++  it('rejects input missing a required property with a ToolResponse and never calls the executor', async () => {
++    const registry = new ToolRegistry();
++    let executorCalls = 0;
++    registry.register(
++      {
++        name: 'get_weather',
++        description: 'Get weather for a location',
++        inputSchema: {
++          type: 'object',
++          properties: {location: {type: 'string'}},
++          required: ['location'],
++        },
++      },
++      async () => {
++        executorCalls += 1;
++        return 'sunny';
++      }
++    );
++
++    const response = await registry.execute('get_weather', {});
++
++    expect({
++      executorCalls,
++      mentionsRequiredField: response.result.includes('location') && /required/i.test(response.result),
++    }).toEqual({
++      executorCalls: 0,
++      mentionsRequiredField: true,
++    });
++  });
++
++  it('rejects a wrong-typed property naming the field and expected type without leaking the offending value to the result or logs', async () => {
++    const recordedLogs: string[] = [];
++    const recordLine = (category: string, message: string, fields?: Record<string, unknown>) => {
++      recordedLogs.push(JSON.stringify({category, message, fields}));
++    };
++    const logger: Logger = {
++      debug: recordLine,
++      info: recordLine,
++      warn: recordLine,
++      error: recordLine,
++    };
++    setLogger(logger);
++
++    const registry = new ToolRegistry();
++    let executorCalls = 0;
++    registry.register(
++      {
++        name: 'ssn_lookup',
++        description: 'Look up record by identifier',
++        inputSchema: {
++          type: 'object',
++          properties: {ssn: {type: 'string'}},
++          required: ['ssn'],
++        },
++      },
++      async () => {
++        executorCalls += 1;
++        return 'found';
++      }
++    );
++
++    const response = await registry.execute('ssn_lookup', {ssn: 123456789});
++
++    expect({
++      executorCalls,
++      mentionsField: response.result.includes('ssn'),
++      mentionsExpectedType: response.result.includes('string'),
++      leaksValueInResult: response.result.includes('123456789'),
++      leaksValueInLogs: recordedLogs.some(line => line.includes('123456789')),
++    }).toEqual({
++      executorCalls: 0,
++      mentionsField: true,
++      mentionsExpectedType: true,
++      leaksValueInResult: false,
++      leaksValueInLogs: false,
++    });
++  });
++
++  it('throws at register time naming the tool when a static inputSchema cannot be compiled', () => {
++    const registry = new ToolRegistry();
++
++    expect(() =>
++      registry.register(
++        {
++          name: 'broken_weather',
++          description: 'Has an invalid JSON Schema type',
++          inputSchema: {
++            type: 'object',
++            properties: {location: {type: 'not-a-json-schema-type'}},
++          },
++        },
++        async () => 'unreachable'
++      )
++    ).toThrow(/broken_weather/);
++  });
++
++  it('returns a schema rejection as a tool_result in the orchestrator loop so the model can correct the call on the next round', async () => {
++    const registry = new ToolRegistry();
++    const executorInputs: Array<Record<string, unknown>> = [];
++    registry.register(
++      () => ({
++        name: 'get_weather',
++        description: 'Get weather for a location',
++        inputSchema: {
++          type: 'object',
++          properties: {location: {type: 'string'}},
++          required: ['location'],
++        },
++      }),
++      async input => {
++        executorInputs.push(input);
++        return `22C in ${String(input.location)}`;
++      }
++    );
++
++    let firstRoundToolResult = '';
++    let round = 0;
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        round += 1;
++        if (round === 1) {
++          yield {type: 'tool_use', toolCall: {id: 'call-1', name: 'get_weather', input: {}}};
++          yield {type: 'stop', stopReason: 'tool_use'};
++          return;
++        }
++        if (round !== 2) {
++          yield {type: 'text', text: '22C in Paris'};
++          yield {type: 'stop', stopReason: 'end_turn'};
++          return;
++        }
++        const toolResult = params.messages[params.messages.length - 1] as ToolResultMessage;
++        const [firstChunk] = toolResult.content;
++        firstRoundToolResult = firstChunk?.content ?? '';
++        yield {type: 'tool_use', toolCall: {id: 'call-2', name: 'get_weather', input: {location: 'Paris'}}};
++        yield {type: 'stop', stopReason: 'tool_use'};
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(
++      provider,
++      new PromptBuilder({identity: 'You are a test assistant.'}),
++      registry
++    );
++    const session: ChatSession = {
++      sessionId: 's-retry',
++      userId: 'u1',
++      entries: [{role: 'user', content: 'Weather in Paris?', timestamp: SENT_AT}],
++    };
++
++    const reply = await orchestrator.processMessage(session);
++
++    expect({
++      reply,
++      executorInputs,
++      firstAttemptRejectedForLocation:
++        firstRoundToolResult.includes('location') && /required/i.test(firstRoundToolResult),
++    }).toEqual({
++      reply: '22C in Paris',
++      executorInputs: [{location: 'Paris'}],
++      firstAttemptRejectedForLocation: true,
++    });
++  });
++});
+diff --git a/src/orchestration/tools/registry.test.ts b/src/orchestration/tools/registry.test.ts
+new file mode 100644
+index 0000000..6a9b5c7
+--- /dev/null
++++ b/src/orchestration/tools/registry.test.ts
+@@ -0,0 +1,115 @@
++import type {ToolDefinition} from '../../types/ai.js';
++import {ToolRegistry} from './registry.js';
++import type {ToolExecutor} from './registry.js';
++
++const locationToolSchema = (): ToolDefinition['inputSchema'] => ({
++  type: 'object',
++  properties: {location: {type: 'string'}},
++  required: ['location'],
++});
++
++const recordingExecutor =
++  (runs: string[]): ToolExecutor =>
++  async input => {
++    runs.push(JSON.stringify(input));
++    return `ran with ${Object.keys(input).join(',')}`;
++  };
++
++describe('ToolRegistry input validation', () => {
++  it('rejects missing required input without calling the executor', async () => {
++    const runs: string[] = [];
++    const registry = new ToolRegistry();
++    registry.register(
++      {name: 'echo_location', description: 'Echo a location back', inputSchema: locationToolSchema()},
++      recordingExecutor(runs)
++    );
++
++    const rejection = await registry.execute('echo_location', {});
++
++    expect({
++      runs,
++      fieldNamed: rejection.result.includes('location'),
++      requiredNamed: /required/i.test(rejection.result),
++    }).toEqual({
++      runs: [],
++      fieldNamed: true,
++      requiredNamed: true,
++    });
++  });
++
++  it('compiles a static tool schema once at registration and reuses it across calls', async () => {
++    const runs: string[] = [];
++    let compiles = 0;
++    const registry = new ToolRegistry(() => {
++      compiles += 1;
++      return () => true;
++    });
++    registry.register(
++      {name: 'echo_location', description: 'Echo a location back', inputSchema: locationToolSchema()},
++      recordingExecutor(runs)
++    );
++
++    for (let round = 0; round < 10; round += 1) {
++      await registry.execute('echo_location', {location: 'Paris'});
++    }
++
++    expect({compiles, runs: runs.length}).toEqual({compiles: 1, runs: 10});
++  });
++
++  it('validates a function-valued source against the schema current at each call', async () => {
++    const runs: string[] = [];
++    const registry = new ToolRegistry();
++    let schema: ToolDefinition['inputSchema'] = {
++      type: 'object',
++      properties: {region: {type: 'string'}},
++      required: ['region'],
++    };
++    registry.register(
++      () => ({name: 'fickle_lookup', description: 'Schema drifts between calls', inputSchema: schema}),
++      recordingExecutor(runs)
++    );
++
++    await registry.execute('fickle_lookup', {region: 'eu-west-4'});
++
++    schema = {
++      type: 'object',
++      properties: {region: {type: 'string'}, units: {type: 'string'}},
++      required: ['region', 'units'],
++    };
++
++    const stale = await registry.execute('fickle_lookup', {region: 'eu-west-4'});
++    const fresh = await registry.execute('fickle_lookup', {region: 'eu-west-4', units: 'metric'});
++
++    expect({
++      runs,
++      staleRejectedForUnits: stale.result.includes('units'),
++      freshExecuted: fresh.result.startsWith('ran with'),
++    }).toEqual({
++      runs: ['{"region":"eu-west-4"}', '{"region":"eu-west-4","units":"metric"}'],
++      staleRejectedForUnits: true,
++      freshExecuted: true,
++    });
++  });
++
++  it('passes valid input with an unlisted extra property through to the executor unchanged, exactly once', async () => {
++    const received: Array<Record<string, unknown>> = [];
++    const registry = new ToolRegistry();
++    registry.register(
++      {name: 'echo_location', description: 'Echo a location back', inputSchema: locationToolSchema()},
++      async input => {
++        received.push(input);
++        return 'ran';
++      }
++    );
++
++    const response = await registry.execute('echo_location', {location: 'Paris', units: 'metric'});
++
++    expect({received, ran: response.result}).toEqual({received: [{location: 'Paris', units: 'metric'}], ran: 'ran'});
++  });
++
++  it('throws Unknown tool for a name that was never registered', async () => {
++    const registry = new ToolRegistry();
++
++    await expect(registry.execute('ghost_tool', {})).rejects.toThrow('Unknown tool: ghost_tool');
++  });
++});
+diff --git a/src/orchestration/tools/registry.ts b/src/orchestration/tools/registry.ts
+index a01748c..777cb38 100644
+--- a/src/orchestration/tools/registry.ts
++++ b/src/orchestration/tools/registry.ts
+@@ -1,7 +1,34 @@
++import {createRequire} from 'node:module';
+ import type {ToolDefinition} from '../../types/ai.js';
+ import type {OutgoingMessage} from '../../types/messages.js';
+ import {log} from '../../shared/logger.js';
+ 
++interface SchemaViolation {
++  instancePath?: string;
++  message?: string;
++}
++
++interface CompiledValidator {
++  (input: unknown): boolean;
++  errors?: SchemaViolation[] | null;
++}
++
++interface AjvLike {
++  compile(schema: ToolDefinition['inputSchema']): CompiledValidator;
++}
++
++// Turns a schema into a validator; injectable so tests can count compilations without reaching into ajv.
++export type SchemaCompiler = (schema: ToolDefinition['inputSchema']) => CompiledValidator;
++
++// ajv is loaded through require and typed structurally here: its published types do not resolve the same way in every install.
++const nodeRequire = createRequire(import.meta.url);
++const {Ajv: AjvConstructor} = nodeRequire('ajv') as {Ajv: new (options?: Record<string, unknown>) => AjvLike};
++
++// Tool schemas are authored loosely, so compile without ajv's strict mode or format validation.
++const ajv = new AjvConstructor({strict: false, validateFormats: false});
++
++const compileWithAjv: SchemaCompiler = schema => ajv.compile(schema);
++
+ export interface ToolResponse {
+   result: string;
+   clientMessages?: OutgoingMessage[];
+@@ -35,10 +62,30 @@ export interface RegisteredTool {
+ interface StoredTool {
+   definitionSource: ToolDefinitionSource;
+   execute: ToolExecutor;
++  validators: WeakMap<object, CompiledValidator>;
++}
++
++// A schema that ajv cannot compile is a programming error, not a runtime input problem: name the tool.
++function compileValidator(
++  toolName: string,
++  schema: ToolDefinition['inputSchema'],
++  compile: SchemaCompiler
++): CompiledValidator {
++  try {
++    return compile(schema);
++  } catch (error) {
++    const detail = error instanceof Error ? error.message : String(error);
++    throw new Error(`Invalid inputSchema for tool ${toolName}: ${detail}`, {cause: error});
++  }
+ }
+ 
+ export class ToolRegistry {
+   private readonly tools = new Map<string, StoredTool>();
++  private readonly compileSchema: SchemaCompiler;
++
++  constructor(compileSchema: SchemaCompiler = compileWithAjv) {
++    this.compileSchema = compileSchema;
++  }
+ 
+   private resolveDefinition(source: ToolDefinitionSource): ToolDefinition {
+     return typeof source === 'function' ? source() : source;
+@@ -46,7 +93,9 @@ export class ToolRegistry {
+ 
+   register(definition: ToolDefinitionSource, execute: ToolExecutor): void {
+     const resolved = this.resolveDefinition(definition);
+-    this.tools.set(resolved.name, {definitionSource: definition, execute});
++    const validators = new WeakMap<object, CompiledValidator>();
++    validators.set(resolved.inputSchema, compileValidator(resolved.name, resolved.inputSchema, this.compileSchema));
++    this.tools.set(resolved.name, {definitionSource: definition, execute, validators});
+   }
+ 
+   get(name: string): RegisteredTool | undefined {
+@@ -73,12 +122,26 @@ export class ToolRegistry {
+     return this.tools.has(name);
+   }
+ 
++  /** Validates input against the declared schema and returns a rejection response instead of throwing; see specs/hal-engine-tool-input-validation/spec.md. */
+   async execute(name: string, input: Record<string, unknown>, context?: ToolContext): Promise<ToolResponse> {
+     const tool = this.tools.get(name);
+     if (!tool) {
+       log.warn('tool', 'tool not found', {name});
+       throw new Error(`Unknown tool: ${name}`);
+     }
++    const resolved = this.resolveDefinition(tool.definitionSource);
++    let validate = tool.validators.get(resolved.inputSchema);
++    if (!validate) {
++      validate = compileValidator(resolved.name, resolved.inputSchema, this.compileSchema);
++      tool.validators.set(resolved.inputSchema, validate);
++    }
++    if (!validate(input)) {
++      const violations = (validate.errors ?? [])
++        .map(error => `${error.instancePath ?? ''} ${error.message ?? ''}`.trim())
++        .join('; ');
++      log.warn('tool', 'input rejected by schema', {name});
++      return {result: `Invalid input for ${name}: ${violations}`};
++    }
+     log.info('tool', 'executing', {name, inputKeys: Object.keys(input)});
+     const rawResult = await tool.execute(input, context);
+     const response = normalizeToolResponse(rawResult);
+diff --git a/src/providers/providerFactory.test.ts b/src/providers/providerFactory.test.ts
+index bdf2a36..55d30cc 100644
+--- a/src/providers/providerFactory.test.ts
++++ b/src/providers/providerFactory.test.ts
+@@ -1,6 +1,22 @@
+-import {createProvider} from './providerFactory.js';
++import {jest} from '@jest/globals';
+ import type {ResponseSchema, StructuredOutputParams} from '../types/ai.js';
+ 
++// The real SDK constructors do work a shape assertion never needs (VertexAI warns from its own constructor), so the arms build against stubs.
++// createRequire never reaches jest's ESM registry, so the helper is the seam, not the package.
++jest.unstable_mockModule('./requireOptionalPeer.js', () => ({
++  requireOptionalPeer: () => ({
++    VertexAI: class {
++      getGenerativeModel(): Record<string, never> {
++        return {};
++      }
++    },
++    BedrockRuntimeClient: class {},
++    ConverseStreamCommand: class {},
++  }),
++}));
++
++const {createProvider} = await import('./providerFactory.js');
++
+ // An arm that drops its argument stays invisible until compared against the direct factory.
+ const SCHEMA: ResponseSchema = {type: 'object', properties: {status: {type: 'string'}, count: {type: 'number'}}};

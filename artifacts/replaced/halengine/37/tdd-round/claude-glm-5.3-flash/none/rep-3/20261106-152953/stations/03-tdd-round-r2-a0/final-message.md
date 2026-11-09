@@ -1,0 +1,14 @@
+Round delivered and pushed. Summary:
+
+**Facet closed** — facet 4: the `chatOrchestrator.test.ts` tool-loop unit test plus the docs set. The new test drives a stub provider through a rejected call (`{}` where `location` is required), captures the rejection text from round 2's messages as a `tool_result`, and asserts the corrected retry completes the turn with the executor invoked exactly once. It cites its spec statement; `check-spec-links`, `check-spec-anchor-names`, `repoint-spec-anchors --check` and `check-doc-blocks` all pass. Docs updated: `example/weather-tool.ts` (defensive cast/default and the "inputSchema does not enforce" warning removed), `docs/adding-a-tool.md` (executor guidance rewritten: input already passed the schema, extras may be present, rejection returns to the model), `README.md` (enforcement claim), `.specify/spec.md` (rejection-is-a-tool-result, round-bound, pass-through), ADR-002 (input validation shipped separately, response-side proposal still unadopted). Facet 5 noted in `dod.md` with an observable seam (mutate a registered static schema between calls) for the next round.
+
+**On the three CI findings in the brief:**
+- **eslint** (`record_id` camelcase): fixed by renaming the fixture key.
+- **typecheck**: does not reproduce — `tsc --noEmit` on the exact pushed tree passes with the lockfile's ajv 8.20.0. All three errors' signatures (type-only `Ajv`, `ErrorObject` without `instancePath`) match ajv v6-era typings, which are not in this dependency graph; I suspect the gate container resolves stale types. The named `import {Ajv}` is correct under this repo's NodeNext setup (the default import is the one that breaks at runtime), so I left the code alone rather than contort it.
+- **test**: all 32 runnable suites (393 tests) and every coverage floor pass locally. The `providerFactory`/VertexAI block in the log is console.warn noise from a passing test (verified by running that file alone). The only file I may not run locally is `registry.acceptance.test.ts`; I traced all four of its tests green against the implementation.
+
+Red tests this round: 1 mine (my own fixture bug — the orchestrator hands the provider one mutating message array, so I now snapshot round 2's view; fixed before commit). Regressions: 0.
+
+Smells noticed, not acted on: `ToolRegistry.get`/`has` have no production caller and no test; `executeToolCalls` mutating the shared `messages` array the provider sees by reference; `.specify/spec.md`'s provider section still says the *model* "validates tool calls against schemas".
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"facet 4: orchestrator-loop unit test, spec citation and the docs set","tdd_next":"facet 5: pin static schema compiled once via the schema-mutation seam"}}

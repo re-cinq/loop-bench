@@ -1,0 +1,15 @@
+Round complete and delivered. Summary:
+
+**Facet closed:** *Handle `list_sessions` in `src/transport/ws/messageHandler.ts`* — the red→green round, with the types facet and the `sessionStore`-threading facet as the least code the test needed:
+
+- **RED:** one new unit test in `src/transport/ws/messageHandler.test.ts` — `answers a list_sessions frame for its socket user with ISO dates, and a store that cannot list as a server error`. It failed for the expected reason: the frame was dropped silently, the store never asked, nothing answered.
+- **GREEN:** `createMessageHandler` gained an optional `sessionStore` parameter, wired from `createServer`; `list_sessions` is answered on the non-locked path beside `ping` — `session.userId` is read from the connection (a client-supplied `userId` never reaches the store), `listFor` gets `{limit, before}`, summaries are serialised to ISO strings, a store with no `listFor` answers an empty list, and a rejecting store logs on the `ws` category with session id and user id and answers `SERVER_ERROR` with the socket left open. `SessionSummaryFrame`/`SessionListMessage` joined `OutgoingMessage` additively; all three frame types re-exported from `src/index.ts`.
+- **REFACTOR:** `handlePing` was a second hand-rolled `JSON.stringify` path in the dispatch I touched — collapsed into `sendJson`. Bar stayed green: **55/55** in the file (my test + 54 pre-existing).
+
+Red tests of mine: 0. Regressions: 0. The three acceptance tests in `.lore/dod.md` were not run here — CI judges them on the push.
+
+Notes for the record: no `lore-query-trace` tool exists in this pod (no CLI, no MCP), so coverage of the touched code was checked by hand — `messageHandler.test.ts` owns it. ts-jest surfaces no type diagnostics here (a `sessionStore is not defined` reached runtime as a `ReferenceError`, not a compile error), so I verified signatures by re-reading; CI's typecheck step is the real judge. Smells noticed and not acted on: `answerUserMessage`/`answerInTurn` now carry `sessionStore` although a `list_sessions` frame can never route through the locked path; and `.lore/dod.md` now records a decision owed — the issue's opt-in `transport.history`/`UNSUPPORTED`/`StoreCannotList` criteria contradict the acceptance tests this branch already records (no flag, empty list without `listFor`), so settling that is the ticket owner's call before anyone builds either version. Remaining facets: the `specs/hal-engine-websocket-protocol/spec.md` documentation, and the changelog + `docs/getting-started.md` via `example/full-config.ts` and `npm run docs:fix`.
+
+Committed as `8ce28a5`, pushed; `origin/main` already merged in, working tree clean, branch not ahead of its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"handle list_sessions in messageHandler (with frame types and sessionStore threading)","tdd_next":"document the two frames in specs/hal-engine-websocket-protocol/spec.md, then changelog + docs/getting-started"}}

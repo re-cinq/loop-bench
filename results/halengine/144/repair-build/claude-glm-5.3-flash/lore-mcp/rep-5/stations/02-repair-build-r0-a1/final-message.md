@@ -1,0 +1,16 @@
+Done. The branch is pushed and in sync with its upstream, with no drift from `main` (0 commits behind, so no merge was needed).
+
+## What the red build was, and what I did
+
+CI judged `5cd4e67` red on **eslint** (3 duplication pairs between `conversationList.acceptance.test.ts` and `sessionResume.test.ts`, a `prefer-early-return` in the former, a `no-flag-params` in `validation.test.ts`) and **test** (the acceptance suite's SERVER_ERROR/no-`listFor` expectations). The trace had no prior failures on any named file.
+
+The working tree already held an uncommitted rework that fixes all of it and renames the frames from the earlier round's `list_sessions`/`session_list` to the ticket's `list_conversations`/`conversation_list`, implementing the handler (store + `transport.history` threaded into `createMessageHandler`, answered off the per-session lock, `ws.userId` never the frame, `UNSUPPORTED` when off / no `listFor` / `StoreCannotList`, `SERVER_ERROR` otherwise). I verified it rather than trusting it:
+
+- **Ran the CI-named tests** in-band from the repo root: the 3 named suites (37 tests), then all 18 transport suites, then the full suite — **69 suites, 701 tests, all passing**.
+- **Spec citations**: the rework moved every test the conversation-list spec's protocol section cited, which would have turned CI's `Spec citations name their test` and `Spec anchor check` red next round. I rewrote that section for the shipped frames (with the authorisation rule and GDPR note), repointed 31 drifted citations across 3 specs via `spec:names --fix`, and confirmed `spec:names`, `repoint-spec-anchors --check origin/main` (0 stale), `check:spec-links`, `check:spec-status`, `docs:check`, `docs:check-paths` and `check-changelog.sh` all pass. Also fixed the CHANGELOG bullet that still advertised the nonexistent `list_sessions` frames.
+- **One latent red CI step found by inspection**: the rework read `ws.userId` off a socket typed as plain `WebSocket`, which has no `userId` — CI's Type check would have failed. I typed the handler socket `ExtWebSocket` (what the connection handler actually passes) and updated the four test doubles plus the `ConnectionHandlerDeps` declaration.
+- **Lint verified by reading the rules, not by running eslint** (forbidden here): the guard now uses single-statement `if (...) return` (the rule only fires on ≥4-statement blocks), the shared helpers live once in `wsTestSupport.ts`, `Array(9).fill(false)` became named error strings, and no counted context exceeds the boolean-operator budget.
+
+**Caveats, stated plainly**: eslint, typecheck and build were not run in this pod (per instructions — they OOM here); those are CI's to judge. `routes/chats.test.ts` — a supertest suite importing nothing I touched — flaked once in ~10 full runs and passes standalone 6/6; a pre-existing timing flake, not one of CI's findings. The ticket's `websocket-protocol` spec section and the `docs/getting-started.md` § Conversation list remain open (nothing CI checks; recorded as the open facet in `.lore/dod.md`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"eslint dedup/early-return/flag-params and the failing list_conversations acceptance test fixed, plus the stale spec citations and a latent ws.userId typecheck error the rework would have shipped"}}

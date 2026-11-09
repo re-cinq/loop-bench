@@ -1,0 +1,3 @@
+Committed and pushed `212381b`. One new test went red → green; no regressions observed. Acceptance and existing regression tests await CI. Branch is clean and current with main. No unrelated smells identified.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Wrap non-Error rejections for onError while preserving their cause and caller identity","tdd_next":"Confirm existing Error-instance tests and acceptance tests through CI"}}

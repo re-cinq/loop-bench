@@ -1,0 +1,5 @@
+The round is blocked because the acceptance tests described in [.lore/dod.md](/var/tmp/loop-bench/runs/6a84e49603ce/workspace/target/.lore/dod.md) conflict with the ticket: they require `list_sessions` / `session_list` and an empty list when the store lacks `listFor`; the ticket requires `list_conversations` / `conversation_list` and an `UNSUPPORTED` error. The ticket explicitly says to stop if an acceptance test is wrong.
+
+The CI brief is also truncated, and the required Lore coverage and CI tools are unavailable in this session. I made no changes and ran no tests; the number of red tests attributable to this round is zero, and the number of regressions cannot be determined from the truncated verdict.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance criteria in .lore/dod.md contradict the ticket's required protocol and unsupported-store behavior."}}

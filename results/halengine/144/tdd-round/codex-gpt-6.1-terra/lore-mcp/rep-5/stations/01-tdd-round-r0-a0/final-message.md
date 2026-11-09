@@ -1,0 +1,5 @@
+The acceptance tests conflict with the ticket, so I stopped without editing or running tests. The definition of done requires `list_sessions` / `session_list` and an empty list when the store lacks `listFor`; the ticket explicitly requires `list_conversations` / `conversation_list` and an `UNSUPPORTED` error in that case. The ticket also requires a separate history opt-in and error logs without store details, which conflict with the listed acceptance behavior.
+
+The CI verdict could not be retrieved: Lore reported that branch `loop-bench/144` was not found. No red tests were run here: 0 mine and 0 identified regressions.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance tests contradict the ticket's protocol and unsupported-store requirements; the intended contract must be resolved."}}

@@ -1,0 +1,5 @@
+The acceptance tests specify a different contract from the ticket: they require `list_sessions`/`session_list` and an empty list when the store cannot list, while the ticket requires `list_conversations`/`conversation_list` and an `UNSUPPORTED` error. The validation limits also differ. Under the instruction to stop if an acceptance test is wrong, I made no changes and ran no tests.
+
+CI’s verdict was unavailable: Lore returned “branch not found.” The number of red tests attributable to this round and the number of regressions are therefore unknown. The definition of done also reflects the conflicting contract and needs correction alongside the acceptance tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance tests contradict the ticket's required protocol and unsupported-store behavior."}}

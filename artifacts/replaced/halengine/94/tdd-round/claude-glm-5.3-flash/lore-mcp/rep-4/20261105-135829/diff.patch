@@ -1,0 +1,222 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..ed5e6f1
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,21 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — The chat orchestrator acts as a seam, allowing us to install hooks through configuration and observe their execution when `beforeSession` throws.
++
++## Done when these pass
++
++- [x] **runs onError and afterSession when beforeSession throws** — pins that a thrown error in `beforeSession` propagates to the caller while invoking both `onError` and `afterSession` hooks.
++      `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`
++
++## Facets
++
++- [x] Move `beforeSession` inside the `try` block in `chatOrchestrator.ts`.
++- [x] Update `specs/hal-engine-config-hooks/spec.md` with the new guarantee for `beforeSession`.
++- [x] Document in the CHANGELOG what changes for an existing consumer.
++
++## Out of scope
++
++- the `instanceof Error` gate on `onError` (its own issue)
++- usage accounting across tool rounds (HALEngine#93)
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 8ddff4d..50c3c80 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -16,6 +16,7 @@ package, not for somebody reading this repository's commit log.
+ 
+ ### Changed
+ 
++- **A `beforeSession` hook that throws now runs the same error path as every other orchestrator failure.** The call was awaited above the orchestrator's `try` block, so its throw escaped before `onError` and `afterSession` existed: the caller saw the rejection, but no hook ever heard about it, and anything `beforeSession` had allocated — a span, a database handle, a rate-limit token — leaked, because the `afterSession` that releases it never ran. Now the throw reaches the same `catch` and `finally`: `onError` receives the error, `afterSession` fires, and the session still reaches the store's `save`. **Migration note**: an `afterSession` hook that assumed it only ever sees a started session now also runs for a turn that failed inside `beforeSession`. On that path you may assume the turn never started — the provider was never called, no tool ran, and no hook after `beforeSession` in the fire order fired — so cleanup can release unconditionally and needs no flag to tell "never allocated" from "allocated and finished"; a hook that records "the turn happened" must keep that judgement in its own state. A `beforeSession` that returns normally behaves exactly as before, and the caller still sees the original rejection unchanged.
+ - Every `SessionStore` member is now `Awaitable<T>` (`T | Promise<T>`) rather than a bare `T`, so a store backed by a database is expressible for the first time. `Awaitable` is exported from the package root. **A synchronous implementation needs no change** — `T` is assignable to `T | Promise<T>` in a return position — and `InMemorySessionStore` is unedited. The WebSocket connection handler now awaits `create` and the release that follows a close: it pauses the socket across the await so a frame sent before `connected` arrives is buffered rather than dropped, attaches its `close` listener before the await so a socket that closes mid-create leaves no session behind, and catches a rejection from either call so one store failure closes one socket instead of ending the process with an unhandled rejection. **Migration note**: the `connected` frame now arrives one tick later, after the awaited `create`, so a client that waits for it (as the protocol already requires) sees no difference; only code that assumed the frame was emitted synchronously with the upgrade does.
+ - **The engine no longer erases a conversation when its socket closes.** The WebSocket close handler called `sessionStore.delete(sessionId)` unconditionally, which meant that behind a durable store every conversation was written and then destroyed the moment the customer closed their tab — the opposite of what this engine's own documentation promised. `SessionStore.delete` now has no engine-internal caller at all and is purely your erasure primitive. The credentials the socket carried are cleared from the session on close, since they were issued for a request that is over; the entries are untouched. **Migration note**: to restore the old behaviour exactly, pass `onDisconnect: sessionId => store.delete(sessionId)` — that one line is the whole migration. If you rely on the default store not growing, note that it is now bounded by `maxAgeMs` (eight hours) rather than by the close handler; that is a memory bound, not a retention policy, and the retention decision remains yours.
+ 
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..72fbcdf 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -19,10 +19,14 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
++## When `beforeSession` throws
++
++- `beforeSession` sits inside the `try` block, so a throw there reaches the same `catch` and `finally` as any other failure in the turn: the caller still sees the rejection unchanged, `onError` receives the thrown error with the same argument shape as any other orchestrator failure, and `afterSession` fires on the way out ([validated by: runs onError and afterSession when beforeSession throws](../../src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts#L40)).
++- On that path a hook may assume the turn never started: the provider was never called, so no tool ran and no hook after `beforeSession` in the fire order fired either, while the session still reaches the store's `save` from the same `finally` — an `afterSession` releasing what `beforeSession` allocated can therefore release unconditionally, with no flag of its own to tell "never allocated" from "allocated and finished" ([validated by: saves once and still rethrows when beforeSession fails](../../src/orchestration/sessionSave.test.ts#L93)).
++
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. Neither is owned by an issue in this epic; each is a separate, out-of-scope change.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
+-- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+-- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
++- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L151](../../src/orchestration/chatOrchestrator.ts#L151)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
++- `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L149](../../src/orchestration/chatOrchestrator.ts#L149)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/specs/hal-engine-session-write-signal/spec.md b/specs/hal-engine-session-write-signal/spec.md
+index f8947de..5c88f45 100644
+--- a/specs/hal-engine-session-write-signal/spec.md
++++ b/specs/hal-engine-session-write-signal/spec.md
+@@ -11,6 +11,7 @@
+ 
+ - `save` fires exactly once for one processed user message ([validated by: saves once for one processed user message](../../src/orchestration/sessionSave.test.ts#L31)).
+ - It is called from the orchestrator's `finally` path, the same one that runs `afterSession`, rather than from the success path, because a turn that ended in a provider error still produced a user entry worth keeping and a store that only heard about successes would silently lose exactly the conversations a customer complains about: a provider that rejects still produces one `save`, and the rejection still reaches the caller ([validated by: saves once and still rethrows when the provider fails](../../src/orchestration/sessionSave.test.ts#L39)).
++- The `finally` path also covers a turn that fails inside `beforeSession`, which sits in the same `try` as the rest of the turn (re-cinq/HALEngine#94): the provider is never reached, no hook after `beforeSession` fires, and the turn still rejects its caller while one `save` carries the session out ([validated by: saves once and still rethrows when beforeSession fails](../../src/orchestration/sessionSave.test.ts#L93)).
+ - The store reaches the orchestrator through `ChatOrchestratorOptions.sessionStore`, which `createHalEngine` forwards from `HalEngineConfig.session` — the same store the transport already received ([validated by: forwards the session store, so its write signal reaches the orchestrator](../../src/config.test.ts#L204)).
+ 
+ ## What it carries
+diff --git a/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts b/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts
+new file mode 100644
+index 0000000..7c4797f
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts
+@@ -0,0 +1,67 @@
++import {describe, expect, it} from '@jest/globals';
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++function createMockProvider(response: string): AIProvider {
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      yield {type: 'text', text: response};
++      yield {type: 'stop', stopReason: 'end_turn'};
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const promptBuilder = new PromptBuilder({
++  baseSystemPrompt: 'You are HAL.',
++  systemPromptSuffix: 'Be precise.',
++  contextConfig: {
++    historyLength: 10,
++    includeTimestamps: false,
++    includeSystemPrompt: true,
++  },
++});
++
++describe('beforeSession throwing', () => {
++  it('runs onError and afterSession when beforeSession throws', async () => {
++    const errorToThrow = new Error('Database connection failed in beforeSession');
++
++    let caughtError: Error | undefined;
++    let afterSessionRan = false;
++
++    const orchestrator = createChatOrchestrator(createMockProvider('hello back'), promptBuilder, undefined, {
++      hooks: {
++        beforeSession: async () => {
++          throw errorToThrow;
++        },
++        onError: async (_session, error) => {
++          caughtError = error;
++        },
++        afterSession: async () => {
++          afterSessionRan = true;
++        },
++      },
++    });
++
++    await expect(orchestrator.processMessage(createSession('hello'))).rejects.toThrow(
++      'Database connection failed in beforeSession'
++    );
++
++    expect(caughtError).toBe(errorToThrow);
++    expect(afterSessionRan).toBe(true);
++  });
++});
+diff --git a/src/orchestration/chatOrchestrator.ts b/src/orchestration/chatOrchestrator.ts
+index da09e31..277b0c4 100644
+--- a/src/orchestration/chatOrchestrator.ts
++++ b/src/orchestration/chatOrchestrator.ts
+@@ -88,9 +88,10 @@ export function createChatOrchestrator(
+     },
+ 
+     async *processMessageStream(session: ChatSession): AsyncGenerator<MessageChunk> {
+-      if (hooks?.beforeSession) await hooks.beforeSession(session);
+-
+       try {
++        // Inside the try, so a throw from beforeSession reaches the same catch and finally as any other failure in the turn.
++        if (hooks?.beforeSession) await hooks.beforeSession(session);
++
+         let userMessage = lastUserContent(session);
+ 
+         if (hooks?.beforeUserInput) {
+diff --git a/src/orchestration/sessionSave.test.ts b/src/orchestration/sessionSave.test.ts
+index c8f0162..d69d6f2 100644
+--- a/src/orchestration/sessionSave.test.ts
++++ b/src/orchestration/sessionSave.test.ts
+@@ -7,7 +7,7 @@ import {
+   writeSignalPromptBuilder,
+ } from '../infrastructure/writeSignalTestSupport.js';
+ import {captureErrors} from '../shared/logCaptureTestSupport.js';
+-import type {AIProvider} from '../types/ai.js';
++import type {AIProvider, MessageChunk} from '../types/ai.js';
+ import type {ChatSession} from '../types/session.js';
+ import type {SessionStore} from '../types/sessionStore.js';
+ 
+@@ -89,4 +89,44 @@ describe('the session write signal', () => {
+ 
+     expect({outcome, saved}).toEqual({outcome: 'threw: hook exploded', saved: ['s1']});
+   });
++
++  it('saves once and still rethrows when beforeSession fails', async () => {
++    const saved: string[] = [];
++    let providerCalled = false;
++    let reachedAfterUserInput = false;
++    const provider: AIProvider = {
++      async *sendMessage(): AsyncGenerator<MessageChunk> {
++        providerCalled = true;
++        yield {type: 'text', text: 'hi'};
++        yield {type: 'stop', stopReason: 'end_turn'};
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++    const store = recordingSessionStore(session => void saved.push(session.sessionId));
++
++    const orchestrator = createChatOrchestrator(provider, writeSignalPromptBuilder, undefined, {
++      sessionStore: store,
++      hooks: {
++        beforeSession: async () => {
++          throw new Error('before session gone');
++        },
++        afterUserInput: async () => {
++          reachedAfterUserInput = true;
++        },
++      },
++    });
++
++    const outcome = await orchestrator
++      .processMessage(sessionWith('hello'))
++      .catch((error: Error) => `threw: ${error.message}`);
++
++    expect({outcome, saved, providerCalled, reachedAfterUserInput}).toEqual({
++      outcome: 'threw: before session gone',
++      saved: ['s1'],
++      providerCalled: false,
++      reachedAfterUserInput: false,
++    });
++  });
+ });

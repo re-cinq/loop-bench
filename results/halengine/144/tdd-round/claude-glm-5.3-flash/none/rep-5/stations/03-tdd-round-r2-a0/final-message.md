@@ -1,0 +1,15 @@
+Round complete. All findings from the brief's CI verdict are fixed and pushed as `7bf9621`; the branch is up to date with `origin/loop-bench/144` and merged cleanly with `origin/main` (no drift).
+
+**What this round delivered** — every item in `CI reported failures`, plus the dod facet they blocked:
+
+- **typecheck** `messageHandler.ts(110,41)`: `handleListSessions`'s `Promise<void>` was `return`ed from the sync `answerFrame`. It is now fired with `void` — safe, since the handler has always caught its own failure, and it preserves the off-lock, at-once answer the spec describes.
+- **test** red: `optionalPeers.test.ts` was collateral of that same type error — its `beforeAll` runs `npm run build`, which failed on it. Fixed by the typecheck fix.
+- **eslint camelcase** on the `user_message`/`list_sessions` validator keys: the record became a `Map` keyed by strings. I first tried quoted keys, but this repo's prettier strips them (verified empirically), so the Map is the fix that survives formatting.
+- **eslint max-member-chain** `hal.wss.clients.size` in `wsTestSupport.ts`: `wss` is destructured first.
+- **eslint require-spec-link** ×2 (tests at `messageHandler.test.ts:908` and `:920`): wrote §4.3 `list_sessions` and §5.9 `session_list` into `specs/hal-engine-websocket-protocol/spec.md` — frame examples, field tables, the authorisation rule (list is the connection user's; a frame `userId` is ignored), the off-the-lock answering rule — with citations to those two tests and the acceptance tests. This closed dod facet 5 (the conversation-list spec already had its WebSocket section from the last round).
+
+**Verification here**: ran only the two unit files that own my edits — `messageHandler.test.ts` and `validation.test.ts` — 60/60 green. Prettier run over the changed `.ts` files. Ran the repo's `repoint-spec-anchors.mjs` (its reanchor equivalent): 721 anchors up to date, 0 unresolved, nothing rewritten, and the changed specs are taken as authored against the working tree. The acceptance tests were not run — CI judges them. Red tests this round: none mine, none regressed (the one failing suite was the build-error collateral above). dod.md now has facet 5 ticked and two ticket-level facets appended unchecked.
+
+Unrelated smells noticed, not acted on: package.json still reads 0.5.0 while the CHANGELOG's `[Unreleased]` entry exists (the MINOR bump is recorded in dod.md), and `docs/getting-started.md` § Conversation list is still owed through `example/full-config.ts` + `npm run docs:fix` — both recorded as unchecked facets for the next round.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"spec facet: list_sessions/session_list documented in the protocol spec, closing the last dod facet and all four CI findings","tdd_next":"docs/getting-started § Conversation list via example/full-config.ts + npm run docs:fix, then the MINOR version bump"}}

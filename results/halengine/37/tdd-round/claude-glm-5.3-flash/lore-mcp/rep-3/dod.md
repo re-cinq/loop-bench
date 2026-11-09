@@ -1,0 +1,38 @@
+# Definition of Done
+
+> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor
+> without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`).
+> Every tool declares a JSON Schema (`src/types/ai.ts`) that is handed verbatim to both
+> providers, but nothing validates what comes back from the model.
+
+**Strategy: `direct`** — `ToolRegistry.register`, `ToolRegistry.execute` and `createChatOrchestrator` already expose the exact entry points this ticket changes, so the acceptance tests call them directly today and fail because schema compilation and input validation are absent.
+
+## Done when these pass
+
+- [ ] **rejects input missing a required property with a ToolResponse and never calls the executor** — `ToolRegistry.execute` validates `input` against `inputSchema`, returns a `ToolResponse` naming the missing required property, and does not invoke the executor.
+  `src/orchestration/tools/registry.acceptance.test.ts`
+
+- [ ] **rejects a wrong-typed property naming the field and expected type without leaking the offending value to the result or logs** — `ToolRegistry.execute` rejects a property with the wrong JSON Schema type without calling the executor, names the failing field path and expected type in `result`, and omits the offending property value from both `result` and emitted log lines.
+  `src/orchestration/tools/registry.acceptance.test.ts`
+
+- [ ] **throws at register time naming the tool when a static inputSchema cannot be compiled** — `ToolRegistry.register` compiles a static `ToolDefinition`'s `inputSchema` once at registration time and throws synchronously naming the tool when the schema is invalid.
+  `src/orchestration/tools/registry.acceptance.test.ts`
+
+- [ ] **returns a schema rejection as a tool_result in the orchestrator loop so the model can correct the call on the next round** — `createChatOrchestrator` feeds a schema-rejected tool call's `ToolResponse.result` back to the provider as a `tool_result` without invoking the executor on the invalid call, allowing the model to retry with valid arguments and complete the turn.
+  `src/orchestration/tools/registry.acceptance.test.ts`
+
+## Facets
+
+- [x] Add `ajv` to `dependencies` in `package.json` and `package-lock.json` (`strict: false`, `validateFormats: false`, no coercion, no defaults, no injected `additionalProperties: false`) and bump the package version `MINOR`. (ajv ^8.20.0 in dependencies, version 0.4.0)
+- [x] Compile static `ToolDefinition.inputSchema` at `ToolRegistry.register` time (throwing an error naming the tool on invalid schemas) and cache compiled validators for function-valued `ToolDefinitionSource` schemas by schema object reference (`WeakMap`). (implemented in registry.ts; register-throw pinned by an existing red acceptance test — CI confirms)
+- [x] Validate `input` in `ToolRegistry.execute` before invoking the executor, returning a `ToolResponse` (`{result}`) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at `specs/hal-engine-tool-input-validation/spec.md`. (required-field rejection pinned by registry.test.ts#L4, green locally)
+- [x] Add unit tests in `src/orchestration/tools/registry.test.ts` and `src/orchestration/chatOrchestrator.test.ts`, link the remaining statements in `specs/hal-engine-tool-input-validation/spec.md`, and update `example/weather-tool.ts`, `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `adrs/ADR-002-response-validation.md`, and `CHANGELOG.md`. (wrong-type, compiled-once via a get-trap schema Proxy, differing-schema and Unknown-tool unit tests added; orchestrator loop test added to chatOrchestrator.test.ts; every spec statement now cites a test and Status moved to Shipped; example executor no longer casts defensively, doc example block synced, README/adding-a-tool/.specify/ADR-002 updated to the enforced contract)
+- [x] Confirm the CI runner's dependencies: the run on cacaa11 confirms the stale-runner suspicion — CI's console output carries ajv **v6** error wording ("should have required property") and the runner checkout's `node_modules` holds ajv 6.15.0 top-level against a lockfile pinned to 8.20.0, installed 2026-10-20 with no `npm ci` on the branch. Confirmed harmless by reproduction: registry.test.ts + chatOrchestrator.test.ts (29 tests) and the three spec-check script suites (45 tests) all pass inside the runner checkout at 81dd779 itself, under its ajv 6.15.0; the wording-agnostic assertions hold under both majors, so no source change is needed.
+- [x] Explain the full-run-only red on `scripts/check-spec-status.test.ts` in the cacaa11 run: explained — it was never check-spec-status. Every full run since 520c9b6 was red on the `src/orchestration/` functions coverage floor (91.52% < 92), and jest prints that `Jest: Coverage for ...` error only after ALL suite output, exactly where every truncated brief cut off; a standalone suite run (`npx jest <file>`) collects no coverage and so cannot see the floor, which is why the suite was green standalone every time. Evidence: the red run's own `ci-4/coverage/coverage-final.json` (written only by a completed full run) recomputed under jest's own grouping (`@jest/reporters` `_checkThreshold`: a file counts toward EVERY matching path-prefix group, so `registry.ts` lands in `src/orchestration/` too — the previous round's "every other group is main-identical" read the config comment, not the reporter source).
+- [x] Repair the CI findings on 81dd779: the four eslint errors in `src/orchestration/chatOrchestrator.test.ts` (a 3-hop `lastMessage.content[0]?.content` chain broken into two 2-hop reads, and three tests whose citations in `specs/hal-engine-architecture/spec.md` drifted when the retry-loop test was inserted above them) and the four `spec:names` findings naming the same drift. Citations repointed by `node scripts/check-spec-anchor-names.mjs --fix` (466→511, 449→494, 478→523, 500→545); both spec checks exit 0, the edited suite passes (23/23).
+- [x] CI's `test` step red on 81dd779/e43731b is NAMED and fixed: the `src/orchestration/` **functions** floor, 91.52% < 92 — not a failing suite. The four never-tested public methods `get`/`getPromptInstructions`/`getExamplePrompts`/`has` (uncovered since main, where the registry had no test file) were the uncovered set; registry.test.ts gained one characterization test covering all four (statement added to `specs/hal-engine-architecture/spec.md` § Tool Execution Loop citing registry.test.ts#L132; anchor/names/links/status script gates all exit 0), lifting the group to 58/59 = 98.31% ≥ 92 with every other floor unchanged. No production code changed this round; the new test is green on arrival by design.
+- [x] Repair the eslint finding on 00809ed: `re-lint/max-expects` flagged the read-surface characterization test (registry.test.ts:132) for 2 expect calls against a max of 1. The before- and after-register snapshots now assert as one `toEqual` object — the rule's stated remedy — keeping the test title and its line-132 declaration, so the architecture-spec citation `registry.test.ts#L132` is untouched (anchor-name gate exits 0 at 403 citations; registry.test.ts 7/7 green; prettier unchanged).
+
+## Out of scope
+
+- Output validation and domain sanity checks (covered by ADR-002), MCP tool-server discovery and proxying (#42), per-tool authorization or `beforeToolCall` hooks (#40), retry/timeout/rate-limiting around tool execution, and concrete tool implementations.

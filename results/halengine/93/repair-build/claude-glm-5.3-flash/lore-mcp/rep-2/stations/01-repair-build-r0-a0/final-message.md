@@ -1,0 +1,10 @@
+Red build fixed and pushed as `6df0d4c`; branch is up to date with its upstream and with `origin/main`.
+
+**What CI named and what I did** — all four findings were in `src/orchestration/orchestratorHelpers.test.ts`, on the `accumulateUsage` suite added last round:
+
+- **`re-lint/max-expects` at 35:3** — the "returns the defined side when one operand is undefined" test held two `expect` calls. Split it into two single-expect tests: `returns the accumulated total when a later round reports no usage` (`accumulateUsage(usage, undefined)`) and `returns the first round usage when nothing has accumulated yet` (`accumulateUsage(undefined, usage)`).
+- **`re-lint/require-spec-link` at 29:3, 35:3, 41:3** (and the new fourth test would have needed one too) — these unit tests back statements the spec already carries, so I cited them there rather than inventing new statements. `specs/hal-engine-config-hooks/spec.md`'s two usage statements now carry second/fourth citations: the summing test backs the "summed across every provider call" statement alongside its acceptance test, and the three undefined-handling tests back the "some rounds omit / none report" statement alongside its acceptance test — the same behaviour the helper implements at unit level.
+
+**Verification** (scoped, pod-safe): the repo's own `check-spec-anchor-names` confirms all 13 citations in that spec name the test they point at; `check-spec-links` reports 0 misplaced across 1639 statements; `check-spec-status` 0 findings; `prettier --check` clean on both changed files; and the edited file passes 8/8 via the repo's jest invocation (`node --experimental-vm-modules node_modules/jest/bin/jest.js src/orchestration/orchestratorHelpers.test.ts` — my first attempt with bare `npx jest` failed on the missing ESM flag, an invocation error, not a test failure). No linter, build or typecheck was run here. `origin/main` merged clean ("Already up to date").
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"4 eslint errors on orchestratorHelpers.test.ts: split the two-expect accumulateUsage test and cited all four tests from specs/hal-engine-config-hooks/spec.md"}}

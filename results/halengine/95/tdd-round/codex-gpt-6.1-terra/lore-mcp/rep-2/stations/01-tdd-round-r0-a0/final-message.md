@@ -1,0 +1,5 @@
+Implemented and pushed the non-Error rejection handling in commit `686e156`. The focused test failed before the change and passed afterward; it covers string, object and `undefined` rejection values. One red test was mine; no regressions were reported, although Lore could not retrieve the prior CI verdict for this branch.
+
+The spec and changelog are updated. The existing Error-instance tests remain for CI to verify. I also recorded a remaining traceability facet: the test is stamped with its spec anchor, but the repository’s test-list script does not emit a `spec` descriptor field.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Call onError with wrapped non-Error rejections and preserve the original cause","tdd_next":"Expose the stamped spec anchor in test descriptors and confirm existing Error-instance tests through CI"}}

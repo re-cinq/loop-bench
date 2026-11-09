@@ -1,0 +1,18 @@
+The round is committed and pushed. Summary of what happened:
+
+**The round (red → green → refactor)**
+
+- **Facet closed:** handler dispatch of `list_sessions` — `createMessageHandler` gained the optional `sessionStore` parameter (1-arg callers unaffected), `createServer` wires it, and the frame is answered on the non-locked path beside `ping`: `listFor(session.userId, {limit, before})`, the two summary times serialised to ISO strings, `session_list` out through a new `sendSessionList`; a failing `listFor` answers one `SERVER_ERROR` frame that names no store detail, logs on the `ws` category with the session id, and leaves the socket open. `SessionSummaryFrame`/`SessionListMessage` joined the outgoing union and the `src/index.ts` re-exports (completing the types facet from the validation round).
+- **Red:** one new test in `src/transport/ws/messageHandler.test.ts` — the handler ignored the store and sent no frame. **Green:** 56/56 in that file (the round also hardened the store-failure paths with a sibling case: no `listFor` → empty list, `Error` and non-`Error` rejections → `SERVER_ERROR`, no store threaded → still answered), then refactor reviewed the diff and held the bar. I ran **only that file**, with a 300 s deadline; the acceptance tests are CI's to run. The only test I wrote is in the file named above — I did not run any acceptance test, lint, typecheck, or build here.
+- **Traceability:** one new cited statement in `specs/hal-engine-conversation-list/spec.md` plus a second citation on the existing store-failure bullet; my import shifted every line below it in the test file, so I ran `node scripts/repoint-spec-anchors.mjs origin/main` (79 anchors repointed, 0 unresolved) and verified `spec:names`, `check:spec-links` and `check:spec-status` pass, including the CI anchor check mode. Spec `Status` rows still match coverage.
+- **Delivery:** prettier run over every changed file; commit `2ee612c` pushed; `origin/main` has 0 commits the branch lacks, so there was no drift to merge and the PR will get CI; `git status` reports the branch up to date with `origin/loop-bench/144`.
+
+**Red tests:** 0 mine outstanding in my file; 0 regressions observed (the 54 pre-existing tests in the file stayed green through every step). CI's verdict on the push is the judge.
+
+**Also done, ticket-owned:** a `CHANGELOG.md` `## [Unreleased]` entry — CI's changelog gate fires on any PR touching `src/`, and this branch had none.
+
+**Named smells, acted on none:** (1) the committed acceptance tests and dod.md require an *empty* `session_list` for a store without `listFor` and have no `transport.history` opt-in, while the ticket text demands an error frame + `UNSUPPORTED` and a default-off gate — I followed the brief's acceptance tests; that descoping deserves an explicit decision in the PR. (2) the ticket says the user id comes from `ws.userId` but the brief's facet (which I followed) reads `session.userId` — equal in every flow that reaches the handler today because resume's ownership check compares them. (3) `handlePing` stringifies inline instead of using `sendJson` — pre-existing.
+
+**Next facet:** document `list_sessions`/`session_list` in `specs/hal-engine-websocket-protocol/spec.md` (field tables, authorisation rule) — the last unchecked facet in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"handle list_sessions in the message handler: store threaded through createMessageHandler/createServer, session_list answered off the lock with ISO dates, SERVER_ERROR on store failure, outgoing types exported","tdd_next":"document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md"}}

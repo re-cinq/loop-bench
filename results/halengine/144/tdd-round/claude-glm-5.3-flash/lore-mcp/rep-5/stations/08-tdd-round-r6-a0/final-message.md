@@ -1,0 +1,17 @@
+Pushed `9b0e6c3..6d5bfba` to `loop-bench/144`; branch is 0 behind `origin/main` (nothing to merge — main is already an ancestor) and `git status` shows it level with its upstream. Round summary:
+
+**What this round owed and closed**
+
+1. **CI's named finding on 9b0e6c3** — eslint's `re-lint/max-member-chain` at `src/transport/ws/connectionHandler.test.ts:293` (`handleMessage.mock.calls.map`, 3 hops). Fixed with the file's own established pattern — destructure the mock first, as the tests at lines 207/227/247 already do. Ran the edited file by name with the repo's jest invocation: **21/21 green in 0.23s** (this file is not one of the dod's acceptance tests; the acceptance file was never run here).
+2. **Anchor repoints** — the inserted line shifted eight spec anchors into lines ≥294 of that file (`session-lifetime` ×6, `awaitable-session-store` ×2); repointed +1 by hand (the repoint script treats baseline-vs-working differences as deliberately retargeted, so it would not have moved them), then verified with CI's exact step: `repoint-spec-anchors --check origin/main` — stale 0, unresolved 0. `check:spec-links`, `spec:names`, `check:spec-status`, `docs:check` all pass.
+3. **Docs facet** — `docs/getting-started.md` gains § Listing a User's Conversations: the two frames, the two-halved `before` cursor, the frame's `userId` dropped in favour of the connection's, empty list without `listFor` vs `SERVER_ERROR` when it fails, the off-lock answer order, and reopening a row via `?sessionId=` with resume on. Deviation noted in dod: the ticket's `example/full-config.ts` + `docs:fix` mechanism exists to keep a *config* listing honest, and this branch built the feature always-on with no config surface, so the section is client-facing prose beside § Session Resume.
+4. **Version facet** — resolved as release-time, not branch-time: `package.json` stays 0.5.0; `publish.yml` cuts releases from a tag and `check-version.sh` holds tag against committed version, exactly as main's own #146 landed. The MINOR note belongs in the PR body. Recorded in dod.
+5. **dod.md** — the three acceptance bullets ticked on CI's green `test` check for 9b0e6c3 (the brief named only eslint); three facets appended and ticked.
+
+**Red tests:** 0 mine, 0 regressions — CI's verdict named no failing test, only the lint finding fixed above.
+
+**Named, not acted on:** (a) `check-doc-paths` reports 3 unresolved paths (`dist/index.d.ts` / `dist/index.js` in `.specify/spec.md:309`, `specs/hal-engine-npm-release/spec.md:148`) — build artifacts this unbuilt pod lacks; they resolve in CI after its Build step. (b) The ticket text still reads `list_conversations`/`conversation_list` with an opt-in `transport.history` flag and `UNSUPPORTED`/`StoreCannotList`, while the branch consistently built and CI-greened `list_sessions`/`session_list`, always-on, without those codes — the dod and acceptance tests are self-consistent, so I followed the branch, but the ticket should be reconciled before review.
+
+The branch ran no lint, typecheck, or build here per the delivery rules; CI judges the push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI's eslint member-chain finding on 9b0e6c3 cleared, spec anchors repointed, docs facet (getting-started § Listing a User's Conversations) landed, version facet resolved as release-time","tdd_next":"acceptance green"}}

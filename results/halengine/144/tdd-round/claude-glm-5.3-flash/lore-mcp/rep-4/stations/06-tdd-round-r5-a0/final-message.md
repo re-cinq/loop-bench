@@ -1,0 +1,12 @@
+Round complete. The branch is pushed (`a8d317d..67b241c`), up to date with its upstream, and `origin/main` (2926558) is already merged in — no drift, no conflicts.
+
+**What this round did** — repaired both CI findings on a8d317d:
+
+1. **The red `test` finding.** The brief's tail was truncated, so I ran the branch-diff's blast radius by file (the eight suites that exercise `createMessageHandler`'s off-lock path). Exactly one suite was red, reproduced deterministically: `createServer.test.ts › a server error after start › is not reported for a start that was cleanly refused, because nothing was running`. Root cause: the loopback-bind commit (d331cb3) bound the engine's `start` to `127.0.0.1` but left the test's port blocker on the wildcard (`blocker.listen(0)`), and macOS — this pod's OS — lets a specific bind succeed over a wildcard holder (the exact mechanism that commit fixed for the suites' engines). The start that must be refused bound anyway, logged a second `HAL Engine started`, and the never-stopped server force-exited the worker — matching the `A worker process h...` tail in the brief. Fix (one line + one comment): the blocker holds the same loopback address, so the refusal is a real `EADDRINUSE` again; the suite is 8/8 green, and `stops cleanly after a refused start` exercises the refused path once more.
+2. **The `spec-names` finding.** The ordering-race commit cited `messageHandler.test.ts#L964` where the test sits at `#L963`. `spec:names -- --fix` repointed it and also caught the six `createServer.test.ts` anchors my comment insert shifted; the check re-ran clean (804 citations named).
+
+Red tests: **1**, and it was this branch's own (d331cb3's harness repair, not main's) — no regressions from main. The acceptance suite (`conversationList.acceptance.test.ts`) and `messageHandler.test.ts` were verified green locally; all three dod acceptance boxes remain CI's to confirm.
+
+Named, not acted on: `config.test.ts:197` has the same wildcard blocker shape, but its engine starts without a host (wildcard vs wildcard is still refused), so it stays green unless that start ever gains a `host`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"repair the red build of a8d317d: loopback-bind the refusal blocker (createServer.test.ts red test) and repoint the drifted spec anchors","tdd_next":"acceptance green"}}

@@ -1,0 +1,5 @@
+The acceptance test is inconsistent with the ticket, so I stopped without changing files or running tests. In [conversationList.acceptance.test.ts](/var/tmp/loop-bench/runs/74665e0a0e81/workspace/target/src/transport/conversationList.acceptance.test.ts:137), it expects an empty `session_list` when the store cannot list; the ticket explicitly requires an `UNSUPPORTED` error to avoid presenting missing data as an empty history. It also expects `list_sessions` and `session_list` where the ticket specifies `list_conversations` and `conversation_list`.
+
+No CI verdict was available: Lore returned “branch not found.” I cannot determine how many CI failures are new tests or regressions. The acceptance contract needs correction before a round can proceed.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test contradicts the ticket's protocol names and required UNSUPPORTED response for stores without listFor."}}

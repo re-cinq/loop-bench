@@ -1,0 +1,16 @@
+Done. The branch is green-bound and pushed as `b05b9b4`.
+
+**What the verdict named, and what fixed it:**
+
+- **typecheck + test (one root cause):** ajv@6 is typed `export = ajv` — a namespace whose `Ajv` member is an *interface*. `import {Ajv} from 'ajv'` therefore resolved as a type only (TS2693 on `new Ajv`), and at runtime the CJS module has no named `Ajv` export, which failed every suite at ESM link ("does not provide an export named 'Ajv'"). Fixed with `import Ajv from 'ajv'` (esModuleInterop is on); I verified the default import works under Node ESM against the installed ajv 6.15.0.
+- **eslint registry.ts:106 `preserve-caught-error`:** the register-time rethrow now carries `{cause: error}`.
+- **eslint acceptance test 141:9 / 143:34:** flipped the `if (round === 2)` wrapper into an `if (round !== 2)` guard with the happy path flat (consequent under the rule's 4-statement floor), and split `lastMessage.content[0]?.content` into two statements, each ≤2 hops.
+- **test (the work under the red suite):** `execute` had no validation yet, so the four acceptance tests would have failed once suites could load. `ToolRegistry.execute` now validates input before the executor — static schemas reuse the register-time compile, function-valued sources resolve per call with validators cached by schema object in a `WeakMap` — and returns a `ToolResponse` naming failing paths and constraints (`input.ssn should be string`, `input should have required property 'location'`) with no offending values in result or logs. Added the ticket's named unit tests to `registry.test.ts` (missing-required, wrong-type without value echo, extra-property passthrough via `toEqual`, unknown-tool throw, per-call schema freshness, register-time compile reused across ten calls) and cited every test from `specs/hal-engine-tool-input-validation/spec.md`, whose Status row becomes `Shipped` as required once all statements are linked.
+
+**What I ran (scoped only):** the four registry-adjacent suites with coverage — 37/37 pass, and registry.ts sits at 83.33/80.76/72.22/86.04 against the tools/ ratchet floors 66.66/56.25/71.42/70.83 (ts-jest type diagnostics were on, so the loaded graph also typechecked; per pod rules I did not run tsc, the build, or eslint). CI's spec/changelog scripts all pass: `check-spec-links`, `check-spec-anchor-names`, `check-spec-status`, `repoint-spec-anchors --check origin/main`, `check-changelog.sh origin/main`. Prettier ran over the three changed TS files.
+
+**Not addressed (not named by the verdict):** the README / `docs/adding-a-tool.md` / `.specify` / example updates and the PR-body migration note — CI's red checks didn't include them, so I left them to the round that owns them rather than widening this fix.
+
+origin/main hadn't moved (branch 0 behind), so no merge was needed. `git status` reports the branch up to date with `origin/loop-bench/37` with a clean tree.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"ajv v6 has no named 'Ajv' export — switched to its default import (fixing TS2693 and the all-suite ESM link error), attached cause to the register-throw rethrow, fixed the two test-file lint findings, and implemented execute-time inputSchema validation returning a value-free rejection ToolResponse; 37 tests pass, spec/changelog checks and coverage floors hold."}}

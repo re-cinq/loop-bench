@@ -1,0 +1,14 @@
+Everything landed. Summary of the repair:
+
+**Root cause (all three red checks):** ajv 8's runtime entry compiles to `module.exports = Ajv` (adding `default` only as a property for interop). Under this repo's `module: NodeNext` + `"type": "module"` setup, a named `import {Ajv} from 'ajv'` therefore resolves to a type-only binding — hence `TS2693` at `registry.ts:100` in typecheck, and the `does not provide an export named 'Ajv'` ESM link error in jest that failed *every* suite importing the registry transitively (including `src/config.test.ts` via `config.ts`). Fixed with the documented default import `import Ajv from 'ajv'`.
+
+**The acceptance tests also needed the missing ticket work:** the previous round only added register-time compilation, but `execute` still never validated. I implemented validation before the executor: a failed `validateInput` returns `{result: 'Tool "<name>" rejected input: <detail>'}`, where `detail` is built from ajv's `instancePath`/`message`/`keyword` — e.g. `/ssn must be string (type)` and `input must have required property 'location' (required)`. ajv messages carry paths and constraints but never input values, so neither the returned text nor the warn log echoes them, and the executor is never invoked on rejection. The `Unknown tool:` throw is untouched.
+
+**The three eslint findings:**
+- `registry.ts:106` — attached `{cause: error}` to the re-thrown compile error (core `preserve-caught-error` rule from the recommended preset).
+- `registry.acceptance.test.ts:141` — flipped the round-2 happy path out of `if (round === 2)` into a flat tail guarded by `if (round !== 2)`, per `re-lint/prefer-early-return`'s stated fix.
+- `registry.acceptance.test.ts:143` — split `lastMessage.content[0]?.content` (3 hops) into `lastMessage.content[0]` then `firstToolResult?.content` (≤2 each), per `re-lint/max-member-chain`.
+
+Also added the `[Unreleased]` CHANGELOG bullet for the new execute behavior, since this round changes shipped src code. Both changed TS files pass `prettier --write` unchanged. I verified the four acceptance tests and `registry.test.ts` against the implementation by hand-tracing the orchestrator's tool loop; I did not run the suite or lint in this pod — its `node_modules/ajv` is 6.15.0 while the lockfile and CI install 8.20.0, so only CI can judge the ajv behavior. Pushed as `d91b19f`; `origin/main` is already an ancestor of HEAD, so no merge was needed; working tree is clean and the branch is in sync with its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"ajv named import was type-only under NodeNext ESM (TS2693 + jest link failure in every suite) — switched to the default import; implemented execute-time inputSchema validation returning a value-free rejection ToolResponse; fixed the 3 eslint findings (cause, early-return guard, member chain)"}}

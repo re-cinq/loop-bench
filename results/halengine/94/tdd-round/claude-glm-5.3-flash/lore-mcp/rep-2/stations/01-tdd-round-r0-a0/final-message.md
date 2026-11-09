@@ -1,0 +1,15 @@
+Round complete. The branch is pushed and in sync with its upstream (`loop-bench/94...origin/loop-bench/94`, no ahead/behind).
+
+**What this round did:**
+
+- **RED** — wrote one unit test, `a throw there still runs onError and afterSession`, in the standing suite `src/orchestration/chatOrchestrator.test.ts` (the acceptance test file is CI's to run and was refused by the pod guard). Confirmed it failed for the right reason: the rejection escaped with `afterSessionRan: false` and `onError` never fired.
+- **GREEN** — the least code that passes: moved the `beforeSession` await inside the `try` in `src/orchestration/chatOrchestrator.ts:92`, so its throw reaches the same `catch`/`finally` as any other failure. Rejection still propagates unchanged; `onError` gets the error; `afterSession` runs; the streaming-commit and `sessionStore.save` `finally` now behave on this path as on any failed turn. File re-ran 24/24 green.
+- **REFACTOR** — nothing to collapse: a single moved line, and the test reuses the file's existing helpers (`outcomeOf`, `createMockProvider`). Prettier ran over both changed TS files (clean).
+- **Spec** — `specs/hal-engine-config-hooks/spec.md` now records the decision the ticket asked for: `afterSession` deliberately runs on a failed `beforeSession` with no argument distinguishing it from a completed turn — that keeps an allocate-in-`beforeSession` / release-in-`afterSession` pair balanced — and what a hook may assume in return is only that nothing of the turn happened. The section preamble no longer claims all three recorded properties are unchanged; the other two remain out of scope. The new statement cites both the acceptance test and the unit test; my inserted test shifted `chatOrchestrator.test.ts` lines, so `scripts/repoint-spec-anchors.mjs` repointed 22 anchors (the config-hooks spec, skipped as branch-authored, was hand-fixed — `repoint --check` and `spec:names` both come back clean).
+- **CHANGELOG** — a `### Fixed` entry under `[Unreleased]` with a migration note: `onError` now sees `beforeSession` failures, the session is now saved through `sessionStore` on this path, and an `afterSession` that assumed a response was produced must tolerate a session holding only what the caller passed in.
+
+**Tests:** 0 red tests of mine remain (my test went green locally); 0 regressions — the other 23 tests in the file stayed green throughout. The acceptance test itself was not run here (pod policy: it is CI's); its verdict arrives on this push.
+
+**Out-of-scope smells noticed, not acted on:** the `instanceof Error` gate on `onError` and the per-round (not summed) `lastUsage` handed to `afterModelResponse` — both already ticket-recorded as their own issues; and the acceptance test file duplicates the `createSession`/`createMockProvider`/`promptBuilder` helpers already in `chatOrchestrator.test.ts`, which a later round could extract.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"move beforeSession inside the try so onError and afterSession run on its throw, with spec guarantee + CHANGELOG migration note recorded","tdd_next":"acceptance green"}}

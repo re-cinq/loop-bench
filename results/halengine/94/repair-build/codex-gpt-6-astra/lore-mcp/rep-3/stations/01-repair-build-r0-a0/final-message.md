@@ -1,0 +1,3 @@
+Pushed `2df3a5d`, fixing both reported findings. Formatted changed files and updated the spec’s test anchor. Branch is current with `main`, clean, and fully pushed. CI must confirm lint and typecheck; neither was run locally.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Corrected unsupported PromptBuilderConfig fields and consolidated acceptance assertions without weakening coverage"}}

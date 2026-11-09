@@ -1,0 +1,166 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..ba4e809
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,28 @@
++# Definition of Done
++
++> The orchestrator's `catch` gates `onError` on `error instanceof Error`. A rejection that is not an `Error` — a thrown string, a plain object, a value from a library that rejects with its own shape — bypasses `onError` entirely while still propagating to the caller.
++
++**Strategy: `direct`** — the seam already exists: `createChatOrchestrator(...).processMessage(session)` is the real entry point, and an `AIProvider` whose `sendMessage` throws a non-Error value drives the production `catch` with no doubles. Run the tests with `node --experimental-vm-modules node_modules/jest/bin/jest.js src/orchestration/chatOrchestrator.onError.acceptance.test.ts`; CI's `Verify` job runs them for every push as its "Test (with coverage floor)" step.
++
++## Done when these pass
++
++- [ ] **calls onError once with an Error whose cause is the string the provider rejected with, and still rejects the caller with that string** — a string rejection fires `onError` exactly once, with an `Error` whose `cause` is that string, while the caller still rejects with the original string
++  `src/orchestration/chatOrchestrator.onError.acceptance.test.ts`
++- [ ] **calls onError once with an Error whose cause is the object the provider rejected with, and still rejects the caller with that object** — the same guarantee for a plain-object rejection, checked by identity rather than deep equality
++  `src/orchestration/chatOrchestrator.onError.acceptance.test.ts`
++- [ ] **calls onError once when the provider rejects with undefined, and still rejects the caller with undefined** — the same guarantee for `undefined`
++  `src/orchestration/chatOrchestrator.onError.acceptance.test.ts`
++- [ ] **passes a rejection that is already an Error to onError as the same instance, not a wrapper** — the fix wraps only what is not already an `Error`; this one is green on arrival today and guards the obvious wrong fix of wrapping everything (acceptance criterion 3, whose existing pins in `src/orchestration/chatOrchestrator.test.ts` remain unedited)
++  `src/orchestration/chatOrchestrator.onError.acceptance.test.ts`
++
++## Facets
++
++- [ ] In the `catch` of `processMessageStream` (`src/orchestration/chatOrchestrator.ts`), drop the `error instanceof Error` gate: pass `onError` an `Error` that wraps a non-Error rejection with the original as its `cause`, pass an `Error` rejection through as itself, and keep re-throwing the original value unchanged
++- [ ] CHANGELOG: a `### Fixed` entry under `[Unreleased]` saying what changes for an existing consumer — an `onError` hook now also fires for rejections that are not `Error`s and receives a wrapper whose `cause` is the original value
++- [ ] The spec's recorded-flaw section is already replaced by the guarantee ("Error delivery to `onError`" in `specs/hal-engine-config-hooks/spec.md`), citing the four acceptance tests above; the code change is what turns them green
++
++## Out of scope
++
++- `beforeSession` escaping the `try` (its own issue)
++- Usage accounting across tool rounds (HALEngine#93)
++- What the caller receives: the re-thrown value stays exactly what it is today
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 66ff9d3..bda1740 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -21,8 +21,9 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L195)).
+ 
+-## Measured semantics — out of scope
++## Error delivery to `onError`
+ 
+-This property of `src/orchestration/chatOrchestrator.ts` is recorded so the hook features that follow specify against real behaviour. This issue does not change it; that is a separate, out-of-scope change owned by no issue in this epic.
+-
+-- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
++- A provider rejecting with a string calls `onError` once, with an `Error` whose `cause` is that string, and the caller still receives the original rejection unchanged ([validated by: calls onError once with an Error whose cause is the string the provider rejected with, and still rejects the caller with that string](../../src/orchestration/chatOrchestrator.onError.acceptance.test.ts#L60)).
++- The same holds for a rejection with a plain object ([validated by: calls onError once with an Error whose cause is the object the provider rejected with, and still rejects the caller with that object](../../src/orchestration/chatOrchestrator.onError.acceptance.test.ts#L73)).
++- The same holds for a rejection with `undefined` ([validated by: calls onError once when the provider rejects with undefined, and still rejects the caller with undefined](../../src/orchestration/chatOrchestrator.onError.acceptance.test.ts#L86)).
++- A rejection that is already an `Error` reaches `onError` as the same instance, not a wrapper ([validated by: passes a rejection that is already an Error to onError as the same instance, not a wrapper](../../src/orchestration/chatOrchestrator.onError.acceptance.test.ts#L97)).
+diff --git a/src/orchestration/chatOrchestrator.onError.acceptance.test.ts b/src/orchestration/chatOrchestrator.onError.acceptance.test.ts
+new file mode 100644
+index 0000000..ef4fa4f
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.onError.acceptance.test.ts
+@@ -0,0 +1,108 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk} from '../types/ai.js';
++import {AIError} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++// Fixed: nothing asserts on it, and new Date() would tie the run to the clock.
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++// The provider rejects with `rejection` verbatim, Error or not.
++function createRejectionProvider(rejection: unknown): AIProvider {
++  return {
++    // eslint-disable-next-line require-yield
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      throw rejection;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++// A rejection that is not an Error carries no message, so each test needs the rejection as a value.
++const rejectionOf = async (call: Promise<unknown>): Promise<unknown> => {
++  try {
++    await call;
++  } catch (error) {
++    return error;
++  }
++  return 'resolved without rejecting';
++};
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++const countingOnError = (): {hooks: OrchestratorHooks; calls: () => number; received: () => unknown} => {
++  let count = 0;
++  let error: unknown;
++  return {
++    hooks: {
++      onError: async (_session, err) => {
++        count++;
++        error = err;
++      },
++    },
++    calls: () => count,
++    received: () => error,
++  };
++};
++
++describe('ChatOrchestrator onError for a rejection that is not an Error', () => {
++  it('calls onError once with an Error whose cause is the string the provider rejected with, and still rejects the caller with that string', async () => {
++    const rejection = 'provider gave up';
++    const {hooks, calls, received} = countingOnError();
++
++    const orchestrator = createChatOrchestrator(createRejectionProvider(rejection), promptBuilder, undefined, {hooks});
++    const outcome = await rejectionOf(orchestrator.processMessage(createSession('hello')));
++
++    expect(calls()).toBe(1);
++    expect(received()).toBeInstanceOf(Error);
++    expect((received() as Error).cause).toBe(rejection);
++    expect(outcome).toBe(rejection);
++  });
++
++  it('calls onError once with an Error whose cause is the object the provider rejected with, and still rejects the caller with that object', async () => {
++    const rejection = {code: 'UPSTREAM_500', detail: 'a rejection shape the library owns'};
++    const {hooks, calls, received} = countingOnError();
++
++    const orchestrator = createChatOrchestrator(createRejectionProvider(rejection), promptBuilder, undefined, {hooks});
++    const outcome = await rejectionOf(orchestrator.processMessage(createSession('hello')));
++
++    expect(calls()).toBe(1);
++    expect(received()).toBeInstanceOf(Error);
++    expect((received() as Error).cause).toBe(rejection);
++    expect(outcome).toBe(rejection);
++  });
++
++  it('calls onError once when the provider rejects with undefined, and still rejects the caller with undefined', async () => {
++    const {hooks, calls, received} = countingOnError();
++
++    const orchestrator = createChatOrchestrator(createRejectionProvider(undefined), promptBuilder, undefined, {hooks});
++    const outcome = await rejectionOf(orchestrator.processMessage(createSession('hello')));
++
++    expect(calls()).toBe(1);
++    expect(received()).toBeInstanceOf(Error);
++    expect(outcome).toBe(undefined);
++  });
++
++  it('passes a rejection that is already an Error to onError as the same instance, not a wrapper', async () => {
++    const rejection = new AIError('rate limited', 'RATE_LIMITED');
++    const {hooks, calls, received} = countingOnError();
++
++    const orchestrator = createChatOrchestrator(createRejectionProvider(rejection), promptBuilder, undefined, {hooks});
++    const outcome = await rejectionOf(orchestrator.processMessage(createSession('hello')));
++
++    expect(calls()).toBe(1);
++    expect(received()).toBe(rejection);
++    expect(outcome).toBe(rejection);
++  });
++});

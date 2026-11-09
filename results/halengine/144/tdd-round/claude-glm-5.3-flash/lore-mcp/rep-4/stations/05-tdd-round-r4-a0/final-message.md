@@ -1,0 +1,13 @@
+Round complete and pushed. Summary of what happened:
+
+**The three CI findings on d331cb3, all fixed:**
+1. **eslint + spec-names** — one root cause: `specs/hal-engine-npm-release/spec.md` carried two anchors left stale by the loopback-bind commit (`#L136`→`#L138`, `#L149`→`#L151` against `createServer.test.ts`). The eslint gate saw the same drift as "test has no spec link". Repointed with the repo's own `spec:names --fix`; all four spec gates re-verified clean locally (`spec:names` 804 citations, `check:spec-links` 0 misplaced, `check:spec-status` 0 findings, `repoint-spec-anchors --check origin/main` stale 0).
+2. **The red acceptance test** — diagnosed from the received object (`seen` populated, `frames: []`): the store was called correctly but the client's harness resolves on `pong`, and the pong was overtaking the pending `session_list` answer. Two frames read in one transport dispatch run concurrently; the ping's answer left synchronously while the list answer sat one microtask behind `await listFor`. A code race, not a wrong test — so it was mine to fix in code.
+
+**The TDD round:** red test `answers off-lock frames in arrival order: a list_sessions is not overtaken by the pong of a ping sent after it` (failed deterministically as `['pong 7', 'session_list']`), then the least code — a per-socket answer queue in `createMessageHandler` (`src/transport/ws/messageHandler.ts`) so a socket's off-lock answers leave in arrival order, turns still on the per-session lock — then green, 58/58 in `messageHandler.test.ts`. The §4.3 statement gained the ordering constraint as a fifth bullet, cited on the new test.
+
+**The dod's last open facet closed:** §5.9's error answer pinned at unit level — no-`listFor` answered `session_list: []`, a rejecting `listFor` answered exactly one `SERVER_ERROR` with the socket still answering — cited on the §5.9 statement beside the acceptance citation.
+
+Red tests this round: 2, both mine (the ordering test red by design; the §5.9 test initially caught the same race through its ping tail, plus a capture-order bug in my own assertion, fixed). Regressions: 0 — the CI-named acceptance red is the ticket's own bar, not a pre-existing test I broke. Committed `a8d317d`, pushed; `origin/main` already merged (up to date), branch in sync with its upstream. One unrelated smell noticed, not acted on: the CI log's "worker process has failed to exit gracefully" — the dod already records it as a latent `stopEngines` race reproducible on main.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"§5.9 error-path unit coverage, plus the answer-ordering race reddening acceptance test 1 and the two drifted spec anchors CI named","tdd_next":"acceptance green"}}

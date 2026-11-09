@@ -1,0 +1,5 @@
+The round is blocked by an acceptance test that fails the repository’s nondeterminism rule: [onErrorNonError.acceptance.test.ts](/var/tmp/loop-bench/runs/17265ec5d4fd/workspace/target/src/orchestration/onErrorNonError.acceptance.test.ts:12) uses `new Date()` without a fixed clock. Fixing that finding requires editing the acceptance test, which the round’s instructions prohibit. Its two spec links also point one line above their test declarations.
+
+I made no changes and ran no tests. CI’s test job timed out, so it does not establish a count of failing tests; the reported lint findings include two acceptance-test link failures and one nondeterminism failure, with no identified regression test.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"CI requires fixing nondeterministic new Date() in an acceptance test, but editing acceptance tests is prohibited."}}

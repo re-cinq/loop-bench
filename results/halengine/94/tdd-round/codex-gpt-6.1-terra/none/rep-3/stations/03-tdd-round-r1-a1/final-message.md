@@ -1,0 +1,5 @@
+The round is blocked by the acceptance test. CI reports that [chatOrchestrator.beforeSession.acceptance.test.ts](/var/tmp/loop-bench/runs/08a41c17b53b/workspace/target/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts:30) uses an invalid `PromptBuilderConfig` property and has three assertions where the lint rule permits one. Fixing those findings requires editing the acceptance test, which the round instructions prohibit.
+
+CI also reported a misplaced spec link and a missing changelog entry. I made no edits, ran no tests, and made no commit or push because the instructions say to stop when an acceptance test is wrong. The reported red acceptance test was not written this round; the CI findings do not establish a count of behavioral regression tests.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"The acceptance test has typecheck and lint errors, but editing acceptance tests is prohibited."}}

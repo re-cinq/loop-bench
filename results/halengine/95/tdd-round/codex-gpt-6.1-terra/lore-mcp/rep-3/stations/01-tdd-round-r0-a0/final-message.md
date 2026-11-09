@@ -1,0 +1,5 @@
+Implemented and pushed the non-`Error` rejection handling. `onError` now receives an `Error` with the original value as its `cause`; the caller still receives the original rejection. The changelog and spec were updated.
+
+The new test passed after failing as expected: **1 red test was mine; 0 regressions were identified**. CI’s prior verdict was unavailable, so the existing `Error`-instance tests still need CI confirmation. The repository’s test-list script does not expose the stamped spec anchor as a descriptor field; that remains a traceability limitation. No unrelated smells were acted on.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Call onError for non-Error rejections while preserving cause and caller rejection","tdd_next":"Confirm existing Error-instance tests remain green in CI"}}

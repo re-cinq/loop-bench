@@ -1,0 +1,305 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..2205feb
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,22 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — The chat orchestrator acts as a seam, allowing us to install hooks through configuration and observe their execution when `beforeSession` throws.
++
++## Done when these pass
++
++- [ ] **runs onError and afterSession when beforeSession throws** — pins that a thrown error in `beforeSession` propagates to the caller while invoking both `onError` and `afterSession` hooks.
++      `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`
++
++## Facets
++
++- [x] Move `beforeSession` inside the `try` block in `chatOrchestrator.ts`.
++- [x] Update `specs/hal-engine-config-hooks/spec.md` with the new guarantee for `beforeSession`.
++- [x] Document in the CHANGELOG what changes for an existing consumer.
++- [x] Pin that a durable `sessionStore.save` also runs when `beforeSession` throws (a consequence of the move: the `finally` now reaches this path, so the session persists with the user entry even though the turn never started).
++
++## Out of scope
++
++- the `instanceof Error` gate on `onError` (its own issue)
++- usage accounting across tool rounds (HALEngine#93)
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 8ddff4d..4ffec69 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -18,6 +18,7 @@ package, not for somebody reading this repository's commit log.
+ 
+ - Every `SessionStore` member is now `Awaitable<T>` (`T | Promise<T>`) rather than a bare `T`, so a store backed by a database is expressible for the first time. `Awaitable` is exported from the package root. **A synchronous implementation needs no change** — `T` is assignable to `T | Promise<T>` in a return position — and `InMemorySessionStore` is unedited. The WebSocket connection handler now awaits `create` and the release that follows a close: it pauses the socket across the await so a frame sent before `connected` arrives is buffered rather than dropped, attaches its `close` listener before the await so a socket that closes mid-create leaves no session behind, and catches a rejection from either call so one store failure closes one socket instead of ending the process with an unhandled rejection. **Migration note**: the `connected` frame now arrives one tick later, after the awaited `create`, so a client that waits for it (as the protocol already requires) sees no difference; only code that assumed the frame was emitted synchronously with the upgrade does.
+ - **The engine no longer erases a conversation when its socket closes.** The WebSocket close handler called `sessionStore.delete(sessionId)` unconditionally, which meant that behind a durable store every conversation was written and then destroyed the moment the customer closed their tab — the opposite of what this engine's own documentation promised. `SessionStore.delete` now has no engine-internal caller at all and is purely your erasure primitive. The credentials the socket carried are cleared from the session on close, since they were issued for a request that is over; the entries are untouched. **Migration note**: to restore the old behaviour exactly, pass `onDisconnect: sessionId => store.delete(sessionId)` — that one line is the whole migration. If you rely on the default store not growing, note that it is now bounded by `maxAgeMs` (eight hours) rather than by the close handler; that is a memory bound, not a retention policy, and the retention decision remains yours.
++- A throw from `beforeSession` now fails the turn through the same path as any other failure: `onError` is called with the session and the thrown error, and `afterSession` runs, before the rejection reaches the caller. Previously the hook was awaited outside the turn's `try`, so its failure reached the caller silently — `onError` never saw it, and neither `afterSession` nor the session `save` ran, so anything a deployer releases in `afterSession` leaked on exactly the path where the setup failed. **Migration note**: an `afterSession` hook that assumed it only sees completed turns now also sees turns that never started. When `beforeSession` was the thing that threw, no tool ran and the provider was never called, so there is nothing the turn allocated to release — see `specs/hal-engine-config-hooks/spec.md` for what a hook may assume — but a hook that reads usage or assistant output from the session sees a turn that has neither. A durable `SessionStore.save` also now persists the session on this path, exactly as it already does for a turn that fails later in the stream. The rejection the caller receives is unchanged.
+ 
+ ## [0.3.0] - 2026-09-29
+ 
+diff --git a/specs/hal-engine-architecture/spec.md b/specs/hal-engine-architecture/spec.md
+index 291072e..d6f4202 100644
+--- a/specs/hal-engine-architecture/spec.md
++++ b/specs/hal-engine-architecture/spec.md
+@@ -98,7 +98,7 @@ interface SessionStore<T extends BaseSession = ChatSession> {
+ - `delete` reports `false` for an id the store was not holding ([validated by: returns false when deleting nonexistent session](../../src/infrastructure/stores/inMemorySessionStore.test.ts#L42)).
+ - `count` reflects creates and deletes as they happen ([validated by: tracks count correctly](../../src/infrastructure/stores/inMemorySessionStore.test.ts#L46)).
+ - `clear` empties the store, leaving `count` at zero and every previous id unresolvable ([validated by: clears all sessions](../../src/infrastructure/stores/inMemorySessionStore.test.ts#L60)).
+-- `save` is the optional write signal the engine calls once per processed user message, detailed in [the session write signal spec](../hal-engine-session-write-signal/spec.md); a store that omits it, as `InMemorySessionStore` does, is unaffected ([validated by: logs nothing for a store that implements no save](../../src/orchestration/sessionSave.test.ts#L67)).
++- `save` is the optional write signal the engine calls once per processed user message, detailed in [the session write signal spec](../hal-engine-session-write-signal/spec.md); a store that omits it, as `InMemorySessionStore` does, is unaffected ([validated by: logs nothing for a store that implements no save](../../src/orchestration/sessionSave.test.ts#L74)).
+ 
+ ### WsAuthenticator
+ 
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..7b2e292 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -19,10 +19,13 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
++## What a failed `beforeSession` guarantees
++
++A `beforeSession` that throws fails the turn through the same path as any other failure: the caller receives the rejection unchanged, `onError` is handed the session and the same thrown error it gets for any other orchestrator failure, and `afterSession` still runs ([validated by: runs onError and afterSession when beforeSession throws](../../src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts#L40)). `afterSession` therefore cannot tell a session that finished from one that never started, and what it may assume about a turn whose `beforeSession` threw is exactly this: no tool ran and the provider was never called, so there is nothing the turn allocated that still needs releasing ([validated by: error path calls onError then afterSession and never reaches the provider](../../src/orchestration/chatOrchestrator.test.ts#L566)). The durable record follows the same rule: `save` runs from the shared `finally` on this path as on any other, so a store that persists receives the session holding the user entry even though the turn never started, and [the session write signal spec](../hal-engine-session-write-signal/spec.md) owns that guarantee.
++
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+ - `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/specs/hal-engine-session-write-signal/spec.md b/specs/hal-engine-session-write-signal/spec.md
+index f8947de..2f08afe 100644
+--- a/specs/hal-engine-session-write-signal/spec.md
++++ b/specs/hal-engine-session-write-signal/spec.md
+@@ -9,8 +9,8 @@
+ 
+ ## When it fires
+ 
+-- `save` fires exactly once for one processed user message ([validated by: saves once for one processed user message](../../src/orchestration/sessionSave.test.ts#L31)).
+-- It is called from the orchestrator's `finally` path, the same one that runs `afterSession`, rather than from the success path, because a turn that ended in a provider error still produced a user entry worth keeping and a store that only heard about successes would silently lose exactly the conversations a customer complains about: a provider that rejects still produces one `save`, and the rejection still reaches the caller ([validated by: saves once and still rethrows when the provider fails](../../src/orchestration/sessionSave.test.ts#L39)).
++- `save` fires exactly once for one processed user message ([validated by: saves once for one processed user message](../../src/orchestration/sessionSave.test.ts#L38)).
++- It is called from the orchestrator's `finally` path, the same one that runs `afterSession`, rather than from the success path, because a turn that ended in a provider error still produced a user entry worth keeping and a store that only heard about successes would silently lose exactly the conversations a customer complains about: a provider that rejects still produces one `save`, and the rejection still reaches the caller ([validated by: saves once and still rethrows when the provider fails](../../src/orchestration/sessionSave.test.ts#L46)).
+ - The store reaches the orchestrator through `ChatOrchestratorOptions.sessionStore`, which `createHalEngine` forwards from `HalEngineConfig.session` — the same store the transport already received ([validated by: forwards the session store, so its write signal reaches the orchestrator](../../src/config.test.ts#L204)).
+ 
+ ## What it carries
+@@ -19,19 +19,20 @@
+ - That holds however the turn ended. On the success path the transport has already committed the entry by then, because `processStopChunk` runs on the provider's `stop` chunk and a generator's `finally` only runs once its consumer pulls after the last chunk. When a provider throws mid-stream it has not: the throw reaches the orchestrator's `finally` first, so the orchestrator closes any entry still marked streaming before saving, and nothing persists a half-streamed entry ([validated by: saves a committed assistant entry even when the provider dies mid-stream](../../src/transport/ws/sessionSave.test.ts#L47)).
+ - An entry still open when the turn ended was cut short, so closing it also records `truncated`, and a store therefore persists the failure rather than a conversation that merely looks finished ([validated by: saves a committed assistant entry even when the provider dies mid-stream](../../src/transport/ws/sessionSave.test.ts#L47)).
+ - A turn that ended on the provider's `stop` records no `truncated` flag, because nothing was still open to close ([validated by: saves the user entry and the committed assistant entry](../../src/transport/ws/sessionSave.test.ts#L34)).
+-- A turn driven through the orchestrator alone never produces an assistant entry at all, since the orchestrator only ever appends the user's, which is why the statement above is validated from the transport side rather than beside the other four ([validated by: saves once for one processed user message](../../src/orchestration/sessionSave.test.ts#L31)).
++- A turn driven through the orchestrator alone never produces an assistant entry at all, since the orchestrator only ever appends the user's, which is why the statement above is validated from the transport side rather than beside the other four ([validated by: saves once for one processed user message](../../src/orchestration/sessionSave.test.ts#L38)).
+ 
+ ## When it fails
+ 
+-- **NIS-2 Article 21.** A `save` that rejects does not fail the turn: the caller still receives the answer, and the failure becomes exactly one logged line under category `orchestrator`, message `session save failed`, carrying the session id and the error's message ([validated by: keeps the turn alive and logs once when save rejects](../../src/orchestration/sessionSave.test.ts#L48)).
+-- A `save` that throws synchronously is handled identically, so an implementation that forgets to be async cannot take the turn down ([validated by: keeps the turn alive when save throws synchronously](../../src/orchestration/sessionSave.test.ts#L57)).
+-- An `afterSession` hook that throws does not cost the turn its write signal: `save` still fires, and the hook's error still reaches the caller ([validated by: saves even when an afterSession hook throws](../../src/orchestration/sessionSave.test.ts#L73)).
++- **NIS-2 Article 21.** A `save` that rejects does not fail the turn: the caller still receives the answer, and the failure becomes exactly one logged line under category `orchestrator`, message `session save failed`, carrying the session id and the error's message ([validated by: keeps the turn alive and logs once when save rejects](../../src/orchestration/sessionSave.test.ts#L55)).
++- A `save` that throws synchronously is handled identically, so an implementation that forgets to be async cannot take the turn down ([validated by: keeps the turn alive when save throws synchronously](../../src/orchestration/sessionSave.test.ts#L64)).
++- An `afterSession` hook that throws does not cost the turn its write signal: `save` still fires, and the hook's error still reaches the caller ([validated by: saves even when an afterSession hook throws](../../src/orchestration/sessionSave.test.ts#L80)).
++- A `beforeSession` hook that throws does not cost the turn its write signal either: the rejection reaches the same `finally` as any other failure, so `save` still fires and the caller still receives the rejection, and the session the store receives carries the user entry alone — the turn never started, so there is no assistant entry to persist ([validated by: saves even when a beforeSession hook throws](../../src/orchestration/sessionSave.test.ts#L93)).
+ 
+ ## Compatibility
+ 
+-- `save` is optional: a store that omits it behaves exactly as it did before the member existed, and logs nothing ([validated by: logs nothing for a store that implements no save](../../src/orchestration/sessionSave.test.ts#L67)).
++- `save` is optional: a store that omits it behaves exactly as it did before the member existed, and logs nothing ([validated by: logs nothing for a store that implements no save](../../src/orchestration/sessionSave.test.ts#L74)).
+ - `InMemorySessionStore` is deliberately not edited, and the member is typed `void | Promise<void>` rather than `Promise<void>`, so its absence of `save` is the compatibility case while a synchronous implementation and an `async` one both satisfy the interface, owing nothing to the queued `Awaitable` change ([validated by: accepts a synchronous save, an async save, and the shipped store that has none](../../src/infrastructure/stores/sessionStoreSaveSignature.test.ts#L11)).
+-- No exported name or signature changes and no existing behaviour changes, so the bump is MINOR ([validated by: logs nothing for a store that implements no save](../../src/orchestration/sessionSave.test.ts#L67)).
++- No exported name or signature changes and no existing behaviour changes, so the bump is MINOR ([validated by: logs nothing for a store that implements no save](../../src/orchestration/sessionSave.test.ts#L74)).
+ 
+ ## Out of scope
+ 
+diff --git a/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts b/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts
+new file mode 100644
+index 0000000..7c4797f
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts
+@@ -0,0 +1,67 @@
++import {describe, expect, it} from '@jest/globals';
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++function createMockProvider(response: string): AIProvider {
++  return {
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      yield {type: 'text', text: response};
++      yield {type: 'stop', stopReason: 'end_turn'};
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const promptBuilder = new PromptBuilder({
++  baseSystemPrompt: 'You are HAL.',
++  systemPromptSuffix: 'Be precise.',
++  contextConfig: {
++    historyLength: 10,
++    includeTimestamps: false,
++    includeSystemPrompt: true,
++  },
++});
++
++describe('beforeSession throwing', () => {
++  it('runs onError and afterSession when beforeSession throws', async () => {
++    const errorToThrow = new Error('Database connection failed in beforeSession');
++
++    let caughtError: Error | undefined;
++    let afterSessionRan = false;
++
++    const orchestrator = createChatOrchestrator(createMockProvider('hello back'), promptBuilder, undefined, {
++      hooks: {
++        beforeSession: async () => {
++          throw errorToThrow;
++        },
++        onError: async (_session, error) => {
++          caughtError = error;
++        },
++        afterSession: async () => {
++          afterSessionRan = true;
++        },
++      },
++    });
++
++    await expect(orchestrator.processMessage(createSession('hello'))).rejects.toThrow(
++      'Database connection failed in beforeSession'
++    );
++
++    expect(caughtError).toBe(errorToThrow);
++    expect(afterSessionRan).toBe(true);
++  });
++});
+diff --git a/src/orchestration/chatOrchestrator.test.ts b/src/orchestration/chatOrchestrator.test.ts
+index 1d60b59..2b1242d 100644
+--- a/src/orchestration/chatOrchestrator.test.ts
++++ b/src/orchestration/chatOrchestrator.test.ts
+@@ -561,3 +561,38 @@ describe('ChatOrchestrator tool loop', () => {
+     }).toEqual({resolved: 'all done', hasRejectionText: true});
+   });
+ });
++
++describe('ChatOrchestrator beforeSession throwing', () => {
++  it('error path calls onError then afterSession and never reaches the provider', async () => {
++    const callOrder: string[] = [];
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        callOrder.push('beforeSession');
++        throw new Error('beforeSession failed');
++      },
++      onError: async () => void callOrder.push('onError'),
++      afterSession: async () => void callOrder.push('afterSession'),
++    };
++
++    let providerCalled = false;
++    const provider: AIProvider = {
++      async *sendMessage(): AsyncGenerator<MessageChunk> {
++        providerCalled = true;
++        yield {type: 'text', text: 'hi'};
++        yield {type: 'stop', stopReason: 'end_turn'};
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, undefined, {hooks});
++    const outcome = await outcomeOf(orchestrator.processMessage(createSession('hello')));
++
++    expect({outcome, providerCalled, callOrder}).toEqual({
++      outcome: 'beforeSession failed',
++      providerCalled: false,
++      callOrder: ['beforeSession', 'onError', 'afterSession'],
++    });
++  });
++});
+diff --git a/src/orchestration/chatOrchestrator.ts b/src/orchestration/chatOrchestrator.ts
+index da09e31..c57fc96 100644
+--- a/src/orchestration/chatOrchestrator.ts
++++ b/src/orchestration/chatOrchestrator.ts
+@@ -88,9 +88,9 @@ export function createChatOrchestrator(
+     },
+ 
+     async *processMessageStream(session: ChatSession): AsyncGenerator<MessageChunk> {
+-      if (hooks?.beforeSession) await hooks.beforeSession(session);
+-
+       try {
++        if (hooks?.beforeSession) await hooks.beforeSession(session);
++
+         let userMessage = lastUserContent(session);
+ 
+         if (hooks?.beforeUserInput) {
+diff --git a/src/orchestration/sessionSave.test.ts b/src/orchestration/sessionSave.test.ts
+index c8f0162..7522330 100644
+--- a/src/orchestration/sessionSave.test.ts
++++ b/src/orchestration/sessionSave.test.ts
+@@ -23,8 +23,15 @@ describe('the session write signal', () => {
+   const errors = captureErrors();
+ 
+   // One outcome value per turn, so each test below can assert with a single expect.
+-  const turn = async (sessionStore: SessionStore, provider: AIProvider = answering('hi')): Promise<string> => {
+-    const orchestrator = createChatOrchestrator(provider, writeSignalPromptBuilder, undefined, {sessionStore});
++  const turn = async (
++    sessionStore: SessionStore,
++    provider: AIProvider = answering('hi'),
++    hooks?: Record<string, unknown>
++  ): Promise<string> => {
++    const orchestrator = createChatOrchestrator(provider, writeSignalPromptBuilder, undefined, {
++      sessionStore,
++      hooks: hooks as never,
++    });
+     return orchestrator.processMessage(sessionWith('hello')).catch((error: Error) => `threw: ${error.message}`);
+   };
+ 
+@@ -73,20 +80,26 @@ describe('the session write signal', () => {
+   it('saves even when an afterSession hook throws', async () => {
+     const saved: string[] = [];
+     const store = recordingSessionStore(session => void saved.push(session.sessionId));
+-    const hooks = {
++
++    const outcome = await turn(store, answering('hi'), {
+       afterSession: () => {
+         throw new Error('hook exploded');
+       },
+-    };
+-    const orchestrator = createChatOrchestrator(answering('hi'), writeSignalPromptBuilder, undefined, {
+-      sessionStore: store,
+-      hooks: hooks as never,
+     });
+ 
+-    const outcome = await orchestrator
+-      .processMessage(sessionWith('hello'))
+-      .catch((error: Error) => `threw: ${error.message}`);
+-
+     expect({outcome, saved}).toEqual({outcome: 'threw: hook exploded', saved: ['s1']});
+   });
++
++  it('saves even when a beforeSession hook throws', async () => {
++    const savedEntries: string[][] = [];
++    const store = recordingSessionStore(session => void savedEntries.push(session.entries.map(entry => entry.role)));
++
++    const outcome = await turn(store, answering('hi'), {
++      beforeSession: () => {
++        throw new Error('before session exploded');
++      },
++    });
++
++    expect({outcome, savedEntries}).toEqual({outcome: 'threw: before session exploded', savedEntries: [['user']]});
++  });
+ });

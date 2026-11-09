@@ -1,0 +1,16 @@
+Round complete. The branch is pushed and in sync with its upstream (`origin/loop-bench/37` at `b2cdb4c`), and `origin/main` is already an ancestor — nothing to merge.
+
+**What this round owed and delivered** — every finding from the CI verdict on `5bf3060`:
+
+- **Red test (the round's facet):** `throws at register time naming the tool` — the missing register-time schema compilation. I wrote a unit test for it in `src/orchestration/tools/registry.test.ts`, ran it red ("Received function did not throw"), then implemented it: `register` now compiles the resolved `inputSchema` through a `WeakMap` keyed by the resolved schema object, so static tools compile once at register (invalid schemas throw naming the tool) and function-valued sources recompile only when they return a new schema object. My test then ran green. The old first test in that file duplicated the acceptance test 23 lines deep — replaced by this one, which clears the duplicate-code error.
+- **Typecheck (3 errors):** the two `instancePath` errors and the `strict`/`Options` error. I could not run `tsc` here per the delivery rules, so I verified by inspection: the errors are ajv-**v6**-shaped, and the only v6-typed copy in the tree is the one nested under `eslint`. I made `registry.ts` compile under either type surface: a structural `SchemaError` reading `instancePath ?? dataPath`, and the options object bound to a non-fresh `const` (no excess-property check on the literal). Runtime is pinned to ajv ^8.20.0 by the direct dependency, so behaviour is exactly the facet's `strict: false`, no formats/coercion/defaults.
+- **ESLint (6 problems):** callee-below-caller (the rejection helpers now sit below the class, callers above callees), both max-member-chain hits (path derivation now uses one-hop locals; the acceptance generator extracts `firstChunk`), and prefer-early-return (the round-2 happy path runs flat with guarded tails returning). Acceptance-test assertions are untouched — only syntax restructured, and its `it(` line numbers that the spec links point at are unshifted.
+- **Spec links:** dropped the citation whose test no longer exists (`registry.test.ts#L4`), added my new test's citation on the register-time statement. No `reanchor.mjs` in this repo, so I re-verified the other `#Lnn` links on statements I touched by hand — none moved.
+
+**Red tests:** 1 red test named by CI, and it was this ticket's own red acceptance test, not a regression. Zero regressions caused by this round. The acceptance suite was not run here — CI judges the push.
+
+**Unrelated smells noticed, not acted on:** `package.json` is still `0.4.0` though facet 1 (ticked) claims the MINOR bump — worth a look when the PR body is written.
+
+Next round takes facet 3: the remaining unit tests (compiled-once across ten calls, function-valued staleness, extra-property passthrough, `Unknown tool` pin, a `chatOrchestrator.test.ts` loop test) plus the docs/README/`.specify`/ADR-002 updates.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"compile static inputSchema at register time with WeakMap cache keyed by schema object","tdd_next":"remaining unit tests in registry.test.ts and chatOrchestrator.test.ts plus docs/README/.specify/ADR-002 updates"}}

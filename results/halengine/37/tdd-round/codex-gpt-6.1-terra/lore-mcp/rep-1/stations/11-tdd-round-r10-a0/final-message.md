@@ -1,0 +1,5 @@
+Committed and pushed the fixes for the two reported test lint violations. Each test now uses one assertion while retaining its checks. The branch is up to date with `origin/main` and its upstream.
+
+No tests ran locally: this repair did not add a test, and the round instructions prohibit running existing tests. The requested red-green-refactor round therefore remains incomplete. The CI test failure was truncated, and Lore could not retrieve a fuller verdict; the reported Ajv type errors also remain unverified against CI. The brief does not provide enough detail to count red tests as authored tests or regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Combine assertions in the two tests named by the CI lint report","tdd_next":"Resolve the CI test failure hidden by the truncated verdict"}}

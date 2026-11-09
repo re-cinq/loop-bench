@@ -1,0 +1,13 @@
+Round complete. Summary:
+
+**Facet closed:** all four facets in `.lore/dod.md` — the round's core edit replaced final-round retention (`lastUsage = outcome.usage ?? lastUsage`) with a deliberately named contract: `afterModelResponse(session, responseText, turnUsage?: TurnUsage)`, where `TurnUsage` is a new exported alias of `UsageMetadata` whose name and doc line say "summed over the turn", accumulated through a new pure fold `addRoundUsage(total, roundUsage)` in `orchestratorHelpers.ts` that adds each token field only for rounds that report and stays `undefined` when none do. The no-tool guard `receives collected response text and usage` and the round-gap guard in `chatOrchestrator.test.ts` are untouched and hold by construction (one reported round sums to itself). The CHANGELOG gained a `### Changed` entry with a migration note; the hooks spec line was already replaced by the previous round. Doc blocks generated from `OrchestratorHooks` (CLAUDE.md, architecture spec) were regenerated, and the `catch`-gate spec anchor my import line shifted was repointed by hand (#L150 → #L151).
+
+**Test this round:** one test, `sums the rounds that report and stays undefined when none do` in `src/orchestration/orchestratorHelpers.test.ts` — RED (missing export), then GREEN after the fold existed, 5/5 in that file post-format. The acceptance tests were not run here, per contract; CI judges them on the push. Also caught before committing: `UsageMetadata` was still used by `RoundOutcome`/`streamRound` after I dropped it from the import list — restored, so CI's typecheck has no dangling reference.
+
+**Reds:** 0 of mine (my test is green), 0 regressions — no round brief existed and the gateway has no CI verdict on file for this branch (HTTP 404), so nothing named a failure to repair; the previous push's expected reds were the two new acceptance tests this implementation answers.
+
+**Pushed:** `b6d201a` to `loop-bench/93`; `origin/main` merged (already up to date, no drift); `git status` reports the branch up to date with its upstream.
+
+**Future improvement (not acted on):** the existing guard's name at `src/orchestration/chatOrchestrator.test.ts:527` ("keeps the usage an earlier round reported when a later round reports none") describes the retired retention semantics; its assertion still passes under summation, and dod forbids editing it, so a later round may rename it to describe what it now pins.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"summed turn-usage contract: TurnUsage + addRoundUsage replace final-round retention","tdd_next":"acceptance green"}}

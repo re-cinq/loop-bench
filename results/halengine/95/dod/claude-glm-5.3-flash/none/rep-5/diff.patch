@@ -1,0 +1,120 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..bc4dbc1
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,25 @@
++# Definition of Done
++
++> The orchestrator's `catch` gates `onError` on `error instanceof Error`. A rejection that is not an `Error` — a thrown string, a plain object, a value from a library that rejects with its own shape — bypasses `onError` entirely while still propagating to the caller.
++
++**Strategy: `direct`** — the seam already exists: a provider whose `sendMessage` generator throws a non-`Error` value, driven through `createChatOrchestrator(...).processMessage`, reaches the `catch` at `src/orchestration/chatOrchestrator.ts:150` by the real caller path. The three `it.each` cases are red today with `onError` never firing (`Received array: []`), exactly the reported bypass; the fourth test pins the already-`Error` identity and is green now, guarding the fix against over-wrapping.
++
++## Done when these pass
++
++- [ ] **wraps a rejection that is a string / a plain object / undefined in an Error for onError, keeping the original as cause, and still rejects the caller with it** (one `it.each`, three cases) — `onError` fires exactly once for a non-`Error` rejection, receives an `Error` whose `cause` is the original value, and the caller's rejection stays the original value unchanged
++  `src/orchestration/chatOrchestrator.onError.acceptance.test.ts`
++- [ ] **hands a rejection that is already an Error to onError as the same instance, not a wrapper** — the existing `Error` path keeps instance identity (ticket criterion 3), and the repo's existing `onError` tests stay unedited and green
++  `src/orchestration/chatOrchestrator.onError.acceptance.test.ts`
++
++## Facets
++
++- [ ] In the `catch` of `processMessageStream` (`src/orchestration/chatOrchestrator.ts:150`), call `onError` for every rejection: wrap whatever is not already an `Error` in one whose `cause` is the original value, pass the original `Error` through as the same instance, and rethrow the original value unchanged so nothing downstream changes shape.
++- [ ] Replace the "Measured semantics — out of scope" section of `specs/hal-engine-config-hooks/spec.md` (the recorded-flaw line citing `chatOrchestrator.ts#L150`) with the new guarantee, citing the acceptance test in the repo's established form, e.g. `- The orchestrator calls onError for every rejection, wrapping a rejection that is not an Error in one whose cause is the original value, and the caller still receives the original rejection ([validated by: wraps a rejection that is a string in an Error for onError, keeping the original as cause, and still rejects the caller with it](../../src/orchestration/chatOrchestrator.onError.acceptance.test.ts#L45)).`
++- [ ] Add a CHANGELOG entry saying what changes for an existing consumer: `onError` now also fires for non-`Error` rejections and receives an `Error` wrapper (original preserved as `cause`), while the value their caller sees on rejection is unchanged.
++- [ ] CI green on push: `npm run build`, `npm test`, `npm run typecheck`, `npm run eslint`, `npm run prettier:check`.
++
++## Out of scope
++
++- `beforeSession` escaping the `try` (its own issue).
++- Usage accounting across tool rounds (HALEngine#93).
++- Non-`Error` throws from other seams (`beforeToolCall` policy decline, tool executors, session-store save): the ticket claims the `catch` gate only, and their local handling is untouched.
+diff --git a/src/orchestration/chatOrchestrator.onError.acceptance.test.ts b/src/orchestration/chatOrchestrator.onError.acceptance.test.ts
+new file mode 100644
+index 0000000..cc5012c
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.onError.acceptance.test.ts
+@@ -0,0 +1,83 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++// Fixed: nothing asserts on it, and new Date() would tie the run to the clock.
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++const createSession = (content: string): ChatSession => ({
++  sessionId: 's1',
++  userId: 'u1',
++  entries: [{role: 'user', content, timestamp: SENT_AT}],
++});
++
++// A provider whose stream rejects with an arbitrary thrown value, not necessarily an Error.
++const rejectingProvider = (rejection: unknown): AIProvider => ({
++  // eslint-disable-next-line require-yield
++  async *sendMessage(): AsyncGenerator<MessageChunk> {
++    throw rejection;
++  },
++  async generateStructured<T>(): Promise<T> {
++    return {} as T;
++  },
++});
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++// A rejection of undefined must stay distinguishable from a clean resolution.
++const settle = async (call: Promise<unknown>): Promise<{resolved: boolean; value: unknown}> => {
++  try {
++    return {resolved: true, value: await call};
++  } catch (caught) {
++    return {resolved: false, value: caught};
++  }
++};
++
++const cases: [string, unknown][] = [
++  ['a string', 'provider exploded'],
++  ['a plain object', {code: 'E_PROVIDER', retryable: false}],
++  ['undefined', undefined],
++];
++
++describe('ChatOrchestrator onError for a rejection that is not an Error', () => {
++  it.each(cases)(
++    'wraps a rejection that is %s in an Error for onError, keeping the original as cause, and still rejects the caller with it',
++    async (_label: string, rejection: unknown) => {
++      const seen: unknown[] = [];
++      const hooks: OrchestratorHooks = {
++        onError: async (_session, error) => {
++          seen.push(error);
++        },
++      };
++
++      const orchestrator = createChatOrchestrator(rejectingProvider(rejection), promptBuilder, undefined, {hooks});
++      const outcome = await settle(orchestrator.processMessage(createSession('hello')));
++
++      expect(seen).toHaveLength(1);
++      expect(seen[0]).toBeInstanceOf(Error);
++      expect((seen[0] as Error).cause).toBe(rejection);
++      expect(outcome.resolved).toBe(false);
++      expect(outcome.value).toBe(rejection);
++    }
++  );
++
++  it('hands a rejection that is already an Error to onError as the same instance, not a wrapper', async () => {
++    const original = new Error('boom');
++    const seen: unknown[] = [];
++    const hooks: OrchestratorHooks = {
++      onError: async (_session, error) => {
++        seen.push(error);
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(rejectingProvider(original), promptBuilder, undefined, {hooks});
++    const outcome = await settle(orchestrator.processMessage(createSession('hello')));
++
++    expect(seen).toHaveLength(1);
++    expect(seen[0]).toBe(original);
++    expect(outcome.resolved).toBe(false);
++    expect(outcome.value).toBe(original);
++  });
++});

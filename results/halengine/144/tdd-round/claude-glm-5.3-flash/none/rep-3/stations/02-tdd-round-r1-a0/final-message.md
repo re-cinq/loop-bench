@@ -1,0 +1,18 @@
+Round complete. The branch is pushed and in sync with `origin/main` (which was already an ancestor — no merge needed, working tree clean, `loop-bench/144` up to date with its upstream).
+
+## What this round did
+
+**First, everything the CI verdict owed** (all findings from the round brief, typecheck + eslint):
+
+- **typecheck** — `listSessions.test.ts(35,17/25)`: the store double's `listFor` parameters are now explicitly typed.
+- **eslint, duplication** — the three clones between `conversationList.acceptance.test.ts` and `sessionResume.test.ts` (client/server registries + `eventually`, the drain teardown, the five-member store double) now live once in `wsTestSupport.ts` (`eventually`, `drainEngines`, `fiveMemberStore`, plus a new `trackEngine` so suites that build their own server still get shared teardown; sessionResume's local `open` folded into the existing `connectClient`).
+- **eslint, prefer-early-return** — `askAfterConnect`'s message handler is guard-shaped (pong resolves, data records, connected drives the exchange), with assertions untouched.
+- **eslint, validation.ts** — the 3-way `switch` on `message.type` became a lookup table (what the rule itself prescribes); the limit check's three boolean operators became `isListableLimit`; the four nested ifs became a flat `cursorError` helper of named predicates. Error strings and accept/reject outcomes are byte-identical, so the acceptance and unit tests' expectations are unchanged.
+
+**Then the TDD facet** (the one unticked box in `dod.md`): a new test pins that a `list_sessions` asked mid-turn is answered before that turn commits or ends — it holds the turn's lock open, asks, and reads `session_list` landing between the answer's delta and its commit. I proved it load-bearing with a mutation check: routing `list_sessions` through the lock turns it red (`session_list` gone from the mid-turn frames), then reverted. The previously uncited off-lock statement in protocol spec §5.9 now carries its `([validated by: …])` anchor, and every anchor the touched suites shifted was repointed by test name (`spec:names:fix`, 36 anchors, exit 0).
+
+**Tests run here:** only my new test and the non-acceptance files I touched — `listSessions` (2/2), `validation` (3/3), `messageHandler` (59), `sessionResume` (25/25) — all green. The acceptance file `conversationList.acceptance.test.ts` was not run in this pod; CI judges it. **Red tests: 0 mine, 0 regressions** — every CI finding came from this branch's own commits and is fixed.
+
+**Unrelated smells noticed, not acted on:** sessionResume still keeps a `deferredRelease` twin of the shared `deferred` (below the clone threshold); `startEngineWith` hard-codes a `/c1` URL that makes it unusable for suites needing a plain base path; the branch's `dod.md` scoped this ticket to always-on `list_sessions`, so the ticket's opt-in `transport.history`, the `UNSUPPORTED` error code, `StoreCannotList`, the GDPR spec text, the docs/full-config regeneration, and the version bump remain open — including the deliberate divergence where a store with no `listFor` currently answers an empty list where the ticket asks for `UNSUPPORTED`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"off-lock ordering test for list_sessions mid-turn, plus every typecheck/eslint finding from the last push","tdd_next":"the ticket's opt-in transport.history flag answering UNSUPPORTED (and StoreCannotList) where the branch currently always answers"}}

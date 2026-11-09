@@ -1,0 +1,5 @@
+The acceptance test conflicts with ticket #144: [conversationList.acceptance.test.ts](/var/tmp/loop-bench/runs/102607f46053/workspace/target/src/transport/conversationList.acceptance.test.ts:135) expects an empty list when the store cannot list conversations. The ticket explicitly requires an `UNSUPPORTED` error because an empty list would misrepresent the user’s data. The test also uses different frame names from the ticket.
+
+I stopped as instructed for a wrong acceptance test. No files were changed, no tests were run, and there is no commit to push. Lore could not retrieve the branch’s CI verdict; it returned “branch not found,” so the number of existing red tests and regressions is unknown.
+
+LORE_NODE_RESULT: {"outcome":"failed","extras":{"tdd_blocked":"Acceptance test requires an empty list for an unsupported store, contrary to ticket #144's explicit UNSUPPORTED error requirement."}}
