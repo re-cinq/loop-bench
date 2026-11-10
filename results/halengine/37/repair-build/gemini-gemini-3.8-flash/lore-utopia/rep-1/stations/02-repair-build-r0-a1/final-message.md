@@ -1,0 +1,3 @@
+The branch has moved past the commit judged by CI (`7ccea884f1d7cb84a96ee5242a0436b047ec021b`). Running `git log --format=%s 7ccea884f1d7cb84a96ee5242a0436b047ec021b..HEAD` shows commit `f731b3e` (`fix(tools): fix ajv import, lint issues, and validate input in execute`), which does not carry `[skip ci]`. As instructed, no changes or builds were run so CI can re-judge the new head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 7ccea884f1d7cb84a96ee5242a0436b047ec021b; CI re-judges the head"}}

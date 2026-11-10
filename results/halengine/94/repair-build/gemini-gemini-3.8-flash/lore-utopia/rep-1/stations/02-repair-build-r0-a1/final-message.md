@@ -1,0 +1,3 @@
+CI judged sha `c3cd08a9719fc2b94390d5b6e91bcbe417f649a3`. `git log --format=%s c3cd08a9719fc2b94390d5b6e91bcbe417f649a3..HEAD` shows commit `4081056` (`fix(test): correct PromptBuilderConfig and consolidate assertions in acceptance test`), which does not carry `[skip ci]` and has already been pushed to `origin/loop-bench/94`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past c3cd08a9719fc2b94390d5b6e91bcbe417f649a3; CI re-judges the head"}}

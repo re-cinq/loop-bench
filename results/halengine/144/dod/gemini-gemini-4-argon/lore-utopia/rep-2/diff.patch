@@ -1,0 +1,589 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..50b4aa0
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,30 @@
++# Definition of Done
++
++> #143 gives a consumer `store.listFor(userId)`. It does not give a **client** anything: the browser holding the socket cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — Both the WebSocket frame validator (`validateMessage`) and the server transport (`createServer`) exist today, so the acceptance tests call the real entry points and fail directly on the absent `list_conversations` validation and handling behaviour.
++
++## Done when these pass
++
++- [ ] **validates list_conversations and rejects out-of-range limits or malformed cursors by field name** — `validateMessage` accepts `{type: 'list_conversations'}`, strips extra fields such as `userId`, validates `limit` as an integer 1–200, and validates `before` as a `{updatedAt, sessionId}` cursor with a parseable date string and non-empty `sessionId`, rejecting invalid values with an error message naming the field.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **answers list_conversations with the authenticated user's summaries newest first, forwards limit and before, and resumes a picked session** — With `history: {enabled: true}`, `list_conversations` is answered with one `conversation_list` frame carrying the connecting user's summaries newest first with ISO timestamp strings and no `stream_end`, calls `store.listFor` with `ws.userId` (ignoring any `userId` in the frame) and `{limit, before}`, and reconnecting with `?sessionId=<id>` resumes that conversation.
++      `src/transport/conversationList.acceptance.test.ts`
++- [ ] **answers UNSUPPORTED when history is off or the store lacks listFor, SERVER_ERROR when listFor rejects, and answers while a turn streams** — Answers `list_conversations` with an `UNSUPPORTED` error frame and no `conversation_list` when `history` is disabled or the store lacks `listFor` (or throws `StoreCannotList`), answers `SERVER_ERROR` with no leaked store detail when `listFor` rejects, and answers `list_conversations` off the per-session lock before an in-flight turn's `stream_end`.
++      `src/transport/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ConversationCursor`, `ConversationSummary`, `ListConversationsMessage`, and `ConversationListMessage` to `src/types/messages.ts` (additive only, preserving all existing lines) and add `UNSUPPORTED` to `ErrorCodes` in `src/types/session.ts`, re-exporting new public types from `src/index.ts`.
++- [ ] Add `list_conversations` validation in `src/transport/ws/validation.ts` (`limit` integer 1–200, `before` `{updatedAt, sessionId}` with parseable `updatedAt` and non-empty `sessionId`, stripping extra fields).
++- [ ] Export `StoreCannotList` for collections/stores that cannot list (and throw it from `MongoSessionStore.listFor` when the collection has no `find`), and add `ConversationHistoryOptions` (`{enabled: boolean}` with retention note pointing at #41) threaded through `HalEngineConfig.transport.history` and `createServer` options (warning at startup when `history.enabled` is true without `resume.enabled`).
++- [ ] Handle `list_conversations` on the non-locked path in `src/transport/ws/messageHandler.ts` using `ws.userId` and `{limit: message.limit, before: message.before}`, sending `conversation_list` with ISO timestamps when `history.enabled` is true, `UNSUPPORTED` when disabled or when `store.listFor` is absent or throws `StoreCannotList`, and `SERVER_ERROR` (logging session id with no store detail in the client frame) when `listFor` rejects.
++- [ ] Update `example/full-config.ts`, regenerate `docs/getting-started.md` via `npm run docs:fix`, update `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md` with citations, add a `CHANGELOG.md` entry under `## [Unreleased]`, and ensure `npm run verify` passes.
++
++## Out of scope
++
++- Previews or titles on conversation summaries (tracked in its own issue).
++- Deleting a conversation from the client over the WebSocket.
++- Server-side paging state (clients page using the `before` cursor).
++- Operator views of another user's conversations.
++- Live synchronisation of conversation lists across multiple open tabs.
+diff --git a/specs/hal-engine-websocket-protocol/spec.md b/specs/hal-engine-websocket-protocol/spec.md
+index e648542..5aeec01 100644
+--- a/specs/hal-engine-websocket-protocol/spec.md
++++ b/specs/hal-engine-websocket-protocol/spec.md
+@@ -122,10 +122,10 @@ Sends a user chat message. `user_message` is the only accepted type: the server
+ }
+ ```
+ 
+-| Field     | Type   | Required | Description                            |
+-| --------- | ------ | -------- | -------------------------------------- |
+-| `type`    | string | Yes      | `"user_message"`                       |
+-| `content` | string | Yes      | Message text                           |
++| Field     | Type   | Required | Description      |
++| --------- | ------ | -------- | ---------------- |
++| `type`    | string | Yes      | `"user_message"` |
++| `content` | string | Yes      | Message text     |
+ 
+ Any other field is ignored, and the validator forwards only the fields the frame defines. In particular the server does not read a `chatId` from this message: the connection already determines the session ([validated by: drops any field the frame does not define, rather than forwarding it](../../src/transport/ws/validation.test.ts#L18)).
+ 
+@@ -155,10 +155,35 @@ Application-level heartbeat. The server MUST respond with a `pong` message echoi
+ }
+ ```
+ 
+-| Field       | Type   | Required | Description                       |
+-| ----------- | ------ | -------- | --------------------------------- |
+-| `type`      | string | Yes      | `"ping"`                          |
+-| `timestamp` | number | Yes      | Client timestamp in milliseconds  |
++| Field       | Type   | Required | Description                      |
++| ----------- | ------ | -------- | -------------------------------- |
++| `type`      | string | Yes      | `"ping"`                         |
++| `timestamp` | number | Yes      | Client timestamp in milliseconds |
++
++### 4.3 list_conversations
++
++Requests a page of the authenticated user's conversation summaries.
++
++```json
++{
++  "type": "list_conversations",
++  "limit": 25,
++  "before": {
++    "updatedAt": "2026-01-01T00:00:00.000Z",
++    "sessionId": "550e8400-e29b-41d4-a716-446655440000"
++  }
++}
++```
++
++| Field    | Type               | Required | Description                                                          |
++| -------- | ------------------ | -------- | -------------------------------------------------------------------- |
++| `type`   | string             | Yes      | `"list_conversations"`                                               |
++| `limit`  | number             | No       | Maximum summaries to return (integer 1–200; store defaults to 50)    |
++| `before` | ConversationCursor | No       | Composite `{updatedAt, sessionId}` cursor from the last summary seen |
++
++Constraints:
++
++- `validateMessage` accepts `{type: 'list_conversations'}`, strips extra fields such as `userId`, requires `limit` when present to be an integer from 1 to 200, and requires `before` when present to be a `{updatedAt, sessionId}` cursor whose `updatedAt` parses as a date and whose `sessionId` is a non-empty string ([validated by: validates list_conversations and rejects out-of-range limits or malformed cursors by field name](../../src/transport/conversationList.acceptance.test.ts#L103)).
+ 
+ ## 5. Server-to-Client Messages
+ 
+@@ -166,14 +191,14 @@ Application-level heartbeat. The server MUST respond with a `pong` message echoi
+ 
+ Sent exactly once after a successful handshake. See Section 2.3.
+ 
+-| Field            | Type     | Description                                            |
+-| ---------------- | -------- | ------------------------------------------------------ |
+-| `type`           | string   | `"connected"`                                          |
+-| `sessionId`      | string   | UUID v4 identifying the session                        |
+-| `message`        | string   | Human-readable greeting                                |
+-| `examplePrompts` | string[] | Example queries derived from registered tool definitions |
+-| `resumed`        | boolean  | Present only with resume enabled: whether the requested conversation was rejoined |
+-| `entryCount`     | number   | Present only when `resumed` is `true`: how many stored entries the replay covers, skipped ones included |
++| Field            | Type     | Description                                                                                                                                                                                                                                                                                         |
++| ---------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
++| `type`           | string   | `"connected"`                                                                                                                                                                                                                                                                                       |
++| `sessionId`      | string   | UUID v4 identifying the session                                                                                                                                                                                                                                                                     |
++| `message`        | string   | Human-readable greeting                                                                                                                                                                                                                                                                             |
++| `examplePrompts` | string[] | Example queries derived from registered tool definitions                                                                                                                                                                                                                                            |
++| `resumed`        | boolean  | Present only with resume enabled: whether the requested conversation was rejoined                                                                                                                                                                                                                   |
++| `entryCount`     | number   | Present only when `resumed` is `true`: how many stored entries the replay covers, skipped ones included                                                                                                                                                                                             |
+ | `resumeFailure`  | string   | Present only when the connection named an id and `resumed` is `false`: `expired` when the caller's own session aged out, `unknown` otherwise. `unknown` deliberately covers both an id the server never issued and one that is not the caller's, so the answer reveals nothing about ids that exist |
+ 
+ ### 5.2 entry_upsert
+@@ -240,10 +265,10 @@ Marks an entry as finalized. No further `entry_delta` messages will be sent for
+ }
+ ```
+ 
+-| Field   | Type   | Description                   |
+-| ------- | ------ | ----------------------------- |
+-| `type`  | string | `"entry_commit"`              |
+-| `index` | number | Index of the entry to commit  |
++| Field   | Type   | Description                  |
++| ------- | ------ | ---------------------------- |
++| `type`  | string | `"entry_commit"`             |
++| `index` | number | Index of the entry to commit |
+ 
+ Semantics:
+ 
+@@ -261,10 +286,10 @@ Notifies the client that a session entry was created on the server and will neve
+ }
+ ```
+ 
+-| Field   | Type   | Description                                    |
+-| ------- | ------ | ---------------------------------------------- |
+-| `type`  | string | `"entry_skip"`                                 |
+-| `index` | number | Server-side index of the skipped entry         |
++| Field   | Type   | Description                            |
++| ------- | ------ | -------------------------------------- |
++| `type`  | string | `"entry_skip"`                         |
++| `index` | number | Server-side index of the skipped entry |
+ 
+ Suppression can begin before or after the server has started sending a reply, and the two cases produce different messages. This distinction is the whole of the protocol here:
+ 
+@@ -298,11 +323,11 @@ Reports an error condition. The connection remains open unless the error is fata
+ }
+ ```
+ 
+-| Field     | Type   | Description              |
+-| --------- | ------ | ------------------------ |
+-| `type`    | string | `"error"`                |
+-| `code`    | string | Machine-readable code    |
+-| `message` | string | Human-readable detail    |
++| Field     | Type   | Description           |
++| --------- | ------ | --------------------- |
++| `type`    | string | `"error"`             |
++| `code`    | string | Machine-readable code |
++| `message` | string | Human-readable detail |
+ 
+ Defined error codes:
+ 
+@@ -312,6 +337,7 @@ Defined error codes:
+ | `INVALID_FORMAT`  | Message body is not valid JSON                                    |
+ | `RATE_LIMITED`    | AI provider returned a rate limit error                           |
+ | `SERVER_ERROR`    | Unexpected server error during message processing                 |
++| `UNSUPPORTED`     | Requested feature is disabled or not supported by the store       |
+ 
+ Semantics:
+ 
+@@ -345,9 +371,9 @@ Signals that the server has finished processing a user message. Sent exactly onc
+ }
+ ```
+ 
+-| Field  | Type   | Description      |
+-| ------ | ------ | ---------------- |
+-| `type` | string | `"stream_end"`   |
++| Field  | Type   | Description    |
++| ------ | ------ | -------------- |
++| `type` | string | `"stream_end"` |
+ 
+ Semantics:
+ 
+@@ -357,6 +383,35 @@ Semantics:
+ - The client SHOULD use this message to clear any "processing" or "loading" indicators.
+ - The client MUST treat a run as complete only at `stream_end` or when the socket closes. Unparseable JSON is the one frame answered with `INVALID_FORMAT` and no `stream_end`, because the server cannot tell what it was meant to be; for it the client falls back on the socket closing.
+ 
++### 5.9 conversation_list
++
++Delivers one page of the authenticated user's conversation summaries in response to `list_conversations`.
++
++```json
++{
++  "type": "conversation_list",
++  "conversations": [
++    {
++      "sessionId": "550e8400-e29b-41d4-a716-446655440000",
++      "createdAt": "2026-01-15T14:00:00.000Z",
++      "updatedAt": "2026-01-15T14:30:00.000Z",
++      "entryCount": 4
++    }
++  ]
++}
++```
++
++| Field           | Type                  | Description                                                      |
++| --------------- | --------------------- | ---------------------------------------------------------------- |
++| `type`          | string                | `"conversation_list"`                                            |
++| `conversations` | ConversationSummary[] | Summaries newest activity first, with ISO 8601 timestamp strings |
++
++Semantics:
++
++- With `transport.history.enabled` set to `true`, the server answers `list_conversations` with one `conversation_list` carrying the connection's authenticated user's summaries newest first with ISO timestamp strings and no `stream_end`, takes the user id from `ws.userId` rather than the frame, forwards `{limit, before}` to `store.listFor`, and lets the client rejoin any listed `sessionId` by reconnecting with `?sessionId=<id>` ([validated by: answers list_conversations with the authenticated user's summaries newest first, forwards limit and before, and resumes a picked session](../../src/transport/conversationList.acceptance.test.ts#L136)).
++- When `transport.history` is absent or disabled, or the store implements no `listFor` (or throws `StoreCannotList`), the server answers `list_conversations` with an `UNSUPPORTED` error frame rather than an empty list; when `listFor` rejects with any other error it answers `SERVER_ERROR` with no store detail; and because listing is not a turn, `list_conversations` is answered off the per-session lock before an in-flight turn's `stream_end` ([validated by: answers UNSUPPORTED when history is off or the store lacks listFor, SERVER_ERROR when listFor rejects, and answers while a turn streams](../../src/transport/conversationList.acceptance.test.ts#L190)).
++- **GDPR.** `conversation_list` carries one authenticated user's own conversation metadata and no conversation content, the user id is taken from the connection and never from the frame, and `transport.history` is the deployer's explicit opt-in decision to make a user's history reachable from the client.
++
+ ## 6. SessionEntry Objects
+ 
+ A SessionEntry represents a single piece of content in the conversation. Every entry has a `role` field that determines its shape. The `role` acts as a discriminant for the union type.
+@@ -373,11 +428,11 @@ A message authored by the user.
+ }
+ ```
+ 
+-| Field       | Type   | Description                  |
+-| ----------- | ------ | ---------------------------- |
+-| `role`      | string | `"user"`                     |
+-| `content`   | string | The message text             |
+-| `timestamp` | string | ISO 8601 datetime            |
++| Field       | Type   | Description       |
++| ----------- | ------ | ----------------- |
++| `role`      | string | `"user"`          |
++| `content`   | string | The message text  |
++| `timestamp` | string | ISO 8601 datetime |
+ 
+ ### 6.2 AssistantEntry
+ 
+@@ -392,13 +447,13 @@ A response generated by the AI model. Content is delivered incrementally via `en
+ }
+ ```
+ 
+-| Field         | Type    | Description                                 |
+-| ------------- | ------- | ------------------------------------------- |
+-| `role`        | string  | `"assistant"`                               |
+-| `content`     | string  | Markdown text, built incrementally by deltas |
+-| `timestamp`   | string  | ISO 8601 datetime                           |
+-| `isStreaming`  | boolean | `true` while deltas are arriving            |
+-| `truncated`    | `true`  | Optional. Present only when the run ended before this entry finished, or when a resume replays it still streaming; see § 7.1 and § 11.3 |
++| Field         | Type    | Description                                                                                                                             |
++| ------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
++| `role`        | string  | `"assistant"`                                                                                                                           |
++| `content`     | string  | Markdown text, built incrementally by deltas                                                                                            |
++| `timestamp`   | string  | ISO 8601 datetime                                                                                                                       |
++| `isStreaming` | boolean | `true` while deltas are arriving                                                                                                        |
++| `truncated`   | `true`  | Optional. Present only when the run ended before this entry finished, or when a resume replays it still streaming; see § 7.1 and § 11.3 |
+ 
+ ### 6.3 ThinkingEntry
+ 
+@@ -412,11 +467,11 @@ Internal AI reasoning, separated from user-facing content by the server's thinki
+ }
+ ```
+ 
+-| Field        | Type    | Description                               |
+-| ------------ | ------- | ----------------------------------------- |
+-| `role`       | string  | `"thinking"`                              |
+-| `content`    | string  | Reasoning text, built incrementally       |
+-| `isStreaming` | boolean | `true` while deltas are arriving          |
++| Field         | Type    | Description                                                                                                                             |
++| ------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
++| `role`        | string  | `"thinking"`                                                                                                                            |
++| `content`     | string  | Reasoning text, built incrementally                                                                                                     |
++| `isStreaming` | boolean | `true` while deltas are arriving                                                                                                        |
+ | `truncated`   | `true`  | Optional. Present only when the run ended before this entry finished, or when a resume replays it still streaming; see § 7.1 and § 11.3 |
+ 
+ Note: ThinkingEntry does not include a `timestamp` field.
+@@ -437,12 +492,12 @@ A tool invocation requested by the AI model. The server executes the tool and fe
+ }
+ ```
+ 
+-| Field       | Type   | Description                               |
+-| ----------- | ------ | ----------------------------------------- |
+-| `role`      | string | `"tool"`                                  |
+-| `toolName`  | string | Registered tool name                      |
+-| `toolInput` | object | Key-value pairs passed to the tool        |
+-| `timestamp` | string | ISO 8601 datetime                         |
++| Field       | Type   | Description                        |
++| ----------- | ------ | ---------------------------------- |
++| `role`      | string | `"tool"`                           |
++| `toolName`  | string | Registered tool name               |
++| `toolInput` | object | Key-value pairs passed to the tool |
++| `timestamp` | string | ISO 8601 datetime                  |
+ 
+ Note: ToolEntry does not participate in the delta/commit cycle. It is delivered as a single `entry_upsert`.
+ 
+@@ -647,11 +702,11 @@ After 5 failed attempts, the client MUST stop reconnecting and report a disconne
+ 
+ ## 13. Source Files
+ 
+-| Concern                  | File                                              |
+-| ------------------------ | ------------------------------------------------- |
+-| Shared entry types       | `src/types/session.ts`                            |
+-| Backend message types    | `src/types/messages.ts`                           |
+-| Backend sender helpers   | `src/transport/ws/sender.ts`                      |
+-| Message validation       | `src/transport/ws/validation.ts`                  |
+-| Message handling         | `src/transport/ws/messageHandler.ts`              |
+-| Connection handler       | `src/transport/ws/connectionHandler.ts`           |
++| Concern                | File                                    |
++| ---------------------- | --------------------------------------- |
++| Shared entry types     | `src/types/session.ts`                  |
++| Backend message types  | `src/types/messages.ts`                 |
++| Backend sender helpers | `src/transport/ws/sender.ts`            |
++| Message validation     | `src/transport/ws/validation.ts`        |
++| Message handling       | `src/transport/ws/messageHandler.ts`    |
++| Connection handler     | `src/transport/ws/connectionHandler.ts` |
+diff --git a/src/transport/conversationList.acceptance.test.ts b/src/transport/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..7de9aee
+--- /dev/null
++++ b/src/transport/conversationList.acceptance.test.ts
+@@ -0,0 +1,267 @@
++import type {AddressInfo} from 'node:net';
++import {WebSocket} from 'ws';
++import type {Express} from 'express';
++import {createServer} from './createServer.js';
++import type {HalServerOptions} from './createServer.js';
++import {HAL_WS_SUBPROTOCOL} from './ws/subprotocol.js';
++import {validateMessage} from './ws/validation.js';
++import {answeringOrchestrator} from './wsTestSupport.js';
++import {InMemorySessionStore} from '../infrastructure/stores/inMemorySessionStore.js';
++import type {ChatOrchestrator} from '../orchestration/chatOrchestrator.js';
++import type {MessageChunk} from '../types/ai.js';
++import type {SessionEntry} from '../types/session.js';
++import type {SessionListOptions, SessionStore} from '../types/sessionStore.js';
++import {setLogger} from '../shared/logger.js';
++
++interface WireSummary {
++  sessionId: string;
++  createdAt: string;
++  updatedAt: string;
++  entryCount: number;
++}
++
++interface WireFrame {
++  type: string;
++  sessionId?: string;
++  resumed?: boolean;
++  entryCount?: number;
++  conversations?: WireSummary[];
++  code?: string;
++  message?: string;
++  index?: number;
++  entry?: SessionEntry;
++}
++
++const servers: Array<ReturnType<typeof createServer>> = [];
++const clients: WebSocket[] = [];
++
++const eventually = async (check: () => boolean): Promise<void> => {
++  for (let attempt = 0; attempt < 50 && !check(); attempt++) await new Promise(resolve => setTimeout(resolve, 10));
++};
++
++beforeAll(() => {
++  setLogger({debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined});
++});
++
++afterAll(() => {
++  setLogger();
++});
++
++afterEach(async () => {
++  for (const client of clients.splice(0)) client.terminate();
++  for (const hal of servers.splice(0)) {
++    const {wss} = hal;
++    await eventually(() => wss.clients.size === 0);
++    await hal.stop();
++  }
++});
++
++const startServer = async (
++  store: SessionStore,
++  extra: Record<string, unknown> = {},
++  orchestrator: ChatOrchestrator = answeringOrchestrator
++): Promise<{base: string; auth: {userId: string}}> => {
++  const auth = {userId: 'u1'};
++  const options = {
++    app: (() => undefined) as unknown as Express,
++    wsAuth: async () => ({id: auth.userId}),
++    sessionStore: store,
++    orchestrator,
++    ...extra,
++  } as unknown as HalServerOptions;
++  const hal = createServer(options);
++  await hal.start(0);
++  servers.push(hal);
++  const {port} = hal.server.address() as AddressInfo;
++  return {base: `ws://127.0.0.1:${port}/hal/ws`, auth};
++};
++
++const openSocket = (url: string, token = 't'): WebSocket => {
++  const client = new WebSocket(url, [HAL_WS_SUBPROTOCOL, token]);
++  clients.push(client);
++  return client;
++};
++
++const sendAndSettle = async (url: string, payload: Record<string, unknown>): Promise<WireFrame[]> => {
++  const client = openSocket(url);
++  const frames: WireFrame[] = [];
++  await new Promise<void>(resolve => {
++    client.on('message', raw => {
++      const frame = JSON.parse(String(raw)) as WireFrame;
++      frames.push(frame);
++      if (frame.type === 'connected') {
++        client.send(JSON.stringify(payload));
++        client.send(JSON.stringify({type: 'ping', timestamp: 1}));
++      }
++      if (frame.type === 'pong') resolve();
++    });
++  });
++  return frames;
++};
++
++describe('conversation list over the WebSocket protocol', () => {
++  it('validates list_conversations and rejects out-of-range limits or malformed cursors by field name', () => {
++    const validCursor = {updatedAt: '2026-01-01T00:00:00.000Z', sessionId: 's1'};
++    const validEmpty = validateMessage({type: 'list_conversations'});
++    const validWithArgs = validateMessage({
++      type: 'list_conversations',
++      limit: 25,
++      before: validCursor,
++      userId: 'stranger',
++    });
++    const invalidLimits = [0, 201, 1.5, '10'].map(limit => validateMessage({type: 'list_conversations', limit}));
++    const invalidBefores = [
++      'not a date',
++      {updatedAt: 'not a date', sessionId: 's1'},
++      {updatedAt: validCursor.updatedAt},
++    ].map(before => validateMessage({type: 'list_conversations', before}));
++
++    expect({
++      validEmpty,
++      validWithArgs,
++      limitsValid: invalidLimits.some(res => res.valid),
++      limitsMentionField: invalidLimits.every(res => !res.valid && res.error.includes('limit')),
++      beforesValid: invalidBefores.some(res => res.valid),
++      beforesMentionField: invalidBefores.every(res => !res.valid && res.error.includes('before')),
++    }).toEqual({
++      validEmpty: {valid: true, data: {type: 'list_conversations'}},
++      validWithArgs: {valid: true, data: {type: 'list_conversations', limit: 25, before: validCursor}},
++      limitsValid: false,
++      limitsMentionField: true,
++      beforesValid: false,
++      beforesMentionField: true,
++    });
++  });
++
++  it("answers list_conversations with the authenticated user's summaries newest first, forwards limit and before, and resumes a picked session", async () => {
++    const inner = new InMemorySessionStore();
++    inner.create('s1', 'u1').entries.push({role: 'user', content: 'first', timestamp: '2026-01-01T00:01:00.000Z'});
++    inner.create('s2', 'u1').entries.push({role: 'user', content: 'second', timestamp: '2026-01-01T00:02:00.000Z'});
++    inner.create('theirs', 'u2').entries.push({role: 'user', content: 'other', timestamp: '2026-01-01T00:03:00.000Z'});
++    const recordedCalls: Array<{userId: string | number; options?: SessionListOptions}> = [];
++    const store: SessionStore = {
++      create: (id, userId, opts) => inner.create(id, userId, opts),
++      get: id => inner.get(id),
++      lookup: id => inner.lookup(id),
++      delete: id => inner.delete(id),
++      count: () => inner.count(),
++      clear: () => inner.clear(),
++      listFor: (userId, options) => {
++        recordedCalls.push({userId, options});
++        return inner.listFor(userId, options);
++      },
++    };
++    const {base} = await startServer(store, {history: {enabled: true}, resume: {enabled: true}});
++
++    const cursor = {updatedAt: '2026-01-01T00:05:00.000Z', sessionId: 's9'};
++    const frames = await sendAndSettle(base, {
++      type: 'list_conversations',
++      limit: 10,
++      before: cursor,
++      userId: 'u2',
++    });
++    const listFrame = frames.find(frame => frame.type === 'conversation_list');
++    const summaries = listFrame?.conversations ?? [];
++    const resumedFrames = await sendAndSettle(`${base}?sessionId=s1`, {type: 'ping', timestamp: 2});
++
++    expect({
++      frameTypes: frames.map(frame => frame.type),
++      calledWith: recordedCalls,
++      count: summaries.length,
++      orderedNewestFirst:
++        summaries.length === 3 &&
++        summaries[1]?.sessionId === 's2' &&
++        summaries[2]?.sessionId === 's1' &&
++        summaries.every(row => !Number.isNaN(Date.parse(row.createdAt)) && !Number.isNaN(Date.parse(row.updatedAt))),
++      resumed: {
++        resumed: resumedFrames[0]?.resumed,
++        sessionId: resumedFrames[0]?.sessionId,
++        replayedContent: resumedFrames.find(frame => frame.type === 'entry_upsert')?.entry?.content,
++      },
++    }).toEqual({
++      frameTypes: ['connected', 'conversation_list', 'pong'],
++      calledWith: [{userId: 'u1', options: {limit: 10, before: cursor}}],
++      count: 3,
++      orderedNewestFirst: true,
++      resumed: {resumed: true, sessionId: 's1', replayedContent: 'first'},
++    });
++  });
++
++  it('answers UNSUPPORTED when history is off or the store lacks listFor, SERVER_ERROR when listFor rejects, and answers while a turn streams', async () => {
++    const inner = new InMemorySessionStore();
++    const storeWithoutList: SessionStore = {
++      create: (id, userId, opts) => inner.create(id, userId, opts),
++      get: id => inner.get(id),
++      delete: id => inner.delete(id),
++      count: () => inner.count(),
++      clear: () => inner.clear(),
++    };
++    const failingStore: SessionStore = {
++      ...storeWithoutList,
++      listFor: () => Promise.reject(new Error('sensitive db host detail')),
++    };
++
++    let releaseTurn = (): void => undefined;
++    const turnGate = new Promise<void>(resolve => {
++      releaseTurn = resolve;
++    });
++    const streamingOrchestrator: ChatOrchestrator = {
++      processMessage: async () => 'done',
++      async *processMessageStream(): AsyncGenerator<MessageChunk> {
++        yield {type: 'text', text: 'streaming'};
++        await turnGate;
++        yield {type: 'stop', stopReason: 'end_turn'};
++      },
++    };
++
++    const offServer = await startServer(inner);
++    const noListServer = await startServer(storeWithoutList, {history: {enabled: true}});
++    const failServer = await startServer(failingStore, {history: {enabled: true}});
++    const streamServer = await startServer(inner, {history: {enabled: true}}, streamingOrchestrator);
++
++    const offFrames = await sendAndSettle(offServer.base, {type: 'list_conversations'});
++    const noListFrames = await sendAndSettle(noListServer.base, {type: 'list_conversations'});
++    const failFrames = await sendAndSettle(failServer.base, {type: 'list_conversations'});
++
++    const streamClient = openSocket(streamServer.base);
++    const streamOrder: string[] = [];
++    await new Promise<void>(resolve => {
++      streamClient.on('message', raw => {
++        const frame = JSON.parse(String(raw)) as WireFrame;
++        streamOrder.push(frame.type);
++        if (frame.type === 'connected') {
++          streamClient.send(JSON.stringify({type: 'user_message', content: 'hold the lock'}));
++        }
++        if (frame.type === 'entry_delta') {
++          streamClient.send(JSON.stringify({type: 'list_conversations'}));
++        }
++        if (frame.type === 'conversation_list' || frame.type === 'error') {
++          releaseTurn();
++        }
++        if (frame.type === 'stream_end') resolve();
++      });
++    });
++
++    const offError = offFrames.find(frame => frame.type === 'error');
++    const noListError = noListFrames.find(frame => frame.type === 'error');
++    const failError = failFrames.find(frame => frame.type === 'error');
++
++    expect({
++      off: {types: offFrames.map(frame => frame.type), code: offError?.code},
++      noList: {types: noListFrames.map(frame => frame.type), code: noListError?.code},
++      failing: {
++        types: failFrames.map(frame => frame.type),
++        code: failError?.code,
++        leakedDetail: Boolean(failError?.message?.includes('sensitive db host detail')),
++      },
++      listBeforeStreamEnd:
++        streamOrder.includes('conversation_list') &&
++        streamOrder.indexOf('conversation_list') < streamOrder.indexOf('stream_end'),
++    }).toEqual({
++      off: {types: ['connected', 'error', 'pong'], code: 'UNSUPPORTED'},
++      noList: {types: ['connected', 'error', 'pong'], code: 'UNSUPPORTED'},
++      failing: {types: ['connected', 'error', 'pong'], code: 'SERVER_ERROR', leakedDetail: false},
++      listBeforeStreamEnd: true,
++    });
++  });
++});

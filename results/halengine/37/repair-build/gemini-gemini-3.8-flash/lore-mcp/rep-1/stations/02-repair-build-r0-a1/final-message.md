@@ -1,0 +1,3 @@
+The CI verdict in `round-brief.md` reported failures on `7ccea884f1d7cb84a96ee5242a0436b047ec021b`. Running `git log --format=%s 7ccea884f1d7cb84a96ee5242a0436b047ec021b..HEAD` shows commit `522e3ac` (`fix(tools): resolve ajv import, lint findings, and validate input in execute`) without `[skip ci]`. The branch moved after CI judged it, so CI will re-judge the new head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 7ccea884f1d7cb84a96ee5242a0436b047ec021b; CI re-judges the head"}}
