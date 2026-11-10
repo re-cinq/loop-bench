@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` with a fixed ISO timestamp (`SENT_AT`) in `src/orchestration/onErrorNonError.acceptance.test.ts` to resolve the `re-lint/no-nondeterministic-tests` ESLint failure, formatted with Prettier, and pushed to `origin`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced new Date() with deterministic timestamp in src/orchestration/onErrorNonError.acceptance.test.ts to fix re-lint/no-nondeterministic-tests"}}

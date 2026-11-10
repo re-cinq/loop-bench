@@ -1,0 +1,153 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..998b0dc
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,21 @@
++# Definition of Done
++
++> The orchestrator's `catch` gates `onError` on `error instanceof Error`. A rejection that is not an `Error` — a thrown string, a plain object, a value from a library that rejects with its own shape — bypasses `onError` entirely while still propagating to the caller.
++
++**Strategy: `direct`** — The seam already exists. `createChatOrchestrator` accepts `OrchestratorHooks.onError` and catches turn errors during `processMessageStream`. An acceptance test can install an `onError` hook, drive `processMessage` with a provider that rejects with non-`Error` values, and observe that `onError` is skipped today.
++
++## Done when these pass
++
++- [ ] **wraps a non-Error rejection in an Error preserving its cause and still rejects to the caller** — When a provider rejects with a non-`Error` value (a string, a plain object, or `undefined`), `onError` is called once with an `Error` instance whose `cause` is that original value, and the caller receives the original rejection unchanged.
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] In `src/orchestration/chatOrchestrator.ts`, update the `catch` block to invoke `hooks.onError` for every rejection, wrapping any value that is not an `instanceof Error` in a new `Error` with `{cause: error}` while re-throwing the original value unchanged.
++- [ ] Confirm existing tests verifying `onError` when an `Error` instance is rejected/thrown continue to pass without modification, receiving the exact same instance rather than a wrapper.
++- [ ] Document the updated `onError` behaviour in `CHANGELOG.md` under Changed.
++
++## Out of scope
++
++- `beforeSession` escaping the `try` block (owned by issue #94).
++- Usage accounting across tool rounds (owned by issue #93).
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 66ff9d3..2625597 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -16,13 +16,8 @@
+ - For a session that completes without error the hooks fire in the order `beforeSession` → `beforeUserInput` → `afterUserInput` → `beforeModelResponse` → `afterModelResponse` → `afterSession` ([validated by: fires the lifecycle hooks in documented order for a session that completes without error](../../src/config.test.ts#L153)).
+ - A `beforeSession` that throws reaches the caller as a rejection, and also runs `onError` with the thrown error and then `afterSession`, because the call sits inside the same `try`/`finally` as the rest of the turn. An `afterSession` hook called under this condition can infer the session never advanced past `beforeSession`: no user-input hooks ran, no model response was generated, and no tool rounds were started — a cleanup hook that allocates in `beforeSession` and frees in `afterSession` will therefore always see the allocation and the release on the same error path ([validated by: runs onError then afterSession when it throws, and still rejects to the caller](../../src/orchestration/chatOrchestrator.test.ts#L116)).
+ - `afterModelResponse` is called once per user message after the round loop exits and is passed `totalUsage` — the sum of the usage every provider call in the turn reported, not the last round alone ([validated by: sums the usage of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L555)).
++- Every rejection encountered while processing a turn runs `onError`; when the rejection is not already an `Error` — a thrown string, plain object, or undefined — it reaches `onError` wrapped in an `Error` whose `cause` is the original rejection, and the original rejection propagates to the caller unchanged ([validated by: wraps a non-Error rejection in an Error preserving its cause and still rejects to the caller](../../src/orchestration/chatOrchestrator.acceptance.test.ts#L33)).
+ 
+ ## Engine startup
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L195)).
+-
+-## Measured semantics — out of scope
+-
+-This property of `src/orchestration/chatOrchestrator.ts` is recorded so the hook features that follow specify against real behaviour. This issue does not change it; that is a separate, out-of-scope change owned by no issue in this epic.
+-
+-- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..03124fd
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,101 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import type {AIProvider, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++// Fixed timestamp so the test does not depend on the system clock.
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++function createSession(content: string): ChatSession {
++  return {
++    sessionId: 's1',
++    userId: 'u1',
++    entries: [{role: 'user', content, timestamp: SENT_AT}],
++  };
++}
++
++function createFailingProvider(rejection: unknown): AIProvider {
++  return {
++    // eslint-disable-next-line require-yield -- generator throws before yielding
++    async *sendMessage(_params: SendMessageParams): AsyncGenerator<MessageChunk> {
++      throw rejection;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}
++
++const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++
++describe('ChatOrchestrator non-Error rejection handling', () => {
++  it('wraps a non-Error rejection in an Error preserving its cause and still rejects to the caller', async () => {
++    const cases: Array<{label: string; rejection: unknown}> = [
++      {label: 'string', rejection: 'provider failed'},
++      {label: 'plain object', rejection: {status: 500, detail: 'upstream error'}},
++      {label: 'undefined', rejection: undefined},
++    ];
++
++    const results = [];
++    for (const {label, rejection} of cases) {
++      let onErrorCalls = 0;
++      let receivedError: unknown;
++      const hooks: OrchestratorHooks = {
++        onError: async (_session, error) => {
++          onErrorCalls += 1;
++          receivedError = error;
++        },
++      };
++
++      const orchestrator = createChatOrchestrator(createFailingProvider(rejection), promptBuilder, undefined, {
++        hooks,
++      });
++
++      let threw = false;
++      let callerRejection: unknown;
++      try {
++        await orchestrator.processMessage(createSession('hello'));
++      } catch (error) {
++        threw = true;
++        callerRejection = error;
++      }
++
++      results.push({
++        label,
++        onErrorCalls,
++        isErrorInstance: receivedError instanceof Error,
++        cause: receivedError instanceof Error ? receivedError.cause : undefined,
++        threw,
++        callerRejection,
++      });
++    }
++
++    expect(results).toEqual([
++      {
++        label: 'string',
++        onErrorCalls: 1,
++        isErrorInstance: true,
++        cause: 'provider failed',
++        threw: true,
++        callerRejection: 'provider failed',
++      },
++      {
++        label: 'plain object',
++        onErrorCalls: 1,
++        isErrorInstance: true,
++        cause: {status: 500, detail: 'upstream error'},
++        threw: true,
++        callerRejection: {status: 500, detail: 'upstream error'},
++      },
++      {
++        label: 'undefined',
++        onErrorCalls: 1,
++        isErrorInstance: true,
++        cause: undefined,
++        threw: true,
++        callerRejection: undefined,
++      },
++    ]);
++  });
++});

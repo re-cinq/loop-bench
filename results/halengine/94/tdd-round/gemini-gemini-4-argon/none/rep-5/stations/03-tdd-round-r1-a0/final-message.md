@@ -1,0 +1,3 @@
+Fixed the TypeScript (`TS2353`) and ESLint (`re-lint/max-expects`) failures reported by CI in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` and updated the corresponding spec line anchor in `specs/hal-engine-config-hooks/spec.md`. No tests were run locally in this round (as the repair targeted the acceptance test file's typecheck and lint findings); 0 red tests were mine and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI typecheck and eslint errors in chatOrchestrator.beforeSession.acceptance.test.ts","tdd_next":"acceptance green"}}

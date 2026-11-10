@@ -1,0 +1,6 @@
+Completed one TDD round:
+- Added `ajv` (`^8.20.0`) to `dependencies` in `package.json` and `package-lock.json` (`allErrors: true`, `strict: false`, `validateFormats: false`, no coercion, no defaults, no injected `additionalProperties: false`) and bumped the package version MINOR to `0.4.0`.
+- Added unit test `throws at registration when inputSchema is not a valid JSON Schema and allows conforming input through to the executor` in `src/orchestration/tools/registry.test.ts` (1 red test written and turned green; 0 regressions).
+- Linked the test in `specs/hal-engine-tool-input-validation/spec.md` and ticked the first facet in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv to dependencies in package.json and package-lock.json (strict: false, validateFormats: false, no coercion, no defaults, no injected additionalProperties: false) and bump the package version MINOR.","tdd_next":"Compile static ToolDefinition.inputSchema at ToolRegistry.register time (throwing an error naming the tool on invalid schemas) and cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap)."}}

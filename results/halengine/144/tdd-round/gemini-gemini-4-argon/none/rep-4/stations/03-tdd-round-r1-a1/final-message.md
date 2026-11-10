@@ -1,0 +1,7 @@
+Completed this round:
+- Threaded optional `sessionStore` into `createMessageHandler(orchestrator, sessionStore?)` and wired `options.sessionStore` in `src/transport/createServer.ts` (validated by unit test in `src/transport/createServer.test.ts`).
+- Handled `list_sessions` frames in `src/transport/ws/messageHandler.ts`: calls `await sessionStore?.listFor?.(session.userId, {limit, before})`, serialises `createdAt` and `updatedAt` to ISO-8601 strings in `{type: 'session_list', sessions}`, answers `{type: 'session_list', sessions: []}` when `listFor` is absent, and logs on category `'ws'` before sending `ErrorCodes.SERVER_ERROR` when `listFor` throws or rejects (validated by unit tests in `src/transport/ws/messageHandler.test.ts`).
+- Documented `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md`, `specs/hal-engine-conversation-list/spec.md`, and `docs/getting-started.md`, and re-anchored spec links.
+- Red tests from previous CI: 3 acceptance tests were ours (awaiting `list_sessions` handler implementation), 0 regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Thread sessionStore into createMessageHandler, handle list_sessions in messageHandler.ts, and document list_sessions/session_list in specs and docs","tdd_next":"acceptance green"}}

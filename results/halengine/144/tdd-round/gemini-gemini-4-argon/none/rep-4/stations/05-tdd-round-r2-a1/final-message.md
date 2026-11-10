@@ -1,0 +1,3 @@
+Resolved all remaining ESLint findings reported by CI (`re-lint/prefer-polymorphism` in `src/transport/ws/validation.ts`, `re-lint/no-duplicate-code` and `re-lint/no-flag-params` in `src/transport/ws/validation.test.ts`, and `re-lint/max-member-chain` in `src/transport/sessionResume.test.ts`). Verified `src/transport/ws/validation.test.ts` (0 red tests of ours, 0 regressions), formatted, and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve remaining eslint findings in validation.ts, validation.test.ts, and sessionResume.test.ts","tdd_next":"acceptance green"}}

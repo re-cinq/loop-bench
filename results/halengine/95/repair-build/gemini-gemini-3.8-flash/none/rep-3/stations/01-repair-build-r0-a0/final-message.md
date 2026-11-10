@@ -1,0 +1,3 @@
+Resolved the ESLint `re-lint/no-nondeterministic-tests` failure by replacing `new Date().toISOString()` with a deterministic timestamp (`'2026-01-01T00:00:00.000Z'`) on line 12 of `src/orchestration/onErrorNonError.acceptance.test.ts`. Verified the acceptance suite passes, formatted the file with Prettier, committed, and pushed the branch to upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replace new Date() with deterministic timestamp in onError acceptance test"}}

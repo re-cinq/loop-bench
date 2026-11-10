@@ -1,0 +1,10 @@
+Completed one red-green-refactor round for ticket #37.
+
+### Summary
+1. **Red**: Added `src/orchestration/tools/registry.test.ts` with a unit test asserting that `ToolRegistry.register` throws an error naming the tool when provided an uncompilable JSON schema for a static tool definition, and linked the test to its statement in `specs/hal-engine-tool-input-validation/spec.md`. Executed only this test file with Jest and confirmed the failure (1 red test mine, 0 regressions).
+2. **Green**: Added `ajv@^8.20.0` to `dependencies` in `package.json` and updated `package-lock.json`, bumping package version to `0.4.0` (MINOR). Implemented schema compilation using `Ajv` (`strict: false`, `validateFormats: false`, no type coercion, no defaults) in `ToolRegistry.register`, storing compiled validators on static tool records and caching dynamic function-valued definitions by schema object reference in a `WeakMap`. Re-ran `registry.test.ts` and confirmed the green bar. Added a changelog entry to `CHANGELOG.md` under `## [Unreleased]`.
+3. **Refactor**: Updated `.lore/dod.md` to check off the completed facets. Formatted changed files with Prettier. Committed changes as `6f4c63a` and pushed to `origin/loop-bench/37`. Synced with `origin/main` (already up to date).
+
+Unrelated smells noticed: `check-audit.mjs` reports 8 pre-existing high/critical audit advisories in dependencies/devDependencies (`body-parser`, `brace-expansion`, `handlebars`, `proxy-addr`). Acted on none of them.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Compile static ToolDefinition.inputSchema at ToolRegistry.register time (throwing an error naming the tool on invalid schemas) and cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap).","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor, returning a ToolResponse ({result}) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at specs/hal-engine-tool-input-validation/spec.md."}}

@@ -1,0 +1,3 @@
+All facets in `.lore/dod.md` are already closed (`beforeSession` moved inside `try` in `src/orchestration/chatOrchestrator.ts`, `specs/hal-engine-config-hooks/spec.md` and `specs/hal-engine-architecture/spec.md` updated with validated test links, and `CHANGELOG.md` updated), no `round-brief.md` or CI failures exist, and the branch is clean and pushed to `origin/loop-bench/94` (0 red tests, 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+Fixed the `re-lint/no-nondeterministic-tests` eslint failure in `src/orchestration/onErrorNonError.acceptance.test.ts` by replacing `new Date().toISOString()` on line 12 with a deterministic timestamp string `'2026-01-01T00:00:00.000Z'`. Verified that the acceptance test passes locally and all spec citations remain aligned. Formatted, committed, and pushed the change to `origin/loop-bench/95`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"new Date() in onErrorNonError.acceptance.test.ts violated re-lint/no-nondeterministic-tests"}}

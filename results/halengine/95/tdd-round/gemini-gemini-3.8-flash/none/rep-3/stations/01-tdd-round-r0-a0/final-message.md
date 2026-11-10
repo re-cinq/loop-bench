@@ -1,0 +1,7 @@
+In this round:
+- Executed Phase 1 (RED): added a unit test `called with wrapped Error preserving cause when rejection is not an Error` in `src/orchestration/chatOrchestrator.test.ts` and confirmed it failed when non-`Error` rejections bypassed `onError`.
+- Executed Phase 2 (GREEN): implemented `toError` and `readableMessage` helper functions in `src/orchestration/chatOrchestrator.ts` and updated the `catch` block so `hooks.onError` is called with the coerced `Error` (preserving `cause` and original rejection thrown), passing all 27 unit tests.
+- Executed Phase 3 (REFACTOR): updated `CHANGELOG.md` under `## [Unreleased] Fixed`, updated spec anchor citations to align with shifted line numbers, marked facets as closed in `.lore/dod.md`, formatted modified files with Prettier, and committed and pushed to `origin/loop-bench/95`.
+- Test counts: 1 red test was ours, and 0 were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"In src/orchestration/chatOrchestrator.ts, coerce a caught non-Error rejection to an Error with a readable message (while passing an Error instance through unchanged) so hooks.onError always fires on any rejection inside the try block.","tdd_next":"acceptance green"}}

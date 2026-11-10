@@ -1,0 +1,3 @@
+Fixed the `PromptBuilderConfig` property (`identity` instead of `baseSystemPrompt`) and consolidated the three assertions into a single `expect(...).toEqual(...)` in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` to satisfy `typecheck` and `re-lint/max-expects`, and updated the test anchor in `specs/hal-engine-config-hooks/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced invalid baseSystemPrompt config with identity and consolidated assertions into a single expect in chatOrchestrator.beforeSession.acceptance.test.ts"}}

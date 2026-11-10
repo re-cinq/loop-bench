@@ -1,0 +1,5 @@
+Verified that existing `Error`-instance tests in `src/orchestration/chatOrchestrator.test.ts` (`called with session and error when stream fails`, `error still propagates after onError hook`, `error path calls onError then afterSession`) remain unedited and green (all 27 tests passed).
+
+Updated `.lore/dod.md` to tick this facet, formatted with prettier, committed, and pushed to origin. The branch is up to date with `origin/main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Confirm existing Error-instance tests in src/orchestration/chatOrchestrator.test.ts (called with session and error when stream fails, error still propagates after onError hook, error path calls onError then afterSession) remain green without modification.","tdd_next":"Add a CHANGELOG.md entry under ## [Unreleased] describing the behaviour change for existing consumers."}}

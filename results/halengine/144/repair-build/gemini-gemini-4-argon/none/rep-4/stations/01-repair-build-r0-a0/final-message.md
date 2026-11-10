@@ -1,0 +1,3 @@
+Wired `sessionStore` into `createMessageHandler` and implemented `list_sessions` frame handling in `src/transport/ws/messageHandler.ts`, resolved all ESLint errors (`re-lint/no-duplicate-code`, `re-lint/prefer-early-return`, and `re-lint/no-flag-params`) in `src/transport/conversationList.acceptance.test.ts` and `src/transport/ws/validation.test.ts`, and updated the test citation line anchors in `specs/hal-engine-conversation-list/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"implemented list_sessions WebSocket frame handling and resolved re-lint errors in test files"}}
