@@ -1,0 +1,3 @@
+The branch moved after CI judged commit `5cd4e6710184e4c23ab8d932710998781bdd6208`. `git log --format=%s 5cd4e6710184e4c23ab8d932710998781bdd6208..HEAD` shows commit `711d5fb381ece27a17fe2d56d01f3cc67d822287` (`feat(transport): handle list_sessions over WebSocket and fix test lint errors (#144)`), which does not carry `[skip ci]`. As instructed, changing nothing so CI can judge the new head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}
