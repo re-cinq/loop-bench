@@ -1,0 +1,7 @@
+I have resolved the `eslint` and `test` CI failures on branch `loop-bench/144`:
+
+1. **WebSocket `list_sessions` handling**: Threaded `sessionStore` into `createMessageHandler` in `src/transport/createServer.ts`, added `sendSessionList` in `src/transport/ws/sender.ts` to serialise `createdAt` and `updatedAt` as ISO-8601 strings, and handled `list_sessions` outside the per-session lock in `src/transport/ws/messageHandler.ts` (falling back to `[]` when `listFor` is unimplemented and logging an error on `'ws'` + answering `SERVER_ERROR` when `listFor` throws).
+2. **Duplicate code lint findings**: Consolidated shared server lifecycle helpers, `requiredMembersOnly`, and `invalidListSessionsFrames` into `src/transport/wsTestSupport.ts` and used them in `src/transport/conversationList.acceptance.test.ts` and `src/transport/ws/validation.test.ts`.
+3. **Specs & unit test coverage**: Added a test in `src/transport/ws/messageHandler.test.ts` verifying `list_sessions` runs outside the per-session lock with no `stream_end`, updated `specs/hal-engine-conversation-list/spec.md` and `specs/hal-engine-websocket-protocol/spec.md`, and repointed spec anchors.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Implemented list_sessions handler in messageHandler/sender/createServer and extracted shared test fixtures in wsTestSupport to fix test and eslint re-lint/no-duplicate-code failures"}}

@@ -1,0 +1,3 @@
+Fixed both CI failures in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (replacing invalid `baseSystemPrompt` with `identity` on `PromptBuilderConfig` and consolidating the 3 `expect` calls into 1 to satisfy `re-lint/max-expects`), repointed the citation anchor in `specs/hal-engine-config-hooks/spec.md` to `#L32`, verified Prettier formatting and spec anchor checks, and pushed to `origin`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed TS2353 PromptBuilderConfig property and re-lint/max-expects in chatOrchestrator.beforeSession.acceptance.test.ts, and repointed spec anchor"}}
