@@ -1,0 +1,7 @@
+Completed the round:
+- Compiled static `ToolDefinition.inputSchema` at `ToolRegistry.register` time (throwing an error naming the tool on invalid schemas) and reused the compiled validator across `execute` calls without re-reading `definition.inputSchema`, while caching compiled validators for function-valued `ToolDefinitionSource` schemas by schema object reference (`WeakMap`).
+- Added unit tests in `src/orchestration/tools/registry.test.ts` and linked them in `specs/hal-engine-tool-input-validation/spec.md`.
+- Resolved the two `re-lint` findings (`prefer-early-return` and `max-member-chain`) reported by CI on `src/orchestration/tools/registry.acceptance.test.ts`.
+- All 4 unit tests in `src/orchestration/tools/registry.test.ts` are green (0 red tests of ours, 0 regressions caused by our code).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Compile static ToolDefinition.inputSchema at ToolRegistry.register time (throwing an error naming the tool on invalid schemas) and cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap).","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor, returning a ToolResponse ({result}) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at specs/hal-engine-tool-input-validation/spec.md."}}

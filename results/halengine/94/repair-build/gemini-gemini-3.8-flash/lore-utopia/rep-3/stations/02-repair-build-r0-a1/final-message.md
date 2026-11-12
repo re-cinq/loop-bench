@@ -1,0 +1,3 @@
+The branch moved after CI judged `c3cd08a9719fc2b94390d5b6e91bcbe417f649a3`. Commit `8099bf8` ("fix(test): correct PromptBuilderConfig and consolidate assertions in acceptance test") was committed to HEAD without `[skip ci]`. In accordance with the instructions, leaving the branch unchanged for CI to judge the new head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past c3cd08a9719fc2b94390d5b6e91bcbe417f649a3; CI re-judges the head"}}

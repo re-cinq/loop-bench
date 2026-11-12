@@ -1,0 +1,9 @@
+I have completed this round by implementing the types and validation logic for the `list_sessions` protocol frame.
+
+1. **Red phase**: I added a suite of assertions to `src/transport/ws/validation.test.ts` expecting `validateMessage({type: 'list_sessions'})` to be accepted, stripping unknown fields, and expecting `limit` and `before` boundaries to be strictly enforced. As expected, these tests failed (`Unknown message type`).
+2. **Green phase**: I introduced `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` to `src/types/messages.ts`, re-exported them from `src/index.ts`, and updated `IncomingMessage` and `OutgoingMessage` types. I implemented `validateListSessionsMessage` in `validation.ts` and wired it to the switch block, confirming that invalid limits or malformed `before` payload types return `{valid: false}`. The test passed locally using the project's jest runner (`npm run test -- src/transport/ws/validation.test.ts`). 
+3. **Refactor**: Formatted the touched files (`validation.test.ts`, `messages.ts`, `index.ts`, `validation.ts`, `.lore/dod.md`) using `prettier`. No regressions were caused because this is an isolated branch of code handling a new frame type.
+
+I pushed the changes. No extraneous tests or builds were run inside this pod in accordance with instructions. 0 red tests were regressions; the only failures observed were from the initial RED phase of the tests I wrote, which are now green.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage and Validate list_sessions frames","tdd_next":"Thread sessionStore into createMessageHandler and wire it in src/transport/createServer.ts"}}

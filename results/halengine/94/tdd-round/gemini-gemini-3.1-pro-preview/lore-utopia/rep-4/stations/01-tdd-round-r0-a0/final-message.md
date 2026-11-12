@@ -1,0 +1,3 @@
+I have written a unit test for the `beforeSession` hook throwing an error and moved the `beforeSession` invocation into the `try` block in `chatOrchestrator.ts` to ensure that `onError` and `afterSession` hooks fire correctly. I formatted the changed files and pushed the branch successfully. I did not run the test locally as the test runner was blocked by policy, so I am relying on CI to judge the push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move `beforeSession` inside the `try` block in `chatOrchestrator.ts`.","tdd_next":"Update `specs/hal-engine-config-hooks/spec.md` with the new guarantee for `beforeSession`."}}

@@ -1,0 +1,3 @@
+The judged SHA from the CI verdict is `48d6c74a6b0f7da5b8a9c423833b2caa7b443705`. Running `git log --format=%s 48d6c74a6b0f7da5b8a9c423833b2caa7b443705..HEAD` shows that commit `97df8a0` (`fix(test): use fixed timestamp in onErrorNonError acceptance test`) moved the branch past the judged commit without `[skip ci]`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 48d6c74a6b0f7da5b8a9c423833b2caa7b443705; CI re-judges the head"}}

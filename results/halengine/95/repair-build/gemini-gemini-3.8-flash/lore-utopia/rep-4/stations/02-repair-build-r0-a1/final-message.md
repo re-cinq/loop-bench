@@ -1,0 +1,3 @@
+CI judged commit `48d6c74a6b0f7da5b8a9c423833b2caa7b443705`. Checking `git log --format=%s 48d6c74a6b0f7da5b8a9c423833b2caa7b443705..HEAD` shows commit `719990a` (`test(orchestrator): use deterministic timestamp in acceptance test`), which addresses the eslint non-deterministic Date error and does not carry `[skip ci]`. The branch has moved since CI judged it.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 48d6c74a6b0f7da5b8a9c423833b2caa7b443705; CI re-judges the head"}}

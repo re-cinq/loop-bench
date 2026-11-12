@@ -1,0 +1,3 @@
+I have fixed the linter failure by replacing the nondeterministic `new Date().toISOString()` with a hardcoded ISO timestamp string in the test file, satisfying the `re-lint/no-nondeterministic-tests` rule. I have also verified that `npm run eslint` passes locally and pushed the changes to the branch.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"fixed eslint re-lint/no-nondeterministic-tests failure in onErrorNonError.acceptance.test.ts"}}

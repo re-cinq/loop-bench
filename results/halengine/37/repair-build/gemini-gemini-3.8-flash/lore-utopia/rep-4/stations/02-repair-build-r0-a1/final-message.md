@@ -1,0 +1,3 @@
+CI reported failures on `7ccea884f1d7cb84a96ee5242a0436b047ec021b`, but `git log` reveals `502b339bd604349b948c0655a3d3f7cf0e5996d3` was pushed without `[skip ci]`. The branch moved after CI judged it, so CI must re-judge the new head before further evaluation.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 7ccea884f1d7cb84a96ee5242a0436b047ec021b; CI re-judges the head"}}

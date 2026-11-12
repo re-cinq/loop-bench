@@ -1,0 +1,3 @@
+All facets in `.lore/dod.md` are closed, the implementation and tests in `src/orchestration/chatOrchestrator.ts` and `src/orchestration/chatOrchestrator.test.ts` are committed and pushed to `origin/loop-bench/95`, spec coverage for `specs/hal-engine-config-hooks/spec.md` is verified, `origin/main` has no drift, and there are no CI failures reported in `round-brief.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

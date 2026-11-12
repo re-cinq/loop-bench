@@ -1,0 +1,9 @@
+I have completed the TDD round for coercing non-`Error` rejections so that the `onError` hook always fires properly. 
+
+1. **Test phase (Red):** I updated the `outcomeOf` helper in `src/orchestration/chatOrchestrator.test.ts` to properly catch non-Error types (since it incorrectly assumed `error` would always be an `Error` instance). Then, I added two new test cases inside the `onError` `describe` block verifying that string and plain object rejections are correctly wrapped in an `Error` and passed to `onError`. Both tests failed as expected because the hook was previously gated behind `error instanceof Error`.
+2. **Implementation phase (Green):** I updated the `catch` block in `src/orchestration/chatOrchestrator.ts` to instantiate a `new Error` with a readable message (`JSON.stringify` for objects or the raw string) and the original payload as its `cause` whenever the caught rejection is not already an `Error`. This satisfies the core facet requirement while passing existing `Error` instances unchanged. Running the unit tests confirmed that the new test cases and the existing ones passed.
+3. **Refactor and Delivery:** Code was straightforward and self-contained; I ran the project's prettier formatter, checked off the two targeted facets in `.lore/dod.md`, committed the changes, merged the upstream `main` branch (which was up to date), and successfully pushed.
+
+The next round will handle the addition of the `CHANGELOG.md` entry.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"In src/orchestration/chatOrchestrator.ts, coerce a caught non-Error rejection to an Error","tdd_next":"Add a CHANGELOG.md entry under ## [Unreleased] describing the behaviour change for existing consumers."}}

@@ -1,0 +1,3 @@
+I have resolved the ESLint failure by replacing the non-deterministic `new Date().toISOString()` call with a hardcoded ISO date string in `src/orchestration/onErrorNonError.acceptance.test.ts`. The file was formatted with Prettier and the changes were committed and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"fixed nondeterministic test timestamp in onErrorNonError.acceptance.test.ts causing eslint error"}}

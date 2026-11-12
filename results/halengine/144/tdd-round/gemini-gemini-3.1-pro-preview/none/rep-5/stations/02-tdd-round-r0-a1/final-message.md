@@ -1,0 +1,3 @@
+I have completed the round by adding the `list_sessions` protocol types and writing the validator with a passing unit test. I also formatted the changed files, updated `.lore/dod.md`, committed, and pushed the branch successfully. I merged `origin/main`, which was already up to date. No acceptance tests were run locally per the instructions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage types and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler (optional parameter so existing callers keep working) and wire it in src/transport/createServer.ts"}}

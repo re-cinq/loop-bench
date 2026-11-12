@@ -1,0 +1,3 @@
+The branch has moved past the SHA that CI judged (`7ccea884f1d7cb84a96ee5242a0436b047ec021b`). There is a new commit (`fix: resolve ajv import, eslint errors and add cause to caught error`) which does not contain `[skip ci]`. Therefore, CI has not yet judged the new head. Following instructions to change nothing and wait for CI to re-judge.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 7ccea884f1d7cb84a96ee5242a0436b047ec021b; CI re-judges the head"}}

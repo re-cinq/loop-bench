@@ -1,0 +1,3 @@
+Wired `sessionStore` into `createMessageHandler` in `src/transport/createServer.ts` and `src/transport/ws/messageHandler.ts` to answer `list_sessions` frames with `session_list` (or `SERVER_ERROR` on `listFor` failure), and resolved the ESLint findings in `src/transport/conversationList.acceptance.test.ts` and `src/transport/ws/validation.test.ts`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Handled list_sessions frames in createMessageHandler and resolved duplicate-code, prefer-early-return, and no-flag-params lint errors in test files"}}

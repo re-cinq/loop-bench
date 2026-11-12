@@ -1,0 +1,3 @@
+CI judged commit `7ccea884f1d7cb84a96ee5242a0436b047ec021b`, but the branch has moved past that commit with `fca882fdf9891aec3e3d57de3e48bd90c6ca7476` (`fix(tools): fix Ajv import, attach cause to compile error, and validate input in execute`), which does not carry `[skip ci]`. As instructed, changing nothing and awaiting CI judgment on the new head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 7ccea884f1d7cb84a96ee5242a0436b047ec021b; CI re-judges the head"}}

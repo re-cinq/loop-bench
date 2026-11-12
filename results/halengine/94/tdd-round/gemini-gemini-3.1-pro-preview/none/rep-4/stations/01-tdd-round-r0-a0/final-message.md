@@ -1,0 +1,3 @@
+I moved the `beforeSession` call into the `try` block in `chatOrchestrator.ts` and verified the behaviour with two new unit tests that assert `onError` and `afterSession` run when `beforeSession` throws. The specification was already stating the new guarantee, so I only updated `CHANGELOG.md` with a note explaining the fix to consumers. All required facets in `.lore/dod.md` are now checked, and the changes have been committed and pushed. I ran the tests for `chatOrchestrator.test.ts` locally here, and they pass. No regressions or smells were noticed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts.","tdd_next":"acceptance green"}}
