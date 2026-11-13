@@ -1,0 +1,3 @@
+The branch has moved since CI judged it, so I made no changes and ran nothing. CI judged `5cd4e67`, but the branch head is now `3b6b415` ("feat(transport): answer list_sessions off the turn lock; share ws test helpers (#144)"). That commit isn't marked `[skip ci]` and it is already pushed. CI hasn't judged it yet, so the red eslint and test results apply to the older commit.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}

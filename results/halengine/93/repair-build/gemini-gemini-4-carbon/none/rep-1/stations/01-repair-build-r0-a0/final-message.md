@@ -1,0 +1,3 @@
+Fixed all four ESLint findings from the CI failure on `19eaa4d`: combined the two `expect` calls in `src/orchestration/orchestratorHelpers.test.ts#L35` into a single `toEqual` object assertion (`re-lint/max-expects`) and added trailing `[validated by: ...]` spec links in `specs/hal-engine-config-hooks/spec.md` for all three `accumulateUsage` tests (`#L29`, `#L35`, `#L43` for `re-lint/require-spec-link`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"combined duplicate expects and linked all three accumulateUsage unit tests in specs/hal-engine-config-hooks/spec.md"}}
