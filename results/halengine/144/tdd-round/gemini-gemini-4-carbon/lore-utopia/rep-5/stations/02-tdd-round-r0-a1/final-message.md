@@ -1,0 +1,7 @@
+Completed one red-green-refactor round (`aa37099`, pushed to `origin/loop-bench/144`):
+
+- **Tests:** 1 red unit test written in this round (`src/transport/ws/listSessions.test.ts`, now green); 0 regressions observed.
+- **Delivered:** Added `sendSessionList` in `src/transport/ws/sender.ts`, accepted an optional `sessionStore` in `createMessageHandler`, handled `list_sessions` in `src/transport/ws/messageHandler.ts` (calling `sessionStore?.listFor?.(session.userId, {limit, before})`, serialising `Date` fields as ISO-8601 strings, and logging under `'ws'` + answering `SERVER_ERROR` on failure), cited the test in `specs/hal-engine-conversation-list/spec.md`, and ticked the facet in `.lore/dod.md`.
+- **Unrelated smell noted (untouched):** `validateMessage` in `src/transport/ws/validation.ts` now has a three-case `switch (message.type)` from commit `23410cb` without the `re-lint/prefer-polymorphism` inline suppression noted in `adrs/ADR-006-lint-suppressions.md` if CI's threshold triggers on three cases.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle list_sessions in src/transport/ws/messageHandler.ts and sendSessionList in src/transport/ws/sender.ts","tdd_next":"Wire sessionStore into createMessageHandler in src/transport/createServer.ts"}}

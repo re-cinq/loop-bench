@@ -1,0 +1,6 @@
+Completed one red-green-refactor round fixing the CommonJS/ESM Ajv constructor resolution and legacy `dataPath`/union-type error normalization in `src/orchestration/tools/registry.ts` (keeping `registry.ts` at 100% statement/branch/function/line coverage), linked the new unit test in `specs/hal-engine-tool-input-validation/spec.md`, updated `.lore/dod.md`, formatted with Prettier, and pushed `5c821da` to `origin/loop-bench/37`.
+
+- **Red tests vs regressions:** On the previous push's CI run, 2 red suites were this ticket's (`src/orchestration/tools/registry.test.ts` and `src/orchestration/tools/registry.acceptance.test.ts`) and 1 suite was a regression (`src/orchestration/chatOrchestrator.test.ts`), all caused by `createSchemaCompiler` throwing when `ajv` exported a direct CommonJS constructor without `.default`; repaired in `src/orchestration/tools/registry.ts`.
+- **Unrelated smells noticed (unacted on):** Pre-existing gitignored `coverage/` output directory present in the workspace checkout.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"resolve direct CommonJS and default-exported JSON Schema compiler constructors and normalize legacy Ajv dataPath and union-type validation errors","tdd_next":"acceptance green"}}

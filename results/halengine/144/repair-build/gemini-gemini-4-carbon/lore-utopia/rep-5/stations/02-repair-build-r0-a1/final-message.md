@@ -1,0 +1,3 @@
+The branch `loop-bench/144` is at `987894a51bf2045e39bf03f3eeb3acd0f16d05e5` (`fix(transport): handle list_sessions frames and resolve test lint errors (#144)`), ahead of the CI-judged commit `5cd4e6710184e4c23ab8d932710998781bdd6208` without `[skip ci]` and already pushed to `origin/loop-bench/144`. Left the repository untouched so CI can judge the current `HEAD`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}

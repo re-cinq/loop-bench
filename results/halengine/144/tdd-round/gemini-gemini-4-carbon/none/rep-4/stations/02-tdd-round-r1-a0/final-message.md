@@ -1,0 +1,7 @@
+Completed the red-green-refactor round and pushed `349833d` to `origin/loop-bench/144`:
+
+- **Tests & regressions:** On the previous CI run, the 2 red tests in `src/transport/conversationList.acceptance.test.ts` were this ticket's acceptance tests and 0 were regressions; in this round, 1 red test was ours (`src/transport/ws/messageHandler.test.ts`, now green) and 0 were regressions.
+- **Delivered:** Added `sendSessionList` in `src/transport/ws/sender.ts`, threaded optional `sessionStore` into `createMessageHandler` and handled `list_sessions` off the per-session turn lock in `src/transport/ws/messageHandler.ts` (wiring `options.sessionStore` in `src/transport/createServer.ts`), fixed all 10 ESLint findings from `round-brief.md`, documented `list_sessions` and `session_list` in `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md` with repointed anchors, and updated `CHANGELOG.md` and `.lore/dod.md`.
+- **Unrelated smells noticed (left untouched):** `src/transport/sessionResume.test.ts` still keeps local socket/server teardown and five-member store wrapper helpers instead of sharing `src/transport/wsTestSupport.ts`, and the `#143` `Unreleased` bullet in `CHANGELOG.md` still notes `"Nothing in the engine calls it yet"`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Thread sessionStore into createMessageHandler and createServer, handle list_sessions with session_list and SERVER_ERROR, fix CI eslint findings, and document list_sessions and session_list in specs","tdd_next":"acceptance green"}}

@@ -1,0 +1,8 @@
+Completed one red-green-refactor round on `loop-bench/144` (`6c3f161`):
+
+- **Red → Green:** Added a failing unit test in `src/transport/createServer.test.ts` (`forwards sessionStore to the message handler so list_sessions reads the store`), then passed `options.sessionStore` into `createMessageHandler(options.orchestrator, options.sessionStore)` in `src/transport/createServer.ts` (9/9 passing in `src/transport/createServer.test.ts`).
+- **CI Fixes & Refactor:** Resolved all `eslint` and `spec-names` findings from `round-brief.md` (`re-lint/no-duplicate-code`, `re-lint/prefer-early-return`, `re-lint/require-spec-link`, `require-yield` in `listSessions.test.ts`, and `re-lint/prefer-polymorphism` on the 3-case `switch` in `validation.ts`), documented `4.3 list_sessions` and `5.9 session_list` in `specs/hal-engine-websocket-protocol/spec.md`, updated `specs/hal-engine-conversation-list/spec.md` anchors, and ticked the closed facets in `.lore/dod.md`.
+- **Red tests / regressions:** 1 red unit test written and turned green by us this round (with the 3 ticket acceptance tests previously red because `createServer.ts` had not yet wired `sessionStore`); 0 regressions.
+- **Unrelated smells noticed (untouched):** `docs/adding-a-message-type.md` teaches adding a third `case` to `switch (message.type)` in `validation.ts`, which immediately trips `re-lint/prefer-polymorphism` (as noted in `adrs/ADR-006-lint-suppressions.md`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Wire sessionStore into createMessageHandler in src/transport/createServer.ts, document list_sessions and session_list in specs, and resolve CI eslint/spec-names findings","tdd_next":"acceptance green"}}

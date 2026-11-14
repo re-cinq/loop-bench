@@ -1,0 +1,5 @@
+Completed one red-green-refactor round (`a81ffcc`, pushed to `origin/loop-bench/37`):
+- Added `ajv` (`^8.20.0`) to `dependencies` with a `MINOR` version bump (`0.4.0`), compiled static `ToolDefinition.inputSchema` in `ToolRegistry.register` under `{strict: false, validateFormats: false, allErrors: true}` (throwing an `Error` naming the tool on invalid schemas), verified RED -> GREEN on `src/orchestration/tools/registry.test.ts`, linked the test in `specs/hal-engine-tool-input-validation/spec.md`, and updated `.lore/dod.md`.
+- Red tests: 0 of ours after GREEN (1 written in RED phase, now passing); 0 regressions (no prior CI failure report on this initial branch). Unrelated observation left untouched: `src/orchestration/tools/registry.acceptance.test.ts` lines 46 and 112 exceed `printWidth: 120`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv to dependencies with MINOR version bump and compile static ToolDefinition.inputSchema at ToolRegistry.register time","tdd_next":"Validate input in ToolRegistry.execute (reusing static validators and caching function-valued schemas via WeakMap) and return non-leaking rejection ToolResponse"}}

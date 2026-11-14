@@ -1,0 +1,7 @@
+Completed one red-green-refactor round on `src/orchestration/tools/registry.test.ts` and `src/orchestration/tools/registry.ts`, resolved all CI findings from `round-brief.md`, and pushed `a109d35`:
+
+- **Red tests vs regressions:** 0 failing tests and 0 regressions on the previous CI push (`test:coverage` failed on the `src/orchestration/` 80.85% branch-coverage floor because `registry.ts` was at 67.79%, and `eslint` failed on `re-lint/max-member-chain` at `src/orchestration/tools/registry.test.ts:261`).
+- **Fixes delivered:** Formatted root-level schema constraint errors without `field "<root>"`, simplified Ajv constructor resolution and error formatters (raising `registry.ts` coverage to 97.72% statements / 88.63% branches / 100% functions / 98.75% lines), extracted `registry.get('lookup_docs')` to eliminate the 3-hop chain, restored `doc-block` marker adjacency in `README.md`, `docs/adding-a-tool.md`, and `.specify/spec.md`, and updated `#Lnn` anchors in `specs/hal-engine-tool-input-validation/spec.md`.
+- **Unrelated smells noticed (untouched):** `CHANGELOG.md` compare footer still links `[Unreleased]` from `v0.2.1...main` rather than `v0.3.0...main`; `npx prettier --write` is denied by the pod's Bash policy hook so formatting was verified directly against `.prettierrc`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"format root-level schema constraint violations, fix eslint max-member-chain, raise registry.ts branch coverage above orchestration floor, and restore doc-block marker adjacency","tdd_next":"acceptance green"}}

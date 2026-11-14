@@ -1,0 +1,5 @@
+Completed one red-green-refactor round closing the usage-summation facet:
+- Added `accumulateUsage` in `src/orchestration/orchestratorHelpers.ts` with its unit test in `src/orchestration/orchestratorHelpers.test.ts` (green; 0 red unit tests, 0 regressions; acceptance tests in `chatOrchestratorUsage.acceptance.test.ts` remain red until `chatOrchestrator.ts` wires `accumulateUsage` in the next round) and spec citation in `specs/hal-engine-architecture/spec.md`.
+- Note (not acted on this round): the second acceptance test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts#L67` does not yet carry a `[validated by]` citation in `specs/hal-engine-config-hooks/spec.md`, which belongs to the hooks-spec/CHANGELOG facet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}
