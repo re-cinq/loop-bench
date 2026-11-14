@@ -1,0 +1,6 @@
+Completed one TDD round (`3a77deb`) adding the `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` protocol types (included in `IncomingMessage`/`OutgoingMessage` and re-exported from `src/types/index.ts` and `src/index.ts`) and validating `list_sessions` frames in `src/transport/ws/validation.ts` (`src/transport/ws/validation.test.ts#L24`, cited in `specs/hal-engine-conversation-list/spec.md`).
+
+- Red tests / regressions: 1 new test was red in the RED phase and is now green (0 remaining red tests in `src/transport/ws/validation.test.ts`; 0 regressions).
+- Unrelated smells noticed (untouched): `PingMessage` in `src/types/messages.ts` is not re-exported from `src/types/index.ts` or `src/index.ts`, unlike `UserMessagePayload` and `PongMessage`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage wire types and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler and wire it in src/transport/createServer.ts"}}

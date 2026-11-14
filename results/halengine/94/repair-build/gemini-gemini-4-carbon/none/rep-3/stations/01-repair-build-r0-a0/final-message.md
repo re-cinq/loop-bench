@@ -1,0 +1,3 @@
+Updated `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (which failed `typecheck` because `baseSystemPrompt` does not exist on `PromptBuilderConfig` and failed `eslint` because 3 `expect` calls violated `re-lint/max-expects`) to construct `PromptBuilder` with `{identity: 'You are HAL.'}` and assert `{rejectedWith, caughtError, afterSessionRan}` in a single `expect(...).toEqual(...)`, and updated the corresponding citation anchor in `specs/hal-engine-config-hooks/spec.md` (`#L40` → `#L32`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed invalid PromptBuilderConfig literal and max-expects violation in chatOrchestrator.beforeSession.acceptance.test.ts and updated its spec anchor"}}

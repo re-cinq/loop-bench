@@ -1,0 +1,7 @@
+Completed one red-green-refactor round on `loop-bench/95` (`a01234b`, pushed and up to date with `origin/main` and `origin/loop-bench/95`):
+
+- **Tests & regressions:** 1 red unit test written this round (now green alongside all 26 existing tests in `src/orchestration/chatOrchestrator.test.ts`); 0 regressions.
+- **Changes:** Coerced non-`Error` rejections in `src/orchestration/chatOrchestrator.ts` into an `Error` with a readable `message` and `{cause: thrown}` while passing `Error` instances through unchanged and rethrowing the original value; cited the new unit test and corrected the `#L53`/`#L64` anchors on the ticket's statement in `specs/hal-engine-config-hooks/spec.md`; added the `CHANGELOG.md` entry under `## [Unreleased]`; and ticked the closed facets in `.lore/dod.md`.
+- **Unrelated smells noticed (untouched):** `src/transport/ws/messageHandler.ts` (`'Unknown error'`), `src/providers/vertex/vertexProvider.ts` / `src/providers/bedrock/bedrockProvider.ts` (`'Unknown'`), and `saveSession` in `src/orchestration/chatOrchestrator.ts` (`String(error)`) degrade non-`Error` throwables when logging.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Coerce non-Error rejections to Error with cause for onError, confirm existing Error tests remain green, and add CHANGELOG entry","tdd_next":"acceptance green"}}

@@ -1,0 +1,3 @@
+Fixed both CI failures in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (the test file added on this branch used `baseSystemPrompt`/`systemPromptSuffix`/`contextConfig` instead of `PromptBuilderConfig.identity`, causing `TS2353`, and called `expect` three times, violating `re-lint/max-expects`) while preserving all assertions (rejection message, `onError` reference identity, and `afterSession` execution) and updating the shifted spec anchor in `specs/hal-engine-config-hooks/spec.md` (`#L40` → `#L32`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"fixed PromptBuilderConfig TS2353 and re-lint/max-expects in chatOrchestrator.beforeSession.acceptance.test.ts and repointed spec anchor"}}

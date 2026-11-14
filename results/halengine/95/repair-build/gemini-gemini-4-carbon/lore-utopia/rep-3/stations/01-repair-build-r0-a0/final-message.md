@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` on line 12 of `src/orchestration/onErrorNonError.acceptance.test.ts` with the fixed timestamp `'2026-01-01T00:00:00.000Z'` to resolve the `re-lint/no-nondeterministic-tests` ESLint failure without shifting spec line anchors, then committed and pushed `d73b4a3` to `origin/loop-bench/95`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"re-lint/no-nondeterministic-tests on new Date() at src/orchestration/onErrorNonError.acceptance.test.ts:12"}}

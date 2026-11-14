@@ -1,0 +1,7 @@
+Fixed both CI-reported failures on `loop-bench/94` (`807fbd2`): replaced invalid `PromptBuilderConfig` properties with `identity`/`responseGuidelines` and consolidated the three assertions into a single `expect(...).toEqual(...)` in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (preserving the exact rejection message, `onError` error-instance identity, and `afterSession` execution checks), updated the shifted spec anchor (`#L40` -> `#L35`) in `specs/hal-engine-config-hooks/spec.md`, updated `.lore/dod.md`, merged `origin/main` (already up to date), and pushed.
+
+- Tests run locally: this round ran no tests here (acceptance test execution is reserved for CI and non-git runners were denied by pod policy).
+- Red tests / regressions on CI: 0 red tests were ours and 0 were regressions (only `typecheck` TS2353 and `eslint` `re-lint/max-expects` failed).
+- Unrelated smells noticed (untouched, out of scope): `chatOrchestrator.ts` still gates `onError` on `error instanceof Error` and passes only `lastUsage` rather than cumulative usage across tool rounds to `afterModelResponse`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve CI-reported PromptBuilderConfig type error and re-lint/max-expects violation in chatOrchestrator.beforeSession.acceptance.test.ts","tdd_next":"acceptance green"}}

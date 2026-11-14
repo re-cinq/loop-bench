@@ -1,0 +1,5 @@
+Completed one red-green-refactor round (`9d2313d` pushed to `origin/loop-bench/37`, up to date with `origin/main`): added `src/orchestration/tools/registry.test.ts` (green), installed `ajv` (`strict: false`, `validateFormats: false`, no coercion/defaults/`additionalProperties: false`) with package version bumped to `0.4.0`, compiled static `ToolDefinition.inputSchema` at `ToolRegistry.register` time throwing the tool name on invalid schemas, linked the test in `specs/hal-engine-tool-input-validation/spec.md`, and ticked the first facet in `.lore/dod.md`.
+
+Red tests from this round: 0 (the new unit test is green; 0 regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv to dependencies (strict: false, validateFormats: false, no coercion/defaults/additionalProperties), bump package version MINOR to 0.4.0, and compile static ToolDefinition.inputSchema at ToolRegistry.register time","tdd_next":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap) and validate input in ToolRegistry.execute"}}

@@ -1,0 +1,3 @@
+The branch has moved past the CI-judged commit `5cd4e6710184e4c23ab8d932710998781bdd6208` (`bc279c61eef72c7e554e14d54fb2d83155787d1a`: `feat(transport): handle list_sessions frames`, without `[skip ci]`, already pushed to `origin/loop-bench/144`). Leaving the repository untouched so CI can judge the current `HEAD`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}

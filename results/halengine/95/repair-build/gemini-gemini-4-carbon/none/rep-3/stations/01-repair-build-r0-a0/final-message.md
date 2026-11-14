@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` on line 12 of `src/orchestration/onErrorNonError.acceptance.test.ts` with a fixed ISO timestamp (`'2026-01-01T00:00:00.000Z'`) to satisfy `re-lint/no-nondeterministic-tests` while preserving spec citation line numbers, verified Prettier formatting and the targeted Jest suite, and pushed commit `8ad2d15` to `origin/loop-bench/95`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"src/orchestration/onErrorNonError.acceptance.test.ts:12 failed re-lint/no-nondeterministic-tests due to new Date(); replaced with a fixed ISO timestamp"}}

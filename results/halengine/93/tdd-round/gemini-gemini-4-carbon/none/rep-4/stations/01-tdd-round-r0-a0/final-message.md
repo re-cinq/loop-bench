@@ -1,0 +1,5 @@
+Completed one TDD round implementing `accumulateTurnUsage` in `src/orchestration/orchestratorHelpers.ts` with unit coverage in `src/orchestration/orchestratorHelpers.test.ts` and spec traceability in `specs/hal-engine-architecture/spec.md` (1 red test written by me and turned green; 0 regressions).
+
+Unacted observation for upcoming facets: the second acceptance test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts#L67` is not yet cited in `specs/hal-engine-config-hooks/spec.md`, which belongs to the spec/CHANGELOG facet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}

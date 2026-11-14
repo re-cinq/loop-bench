@@ -1,0 +1,6 @@
+Fixed the CI failures on `loop-bench/37` (`fff0854`) and pushed to `origin`:
+
+- **`typecheck` & `test` (`Ajv` import + `execute` validation):** Replaced the invalid named `{Ajv}` import (which resolved only to a type under `NodeNext` and threw `SyntaxError` in Node ESM) with `createRequire(import.meta.url)` and strict local validator interfaces, and implemented `inputSchema` validation (with `WeakMap` caching for dynamic definitions and value-redacted rejection messages/logs) in `ToolRegistry.execute`.
+- **`eslint` (`preserve-caught-error`, `prefer-early-return`, `max-member-chain`):** Attached `{cause: error}` in `compileSchema`, restructured `sendMessage` in `registry.acceptance.test.ts` with an early return on `round > 2` and destructured `lastMessage.content`, and added unit tests in `registry.test.ts` with verified spec citations in `specs/hal-engine-tool-input-validation/spec.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"named Ajv ESM import broke typecheck/jest, compileSchema omitted error cause, registry.acceptance.test.ts violated prefer-early-return and max-member-chain, and ToolRegistry.execute lacked input validation"}}

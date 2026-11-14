@@ -1,0 +1,3 @@
+Fixed the `Ajv` NodeNext/ESM default import (`AjvModule.default`), attached `{cause: error}` in `compileSchema`, implemented `ToolRegistry.execute` input validation with `WeakMap` dynamic-schema caching and value-free rejection diagnostics, resolved the `prefer-early-return` and `max-member-chain` lint findings in `registry.acceptance.test.ts`, and added spec-cited unit tests in `registry.test.ts` to satisfy Jest coverage thresholds and spec status checks.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed Ajv NodeNext/ESM import, preserve-caught-error and re-lint errors, and added execute-time inputSchema validation with full test coverage"}}

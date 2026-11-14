@@ -1,0 +1,3 @@
+The branch `loop-bench/94` (and `origin/loop-bench/94`) has moved past the CI-judged commit `c3cd08a9719fc2b94390d5b6e91bcbe417f649a3` to `cecec6edeb04ca42ba451db729628f32563f97bb` (`fix: pass PromptBuilderConfig and single expect in beforeSession acceptance test`, without `[skip ci]`), so CI has not judged the current `HEAD` yet. Left the checkout unchanged per the branch-movement check.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past c3cd08a9719fc2b94390d5b6e91bcbe417f649a3; CI re-judges the head"}}

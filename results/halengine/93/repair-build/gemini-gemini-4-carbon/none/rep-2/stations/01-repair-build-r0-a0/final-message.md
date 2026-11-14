@@ -1,0 +1,3 @@
+Fixed the four ESLint errors in `src/orchestration/orchestratorHelpers.test.ts` by combining the two `expect` assertions in `returns the defined side when one operand is undefined` into a single object equality check (`re-lint/max-expects`) and citing all three `accumulateUsage` unit tests in the trailing parentheticals of `specs/hal-engine-config-hooks/spec.md` (`re-lint/require-spec-link`). Verified `orchestratorHelpers.test.ts` with Jest plus spec anchor/link/name checks and pushed `71e246c` to `origin/loop-bench/93`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"accumulateUsage tests in src/orchestration/orchestratorHelpers.test.ts lacked spec citations (re-lint/require-spec-link) and had two expects in one test (re-lint/max-expects)"}}

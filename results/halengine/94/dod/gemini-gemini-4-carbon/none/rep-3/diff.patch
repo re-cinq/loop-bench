@@ -1,0 +1,182 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..a53689b
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,25 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — `createChatOrchestrator` already accepts `OrchestratorHooks` (`beforeSession`, `onError`, `afterSession`) through `ChatOrchestratorOptions.hooks`, so the acceptance tests call `processMessage` and `processMessageStream` directly and fail today because `beforeSession` rejects above `try`.
++
++## Done when these pass
++
++- [ ] **ChatOrchestrator when beforeSession throws runs onError with the session and error, then afterSession, skips the rest of the turn, and still rejects** — when `beforeSession` throws an `Error`, no later turn hook or provider call runs, `onError(session, error)` fires with `(session, error)`, `afterSession(session)` fires after it, and `processMessage` rejects with the original `Error`.
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++- [ ] **ChatOrchestrator when beforeSession throws runs afterSession on processMessageStream when beforeSession throws before completing setup** — `afterSession(session)` runs unconditionally on `processMessageStream` even when `beforeSession` fails mid-setup, releasing allocated state while leaving unallocated state untouched and propagating the rejection.
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] Move the `hooks?.beforeSession` call inside the `try` block in `processMessageStream` in `src/orchestration/chatOrchestrator.ts`, leaving existing non-throwing `beforeSession` tests unedited.
++- [ ] Run `node scripts/repoint-spec-anchors.mjs` if editing `src/orchestration/chatOrchestrator.ts` shifts cited line numbers in `specs/hal-engine-config-hooks/spec.md`.
++- [ ] Add an entry under `## [Unreleased]` in `CHANGELOG.md` describing what changes for an existing consumer when `beforeSession` throws.
++
++## Out of scope
++
++- Changing `OrchestratorHooks.afterSession`'s signature (the spec defines that `afterSession(session)` runs unconditionally and must check whether resources were allocated).
++- The `error instanceof Error` gate on `onError` in `src/orchestration/chatOrchestrator.ts`.
++- Usage accounting across tool rounds (`afterModelResponse` receiving `lastUsage` rather than cumulative usage, HALEngine#93).
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..7a31e72 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -15,14 +15,18 @@
+ - The value the hook returns then replaces the system prompt the provider receives; this is exercised at the orchestrator layer because `HalEngineConfig.provider` takes a `ProviderConfig` and offers no seam to inject a recording provider through config ([validated by: replaces system prompt with returned value](../../src/orchestration/chatOrchestrator.test.ts#L194)).
+ - For a session that completes without error the hooks fire in the order `beforeSession` → `beforeUserInput` → `afterUserInput` → `beforeModelResponse` → `afterModelResponse` → `afterSession` ([validated by: fires the lifecycle hooks in documented order for a session that completes without error](../../src/config.test.ts#L132)).
+ 
++## When beforeSession throws
++
++- `beforeSession` runs inside the turn's `try` block, so when it throws an `Error` no later turn hook or provider call runs, `onError(session, error)` fires with the session and the thrown `Error` just like any other orchestrator failure, `afterSession(session)` fires after it, and the rejection still reaches the caller unchanged ([validated by: runs onError with the session and error, then afterSession, skips the rest of the turn, and still rejects](../../src/orchestration/chatOrchestrator.acceptance.test.ts#L14)).
++- `afterSession(session)` keeps its single-argument signature and runs unconditionally in `finally` even when `beforeSession` threw before completing, so a deployer can release resources acquired earlier in `beforeSession`, while `afterSession` cannot assume `beforeSession` finished, that all setup succeeded, or that any user-input or model hook ran; a cleanup hook must check whether each resource was actually allocated before releasing it ([validated by: runs afterSession on processMessageStream when beforeSession throws before completing setup](../../src/orchestration/chatOrchestrator.acceptance.test.ts#L55)).
++
+ ## Engine startup
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+ - `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..e61859b
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,120 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import {writeSignalPromptBuilder} from '../infrastructure/writeSignalTestSupport.js';
++import type {AIProvider, MessageChunk} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++
++interface RecordedHookEvent {
++  hook: string;
++  sameSession: boolean;
++  error?: Error;
++}
++
++describe('ChatOrchestrator when beforeSession throws', () => {
++  it('runs onError with the session and error, then afterSession, skips the rest of the turn, and still rejects', async () => {
++    const failure = new Error('allocation failed');
++    const session = turnSession('hello');
++    const events: RecordedHookEvent[] = [];
++    const hooks: OrchestratorHooks = {
++      beforeSession: async current => {
++        events.push({hook: 'beforeSession', sameSession: current === session});
++        throw failure;
++      },
++      beforeUserInput: async (current, message) => {
++        events.push({hook: 'beforeUserInput', sameSession: current === session});
++        return message;
++      },
++      afterUserInput: async current => void events.push({hook: 'afterUserInput', sameSession: current === session}),
++      beforeModelResponse: async (current, prompt) => {
++        events.push({hook: 'beforeModelResponse', sameSession: current === session});
++        return prompt;
++      },
++      afterModelResponse: async current =>
++        void events.push({hook: 'afterModelResponse', sameSession: current === session}),
++      onError: async (current, error) => void events.push({hook: 'onError', sameSession: current === session, error}),
++      afterSession: async current => void events.push({hook: 'afterSession', sameSession: current === session}),
++    };
++    const providerCalls: string[] = [];
++    const orchestrator = createChatOrchestrator(recordingProvider(providerCalls), writeSignalPromptBuilder, undefined, {
++      hooks,
++    });
++
++    const caught = await orchestrator.processMessage(session).catch((error: unknown) => error);
++
++    expect({caught, providerCalls, events}).toEqual({
++      caught: failure,
++      providerCalls: [],
++      events: [
++        {hook: 'beforeSession', sameSession: true},
++        {hook: 'onError', sameSession: true, error: failure},
++        {hook: 'afterSession', sameSession: true},
++      ],
++    });
++  });
++
++  it('runs afterSession on processMessageStream when beforeSession throws before completing setup', async () => {
++    const failure = new Error('rate limit check failed');
++    const resources = {spanOpened: false, spanClosed: false, tokenAcquired: false, tokenReleased: false};
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        resources.spanOpened = true;
++        throw failure;
++      },
++      afterSession: async () => {
++        if (resources.spanOpened) resources.spanClosed = true;
++        if (resources.tokenAcquired) resources.tokenReleased = true;
++      },
++    };
++    const providerCalls: string[] = [];
++    const orchestrator = createChatOrchestrator(recordingProvider(providerCalls), writeSignalPromptBuilder, undefined, {
++      hooks,
++    });
++    const session = turnSession('stream hello');
++    const chunks: MessageChunk[] = [];
++
++    const caught = await collectChunks(orchestrator.processMessageStream(session), chunks).catch(
++      (error: unknown) => error
++    );
++
++    expect({
++      caught,
++      chunks,
++      providerCalls,
++      spanClosed: resources.spanClosed,
++      tokenReleased: resources.tokenReleased,
++    }).toEqual({
++      caught: failure,
++      chunks: [],
++      providerCalls: [],
++      spanClosed: true,
++      tokenReleased: false,
++    });
++  });
++});
++
++function turnSession(content: string): ChatSession {
++  return {
++    sessionId: 's-before-session-throw',
++    userId: 'u-1',
++    entries: [{role: 'user', content, timestamp: '2026-01-01T00:00:00.000Z'}],
++  };
++}
++
++function recordingProvider(calls: string[]): AIProvider {
++  return {
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      calls.push('sendMessage');
++      yield {type: 'text', text: 'ok'};
++      yield {type: 'stop', stopReason: 'end_turn'};
++    },
++    async generateStructured<T>(): Promise<T> {
++      throw new Error('unused');
++    },
++  };
++}
++
++async function collectChunks(stream: AsyncGenerator<MessageChunk>, chunks: MessageChunk[]): Promise<void> {
++  for await (const chunk of stream) {
++    chunks.push(chunk);
++  }
++}

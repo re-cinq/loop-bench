@@ -1,0 +1,6 @@
+Completed one red-green-refactor round on `loop-bench/94` (`6a8873e`, pushed and up to date with `origin/loop-bench/94` and `origin/main`):
+- **Tests:** 1 new unit test written (`src/orchestration/beforeSessionError.test.ts`, observed RED then GREEN); 0 regressions (no prior CI failures). Existing test files were left unedited.
+- **Changes:** Moved `hooks?.beforeSession` inside the `try` block in `src/orchestration/chatOrchestrator.ts`, promoted the `beforeSession` failure guarantee out of the out-of-scope section in `specs/hal-engine-config-hooks/spec.md` with traceability links and cleanup-hook assumptions, added the `CHANGELOG.md` entry and migration note, and updated `.lore/dod.md`.
+- **Unrelated smells noticed (left untouched):** `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` constructs `PromptBuilder` with `{baseSystemPrompt, systemPromptSuffix, contextConfig}` instead of `PromptBuilderConfig` (`{identity, ...}`) and has three `expect(...)` calls in one `it(...)` body (`re-lint/max-expects`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document in CHANGELOG.md","tdd_next":"acceptance green"}}

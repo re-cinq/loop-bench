@@ -1,0 +1,5 @@
+Fixed all reported CI failures on `loop-bench/37` (`f78d4cd`):
+- Replaced `import {Ajv} from 'ajv'` with `import ajvModule from 'ajv'` (`ajvModule.default`) in `src/orchestration/tools/registry.ts` to resolve both `TS2693` under TypeScript `NodeNext` and the ESM `SyntaxError` in Jest, attached `{cause: error}` in `compileSchema` (`preserve-caught-error`), and added `inputSchema` validation in `ToolRegistry.execute` before executor invocation without logging or returning offending values.
+- Refactored `sendMessage` in `src/orchestration/tools/registry.acceptance.test.ts` to satisfy `re-lint/prefer-early-return` and `re-lint/max-member-chain`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"named Ajv ESM/NodeNext import, missing ToolRegistry.execute input validation, and 3 ESLint errors in registry.ts and registry.acceptance.test.ts"}}

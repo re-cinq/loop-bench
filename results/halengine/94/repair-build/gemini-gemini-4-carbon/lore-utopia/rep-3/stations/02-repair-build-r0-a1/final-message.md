@@ -1,0 +1,3 @@
+`git log --format=%s c3cd08a9719fc2b94390d5b6e91bcbe417f649a3..HEAD` shows a non-`[skip ci]` commit (`test(orchestrator): fix PromptBuilderConfig and max-expects in acceptance test`), so the branch moved after CI judged `c3cd08a9719fc2b94390d5b6e91bcbe417f649a3`. Changed nothing and ran nothing so CI can judge the new HEAD.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past c3cd08a9719fc2b94390d5b6e91bcbe417f649a3; CI re-judges the head"}}

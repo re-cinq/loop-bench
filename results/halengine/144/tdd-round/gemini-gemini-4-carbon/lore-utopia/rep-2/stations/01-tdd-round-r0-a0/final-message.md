@@ -1,0 +1,7 @@
+Completed one red-green-refactor round (`6cc55b0`, pushed to `origin/loop-bench/144`):
+
+- **Red → Green → Refactor:** Added a failing unit test in `src/transport/ws/validation.test.ts` (`#L24`, linked in `specs/hal-engine-conversation-list/spec.md`), added `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` to `src/types/messages.ts` (included in `IncomingMessage` and `OutgoingMessage` and re-exported from `src/types/index.ts` and `src/index.ts`), and implemented `list_sessions` frame validation in `src/transport/ws/validation.ts`.
+- **Red tests / regressions:** 0 regressions; 1 new unit test in `src/transport/ws/validation.test.ts` (red → green); no prior CI failure report existed on the branch (the 3 acceptance tests in `.lore/dod.md` remain for CI / subsequent facets).
+- **Unrelated smells noticed (left untouched):** `PingMessage` in `src/types/messages.ts` is not re-exported from `src/types/index.ts` or `src/index.ts`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage to src/types/messages.ts (re-exported from src/index.ts) and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler and wire it in src/transport/createServer.ts"}}

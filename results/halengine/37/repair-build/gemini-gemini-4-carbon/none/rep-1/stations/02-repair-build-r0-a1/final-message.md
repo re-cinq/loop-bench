@@ -1,0 +1,3 @@
+CI judged `7ccea884f1d7cb84a96ee5242a0436b047ec021b`, and `loop-bench/37` (`origin/loop-bench/37`) has already moved past it to `230616312ca124b953bd673b4c0c4ca9bdc2b5a1` (`fix(tools): validate input and fix ajv esm import`) without `[skip ci]`. Leaving the branch untouched so CI can judge the current head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 7ccea884f1d7cb84a96ee5242a0436b047ec021b; CI re-judges the head"}}

@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` at `src/orchestration/onErrorNonError.acceptance.test.ts:12` with a fixed ISO timestamp (`'2026-01-01T00:00:00.000Z'`) to satisfy `re-lint/no-nondeterministic-tests` without shifting spec citation anchors, committed `b0d1a38`, verified `origin/main` is up to date, and pushed to `origin/loop-bench/95`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"re-lint/no-nondeterministic-tests error from new Date() at src/orchestration/onErrorNonError.acceptance.test.ts:12:48"}}

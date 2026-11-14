@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` on line 12 of `src/orchestration/onErrorNonError.acceptance.test.ts` with `'2026-01-01T00:00:00.000Z'` to resolve the CI `eslint` failure (`re-lint/no-nondeterministic-tests`) while keeping all test anchors (`#L53`, `#L64`) unchanged, updated `.lore/dod.md`, and pushed `345db00` to `origin/loop-bench/95`. This round ran no tests here (0 red tests were ours and 0 were regressions; CI reported only the single ESLint finding).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace non-deterministic new Date() in src/orchestration/onErrorNonError.acceptance.test.ts to satisfy re-lint/no-nondeterministic-tests","tdd_next":"acceptance green"}}

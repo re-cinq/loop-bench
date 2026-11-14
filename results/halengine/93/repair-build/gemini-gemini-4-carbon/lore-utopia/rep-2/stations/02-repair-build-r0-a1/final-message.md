@@ -1,0 +1,3 @@
+CI judged commit `19eaa4dfdc1d7fee67a77a045b3b6ffe47e754bd`, and `git log --format=%s 19eaa4dfdc1d7fee67a77a045b3b6ffe47e754bd..HEAD` shows a newer commit already pushed to `origin/loop-bench/93` (`3901a433cbaacb0c5c4be90ed043e1142619b926`, `test(orchestrator): link usage helper tests`) without `[skip ci]`. Per the branch-movement check, no files were modified.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 19eaa4dfdc1d7fee67a77a045b3b6ffe47e754bd; CI re-judges the head"}}

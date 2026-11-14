@@ -1,0 +1,5 @@
+Fixed both CI findings from `round-brief.md` on `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (`TS2353` invalid `PromptBuilderConfig` keys and `re-lint/max-expects`), updated the shifted `#L35` spec anchor in `specs/hal-engine-config-hooks/spec.md`, verified `src/orchestration/beforeSessionThrow.test.ts` passes, and pushed `8b8d29c` cleanly synced with `origin/main`.
+- Red tests / regressions: 0 regressions on existing main tests; both CI failures were on this ticket's acceptance test file (`typecheck` and `eslint`).
+- Unrelated smells noticed (untouched, out of scope): `onError` gated on `error instanceof Error` and `afterModelResponse` receiving only `lastUsage` rather than cumulative tool-round usage in `src/orchestration/chatOrchestrator.ts`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix PromptBuilderConfig type error and re-lint/max-expects violation in chatOrchestrator.beforeSession.acceptance.test.ts","tdd_next":"acceptance green"}}

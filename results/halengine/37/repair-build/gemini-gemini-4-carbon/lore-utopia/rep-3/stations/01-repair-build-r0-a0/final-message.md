@@ -1,0 +1,7 @@
+Fixed all three red CI checks (`typecheck`, `eslint`, and `test`) on `loop-bench/37` and pushed `076ab7c` to `origin/loop-bench/37`:
+
+- **`src/orchestration/tools/registry.ts`**: Replaced the named `Ajv` import (which failed `tsc --noEmit` with `TS2693` and CJS/ESM module resolution) with a default import narrowed via a type guard, attached `{cause: error}` in `compileSchema` (`preserve-caught-error`), and added `inputSchema` validation in `ToolRegistry.execute` (with `WeakMap` caching for function-valued tool definitions and value-free rejection messages/logs).
+- **`src/orchestration/tools/registry.acceptance.test.ts`**: Guarded `round !== 2` early (`re-lint/prefer-early-return`) and destructured `lastMessage.content` to stay within 2 hops (`re-lint/max-member-chain`).
+- **`src/orchestration/tools/registry.test.ts` & `specs/hal-engine-tool-input-validation/spec.md`**: Added spec-linked unit tests covering valid pass-through, `enum` and keyword rejections, `Unknown tool`, and dynamic schema caching so orchestration coverage remains above all `jest.config.js` thresholds.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Ajv default ESM/NodeNext import, preserve-caught-error and re-lint findings, and execute-time inputSchema validation in ToolRegistry"}}

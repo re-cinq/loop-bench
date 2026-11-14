@@ -1,0 +1,3 @@
+Fixed the `PromptBuilderConfig` properties and `re-lint/max-expects` violation in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`, updated the corresponding spec anchor in `specs/hal-engine-config-hooks/spec.md`, verified the acceptance test with Jest, and pushed `2c368c1` to `origin/loop-bench/94`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"chatOrchestrator.beforeSession.acceptance.test.ts passed invalid PromptBuilderConfig keys and had 3 expect calls violating re-lint/max-expects"}}

@@ -1,3 +1,6 @@
-Completed one TDD round implementing `sumUsage` in `src/orchestration/orchestratorHelpers.ts` with unit coverage in `src/orchestration/orchestratorHelpers.test.ts` (5/5 passing; 0 red tests of mine, 0 regressions) and spec citation in `specs/hal-engine-architecture/spec.md`. Note for later facets (unacted on here): the second acceptance test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` has no spec citation yet until the hooks spec/CHANGELOG facet runs.
+Completed one red-green-refactor round for round-usage summation (`accumulateUsage` in `src/orchestration/orchestratorHelpers.ts`, validated in `src/orchestration/orchestratorHelpers.test.ts` and cited in `specs/hal-engine-architecture/spec.md`), ticked the closed facet in `.lore/dod.md`, and pushed `7b81f49` to `origin/loop-bench/93`.
+
+- **Red tests / regressions:** 1 new unit test written this round (observed RED, now GREEN); 0 regressions.
+- **Noted for later facets (untouched):** `src/orchestration/chatOrchestratorUsage.acceptance.test.ts#L67` (`counts reported rounds while leaving a turn with no reported usage undefined`) does not yet have a `validated by` citation in `specs/hal-engine-config-hooks/spec.md` (covered under the hooks-spec and `CHANGELOG.md` facet).
 
 LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}

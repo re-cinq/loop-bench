@@ -1,0 +1,3 @@
+CI judged `5cd4e6710184e4c23ab8d932710998781bdd6208`, and `git log --format=%s 5cd4e6710184e4c23ab8d932710998781bdd6208..HEAD` shows the branch has already moved to `d2684133adc4f63dde98532895fa8d7e24437d34` (`fix(transport): handle list_sessions frames and resolve test lint errors (#144)`) without `[skip ci]`. Leaving the repository unchanged so CI can judge the current head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}

@@ -1,0 +1,5 @@
+Completed one TDD round closing `list_sessions` handling in `src/transport/ws/messageHandler.ts` (and `sendSessionList` in `src/transport/ws/sender.ts`) with an optional `sessionStore` parameter on `createMessageHandler`, spec traceability citations, repointed `#Lnn` anchors, and `.lore/dod.md` updated and pushed (`d572c66`).
+- Red tests: 1 red test written by me during RED (now green, 55/55 passing in `src/transport/ws/messageHandler.test.ts`); 0 regressions (3 acceptance tests in `src/transport/conversationList.acceptance.test.ts` remain for wiring `options.sessionStore` in `src/transport/createServer.ts`).
+- Unrelated smells noticed (untouched): `docs/adding-a-message-type.md` shows an older `createMessageHandler` snippet predating `PerSessionLock`/`answerFrame`, and `CHANGELOG.md`'s `#143` bullet still mentions "Nothing in the engine calls it yet".
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle list_sessions in src/transport/ws/messageHandler.ts and src/transport/ws/sender.ts","tdd_next":"Wire sessionStore into createMessageHandler in src/transport/createServer.ts"}}

@@ -1,0 +1,3 @@
+Completed one TDD round closing the usage-summing helper facet (`accumulateUsage` in `src/orchestration/orchestratorHelpers.ts`, validated by `src/orchestration/orchestratorHelpers.test.ts#L29` and cited in `specs/hal-engine-architecture/spec.md`): 1 red test was ours during the RED phase (now green) and 0 were regressions. Unrelated observation left untouched: `README.md`'s annotated `HalEngineConfig` block omits `orchestrator.hooks`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}

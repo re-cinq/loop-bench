@@ -1,0 +1,7 @@
+Completed one red-green-refactor round (`fd7681e`, pushed to `origin/loop-bench/37` and synced with `origin/main`):
+
+- **CI failure breakdown (`1c39022`)**: 9 red tests were ours on this ticket (3 ticket acceptance tests in `src/orchestration/tools/registry.acceptance.test.ts`, 5 unit tests in `src/orchestration/tools/registry.test.ts`, and 1 unit test in `src/orchestration/chatOrchestrator.test.ts`, all hitting `undefined` `instancePath` when Ajv v6 populates `dataPath`); **0 regressions** in pre-existing `main` tests.
+- **Round changes**: Added RED unit assertions for bracket-quoted property names (`['api-key']`) and array index segments (`.tags[0]`) in legacy `dataPath` validation errors, updated `createSchemaCompiler` (`jsonPointers: true`) and `resolveErrorBasePath` in `src/orchestration/tools/registry.ts` so legacy `dataPath` and JSON Pointer `instancePath` normalize to identical dot-separated paths without leaking values, verified `src/orchestration/tools/registry.test.ts` green (10/10), formatted modified files with Prettier, and updated `.lore/dod.md`.
+- **Unrelated smells noticed (left untouched)**: `CHANGELOG.md`'s `[Unreleased]` footer link still points at `v0.2.1...main` despite a `[0.3.0]` section above it.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Normalize legacy Ajv dataPath error paths (dot, bracket-key, and array-index segments, plus jsonPointers: true) alongside instancePath when formatting schema rejections","tdd_next":"acceptance green"}}

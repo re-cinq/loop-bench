@@ -1,0 +1,6 @@
+Completed one TDD round (`204b236` on `loop-bench/37`):
+- **RED -> GREEN -> REFACTOR**: Added `src/orchestration/tools/registry.test.ts` testing synchronous `ToolRegistry.register` failure naming the tool on an invalid static `inputSchema` (observed RED, then GREEN after adding `ajv` `^8.20.0` with `{strict: false, validateFormats: false}` to `dependencies`, bumping version `MINOR` to `0.4.0`, and compiling static schemas in `ToolRegistry.register`).
+- **Traceability & DoD**: Cited `src/orchestration/tools/registry.test.ts#L4` in `specs/hal-engine-tool-input-validation/spec.md` and ticked the `ajv` + `MINOR` bump facet in `.lore/dod.md`.
+- **Red tests / regressions**: 0 regressions (no prior CI failures on this branch; 1 new unit test went red to green). No unrelated smells acted upon.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv to dependencies with MINOR version bump and compile static ToolDefinition.inputSchema at ToolRegistry.register time","tdd_next":"Cache compiled validators for function-valued ToolDefinitionSource schemas by WeakMap and validate input in ToolRegistry.execute"}}

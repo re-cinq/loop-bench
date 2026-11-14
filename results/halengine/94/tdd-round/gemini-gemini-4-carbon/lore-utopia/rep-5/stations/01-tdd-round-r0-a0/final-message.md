@@ -1,0 +1,7 @@
+Completed the TDD round (`ef99e45` pushed to `origin/loop-bench/94`, up to date with `origin/main`):
+
+- **Tests**: 1 red test was mine in the RED phase (`aborts before user-input hooks and provider while running onError then afterSession` in `src/orchestration/chatOrchestrator.test.ts`), now green (`24/24` passing); `0` regressions.
+- **Implementation & Docs**: Moved `hooks.beforeSession` inside the `try` block in `src/orchestration/chatOrchestrator.ts`, promoted the normative guarantee and cleanup-hook assumptions into `## Installing hooks through config` in `specs/hal-engine-config-hooks/spec.md`, added the `### Fixed` entry and migration note to `CHANGELOG.md`, and ticked the completed facets in `.lore/dod.md`.
+- **Unacted-upon smells observed**: The unedited acceptance test `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` constructs `new PromptBuilder({baseSystemPrompt, systemPromptSuffix, contextConfig})` instead of `{identity}` (`PromptBuilderConfig`), imports `@jest/globals` explicitly, and uses three `expect` calls in one test (`re-lint/max-expects`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts and update spec and CHANGELOG","tdd_next":"acceptance green"}}

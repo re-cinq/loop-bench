@@ -1,0 +1,5 @@
+Resolved the `eslint` (`no-nondeterministic-tests`, `require-spec-link`) and `spec-names` (`#L53`/`#L64`) CI findings from `round-brief.md`, pinned single-invocation `onError` semantics (`invocationCount === 1`) across string, plain object, `undefined`, and `Error` rejections in `src/orchestration/onErrorCoercion.test.ts` (`#L46` in `specs/hal-engine-config-hooks/spec.md`), and pushed `4baf2d9` up to date with `origin/main`.
+
+Red tests: 0 of mine, 0 regressions (CI failed only on `eslint` and `spec-names`). Unrelated smell noticed and left untouched: `// eslint-disable-next-line require-yield` on line 16 of `src/orchestration/onErrorNonError.acceptance.test.ts` omits a `--` rationale.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve eslint and spec-names CI findings and pin single-invocation onError coercion semantics in src/orchestration/onErrorCoercion.test.ts","tdd_next":"acceptance green"}}

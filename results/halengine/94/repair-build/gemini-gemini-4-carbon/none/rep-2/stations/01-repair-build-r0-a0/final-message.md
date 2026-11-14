@@ -1,0 +1,3 @@
+Fixed both CI failures in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (replacing invalid `PromptBuilderConfig` fields with `{identity: 'You are HAL.'}` for `TS2353` and consolidating the three `expect` calls into one `toEqual` assertion for `re-lint/max-expects`), updated the shifted `#L32` spec citation in `specs/hal-engine-config-hooks/spec.md`, verified the test and formatting, and pushed `7bbb0b1` to `origin/loop-bench/94`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed PromptBuilderConfig TS2353 error and re-lint/max-expects violation in chatOrchestrator.beforeSession.acceptance.test.ts and updated its spec line anchor"}}

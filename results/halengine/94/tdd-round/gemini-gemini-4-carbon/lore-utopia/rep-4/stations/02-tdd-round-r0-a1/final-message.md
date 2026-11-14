@@ -1,0 +1,6 @@
+Updated `specs/hal-engine-config-hooks/spec.md` to move the `beforeSession` throw guarantee out of `Measured semantics — out of scope` into `Installing hooks through config`, documenting why `afterSession` runs without a separate session-started flag and what cleanup hooks can and cannot assume about turn progress and partial allocation, citing both validating tests, and ticked the closed facet in `.lore/dod.md` (`9538bae`).
+
+- This round ran no tests here (spec-only facet; 0 red tests were ours and 0 were regressions).
+- Unrelated smells noticed and left untouched: `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` contains three `expect(...)` calls in a single `it(...)` (potentially flagging `re-lint/max-expects` in CI), plus the two out-of-scope items in `chatOrchestrator.ts` (`error instanceof Error` gating `onError`, and `lastUsage` overwriting rather than summing usage across tool rounds).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update specs/hal-engine-config-hooks/spec.md with the new guarantee for beforeSession.","tdd_next":"Document in the CHANGELOG what changes for an existing consumer."}}

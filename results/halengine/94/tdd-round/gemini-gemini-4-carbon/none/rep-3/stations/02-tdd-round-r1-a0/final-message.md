@@ -1,0 +1,3 @@
+Fixed both CI failures reported in `round-brief.md` on `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (`TS2353` on `PromptBuilderConfig` and `re-lint/max-expects`), updated the spec anchor in `specs/hal-engine-config-hooks/spec.md` (`#L40` → `#L35`), formatted with Prettier, and pushed to `origin`. No red tests were reported by CI (0 mine, 0 regressions), and no tests were run locally in this round because only the acceptance test file was touched.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Resolve PromptBuilderConfig typecheck and re-lint/max-expects lint errors in chatOrchestrator.beforeSession.acceptance.test.ts","tdd_next":"acceptance green"}}

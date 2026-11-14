@@ -1,0 +1,6 @@
+Fixed all CI failures on `loop-bench/37` (`e0c9958`):
+- **`typecheck` & ESM runtime (`src/orchestration/tools/registry.ts`)**: Replaced named `{Ajv}` value import with a `NodeNext`/ESM-safe default import + constructor resolver, resolving `TS2693` and Jest ESM `SyntaxError`.
+- **`eslint` (`registry.ts`, `registry.acceptance.test.ts`)**: Attached `{cause: error}` in `compileSchema` (`preserve-caught-error`), flipped `round > 2` to an early-return guard (`re-lint/prefer-early-return`), and destructured `[firstResult] = lastMessage.content` (`re-lint/max-member-chain`).
+- **`test` (`src/orchestration/tools/registry.ts`)**: Validated `input` in `ToolRegistry.execute` before invoking the executor (with `WeakMap` caching for dynamic `ToolDefinitionSource` schemas) and returned/logged failing field paths and constraints without leaking offending values (`20/20` `src/` suites, `201/201` tests passing with coverage floors met).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Ajv NodeNext/ESM import (TS2693 & SyntaxError), eslint violations in registry.ts and registry.acceptance.test.ts, and missing ToolRegistry.execute inputSchema validation"}}

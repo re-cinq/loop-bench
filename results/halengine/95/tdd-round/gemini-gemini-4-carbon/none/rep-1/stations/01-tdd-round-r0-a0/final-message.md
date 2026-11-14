@@ -1,0 +1,6 @@
+Completed one RED-GREEN-REFACTOR round (`dfee1b5`, pushed to `origin/loop-bench/95`, up to date with `origin/main`):
+
+- **RED → GREEN → REFACTOR**: Added `src/orchestration/onErrorWrapping.test.ts` (1 red test before implementation, 0 red tests after, 0 regressions), updated `src/orchestration/chatOrchestrator.ts` to coerce non-`Error` rejections via `toHookError` (preserving `cause` and passing `Error` instances through unchanged while rethrowing the original rejection), linked the test in `specs/hal-engine-config-hooks/spec.md`, added the `CHANGELOG.md` entry, and ticked `.lore/dod.md`.
+- **Unrelated smell noted (untouched)**: `src/orchestration/onErrorNonError.acceptance.test.ts` constructs timestamps with `new Date().toISOString()` on line 12 (which may trigger `re-lint/no-nondeterministic-tests`) and its file name contains `NonError` (which may trigger `re-lint/no-negative-names` if checked against filenames).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Coerce caught non-Error rejections to Error with readable message and cause preserved in chatOrchestrator.ts, link spec, and add CHANGELOG entry","tdd_next":"acceptance green"}}

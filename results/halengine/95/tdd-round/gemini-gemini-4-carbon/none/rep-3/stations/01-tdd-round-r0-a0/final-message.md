@@ -1,0 +1,6 @@
+Completed one red-green-refactor round on `loop-bench/95` (`2768c8f`):
+
+- **Red → Green → Traceability**: Added `src/orchestration/onErrorCoercion.test.ts` (1 red test of ours during the red phase, now green; 0 regressions), updated `src/orchestration/chatOrchestrator.ts` to coerce non-`Error` rejections via `toError` (preserving raw `cause` and passing `Error` instances through unchanged while rethrowing the original rejection), cited the test in `specs/hal-engine-config-hooks/spec.md`, added the `CHANGELOG.md` entry under `## [Unreleased]`, and ticked the facets in `.lore/dod.md`.
+- **Unrelated smells noticed (untouched)**: `src/orchestration/onErrorNonError.acceptance.test.ts:12` calls `new Date().toISOString()` instead of using a fixed timestamp constant, which may trigger `re-lint/no-nondeterministic-tests` in CI.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"In src/orchestration/chatOrchestrator.ts, coerce a caught non-Error rejection to an Error with a readable message and cause (while passing Error instances through unchanged) and update CHANGELOG.md","tdd_next":"acceptance green"}}

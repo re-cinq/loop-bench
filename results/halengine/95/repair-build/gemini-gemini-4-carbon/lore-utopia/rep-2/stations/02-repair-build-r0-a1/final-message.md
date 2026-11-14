@@ -1,0 +1,3 @@
+`git log --format=%s 48d6c74a6b0f7da5b8a9c423833b2caa7b443705..HEAD` shows a newer commit without `[skip ci]` (`test(orchestrator): use fixed timestamp in onErrorNonError acceptance test`), so the branch moved after CI judged `48d6c74a6b0f7da5b8a9c423833b2caa7b443705`. Leaving the workspace untouched for CI to judge the current head.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 48d6c74a6b0f7da5b8a9c423833b2caa7b443705; CI re-judges the head"}}

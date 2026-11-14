@@ -1,0 +1,3 @@
+Completed one TDD round implementing `sumUsage` in `src/orchestration/orchestratorHelpers.ts` with unit coverage in `src/orchestration/orchestratorHelpers.test.ts` (5/5 passing; 0 red tests of mine, 0 regressions) and spec citation in `specs/hal-engine-architecture/spec.md`. Note for later facets (unacted on here): the second acceptance test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` has no spec citation yet until the hooks spec/CHANGELOG facet runs.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}

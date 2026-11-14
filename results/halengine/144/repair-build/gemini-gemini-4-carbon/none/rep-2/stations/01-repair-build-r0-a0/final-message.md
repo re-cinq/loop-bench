@@ -1,0 +1,3 @@
+Wired `sessionStore` into `createMessageHandler` and `createServer` to answer `list_sessions` frames with `session_list` (or `SERVER_ERROR` with a `ws` error log on store failure), resolved all 8 `re-lint` findings (`no-duplicate-code`, `prefer-early-return`, and `no-flag-params`), repointed the moved spec anchors in `specs/hal-engine-conversation-list/spec.md`, formatted the changed files, and pushed `bdff386` to `origin/loop-bench/144`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"wired list_sessions WebSocket handling into messageHandler/createServer and resolved all 8 re-lint errors in the conversation list and validation tests"}}

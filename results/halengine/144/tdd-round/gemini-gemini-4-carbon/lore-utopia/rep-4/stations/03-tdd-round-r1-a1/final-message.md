@@ -1,0 +1,6 @@
+Wired `options.sessionStore` into `createMessageHandler` in `src/transport/createServer.ts` (verified red-to-green via `src/transport/serverSessionList.test.ts`), documented `list_sessions` and `session_list` with spec-traceability citations in `specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md`, updated `.lore/dod.md`, and pushed `3900900` to `origin/loop-bench/144`.
+
+- Red tests in `round-brief.md`: 2 ticket acceptance tests (`src/transport/conversationList.acceptance.test.ts`), 0 regressions (prior `3a77deb` lint, spec-names, and changelog findings were already resolved in `9b00fcd`).
+- Unrelated smells noticed and left untouched: older `as unknown as` casts in `src/transport/createServer.test.ts`'s `harness` helper.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Wire options.sessionStore into createMessageHandler in src/transport/createServer.ts and document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md and specs/hal-engine-conversation-list/spec.md","tdd_next":"acceptance green"}}

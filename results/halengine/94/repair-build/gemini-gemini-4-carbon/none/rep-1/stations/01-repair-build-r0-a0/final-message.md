@@ -1,0 +1,3 @@
+Updated `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` because it constructed `PromptBuilder` with non-existent `PromptBuilderConfig` fields (`baseSystemPrompt`, `systemPromptSuffix`, `contextConfig` instead of `identity` and `responseGuidelines`) and used three `expect` calls instead of asserting one object as required by `re-lint/max-expects`, and repointed its citation anchor in `specs/hal-engine-config-hooks/spec.md` (`#L40` -> `#L35`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed invalid PromptBuilderConfig properties and consolidated 3 expect calls into one in chatOrchestrator.beforeSession.acceptance.test.ts (with updated spec anchor)"}}

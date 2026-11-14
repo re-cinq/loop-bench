@@ -1,0 +1,6 @@
+No changes were made in this round because there is nothing left to write: no `round-brief.md` (and no `CI reported failures` section) exists, and commit `cb3a538` already completed and checked off all three facets in `.lore/dod.md` (`beforeSession` moved inside the `try` block in `src/orchestration/chatOrchestrator.ts`, unit coverage added in `src/orchestration/beforeSessionThrow.test.ts`, guarantees and citations added in `specs/hal-engine-config-hooks/spec.md`, and consumer-facing changes documented in `CHANGELOG.md`), with `loop-bench/94` clean and pushed to `origin/loop-bench/94`.
+
+- Red tests: 0 ours, 0 regressions (this round wrote and ran no new tests).
+- Unrelated smells noticed (left untouched): `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` constructs `new PromptBuilder(...)` with non-`PromptBuilderConfig` fields (`baseSystemPrompt`, `systemPromptSuffix`, `contextConfig` instead of `identity`) and contains three `expect(...)` calls per `it` block (against `re-lint/max-expects`), left unedited per the acceptance-test rule; out-of-scope items in `chatOrchestrator.ts` remain the `error instanceof Error` gate on `onError` and single-round `lastUsage` forwarding to `afterModelResponse`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

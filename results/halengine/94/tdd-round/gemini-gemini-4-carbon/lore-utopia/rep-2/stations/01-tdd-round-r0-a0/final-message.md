@@ -1,0 +1,7 @@
+Completed one red-green-refactor round on `loop-bench/94` (`0493a48`):
+
+- **Test & implementation**: Added `src/orchestration/beforeSessionThrow.test.ts` (1 red test ours in the red phase, now green; 0 regressions; no prior CI failure brief existed on entry) and moved `if (hooks?.beforeSession) await hooks.beforeSession(session);` inside the `try` block in `src/orchestration/chatOrchestrator.ts` while leaving existing `chatOrchestrator.test.ts` suites unedited.
+- **Traceability & docs**: Promoted the `beforeSession` throw guarantee and cleanup-state contract into `## Installing hooks through config` in `specs/hal-engine-config-hooks/spec.md` with `[validated by: ...]` citations, documented the fix and `afterSession` migration note in `CHANGELOG.md`, and ticked the completed facets in `.lore/dod.md`.
+- **Untouched smells noticed**: `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (left unedited per the acceptance-test rule) passes `{baseSystemPrompt, systemPromptSuffix, contextConfig}` to `new PromptBuilder(...)` instead of `{identity}` and contains three `expect(...)` calls in a single `it(...)` block (`re-lint/max-expects`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document the change in CHANGELOG.md","tdd_next":"acceptance green"}}

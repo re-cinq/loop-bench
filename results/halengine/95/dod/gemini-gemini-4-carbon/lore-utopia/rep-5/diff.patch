@@ -1,0 +1,127 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..0505969
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,21 @@
++# Definition of Done
++
++> The orchestrator's `catch` gates `onError` on `error instanceof Error`. A rejection that is not an `Error` — a thrown string, a plain object, a value from a library that rejects with its own shape — bypasses `onError` entirely while still propagating to the caller.
++
++**Strategy: `direct`** — `createChatOrchestrator` already exposes the real `AIProvider` and `OrchestratorHooks.onError` seams (`HalEngineConfig.provider` accepts only `ProviderConfig`, so provider-driven hook tests exercise `createChatOrchestrator` directly). One acceptance test drives string, plain-object, and `undefined` rejections through `processMessage` and fails today because `onError` is skipped for all three.
++
++## Done when these pass
++
++- [ ] **ChatOrchestrator onError non-Error rejections wraps non-Error rejections with cause and rethrows the original value** — calls `onError` once with the session and an `Error` whose `cause` is the original thrown value for string, plain-object, and `undefined` rejections, while re-throwing the original value unchanged to the caller
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] In `src/orchestration/chatOrchestrator.ts`, invoke `hooks.onError` on every caught rejection, passing `error` unchanged when `error instanceof Error` and wrapping any other thrown value in `new Error(String(error), {cause: error})`, while still re-throwing the original `error` unchanged.
++- [ ] Keep existing `onError` tests in `src/orchestration/chatOrchestrator.test.ts` unedited and green so `Error` rejections continue reaching `onError` unwrapped.
++- [ ] Add a `CHANGELOG.md` entry under `## [Unreleased]` (`### Changed`) explaining that `onError` now fires for non-`Error` rejections wrapped in an `Error` with `cause` set to the original value while the caller-boundary rejection value stays unchanged.
++
++## Out of scope
++
++- `beforeSession` escaping the `try` block (handled in its own issue).
++- Usage accounting across tool rounds (`re-cinq/HALEngine#93`).
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 66ff9d3..1cbdac3 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -16,13 +16,8 @@
+ - For a session that completes without error the hooks fire in the order `beforeSession` → `beforeUserInput` → `afterUserInput` → `beforeModelResponse` → `afterModelResponse` → `afterSession` ([validated by: fires the lifecycle hooks in documented order for a session that completes without error](../../src/config.test.ts#L153)).
+ - A `beforeSession` that throws reaches the caller as a rejection, and also runs `onError` with the thrown error and then `afterSession`, because the call sits inside the same `try`/`finally` as the rest of the turn. An `afterSession` hook called under this condition can infer the session never advanced past `beforeSession`: no user-input hooks ran, no model response was generated, and no tool rounds were started — a cleanup hook that allocates in `beforeSession` and frees in `afterSession` will therefore always see the allocation and the release on the same error path ([validated by: runs onError then afterSession when it throws, and still rejects to the caller](../../src/orchestration/chatOrchestrator.test.ts#L116)).
+ - `afterModelResponse` is called once per user message after the round loop exits and is passed `totalUsage` — the sum of the usage every provider call in the turn reported, not the last round alone ([validated by: sums the usage of every round, not only the last](../../src/orchestration/chatOrchestrator.test.ts#L555)).
++- `onError` fires for every rejection in the turn: an `Error` instance reaches the hook unchanged, while a rejection that is not an `Error` — such as a string, a plain object, or `undefined` — is wrapped in an `Error` whose `cause` is the original value, and the caller still receives the original rejection unchanged ([validated by: wraps non-Error rejections with cause and rethrows the original value](../../src/orchestration/chatOrchestrator.acceptance.test.ts#L8)).
+ 
+ ## Engine startup
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L195)).
+-
+-## Measured semantics — out of scope
+-
+-This property of `src/orchestration/chatOrchestrator.ts` is recorded so the hook features that follow specify against real behaviour. This issue does not change it; that is a separate, out-of-scope change owned by no issue in this epic.
+-
+-- The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..363d60c
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,75 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, MessageChunk} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++
++describe('ChatOrchestrator onError non-Error rejections', () => {
++  it('wraps non-Error rejections with cause and rethrows the original value', async () => {
++    const plainObject = {code: 503, detail: 'service unavailable'};
++    const outcomes = await Promise.all([
++      observeRejection('string', 'upstream timeout'),
++      observeRejection('plain object', plainObject),
++      observeRejection('undefined', undefined),
++    ]);
++    const expectedFor = (label: string) => ({
++      label,
++      onErrorCallCount: 1,
++      receivedSameSession: true,
++      receivedErrorInstance: true,
++      preservesCauseProperty: true,
++      causeIsOriginal: true,
++      callerReceivedOriginal: true,
++    });
++
++    expect(outcomes).toEqual([expectedFor('string'), expectedFor('plain object'), expectedFor('undefined')]);
++  });
++});
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++const RESOLVED_SENTINEL = Symbol('resolved');
++const promptBuilder = new PromptBuilder({identity: 'Acceptance test assistant.'});
++
++async function observeRejection(label: string, rejection: unknown) {
++  const seenCalls: Array<{session: ChatSession; error: Error}> = [];
++  const hooks: OrchestratorHooks = {
++    onError: async (seenSession, seenError) => {
++      seenCalls.push({session: seenSession, error: seenError});
++    },
++  };
++  const session: ChatSession = {
++    sessionId: `session-${label}`,
++    userId: 'user-1',
++    entries: [{role: 'user', content: 'hello', timestamp: SENT_AT}],
++  };
++  const orchestrator = createChatOrchestrator(rejectingProvider(rejection), promptBuilder, undefined, {hooks});
++  const callerOutcome = await orchestrator
++    .processMessage(session)
++    .then(() => RESOLVED_SENTINEL)
++    .catch((caught: unknown) => caught);
++
++  const [recorded] = seenCalls;
++  const seenError = recorded?.error;
++
++  return {
++    label,
++    onErrorCallCount: seenCalls.length,
++    receivedSameSession: recorded?.session === session,
++    receivedErrorInstance: seenError instanceof Error,
++    preservesCauseProperty: seenError ? 'cause' in seenError : false,
++    causeIsOriginal: Object.is(seenError?.cause, rejection),
++    callerReceivedOriginal: Object.is(callerOutcome, rejection),
++  };
++}
++
++function rejectingProvider(rejection: unknown): AIProvider {
++  return {
++    // eslint-disable-next-line require-yield -- provider rejects before yielding any chunk
++    async *sendMessage(): AsyncGenerator<MessageChunk> {
++      throw rejection;
++    },
++    async generateStructured<T>(): Promise<T> {
++      return {} as T;
++    },
++  };
++}

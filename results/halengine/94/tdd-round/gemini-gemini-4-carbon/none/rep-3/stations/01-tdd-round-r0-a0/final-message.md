@@ -1,0 +1,5 @@
+Completed one red-green-refactor round (`ae20704`): added a unit test in `src/orchestration/chatOrchestrator.test.ts` (1 red test of ours before implementation, 0 regressions; 24/24 green after), moved `beforeSession` inside `try` in `src/orchestration/chatOrchestrator.ts`, updated `specs/hal-engine-config-hooks/spec.md` (with repointed `#Lnn` anchors) and `CHANGELOG.md`, and ticked the closed facets in `.lore/dod.md`.
+
+Unrelated smell noticed and left untouched: `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` contains three `expect(...)` calls in a single `it(...)` block, which may be flagged by `re-lint/max-expects` (max 1) in CI.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document in CHANGELOG.md","tdd_next":"acceptance green"}}

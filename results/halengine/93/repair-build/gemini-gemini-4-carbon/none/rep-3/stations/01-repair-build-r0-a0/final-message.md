@@ -1,0 +1,3 @@
+Fixed all four ESLint errors in `src/orchestration/orchestratorHelpers.test.ts`: combined the two `expect` calls in the undefined-operand test into a single object assertion (`re-lint/max-expects`), and added trailing `[validated by: ...]` citations for all three `accumulateUsage` unit tests in `specs/hal-engine-config-hooks/spec.md` (`re-lint/require-spec-link`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"added spec links in specs/hal-engine-config-hooks/spec.md for the three accumulateUsage unit tests and merged the two-expect test into one assertion in src/orchestration/orchestratorHelpers.test.ts"}}
