@@ -243,7 +243,8 @@ async function runSelected(config: ExperimentConfig, loops: readonly PlannedLoop
       try {
         await runLoop(loop, { config, paths, log, keepRun, excludedHarnesses, ...(lanes ? { lanes } : {}) });
         await scoreSelected(config, [loop], AFTER_RUN);
-        analyzeAll(config);
+        // Only this loop's visits: every visit's transcript (over a GB) took minutes, with the event loop blocked the whole time.
+        analyzeVisits(recordDirsUnder(join(paths.resultsDir, cellPath(loop))));
         writeReport(config);
       } catch (error) {
         if (error instanceof InfraError) {
@@ -427,8 +428,10 @@ async function truncateCells(config: ExperimentConfig, ticketFilter: string | un
 }
 
 function visitDirs(experimentId: string): string[] {
-  const root = join(paths.resultsDir, experimentId);
+  return recordDirsUnder(join(paths.resultsDir, experimentId));
+}
 
+function recordDirsUnder(root: string): string[] {
   if (!existsSync(root)) {
     return [];
   }
@@ -439,8 +442,10 @@ function visitDirs(experimentId: string): string[] {
 }
 
 function analyzeAll(config: ExperimentConfig): void {
-  const dirs = visitDirs(config.id);
+  analyzeVisits(visitDirs(config.id));
+}
 
+function analyzeVisits(dirs: readonly string[]): void {
   for (const dir of dirs.filter((visit) => existsSync(join(visit, "stdout.jsonl")))) {
     const record = JSON.parse(readFileSync(join(dir, "record.json"), "utf8")) as { harness: string; usage: unknown; cost_usd: number; wall_ms: number; outcome: string };
     const harness = HarnessSchema.parse(record.harness);
@@ -498,9 +503,19 @@ function reportInputs(config: ExperimentConfig): ReportInputs {
 /** The one markdown file holding everything: tables from results.jsonl, every visit with its analysis, and the conclusions written beside it. */
 function writeReport(config: ExperimentConfig): string {
   const { records, loops, experimentDir, promptsLoreSha, generatedAt, conclusions } = reportInputs(config);
+  // One walk of the tree, not one per visit: per visit it read every record.json again, thousands of times over.
+  const visitDirById = new Map<string, string>();
+
+  for (const dir of visitDirs(config.id)) {
+    const id = readRecordId(dir);
+
+    if (id !== null && !visitDirById.has(id)) {
+      visitDirById.set(id, dir);
+    }
+  }
   const visits: VisitRow[] = latestStationRuns(records).map((record) => {
     const loop = loops.find((candidate) => candidate.loop_id === record.loop_id);
-    const visitDir = visitDirs(config.id).find((dir) => readRecordId(dir) === record.run_id);
+    const visitDir = visitDirById.get(record.run_id);
     const analysisPath = visitDir ? join(visitDir, "analysis.json") : null;
 
     return {

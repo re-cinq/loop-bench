@@ -1,6 +1,6 @@
 // Runs one process to completion with a deadline, capturing both streams to files and in memory.
 import { spawn } from "node:child_process";
-import { createWriteStream } from "node:fs";
+import { closeSync, openSync, readFileSync } from "node:fs";
 
 export interface SpawnSpec {
   bin: string;
@@ -21,11 +21,25 @@ export interface SpawnResult {
   wallMs: number;
 }
 
+/**
+ * A stream with a path is the file itself, opened here and handed to the child, so the child writes to disk with no pipe for this process to drain.
+ * Through a pipe, a busy event loop here (the run loop's synchronous analysis and report after every loop) stopped the reading, and the claude CLI
+ * then dropped the rest of its stream, the result line with it, and exited 0. A stream without a path stays a pipe read into memory.
+ */
 export function runProcess(spec: SpawnSpec): Promise<SpawnResult> {
   return new Promise((resolve) => {
     const startedAt = Date.now();
+    const stdoutFd = spec.stdoutPath ? openSync(spec.stdoutPath, "w") : null;
+    const stderrFd = spec.stderrPath ? openSync(spec.stderrPath, "w") : null;
     // Its own process group, so a timeout can end everything the CLI started: gemini relaunches itself as a child that outlives a killed launcher, at several GB.
-    const child = spawn(spec.bin, spec.args, { cwd: spec.cwd, env: spec.env, stdio: ["pipe", "pipe", "pipe"], detached: true });
+    const child = spawn(spec.bin, spec.args, { cwd: spec.cwd, env: spec.env, stdio: ["pipe", stdoutFd ?? "pipe", stderrFd ?? "pipe"], detached: true });
+
+    // The child holds its own copies.
+    for (const fd of [stdoutFd, stderrFd]) {
+      if (fd !== null) {
+        closeSync(fd);
+      }
+    }
     const killGroup = (signal: NodeJS.Signals): void => {
       try {
         if (child.pid !== undefined) {
@@ -37,8 +51,7 @@ export function runProcess(spec: SpawnSpec): Promise<SpawnResult> {
     };
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
-    const stdoutFile = spec.stdoutPath ? createWriteStream(spec.stdoutPath) : null;
-    const stderrFile = spec.stderrPath ? createWriteStream(spec.stderrPath) : null;
+    const collected = (chunks: Buffer[], path: string | undefined): string => (path ? readFileSync(path, "utf8") : Buffer.concat(chunks).toString());
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
@@ -46,28 +59,20 @@ export function runProcess(spec: SpawnSpec): Promise<SpawnResult> {
       setTimeout(() => killGroup("SIGKILL"), 10_000).unref();
     }, spec.timeoutMs);
 
-    child.stdout.on("data", (chunk: Buffer) => {
-      stdout.push(chunk);
-      stdoutFile?.write(chunk);
-    });
-    child.stderr.on("data", (chunk: Buffer) => {
-      stderr.push(chunk);
-      stderrFile?.write(chunk);
-    });
+    child.stdout?.on("data", (chunk: Buffer) => stdout.push(chunk));
+    child.stderr?.on("data", (chunk: Buffer) => stderr.push(chunk));
     child.on("error", (error) => {
       clearTimeout(timer);
-      resolve({ exitCode: null, timedOut, stdout: Buffer.concat(stdout).toString(), stderr: `${Buffer.concat(stderr).toString()}\n${error.message}`, wallMs: Date.now() - startedAt });
+      resolve({ exitCode: null, timedOut, stdout: collected(stdout, spec.stdoutPath), stderr: `${collected(stderr, spec.stderrPath)}\n${error.message}`, wallMs: Date.now() - startedAt });
     });
     child.on("close", (code) => {
       clearTimeout(timer);
       killGroup("SIGKILL");
-      stdoutFile?.end();
-      stderrFile?.end();
-      resolve({ exitCode: code, timedOut, stdout: Buffer.concat(stdout).toString(), stderr: Buffer.concat(stderr).toString(), wallMs: Date.now() - startedAt });
+      resolve({ exitCode: code, timedOut, stdout: collected(stdout, spec.stdoutPath), stderr: collected(stderr, spec.stderrPath), wallMs: Date.now() - startedAt });
     });
     if (spec.stdin !== undefined) {
-      child.stdin.write(spec.stdin);
+      child.stdin?.write(spec.stdin);
     }
-    child.stdin.end();
+    child.stdin?.end();
   });
 }
