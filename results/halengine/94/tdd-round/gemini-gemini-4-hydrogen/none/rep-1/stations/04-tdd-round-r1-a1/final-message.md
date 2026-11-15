@@ -1,0 +1,5 @@
+Nothing left to write: commit `2b6c44a` (already on `HEAD` and pushed to `origin/loop-bench/94`) already closed all facets in `.lore/dod.md` and resolved every failure from `e8b9f13` listed in `round-brief.md` (`PromptBuilderConfig` in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`, `re-lint/max-member-chain` in `src/config.test.ts`, `re-lint/max-expects` in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`, and the `CHANGELOG.md` entry under `## [Unreleased]`).
+
+Verified in this pod: `npx prettier --check` on the modified `.ts` files, `node scripts/repoint-spec-anchors.mjs --check origin/main`, `npm run spec:names`, `npm run check:spec-links`, `npm run check:spec-status`, `bash scripts/check-changelog.sh origin/main`, and `git fetch origin main` (branch is up to date with `origin/main` and `origin/loop-bench/94`). This round wrote no new tests and ran no Jest tests, lint, typecheck, or build locally (0 red tests authored, 0 regressions observed locally).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

@@ -1,0 +1,8 @@
+Added the `Error` instance identity (`===`) test in `src/orchestration/chatOrchestrator.test.ts` (`passes an Error rejection to onError as the same instance`), cited it in `specs/hal-engine-config-hooks/spec.md`, repointed shifted spec anchors (`check-spec-anchor-names.mjs --fix`), and ticked the remaining facets in `.lore/dod.md`. Note that the `round-brief.md` CI findings on `2bc39a8` (`src/orchestration/onErrorNonError.acceptance.test.ts:12` `new Date()` and `CHANGELOG.md`) were already fixed in `32406a8`.
+
+Verified locally:
+- `src/orchestration/chatOrchestrator.test.ts`: 4 passed (the new test plus the 3 existing `Error`-instance tests `called with session and error when stream fails`, `error still propagates after onError hook`, and `error path calls onError then afterSession`), 0 red tests of ours, 0 regressions (acceptance tests and full suite were not run locally; `eslint`, `tsc`, and `npm run build` were deferred to CI).
+- `check-spec-links.mjs`, `check-spec-status.mjs`, `repoint-spec-anchors.mjs --check origin/main`, and `check-changelog.sh` all passed; Prettier reported `src/orchestration/chatOrchestrator.test.ts` formatted.
+- Committed (`73dba0f`), pushed to `origin/loop-bench/95`, and confirmed `origin/main` is already up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Pin Error instance identity (===) and confirm existing Error-instance tests in src/orchestration/chatOrchestrator.test.ts remain green","tdd_next":"acceptance green"}}

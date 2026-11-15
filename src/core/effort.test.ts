@@ -11,9 +11,11 @@ describe("effort", () => {
     expect(effortLabel("gemini", "gemini-4-argon", undefined)).toBe("medium (gemini-cli default)");
     expect(effortLabel("gemini", "gemini-3.1-pro-preview", undefined)).toBe("high (gemini-cli default)");
     expect(effortLabel("gemini", "gemini-4-carbon", undefined)).toBe("medium (gemini-cli default)");
+    expect(effortLabel("gemini", "gemini-4-hydrogen", undefined)).toBe("medium (gemini-cli default)");
     expect(effortLabel("gemini", "gemini-3.8-flash", undefined)).toBe("high (gemini-cli default)");
     expect(effortLabel("claude", "claude-opus-5-5", undefined)).toBe("medium (claude CLI default)");
     expect(effortLabel("claude", "claude-fable-5-1", undefined)).toBe("high (claude CLI default)");
+    expect(effortLabel("claude", "claude-fable-5-2", undefined)).toBe("high (claude CLI default)");
     expect(effortLabel("claude", "claude-opus-5-5", "high")).toBe("high");
   });
 

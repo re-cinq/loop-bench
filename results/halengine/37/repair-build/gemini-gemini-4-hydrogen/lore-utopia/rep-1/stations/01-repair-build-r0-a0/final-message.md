@@ -1,0 +1,6 @@
+Fixed all reported CI failures on `loop-bench/37` (commit `5efb46a`, pushed and up-to-date with `origin/main`):
+- `src/orchestration/tools/registry.ts`: loaded `ajv` via `createRequire(import.meta.url)` with a typed constructor (fixing `TS2693` and Node ESM `SyntaxError`), attached `{cause: error}` in `compileSchema` (fixing `preserve-caught-error`), and implemented `inputSchema` validation in `ToolRegistry.execute` with `WeakMap` caching for dynamic tool definitions and value-free rejection messages/logs.
+- `src/orchestration/tools/registry.acceptance.test.ts`: fixed `re-lint/prefer-early-return` and `re-lint/max-member-chain` in the orchestrator retry test.
+- Verified with `npm run test -- src/orchestration/tools/registry.acceptance.test.ts src/orchestration/tools/registry.test.ts src/config.test.ts src/orchestration/chatOrchestrator.test.ts` (4 suites, 36 tests passed), `npx prettier --write`, `npm run spec:names`, `npm run check:spec-links`, `npm run check:spec-status`, and `node scripts/repoint-spec-anchors.mjs --check origin/main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed Ajv ESM/NodeNext import, preserve-caught-error, registry.acceptance.test.ts re-lint errors, and implemented ToolRegistry.execute inputSchema validation"}}

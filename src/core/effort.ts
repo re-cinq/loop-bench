@@ -14,6 +14,7 @@ const CODEX_DEFAULT_EFFORT: Record<string, string> = {
 
 // What claude code runs a model at when told nothing (code.claude.com/docs/en/model-config, read 2026-10-19): high, except medium on Opus 5.5, Sonnet 5.5 and Haiku 5.5. Haiku 4.5 does not support effort and runs without thinking.
 const CLAUDE_DEFAULT_EFFORT: Record<string, string> = {
+  "claude-fable-5-2": "high",
   "claude-fable-5-1": "high",
   "claude-opus-5-5": "medium",
   "claude-sonnet-5-5": "medium",
@@ -28,6 +29,7 @@ const GEMINI_DEFAULT_EFFORT: Record<string, string> = {
   "gemini-3-flash-preview": "high",
   "gemini-4-argon": "medium",
   "gemini-4-carbon": "medium",
+  "gemini-4-hydrogen": "medium",
   "gemini-3.8-flash": "high",
 };
 

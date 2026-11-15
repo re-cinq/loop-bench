@@ -1,6 +1,6 @@
 # Which model runs each implementation-loop station best
 
-**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-11-15 08:07 UTC: 2739 loops over 710 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
+**For people choosing the model behind one of Lore's agents.** Results of `halengine` as of 2026-11-15 16:44 UTC: 2785 loops over 756 cells on re-cinq/HALEngine, prompts from lore `aa562bb4`.
 
 ## Why we measured
 
@@ -69,9 +69,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #37 medium | dod | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.00 | 64.1 min | 1.0 | 1.0 | 2.0 | 0/1 | 3 (0.08) | +274/−0 |
 | #37 medium | dod | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.64 ($0.00–$1.38, sd $0.55) | 42.7 min (26.1 min–68.8 min, sd 15.6 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.8 (1.0–2.0, sd 0.4) | 0/5 | 3 (3–3, sd 0) (0.08 (0.08–0.08, sd 0.00)) | +210/−0 |
 | #37 medium | dod | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.32 ($0.00–$1.25, sd $0.48) | 36.3 min (24.1 min–48.2 min, sd 9.5 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.6 (1.0–2.0, sd 0.5) | 0/5 | 3 (3–3, sd 0) (0.08 (0.08–0.08, sd 0.00)) | +254/−0 |
-| #37 medium | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #37 medium | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $2.09 | 10.3 min | — | — | — | 0/1 | 3 (0.08) | +262/−0 |
 | #37 medium | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $1.68 ($0.00–$3.61, sd $1.47) | 38.4 min (14.6 min–55.4 min, sd 13.3 min) | — | — | — | 0/5 | 3 (3–3, sd 0) (0.08 (0.08–0.08, sd 0.00)) | +267/−0 |
 | #37 medium | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $2.26 ($1.38–$3.41, sd $0.69) | 55.4 min (38.5 min–80.6 min, sd 14.2 min) | — | — | — | 0/5 | 3 (3–3, sd 0) (0.08 (0.08–0.08, sd 0.00)) | +281/−0 |
+| #37 medium | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.17 | 32.4 min | — | — | — | 0/1 | 4 (0.07) | +307/−0 |
+| #37 medium | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 0.0 | $0.25 | 37.3 min | — | — | — | 0/1 | 4 (0.07) | +265/−0 |
+| #37 medium | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.38 | 67.1 min | — | — | — | 0/1 | 4 (0.07) | +361/−0 |
 | #37 medium | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -126,9 +129,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #37 medium | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 3 | 2/3 | 0.3 (0.0–1.0, sd 0.5) | $1.73 ($1.27–$1.99, sd $0.33) | 12.4 min (11.3 min–13.8 min, sd 1.0 min) | 1.7 (1.0–2.0, sd 0.5) | 2.0 (2.0–2.0, sd 0.0) | 2.3 (2.0–3.0, sd 0.5) | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +385/−17 |
 | #37 medium | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 3/5 | 0.4 (0.0–1.0, sd 0.5) | $2.37 ($0.13–$4.02, sd $1.35) | 31.5 min (12.4 min–62.4 min, sd 19.4 min) | 2.5 (2.0–4.0, sd 0.9) | 2.3 (2.0–3.0, sd 0.4) | 2.8 (2.0–3.0, sd 0.4) | — | 9 (8–13, sd 2) (0.51 (0.46–0.71, sd 0.10)) | +457/−20 |
 | #37 medium | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 1/5 | 0.8 (0.0–1.0, sd 0.4) | $2.21 ($0.10–$3.37, sd $1.27) | 18.7 min (11.0 min–26.1 min, sd 6.1 min) | 3.4 (2.0–5.0, sd 1.2) | 3.2 (2.0–5.0, sd 1.0) | 3.4 (3.0–4.0, sd 0.5) | — | 10 (8–14, sd 3) (0.59 (0.46–0.79, sd 0.16)) | +512/−22 |
-| #37 medium | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #37 medium | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.25 | 42.5 min | — | — | — | — | 8 (0.46) | +405/−24 |
 | #37 medium | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 2/5 | 0.6 (0.0–1.0, sd 0.5) | $2.87 ($0.22–$5.17, sd $1.66) | 36.5 min (31.0 min–43.2 min, sd 4.6 min) | — | — | — | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +478/−17 |
 | #37 medium | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 1/5 | 0.8 (0.0–1.0, sd 0.4) | $2.80 ($0.13–$4.50, sd $1.46) | 40.2 min (24.8 min–52.3 min, sd 10.2 min) | — | — | — | — | 8 (8–8, sd 0) (0.46 (0.46–0.46, sd 0.00)) | +437/−17 |
+| #37 medium | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 1.0 | $0.53 | 32.3 min | — | — | — | — | 8 (0.46) | +394/−17 |
+| #37 medium | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 1.0 | $0.49 | 6.3 min | — | — | — | — | 8 (0.46) | +412/−17 |
+| #37 medium | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 1.0 | $0.04 | 31.0 min | — | — | — | — | 13 (0.85) | +630/−28 |
 | #37 medium | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #37 medium | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -183,9 +189,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #37 medium | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 2.0 (1.0–3.0, sd 0.8) | $11.53 ($6.88–$20.59, sd $6.40) | 47.6 min (24.0 min–83.6 min, sd 25.9 min) | 4.3 (4.0–5.0, sd 0.5) | 3.7 (2.0–5.0, sd 1.2) | 3.7 (3.0–4.0, sd 0.5) | — | 12 (8–14, sd 3) (0.68 (0.46–0.79, sd 0.15)) | +504/−20 |
 | #37 medium | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 3/5 | 2.8 (0.0–6.0, sd 1.9) | $10.04 ($0.00–$16.01, sd $6.01) | 64.9 min (32.0 min–120.5 min, sd 29.9 min) | 4.5 (4.0–5.0, sd 0.5) | 4.3 (3.0–5.0, sd 0.8) | 3.8 (3.0–4.0, sd 0.4) | — | 13 (8–16, sd 3) (0.70 (0.46–0.79, sd 0.13)) | +594/−27 |
 | #37 medium | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 4/5 | 1.8 (1.0–3.0, sd 0.7) | $6.59 ($1.87–$12.89, sd $3.65) | 58.6 min (27.3 min–95.6 min, sd 29.6 min) | 4.6 (4.0–5.0, sd 0.5) | 4.4 (3.0–5.0, sd 0.8) | 3.8 (3.0–4.0, sd 0.4) | — | 13 (8–15, sd 3) (0.70 (0.46–0.79, sd 0.12)) | +644/−30 |
-| #37 medium | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #37 medium | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 1.0 | $2.79 | 117.8 min | — | — | — | — | 8 (0.46) | +510/−18 |
 | #37 medium | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 2/5 | 1.8 (1.0–3.0, sd 1.0) | $6.34 ($1.67–$12.69, sd $4.21) | 150.0 min (62.9 min–245.9 min, sd 75.2 min) | — | — | — | — | 10 (8–14, sd 3) (0.59 (0.46–0.79, sd 0.16)) | +695/−26 |
 | #37 medium | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 2/5 | 2.4 (0.0–4.0, sd 1.6) | $8.66 ($0.00–$18.48, sd $6.48) | 164.6 min (57.9 min–219.9 min, sd 63.4 min) | — | — | — | — | 13 (7–14, sd 3) (0.71 (0.38–0.79, sd 0.16)) | +758/−33 |
+| #37 medium | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #37 medium | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 1.0 | $0.30 | 100.8 min | — | — | — | — | 14 (0.79) | +760/−33 |
+| #37 medium | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 1.0 | $0.66 | 132.4 min | — | — | — | — | 8 (0.46) | +538/−17 |
 | #93 small | baseline | `gemini-3.1-pro-preview` (gemini) | high (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 3.0 | $9.66 | 60.5 min | 4.0 | 5.0 | 3.0 | 0/1 | 14 (0.40) | +268/−51 |
 | #93 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -247,6 +256,9 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $2.76 | 30.5 min | — | — | — | 1/1 | 3 (0.11) | +114/−2 |
 | #93 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.83 ($0.00–$1.58, sd $0.70) | 34.8 min (9.2 min–52.5 min, sd 14.4 min) | — | — | — | 5/5 | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +118/−2 |
 | #93 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $2.14 ($0.77–$2.97, sd $0.78) | 34.0 min (10.7 min–63.2 min, sd 18.9 min) | — | — | — | 5/5 | 3 (3–3, sd 0) (0.11 (0.11–0.11, sd 0.00)) | +122/−2 |
+| #93 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.52 | 35.5 min | — | — | — | 1/1 | 3 (0.11) | +130/−2 |
+| #93 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 0.0 | $0.66 | 35.7 min | — | — | — | 1/1 | 3 (0.11) | +135/−2 |
+| #93 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.66 | 35.6 min | — | — | — | 1/1 | 3 (0.11) | +130/−0 |
 | #93 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -304,6 +316,9 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $1.50 | 8.2 min | — | — | — | — | 7 (0.27) | +141/−6 |
 | #93 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.70 ($0.19–$1.20, sd $0.35) | 21.5 min (8.2 min–33.9 min, sd 10.9 min) | — | — | — | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +141/−5 |
 | #93 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 4/5 | 0.2 (0.0–1.0, sd 0.4) | $0.70 ($0.14–$0.91, sd $0.28) | 23.9 min (5.6 min–53.0 min, sd 20.5 min) | — | — | — | — | 7 (7–7, sd 0) (0.27 (0.27–0.27, sd 0.00)) | +144/−5 |
+| #93 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.29 | 2.7 min | — | — | — | — | 8 (0.36) | +146/−5 |
+| #93 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 0.0 | $0.38 | 2.8 min | — | — | — | — | 8 (0.36) | +149/−5 |
+| #93 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 0.0 | $0.28 | 2.4 min | — | — | — | — | 8 (0.36) | +149/−5 |
 | #93 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #93 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -361,6 +376,9 @@ Each row is one cell: one station varied against the production baseline, every 
 | #93 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 1.0 | $4.99 | 84.6 min | — | — | — | — | 13 (0.43) | +197/−13 |
 | #93 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 1/5 | 0.2 (0.0–1.0, sd 0.4) | $2.53 ($0.00–$12.67, sd $5.07) | 53.4 min (46.6 min–57.9 min, sd 3.8 min) | — | — | — | — | 13 (12–14, sd 1) (0.32 (0.25–0.43, sd 0.06)) | +228/−13 |
 | #93 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 1/5 | 0.8 (0.0–1.0, sd 0.4) | $3.43 ($0.00–$11.45, sd $4.10) | 76.0 min (56.9 min–104.6 min, sd 18.3 min) | — | — | — | — | 14 (13–15, sd 1) (0.35 (0.25–0.40, sd 0.06)) | +227/−16 |
+| #93 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 1.0 | $0.79 | 139.5 min | — | — | — | — | 14 (0.50) | +198/−13 |
+| #93 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 0.0 | $0.00 | 68.6 min | — | — | — | — | 12 (0.36) | +192/−11 |
+| #93 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.00 | 68.5 min | — | — | — | — | 12 (0.36) | +214/−13 |
 | #94 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -421,6 +439,9 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $1.57 | 31.1 min | — | — | — | 1/1 | 3 (0.13) | +74/−2 |
 | #94 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $1.44 ($0.00–$2.33, sd $0.79) | 34.4 min (24.2 min–56.3 min, sd 11.8 min) | — | — | — | 5/5 | 3 (3–3, sd 0) (0.13 (0.13–0.13, sd 0.00)) | +99/−2 |
 | #94 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $2.05 ($1.10–$2.92, sd $0.70) | 52.0 min (28.4 min–76.3 min, sd 17.5 min) | — | — | — | 5/5 | 3 (3–3, sd 0) (0.13 (0.13–0.13, sd 0.00)) | +130/−3 |
+| #94 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.19 | 34.8 min | — | — | — | 1/1 | 3 (0.13) | +91/−2 |
+| #94 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 0.0 | $0.00 | 65.8 min | — | — | — | 1/1 | 3 (0.13) | +113/−2 |
+| #94 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.00 | 65.9 min | — | — | — | 1/1 | 3 (0.13) | +125/−0 |
 | #94 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -478,6 +499,9 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.20 | 25.7 min | — | — | — | — | 8 (0.75) | +147/−27 |
 | #94 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.65 ($0.30–$1.09, sd $0.30) | 28.9 min (18.6 min–40.7 min, sd 8.1 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +142/−27 |
 | #94 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.83 ($0.63–$1.08, sd $0.14) | 16.2 min (7.5 min–50.4 min, sd 17.1 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +138/−27 |
+| #94 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.16 | 2.1 min | — | — | — | — | 8 (0.75) | +135/−27 |
+| #94 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 0.0 | $0.06 | 34.0 min | — | — | — | — | 8 (0.75) | +137/−27 |
+| #94 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 0.0 | $0.19 | 33.7 min | — | — | — | — | 8 (0.75) | +137/−27 |
 | #94 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #94 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -535,6 +559,9 @@ Each row is one cell: one station varied against the production baseline, every 
 | #94 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 1.0 | $1.71 | 79.2 min | — | — | — | — | 8 (0.75) | +152/−27 |
 | #94 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 4/5 | 0.8 (0.0–1.0, sd 0.4) | $5.56 ($0.00–$8.28, sd $2.98) | 78.9 min (45.3 min–125.3 min, sd 29.7 min) | — | — | — | — | 7 (6–8, sd 1) (0.62 (0.33–0.75, sd 0.17)) | +153/−18 |
 | #94 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 4/5 | 0.8 (0.0–1.0, sd 0.4) | $2.82 ($0.00–$4.42, sd $1.54) | 66.1 min (48.6 min–113.1 min, sd 24.4 min) | — | — | — | — | 7 (6–8, sd 1) (0.44 (0.30–0.75, sd 0.17)) | +171/−10 |
+| #94 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 2.0 | $1.07 | 138.6 min | — | — | — | — | 8 (0.75) | +152/−27 |
+| #94 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 1.0 | $0.66 | 135.8 min | — | — | — | — | 9 (0.67) | +204/−27 |
+| #94 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 1.0 | $0.68 | 134.9 min | — | — | — | — | 11 (0.55) | +203/−32 |
 | #95 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -595,6 +622,9 @@ Each row is one cell: one station varied against the production baseline, every 
 | #95 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.00 | 47.4 min | — | — | — | 1/1 | 3 (0.13) | +137/−5 |
 | #95 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $2.38 ($1.52–$3.60, sd $0.69) | 43.9 min (25.8 min–67.3 min, sd 14.0 min) | — | — | — | 5/5 | 3 (3–3, sd 0) (0.13 (0.13–0.13, sd 0.00)) | +120/−6 |
 | #95 small | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $1.95 ($0.00–$2.93, sd $1.03) | 35.2 min (10.4 min–47.2 min, sd 13.7 min) | — | — | — | 5/5 | 3 (3–3, sd 0) (0.13 (0.13–0.13, sd 0.00)) | +124/−6 |
+| #95 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.28 | 35.4 min | — | — | — | 1/1 | 3 (0.13) | +87/−0 |
+| #95 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 0.0 | $0.32 | 34.2 min | — | — | — | 1/1 | 3 (0.13) | +108/−0 |
+| #95 small | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.14 | 35.4 min | — | — | — | 1/1 | 3 (0.13) | +151/−6 |
 | #95 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -652,6 +682,9 @@ Each row is one cell: one station varied against the production baseline, every 
 | #95 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.24 | 25.6 min | — | — | — | — | 8 (0.75) | +145/−24 |
 | #95 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.57 ($0.17–$0.79, sd $0.21) | 17.5 min (5.1 min–46.3 min, sd 16.1 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +145/−24 |
 | #95 small | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 5/5 | 0.0 (0.0–0.0, sd 0.0) | $0.40 ($0.28–$0.50, sd $0.09) | 20.8 min (2.5 min–51.0 min, sd 16.7 min) | — | — | — | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +145/−24 |
+| #95 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $0.12 | 66.3 min | — | — | — | — | 8 (0.75) | +145/−24 |
+| #95 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 0.0 | $0.13 | 1.4 min | — | — | — | — | 8 (0.75) | +145/−24 |
+| #95 small | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 1.0 | $0.09 | 1.1 min | — | — | — | — | 8 (0.75) | +146/−24 |
 | #95 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #95 small | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -706,9 +739,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #95 small | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 3 | 3/3 | 1.0 (1.0–1.0, sd 0.0) | $1.87 ($1.48–$2.11, sd $0.27) | 11.9 min (8.9 min–17.2 min, sd 3.7 min) | 4.7 (4.0–5.0, sd 0.5) | 5.0 (5.0–5.0, sd 0.0) | 4.0 (4.0–4.0, sd 0.0) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +163/−24 |
 | #95 small | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 4/5 | 0.8 (0.0–1.0, sd 0.4) | $1.85 ($0.00–$3.43, sd $1.14) | 26.2 min (7.9 min–47.3 min, sd 13.8 min) | 4.8 (4.0–5.0, sd 0.4) | 4.8 (4.0–5.0, sd 0.4) | 4.3 (4.0–5.0, sd 0.4) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +178/−26 |
 | #95 small | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 4/5 | 1.2 (1.0–2.0, sd 0.4) | $1.99 ($0.97–$2.78, sd $0.68) | 34.4 min (9.0 min–73.1 min, sd 29.1 min) | 4.0 (3.0–5.0, sd 0.6) | 4.4 (3.0–5.0, sd 0.8) | 3.8 (3.0–4.0, sd 0.4) | — | 8 (8–8, sd 0) (0.75 (0.75–0.75, sd 0.00)) | +167/−24 |
-| #95 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #95 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 1.0 | $3.81 | 49.5 min | — | — | — | — | 8 (0.75) | +164/−24 |
 | #95 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 3/5 | 0.6 (0.0–1.0, sd 0.5) | $1.42 ($0.00–$2.86, sd $1.21) | 67.1 min (45.9 min–121.7 min, sd 27.6 min) | — | — | — | — | 6 (6–8, sd 1) (0.48 (0.33–0.75, sd 0.15)) | +219/−12 |
 | #95 small | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 4/5 | 0.8 (0.0–1.0, sd 0.4) | $1.72 ($0.00–$3.01, sd $1.09) | 75.4 min (45.4 min–107.9 min, sd 24.6 min) | — | — | — | — | 6 (6–8, sd 1) (0.45 (0.33–0.75, sd 0.16)) | +211/−12 |
+| #95 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.00 | 67.1 min | — | — | — | — | 8 (0.75) | +184/−24 |
+| #95 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 1/1 | 2.0 | $0.71 | 172.2 min | — | — | — | — | 9 (0.67) | +228/−28 |
+| #95 small | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 1/1 | 1.0 | $0.57 | 102.9 min | — | — | — | — | 8 (0.75) | +266/−24 |
 | #144 large | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | dod | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -766,9 +802,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | dod | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $4.28 | 52.1 min | 1.0 | 1.0 | 1.0 | 0/1 | 3 (0.04) | +405/−63 |
 | #144 large | dod | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.81 ($0.00–$3.06, sd $1.19) | 50.3 min (5.0 min–92.8 min, sd 28.2 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.3 (1.0–2.0, sd 0.4) | 1/5 | 3 (3–4, sd 0) (0.05 (0.04–0.08, sd 0.02)) | +433/−26 |
 | #144 large | dod | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $0.86 ($0.00–$2.26, sd $0.95) | 39.9 min (26.5 min–45.4 min, sd 6.8 min) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 1.0 (1.0–1.0, sd 0.0) | 0/5 | 3 (3–3, sd 0) (0.04 (0.04–0.04, sd 0.00)) | +363/−26 |
-| #144 large | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #144 large | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.00 | 68.6 min | — | — | — | 1/1 | 3 (0.04) | +558/−0 |
 | #144 large | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $5.24 ($4.50–$6.92, sd $0.88) | 58.7 min (50.6 min–75.7 min, sd 9.5 min) | — | — | — | 4/5 | 3 (3–4, sd 0) (0.05 (0.04–0.08, sd 0.02)) | +623/−1 |
 | #144 large | dod | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 0/5 | 0.0 (0.0–0.0, sd 0.0) | $4.42 ($0.00–$7.94, sd $2.66) | 49.2 min (30.6 min–70.6 min, sd 14.3 min) | — | — | — | 3/5 | 3 (3–3, sd 0) (0.04 (0.04–0.04, sd 0.00)) | +677/−25 |
+| #144 large | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 0.0 | $0.61 | 38.2 min | — | — | — | 0/1 | 3 (0.04) | +610/−63 |
+| #144 large | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 1 | 0/1 | 0.0 | $0.00 | 60.2 min | — | — | — | 0/1 | 3 (0.04) | +541/−63 |
+| #144 large | dod | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 1 | 0/1 | 0.0 | $0.47 | 37.9 min | — | — | — | 1/1 | 3 (0.04) | +535/−6 |
 | #144 large | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | repair-build | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -823,9 +862,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 2 | 2/2 | 0.0 (0.0–0.0, sd 0.0) | $3.66 ($3.13–$4.19, sd $0.53) | 19.1 min (15.8 min–22.4 min, sd 3.3 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 10 (10–10, sd 0) (0.31 (0.31–0.31, sd 0.00)) | +352/−17 |
 | #144 large | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 3/5 | 0.4 (0.0–1.0, sd 0.5) | $2.92 ($1.54–$5.25, sd $1.26) | 17.7 min (5.7 min–45.1 min, sd 14.0 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 13 (10–21, sd 4) (0.30 (0.25–0.32, sd 0.02)) | +426/−48 |
 | #144 large | repair-build | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 3/5 | 0.4 (0.0–1.0, sd 0.5) | $2.80 ($1.05–$7.03, sd $2.19) | 13.9 min (5.8 min–30.5 min, sd 8.5 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 11 (10–12, sd 1) (0.33 (0.31–0.35, sd 0.02)) | +411/−30 |
-| #144 large | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #144 large | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 0.0 | $3.66 | 50.9 min | — | — | — | — | 11 (0.30) | +392/−21 |
 | #144 large | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 4/5 | 0.0 (0.0–0.0, sd 0.0) | $1.60 ($0.00–$4.02, sd $1.80) | 39.7 min (17.2 min–81.5 min, sd 21.8 min) | — | — | — | — | 11 (10–12, sd 1) (0.30 (0.29–0.31, sd 0.01)) | +387/−20 |
 | #144 large | repair-build | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 4/5 | 0.2 (0.0–1.0, sd 0.4) | $2.37 ($0.14–$5.84, sd $2.13) | 29.2 min (15.7 min–42.7 min, sd 9.0 min) | — | — | — | — | 12 (11–13, sd 1) (0.31 (0.28–0.35, sd 0.03)) | +419/−32 |
+| #144 large | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 0/1 | 1.0 | $1.10 | 6.1 min | — | — | — | — | 12 (0.29) | +392/−21 |
+| #144 large | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #144 large | repair-build | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | Lore on Utopia | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
 | #144 large | tdd-round | `claude-fable-5-1` (claude) | high (claude CLI default) | without Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
@@ -880,9 +922,12 @@ Each row is one cell: one station varied against the production baseline, every 
 | #144 large | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 2 | 2/2 | 2.5 (2.0–3.0, sd 0.5) | $7.19 ($6.95–$7.43, sd $0.24) | 35.9 min (31.8 min–40.1 min, sd 4.2 min) | 3.0 (3.0–3.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 15 (15–15, sd 0) (0.30 (0.30–0.30, sd 0.00)) | +533/−30 |
 | #144 large | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 2/5 | 1.8 (0.0–4.0, sd 1.8) | $3.77 ($0.00–$8.79, sd $3.67) | 57.5 min (31.7 min–131.0 min, sd 37.3 min) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | 2.0 (2.0–2.0, sd 0.0) | — | 21 (19–24, sd 2) (0.23 (0.22–0.24, sd 0.01)) | +682/−138 |
 | #144 large | tdd-round | `gemini-4-argon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 4/5 | 2.0 (0.0–3.0, sd 1.3) | $6.06 ($0.00–$9.08, sd $3.30) | 55.8 min (28.0 min–138.7 min, sd 41.8 min) | 1.8 (1.0–2.0, sd 0.4) | 1.8 (1.0–2.0, sd 0.4) | 1.8 (1.0–2.0, sd 0.4) | — | 19 (9–25, sd 5) (0.24 (0.18–0.26, sd 0.03)) | +624/−120 |
-| #144 large | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | not run yet | — | — | — | — | — | — | — | — | — |
+| #144 large | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | with Lore | baseline | 1 | 1/1 | 1.0 | $6.96 | 104.8 min | — | — | — | — | 16 (0.29) | +732/−81 |
 | #144 large | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 5 | 3/5 | 1.4 (0.0–2.0, sd 0.8) | $5.92 ($0.00–$10.11, sd $4.21) | 80.2 min (57.7 min–96.9 min, sd 14.7 min) | — | — | — | — | 16 (14–19, sd 2) (0.28 (0.23–0.31, sd 0.03)) | +654/−46 |
 | #144 large | tdd-round | `gemini-4-carbon` (gemini) | medium (gemini-cli default) | without Lore | baseline | 5 | 2/5 | 1.4 (0.0–2.0, sd 0.8) | $6.08 ($0.00–$10.54, sd $4.08) | 117.6 min (52.4 min–205.7 min, sd 62.2 min) | — | — | — | — | 18 (11–27, sd 5) (0.25 (0.21–0.29, sd 0.03)) | +687/−95 |
+| #144 large | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | with Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #144 large | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | Lore on Utopia | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
+| #144 large | tdd-round | `gemini-4-hydrogen` (gemini) | medium (gemini-cli default) | without Lore | baseline | 0 | running | — | — | — | — | — | — | — | — | — |
 
 What the columns mean:
 
@@ -940,8 +985,12 @@ What the columns mean:
 | #37 medium | dod | `gemini-4-argon` (gemini) | with Lore | retry_budget ×1 |
 | #37 medium | dod | `gemini-4-argon` (gemini) | Lore on Utopia | retry_budget ×2, station_done ×3 |
 | #37 medium | dod | `gemini-4-argon` (gemini) | without Lore | station_done ×2, retry_budget ×3 |
+| #37 medium | dod | `gemini-4-carbon` (gemini) | with Lore | station_done ×1 |
 | #37 medium | dod | `gemini-4-carbon` (gemini) | Lore on Utopia | station_done ×3, retry_budget ×2 |
 | #37 medium | dod | `gemini-4-carbon` (gemini) | without Lore | station_done ×5 |
+| #37 medium | dod | `gemini-4-hydrogen` (gemini) | with Lore | station_done ×1 |
+| #37 medium | dod | `gemini-4-hydrogen` (gemini) | Lore on Utopia | station_done ×1 |
+| #37 medium | dod | `gemini-4-hydrogen` (gemini) | without Lore | station_done ×1 |
 | #37 medium | repair-build | `claude-haiku-4-5-20251001` (claude) | with Lore | station_done ×1 |
 | #37 medium | repair-build | `claude-haiku-4-5-20251001` (claude) | without Lore | station_done ×3, retry_budget ×2 |
 | #37 medium | repair-build | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
@@ -987,8 +1036,12 @@ What the columns mean:
 | #37 medium | repair-build | `gemini-4-argon` (gemini) | with Lore | station_done ×1, green ×2 |
 | #37 medium | repair-build | `gemini-4-argon` (gemini) | Lore on Utopia | green ×3, station_done ×2 |
 | #37 medium | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×1, station_done ×4 |
+| #37 medium | repair-build | `gemini-4-carbon` (gemini) | with Lore | station_done ×1 |
 | #37 medium | repair-build | `gemini-4-carbon` (gemini) | Lore on Utopia | green ×2, station_done ×3 |
 | #37 medium | repair-build | `gemini-4-carbon` (gemini) | without Lore | station_done ×4, green ×1 |
+| #37 medium | repair-build | `gemini-4-hydrogen` (gemini) | with Lore | station_done ×1 |
+| #37 medium | repair-build | `gemini-4-hydrogen` (gemini) | Lore on Utopia | station_done ×1 |
+| #37 medium | repair-build | `gemini-4-hydrogen` (gemini) | without Lore | station_done ×1 |
 | #37 medium | tdd-round | `claude-haiku-4-5-20251001` (claude) | with Lore | retry_budget ×1 |
 | #37 medium | tdd-round | `claude-haiku-4-5-20251001` (claude) | without Lore | retry_budget ×5 |
 | #37 medium | tdd-round | `claude-haiku-5-5` (claude) | with Lore | retry_budget ×1 |
@@ -1035,8 +1088,11 @@ What the columns mean:
 | #37 medium | tdd-round | `gemini-4-argon` (gemini) | with Lore | green ×3 |
 | #37 medium | tdd-round | `gemini-4-argon` (gemini) | Lore on Utopia | green ×3, retry_budget ×2 |
 | #37 medium | tdd-round | `gemini-4-argon` (gemini) | without Lore | green ×4, retry_budget ×1 |
+| #37 medium | tdd-round | `gemini-4-carbon` (gemini) | with Lore | retry_budget ×1 |
 | #37 medium | tdd-round | `gemini-4-carbon` (gemini) | Lore on Utopia | retry_budget ×3, green ×2 |
 | #37 medium | tdd-round | `gemini-4-carbon` (gemini) | without Lore | retry_budget ×3, green ×2 |
+| #37 medium | tdd-round | `gemini-4-hydrogen` (gemini) | Lore on Utopia | retry_budget ×1 |
+| #37 medium | tdd-round | `gemini-4-hydrogen` (gemini) | without Lore | retry_budget ×1 |
 | #93 small | baseline | `gemini-3.1-pro-preview` (gemini) | without Lore | green ×1 |
 | #93 small | dod | `claude-fable-5-1` (claude) | without Lore | station_done ×1 |
 | #93 small | dod | `claude-haiku-4-5-20251001` (claude) | with Lore | station_done ×5 |
@@ -1087,6 +1143,9 @@ What the columns mean:
 | #93 small | dod | `gemini-4-carbon` (gemini) | with Lore | station_done ×1 |
 | #93 small | dod | `gemini-4-carbon` (gemini) | Lore on Utopia | station_done ×3, retry_budget ×2 |
 | #93 small | dod | `gemini-4-carbon` (gemini) | without Lore | station_done ×5 |
+| #93 small | dod | `gemini-4-hydrogen` (gemini) | with Lore | station_done ×1 |
+| #93 small | dod | `gemini-4-hydrogen` (gemini) | Lore on Utopia | station_done ×1 |
+| #93 small | dod | `gemini-4-hydrogen` (gemini) | without Lore | station_done ×1 |
 | #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×3, station_done ×2 |
 | #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | station_done ×2, green ×2 |
 | #93 small | repair-build | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×3, station_done ×2 |
@@ -1136,6 +1195,9 @@ What the columns mean:
 | #93 small | repair-build | `gemini-4-carbon` (gemini) | with Lore | green ×1 |
 | #93 small | repair-build | `gemini-4-carbon` (gemini) | Lore on Utopia | green ×5 |
 | #93 small | repair-build | `gemini-4-carbon` (gemini) | without Lore | green ×4, station_done ×1 |
+| #93 small | repair-build | `gemini-4-hydrogen` (gemini) | with Lore | green ×1 |
+| #93 small | repair-build | `gemini-4-hydrogen` (gemini) | Lore on Utopia | green ×1 |
+| #93 small | repair-build | `gemini-4-hydrogen` (gemini) | without Lore | green ×1 |
 | #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×5 |
 | #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×4 |
 | #93 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×5 |
@@ -1186,6 +1248,9 @@ What the columns mean:
 | #93 small | tdd-round | `gemini-4-carbon` (gemini) | with Lore | green ×1 |
 | #93 small | tdd-round | `gemini-4-carbon` (gemini) | Lore on Utopia | green ×1, retry_budget ×4 |
 | #93 small | tdd-round | `gemini-4-carbon` (gemini) | without Lore | green ×1, retry_budget ×4 |
+| #93 small | tdd-round | `gemini-4-hydrogen` (gemini) | with Lore | green ×1 |
+| #93 small | tdd-round | `gemini-4-hydrogen` (gemini) | Lore on Utopia | retry_budget ×1 |
+| #93 small | tdd-round | `gemini-4-hydrogen` (gemini) | without Lore | retry_budget ×1 |
 | #94 small | dod | `claude-haiku-4-5-20251001` (claude) | with Lore | station_done ×1 |
 | #94 small | dod | `claude-haiku-4-5-20251001` (claude) | without Lore | station_done ×5 |
 | #94 small | dod | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
@@ -1231,6 +1296,9 @@ What the columns mean:
 | #94 small | dod | `gemini-4-carbon` (gemini) | with Lore | station_done ×1 |
 | #94 small | dod | `gemini-4-carbon` (gemini) | Lore on Utopia | station_done ×4, retry_budget ×1 |
 | #94 small | dod | `gemini-4-carbon` (gemini) | without Lore | station_done ×5 |
+| #94 small | dod | `gemini-4-hydrogen` (gemini) | with Lore | station_done ×1 |
+| #94 small | dod | `gemini-4-hydrogen` (gemini) | Lore on Utopia | retry_budget ×1 |
+| #94 small | dod | `gemini-4-hydrogen` (gemini) | without Lore | retry_budget ×1 |
 | #94 small | repair-build | `claude-haiku-4-5-20251001` (claude) | with Lore | station_done ×4, green ×1 |
 | #94 small | repair-build | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×1, station_done ×5 |
 | #94 small | repair-build | `claude-haiku-4-5-20251001` (claude) | without Lore | station_done ×5 |
@@ -1280,6 +1348,9 @@ What the columns mean:
 | #94 small | repair-build | `gemini-4-carbon` (gemini) | with Lore | green ×1 |
 | #94 small | repair-build | `gemini-4-carbon` (gemini) | Lore on Utopia | green ×5 |
 | #94 small | repair-build | `gemini-4-carbon` (gemini) | without Lore | green ×5 |
+| #94 small | repair-build | `gemini-4-hydrogen` (gemini) | with Lore | green ×1 |
+| #94 small | repair-build | `gemini-4-hydrogen` (gemini) | Lore on Utopia | green ×1 |
+| #94 small | repair-build | `gemini-4-hydrogen` (gemini) | without Lore | green ×1 |
 | #94 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | with Lore | green ×5 |
 | #94 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | Lore on Utopia | green ×6 |
 | #94 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | without Lore | green ×5 |
@@ -1330,6 +1401,9 @@ What the columns mean:
 | #94 small | tdd-round | `gemini-4-carbon` (gemini) | with Lore | retry_budget ×1 |
 | #94 small | tdd-round | `gemini-4-carbon` (gemini) | Lore on Utopia | green ×4, retry_budget ×1 |
 | #94 small | tdd-round | `gemini-4-carbon` (gemini) | without Lore | green ×4, retry_budget ×1 |
+| #94 small | tdd-round | `gemini-4-hydrogen` (gemini) | with Lore | green ×1 |
+| #94 small | tdd-round | `gemini-4-hydrogen` (gemini) | Lore on Utopia | green ×1 |
+| #94 small | tdd-round | `gemini-4-hydrogen` (gemini) | without Lore | green ×1 |
 | #95 small | dod | `claude-haiku-4-5-20251001` (claude) | with Lore | station_done ×1 |
 | #95 small | dod | `claude-haiku-4-5-20251001` (claude) | without Lore | station_done ×5 |
 | #95 small | dod | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
@@ -1375,6 +1449,9 @@ What the columns mean:
 | #95 small | dod | `gemini-4-carbon` (gemini) | with Lore | retry_budget ×1 |
 | #95 small | dod | `gemini-4-carbon` (gemini) | Lore on Utopia | station_done ×5 |
 | #95 small | dod | `gemini-4-carbon` (gemini) | without Lore | station_done ×4, retry_budget ×1 |
+| #95 small | dod | `gemini-4-hydrogen` (gemini) | with Lore | station_done ×1 |
+| #95 small | dod | `gemini-4-hydrogen` (gemini) | Lore on Utopia | station_done ×1 |
+| #95 small | dod | `gemini-4-hydrogen` (gemini) | without Lore | station_done ×1 |
 | #95 small | repair-build | `claude-haiku-4-5-20251001` (claude) | with Lore | retry_budget ×1 |
 | #95 small | repair-build | `claude-haiku-4-5-20251001` (claude) | without Lore | retry_budget ×1, green ×4 |
 | #95 small | repair-build | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
@@ -1423,6 +1500,9 @@ What the columns mean:
 | #95 small | repair-build | `gemini-4-carbon` (gemini) | with Lore | green ×1 |
 | #95 small | repair-build | `gemini-4-carbon` (gemini) | Lore on Utopia | green ×5 |
 | #95 small | repair-build | `gemini-4-carbon` (gemini) | without Lore | green ×5 |
+| #95 small | repair-build | `gemini-4-hydrogen` (gemini) | with Lore | green ×1 |
+| #95 small | repair-build | `gemini-4-hydrogen` (gemini) | Lore on Utopia | green ×1 |
+| #95 small | repair-build | `gemini-4-hydrogen` (gemini) | without Lore | station_done ×1 |
 | #95 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | with Lore | retry_budget ×1 |
 | #95 small | tdd-round | `claude-haiku-4-5-20251001` (claude) | without Lore | retry_budget ×4, green ×1 |
 | #95 small | tdd-round | `claude-haiku-5-5` (claude) | with Lore | retry_budget ×1 |
@@ -1469,8 +1549,12 @@ What the columns mean:
 | #95 small | tdd-round | `gemini-4-argon` (gemini) | with Lore | green ×3 |
 | #95 small | tdd-round | `gemini-4-argon` (gemini) | Lore on Utopia | green ×4, retry_budget ×1 |
 | #95 small | tdd-round | `gemini-4-argon` (gemini) | without Lore | green ×4, retry_budget ×1 |
+| #95 small | tdd-round | `gemini-4-carbon` (gemini) | with Lore | green ×1 |
 | #95 small | tdd-round | `gemini-4-carbon` (gemini) | Lore on Utopia | green ×3, retry_budget ×2 |
 | #95 small | tdd-round | `gemini-4-carbon` (gemini) | without Lore | green ×4, retry_budget ×1 |
+| #95 small | tdd-round | `gemini-4-hydrogen` (gemini) | with Lore | retry_budget ×1 |
+| #95 small | tdd-round | `gemini-4-hydrogen` (gemini) | Lore on Utopia | green ×1 |
+| #95 small | tdd-round | `gemini-4-hydrogen` (gemini) | without Lore | green ×1 |
 | #144 large | dod | `claude-haiku-4-5-20251001` (claude) | with Lore | station_done ×1 |
 | #144 large | dod | `claude-haiku-4-5-20251001` (claude) | without Lore | retry_budget ×2, station_done ×3 |
 | #144 large | dod | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
@@ -1513,8 +1597,12 @@ What the columns mean:
 | #144 large | dod | `gemini-4-argon` (gemini) | with Lore | station_done ×1 |
 | #144 large | dod | `gemini-4-argon` (gemini) | Lore on Utopia | retry_budget ×3, station_done ×2 |
 | #144 large | dod | `gemini-4-argon` (gemini) | without Lore | station_done ×3, retry_budget ×2 |
+| #144 large | dod | `gemini-4-carbon` (gemini) | with Lore | retry_budget ×1 |
 | #144 large | dod | `gemini-4-carbon` (gemini) | Lore on Utopia | station_done ×5 |
 | #144 large | dod | `gemini-4-carbon` (gemini) | without Lore | station_done ×4, retry_budget ×1 |
+| #144 large | dod | `gemini-4-hydrogen` (gemini) | with Lore | station_done ×1 |
+| #144 large | dod | `gemini-4-hydrogen` (gemini) | Lore on Utopia | retry_budget ×1 |
+| #144 large | dod | `gemini-4-hydrogen` (gemini) | without Lore | station_done ×1 |
 | #144 large | repair-build | `claude-haiku-4-5-20251001` (claude) | with Lore | station_done ×1 |
 | #144 large | repair-build | `claude-haiku-4-5-20251001` (claude) | without Lore | retry_budget ×3, station_done ×2 |
 | #144 large | repair-build | `claude-haiku-5-5` (claude) | with Lore | station_done ×1 |
@@ -1560,8 +1648,10 @@ What the columns mean:
 | #144 large | repair-build | `gemini-4-argon` (gemini) | with Lore | green ×2 |
 | #144 large | repair-build | `gemini-4-argon` (gemini) | Lore on Utopia | station_done ×2, green ×3 |
 | #144 large | repair-build | `gemini-4-argon` (gemini) | without Lore | green ×3, station_done ×2 |
+| #144 large | repair-build | `gemini-4-carbon` (gemini) | with Lore | green ×1 |
 | #144 large | repair-build | `gemini-4-carbon` (gemini) | Lore on Utopia | green ×4, retry_budget ×1 |
 | #144 large | repair-build | `gemini-4-carbon` (gemini) | without Lore | green ×4, station_done ×1 |
+| #144 large | repair-build | `gemini-4-hydrogen` (gemini) | with Lore | station_done ×1 |
 | #144 large | tdd-round | `claude-haiku-4-5-20251001` (claude) | with Lore | retry_budget ×1 |
 | #144 large | tdd-round | `claude-haiku-4-5-20251001` (claude) | without Lore | retry_budget ×4, green ×1 |
 | #144 large | tdd-round | `claude-haiku-5-5` (claude) | with Lore | retry_budget ×1 |
@@ -1606,6 +1696,7 @@ What the columns mean:
 | #144 large | tdd-round | `gemini-4-argon` (gemini) | with Lore | green ×2 |
 | #144 large | tdd-round | `gemini-4-argon` (gemini) | Lore on Utopia | green ×2, retry_budget ×3 |
 | #144 large | tdd-round | `gemini-4-argon` (gemini) | without Lore | green ×4, retry_budget ×1 |
+| #144 large | tdd-round | `gemini-4-carbon` (gemini) | with Lore | green ×1 |
 | #144 large | tdd-round | `gemini-4-carbon` (gemini) | Lore on Utopia | retry_budget ×2, green ×3 |
 | #144 large | tdd-round | `gemini-4-carbon` (gemini) | without Lore | retry_budget ×3, green ×2 |
 

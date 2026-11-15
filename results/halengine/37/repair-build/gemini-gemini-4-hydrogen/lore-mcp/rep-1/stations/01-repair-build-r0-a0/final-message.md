@@ -1,0 +1,7 @@
+Fixed all reported CI findings on `loop-bench/37` and pushed commit `81a8803` to `origin/loop-bench/37` (with `origin/main` already up to date):
+
+- `src/orchestration/tools/registry.ts`: Switched `import {Ajv} from 'ajv'` to `import AjvModule from 'ajv'` with `new AjvModule.default(...)` for TypeScript `NodeNext` and Node ESM compatibility, attached `{cause: error}` in `compileSchema` (`preserve-caught-error`), added the one-line doc comment on `ToolRegistry.execute`, and implemented `inputSchema` validation in `ToolRegistry.execute` (reusing static compiled validators, caching function-valued `ToolDefinitionSource` validators in a `WeakMap`, and returning/logging constraint messages without leaking offending values).
+- `src/orchestration/tools/registry.acceptance.test.ts`: Fixed `re-lint/prefer-early-return` and `re-lint/max-member-chain` in the `sendMessage` test stub.
+- Ran `npx prettier --write` on the modified files, `node scripts/check-spec-anchor-names.mjs`, and `node scripts/check-doc-blocks.mjs`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed Ajv ESM/NodeNext import, missing execute inputSchema validation, preserve-caught-error cause in registry.ts, and re-lint errors in registry.acceptance.test.ts"}}

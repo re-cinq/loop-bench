@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` on line 12 of `src/orchestration/onErrorNonError.acceptance.test.ts` with `'2026-01-01T00:00:00.000Z'` to fix the `re-lint/no-nondeterministic-tests` ESLint failure without shifting spec citation line numbers. Verified formatting with `npx prettier --write src/orchestration/onErrorNonError.acceptance.test.ts` and ran `npm test -- src/orchestration/onErrorNonError.acceptance.test.ts` (1 suite, 2 tests passed), then committed (`2995438`), pushed to `origin/loop-bench/95`, and confirmed `origin/main` is already up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced non-deterministic new Date().toISOString() in src/orchestration/onErrorNonError.acceptance.test.ts:12 with a fixed ISO timestamp"}}

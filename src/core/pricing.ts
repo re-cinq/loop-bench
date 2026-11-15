@@ -19,6 +19,7 @@ const anthropic = (input: number, output: number, cacheRead: number): PricePerMi
 
 export const MARKET_PRICES: Record<Harness, Record<string, PricePerMillion>> = {
   claude: {
+    "claude-fable-5-2": anthropic(8, 40, 0.2),
     "claude-fable-5-1": anthropic(10, 50, 0.25),
     "claude-opus-5-5": anthropic(4, 20, 0.2),
     "claude-sonnet-5-5": anthropic(2, 10, 0.2),
@@ -32,8 +33,10 @@ export const MARKET_PRICES: Record<Harness, Record<string, PricePerMillion>> = {
   },
   gemini: {
     "gemini-4-argon": { input: 4, output: 20, cacheRead: 0.2 },
-    // Announced at Argon's price, no Google page lists it yet (read 2026-11-01 from third-party sources).
+    // Google's Vertex pricing page lists carbon at argon's price: $2/$10 until 2026-11-30, then this.
     "gemini-4-carbon": { input: 4, output: 20, cacheRead: 0.2 },
+    // Google's Vertex pricing page, standard tier, global region.
+    "gemini-4-hydrogen": { input: 1.5, output: 7.5, cacheRead: 0.075 },
     // $0.75/$3.75 until 2026-12-31, then this; the cache read is 10% of input like the other flash, not a published number.
     "gemini-3.8-flash": { input: 1.5, output: 7.5, cacheRead: 0.15 },
     "gemini-3.1-pro-preview": { input: 2, output: 12, cacheRead: 0.2 },

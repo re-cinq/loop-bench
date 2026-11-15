@@ -1,0 +1,9 @@
+Implemented `list_sessions` handling over WebSocket and resolved all reported test and ESLint failures:
+
+- Wired `options.sessionStore` from `src/transport/createServer.ts` into `createMessageHandler(orchestrator, sessionStore)` in `src/transport/ws/messageHandler.ts`.
+- Added `sendSessionList` in `src/transport/ws/sender.ts` and `handleListSessions` / `toSummaryFrame` in `src/transport/ws/messageHandler.ts` to answer `list_sessions` with `session_list` (ISO-8601 dates, forwarding `limit`/`before` for `session.userId`, returning `[]` when `listFor` is absent, and logging `ws` error + sending `SERVER_ERROR` when `listFor` throws).
+- Removed duplicated test setup in `src/transport/conversationList.acceptance.test.ts` by reusing `wsTestSupport.ts` (`connectClient`, `startEngineWith`, `stopEngines` updated to await socket `close`), flipped the `connected` branch in `askAfterConnect` to early returns, and replaced `Array(9).fill(false)` in `src/transport/ws/validation.test.ts` with `invalidInputs.map(() => false)`.
+- Formatted modified `.ts` files with Prettier, repointed spec anchors in `specs/hal-engine-conversation-list/spec.md` (`npm run spec:names:fix`), verified `spec:names`, `check:spec-links`, `check:spec-status`, `repoint-spec-anchors.mjs --check origin/main`, and `docs:check`, and verified all 9 transport/related Jest test suites (121 tests) pass.
+- Committed (`a544441`) and pushed to `origin/loop-bench/144` with `origin/main` already up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"wired list_sessions handling in messageHandler/createServer and fixed eslint duplicate-code, prefer-early-return, and no-flag-params errors"}}

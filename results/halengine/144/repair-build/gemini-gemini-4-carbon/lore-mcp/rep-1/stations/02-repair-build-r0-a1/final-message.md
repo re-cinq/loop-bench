@@ -1,0 +1,3 @@
+The CI verdict in `round-brief.md` judged `5cd4e6710184e4c23ab8d932710998781bdd6208`, and `git log --format=%s 5cd4e6710184e4c23ab8d932710998781bdd6208..HEAD` shows commit `8b90d1cb6a17ecb2551793720a72a871e4d755b3` (`feat(transport): handle list_sessions over ws`, without `[skip ci]`) already pushed on `origin/loop-bench/144`. No files were modified so CI can judge the current `HEAD`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}

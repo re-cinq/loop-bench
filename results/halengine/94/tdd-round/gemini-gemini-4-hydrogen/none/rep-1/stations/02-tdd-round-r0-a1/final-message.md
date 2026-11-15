@@ -1,0 +1,7 @@
+Closed the `specs/hal-engine-config-hooks/spec.md` facet in commit `e8b9f13` and pushed `loop-bench/94` (`origin/main` already up to date; `git status` clean):
+
+- Added `passes session to onError and afterSession without running turn hooks when beforeSession throws` in `src/config.test.ts`, formatted with Prettier, and verified `src/config.test.ts` passes (12/12 passed; 0 red tests of mine, 0 regressions).
+- Moved the `beforeSession` throw guarantee out of `## Measured semantics — out of scope` into `## Installing hooks through config` in `specs/hal-engine-config-hooks/spec.md`, documenting the `(session, error)` / `(session)` arguments, `afterSession` idempotency assumption, and that no subsequent hooks, provider calls, or tools run; repointed shifted spec anchors (`repoint-spec-anchors.mjs`, `spec:names`, `check:spec-links`, `check-spec-status.mjs` all clean).
+- Checked off the spec facet in `.lore/dod.md`, leaving `Document in the CHANGELOG what changes for an existing consumer.` for the next round.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update specs/hal-engine-config-hooks/spec.md with the new guarantee for beforeSession.","tdd_next":"Document in the CHANGELOG what changes for an existing consumer."}}

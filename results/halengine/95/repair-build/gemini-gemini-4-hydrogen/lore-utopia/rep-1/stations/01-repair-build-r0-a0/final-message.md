@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` on line 12 of `src/orchestration/onErrorNonError.acceptance.test.ts` with `'2026-01-01T00:00:00.000Z'` to resolve the `re-lint/no-nondeterministic-tests` ESLint error reported on `48d6c74a6b0f7da5b8a9c423833b2caa7b443705`. Verified formatting with `npx prettier --write src/orchestration/onErrorNonError.acceptance.test.ts` and ran `npm test -- src/orchestration/onErrorNonError.acceptance.test.ts` (2 passed, 2 total); committed (`2951c63`), pushed to `origin/loop-bench/95`, and confirmed `origin/main` is up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced nondeterministic new Date().toISOString() in src/orchestration/onErrorNonError.acceptance.test.ts with a fixed ISO timestamp"}}

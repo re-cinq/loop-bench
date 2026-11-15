@@ -21,6 +21,14 @@ describe("costOf", () => {
     expect(costOf("gemini", "gemini-4-carbon", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(20.2, 9);
   });
 
+  it("claude-fable-5-2 at $8 in, $40 out, $0.20 cache read: 1M of each is $48.20", () => {
+    expect(costOf("claude", "claude-fable-5-2", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(48.2, 9);
+  });
+
+  it("gemini-4-hydrogen at its published standard price: 1M input of which 1M cached plus 1M output is $7.575", () => {
+    expect(costOf("gemini", "gemini-4-hydrogen", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(7.575, 9);
+  });
+
   it("gemini-3.8-flash at its January 2027 price: 1M input of which 1M cached plus 1M output is $7.65", () => {
     expect(costOf("gemini", "gemini-3.8-flash", { ...EMPTY_USAGE, input_tokens: million, cache_read_tokens: million, output_tokens: million }).usd).toBeCloseTo(7.65, 9);
   });

@@ -1,0 +1,8 @@
+Completed one red-green-refactor round for `re-cinq/HALEngine#37` (`c9d7ab2` pushed to `origin/loop-bench/37`, up to date with `origin/main`):
+
+- **RED**: Added `reuses the static validator compiled at register time without re-reading inputSchema` in `src/orchestration/tools/registry.test.ts` and verified it failed (`executorCalls: 10` instead of `9`).
+- **GREEN**: Updated `src/orchestration/tools/registry.ts` so `compileToolSchema` returns `ValidateFunction`, `register` stores it on `StoredTool` for static definitions, and `execute` validates `input` with `tool.validator` before calling `tool.execute`. Re-ran `src/orchestration/tools/registry.test.ts` (2 passed, 0 failed).
+- **REFACTOR & TRACEABILITY**: Linked the new test in `specs/hal-engine-tool-input-validation/spec.md#L20`, updated `.lore/dod.md`, and verified formatting with `npx prettier --write`.
+- **Tests / Regressions**: 0 red tests in `src/orchestration/tools/registry.test.ts` (2/2 passing); 0 regressions reported (`lore_get_ci_failures` returned 404 for `loop-bench/37` prior to push). Acceptance tests were not run locally per instructions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Reuse compiled static validators on execute without re-reading or re-compiling definition.inputSchema","tdd_next":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap) and validate against the schema current at each call"}}

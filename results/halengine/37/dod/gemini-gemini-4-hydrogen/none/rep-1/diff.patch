@@ -1,0 +1,385 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..8ec1fa0
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,34 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`).
++
++**Strategy: `direct`** — `ToolRegistry.register`, `ToolRegistry.execute`, and `createChatOrchestrator` already exist with public entry points that accept real schemas, executors, and `AIProvider` implementations. The acceptance tests call those entry points directly today and fail because `inputSchema` is never compiled or checked.
++
++## Done when these pass
++
++- [ ] **rejects invalid input with path and constraint, calls executor zero times, and leaks no values** — missing `required` fields, wrong types, and invalid `enum` values return a `ToolResponse` naming the path and constraint, never call the executor, and omit all input values from `result` and logs.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **forwards valid input with extra properties unmodified without defaults or coercion** — valid inputs retain unlisted properties and skip schema defaults, while wrong-typed inputs are rejected rather than coerced.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **compiles static schemas at registration, rejects broken schemas, and throws on unknown tools** — static definitions compile once in `register`, throw naming the tool when uncompilable, and `execute` still throws `Unknown tool: <name>` for unregistered tools.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **validates a function-valued tool definition against the schema current at each call** — a `ToolDefinitionSource` function whose returned schema changes between calls validates against the current schema rather than a stale cached one.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **feeds schema rejection back to the provider and resolves after retry** — a malformed `tool_use` call in `createChatOrchestrator` feeds the rejection `ToolResponse` into the next round's `tool_result` without calling `onError` and resolves after the model retries with valid input.
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ajv` to `package.json` `dependencies` (not `devDependencies` or `peerDependencies`) and verify `npm run build && node --input-type=module -e "import('./dist/index.js')"` exits `0`.
++- [ ] Compile static `inputSchema` once in `ToolRegistry.register` (throwing an error naming the tool on invalid schema) and cache dynamic `ToolDefinitionSource` validators by resolved schema object reference (`WeakMap`).
++- [ ] Validate `input` in `ToolRegistry.execute` against the compiled validator (no `additionalProperties: false`, no coercion, no defaults), returning `{result}` naming failing paths and constraints without leaking input values in `result` or logs; keep `Unknown tool: <name>` throw unchanged.
++- [ ] Add a one-line doc comment on `ToolRegistry.execute` pointing to `specs/hal-engine-tool-input-validation/spec.md`.
++- [ ] Add unit tests in `src/orchestration/tools/registry.test.ts` (including dynamic schema-object reference caching) and link the remaining statement in `specs/hal-engine-tool-input-validation/spec.md`, updating `| Status |` once all statements are linked.
++- [ ] Update `README.md`, `docs/adding-a-tool.md`, `.specify/spec.md`, `CHANGELOG.md`, and bump `package.json` MINOR version per the ticket checklist.
++
++## Out of scope
++
++- Returning an unknown tool name to the model instead of throwing `Unknown tool: <name>`.
++- Validating tool output, hallucination detection, or an evaluation harness.
++- Per-tool authorization on `ToolContext` or a `beforeToolCall` veto hook.
++- Retry, timeout, and rate limiting around tool execution, or concrete tool implementations.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..fccae54
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,17 @@
++# Tool Input Validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | In Progress          |
++
++Every tool registers a JSON Schema `inputSchema` that providers already receive verbatim, yet `ToolRegistry.execute` historically forwarded model inputs to executors without checking them. This specification defines the validation boundary inside `src/orchestration/tools/registry.ts` so malformed tool arguments fail predictably as a `ToolResponse` the model can recover from inside `src/orchestration/chatOrchestrator.ts`.
++
++## Input validation contract
++
++- `ToolRegistry.execute` validates input against the resolved `inputSchema` before calling the executor, returning a `ToolResponse` whose `result` names the failing property path and constraint while calling the executor zero times and leaking no input values into results or logs ([validated by: rejects invalid input with path and constraint, calls executor zero times, and leaks no values](../../src/orchestration/tools/registry.acceptance.test.ts#L17)).
++- Validation enforces `required`, declared types, and `enum` only, forwarding valid input with unlisted properties unmodified without injecting defaults or coercing types ([validated by: forwards valid input with extra properties unmodified without defaults or coercion](../../src/orchestration/tools/registry.acceptance.test.ts#L84)).
++- Static tool definitions compile their `inputSchema` once at `register` time—throwing an error naming the tool on an uncompilable schema—while `execute` still throws `Unknown tool: <name>` for unregistered tool names ([validated by: compiles static schemas at registration, rejects broken schemas, and throws on unknown tools](../../src/orchestration/tools/registry.acceptance.test.ts#L122)).
++- A function-valued `ToolDefinitionSource` resolves its definition per `execute` call and validates against the schema current at that call ([validated by: validates a function-valued tool definition against the schema current at each call](../../src/orchestration/tools/registry.acceptance.test.ts#L166)).
++- Function-valued tool definitions returning the same schema object reference across calls reuse the cached compiled validator rather than recompiling it.
++- Inside the orchestrator tool loop, a schema-rejected tool call returns its `ToolResponse` as a `tool_result` message so the model can retry within the round budget without triggering `onError` ([validated by: feeds schema rejection back to the provider and resolves after retry](../../src/orchestration/chatOrchestrator.acceptance.test.ts#L17)).
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..dcee2f6
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,96 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import {ToolRegistry} from './tools/registry.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, Message, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++
++const FIXED_TIMESTAMP = '2026-01-01T00:00:00.000Z';
++
++function extractToolResultText(message: Message | undefined, toolUseId: string): string {
++  if (!message || typeof message.content === 'string') return '';
++  const entry = message.content.find(part => part.type === 'tool_result' && part.toolUseId === toolUseId);
++  return entry?.type === 'tool_result' ? entry.content : '';
++}
++
++describe('ChatOrchestrator tool input validation recovery', () => {
++  it('feeds schema rejection back to the provider and resolves after retry', async () => {
++    const observedMessages: Message[][] = [];
++    const rounds: MessageChunk[][] = [
++      [
++        {type: 'tool_use', toolCall: {id: 'call-bad', name: 'lookup', input: {}}},
++        {type: 'stop', stopReason: 'tool_use'},
++      ],
++      [
++        {type: 'tool_use', toolCall: {id: 'call-good', name: 'lookup', input: {query: 'hal'}}},
++        {type: 'stop', stopReason: 'tool_use'},
++      ],
++      [
++        {type: 'text', text: 'Found hal'},
++        {type: 'stop', stopReason: 'end_turn'},
++      ],
++    ];
++
++    let roundIndex = 0;
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        observedMessages.push([...params.messages]);
++        for (const chunk of rounds[roundIndex++] ?? []) yield chunk;
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++
++    const executorInputs: Array<Record<string, unknown>> = [];
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'lookup',
++        description: 'Look up query',
++        inputSchema: {
++          type: 'object',
++          properties: {query: {type: 'string'}},
++          required: ['query'],
++        },
++      },
++      async input => {
++        executorInputs.push(input);
++        return 'matched-hal';
++      }
++    );
++
++    let onErrorCalled = false;
++    const hooks: OrchestratorHooks = {
++      onError: async () => {
++        onErrorCalled = true;
++      },
++    };
++
++    const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registry, {hooks});
++    const session: ChatSession = {
++      sessionId: 's-validate',
++      userId: 'u-validate',
++      entries: [{role: 'user', content: 'find hal', timestamp: FIXED_TIMESTAMP}],
++    };
++
++    const reply = await orchestrator.processMessage(session);
++    const roundTwoMessages = observedMessages[1] ?? [];
++    const rejectionText = extractToolResultText(roundTwoMessages[roundTwoMessages.length - 1], 'call-bad');
++
++    expect({
++      reply,
++      onErrorCalled,
++      executorInputs,
++      rejectionMentionsQuery: /query/i.test(rejectionText),
++      rejectionMentionsRequired: /required/i.test(rejectionText),
++    }).toEqual({
++      reply: 'Found hal',
++      onErrorCalled: false,
++      executorInputs: [{query: 'hal'}],
++      rejectionMentionsQuery: true,
++      rejectionMentionsRequired: true,
++    });
++  });
++});
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..dd80004
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,214 @@
++import {ToolRegistry} from './registry.js';
++import type {ToolDefinition} from '../../types/ai.js';
++import {setLogger} from '../../shared/logger.js';
++
++function registerOutcome(registry: ToolRegistry, definition: ToolDefinition): string {
++  try {
++    registry.register(definition, async () => 'ok');
++    return 'registered';
++  } catch (error) {
++    return error instanceof Error ? error.message : 'threw non-error';
++  }
++}
++
++describe('ToolRegistry input schema validation', () => {
++  afterEach(() => setLogger());
++
++  it('rejects invalid input with path and constraint, calls executor zero times, and leaks no values', async () => {
++    const logEntries: string[] = [];
++    setLogger({
++      debug: (category, message, fields) => void logEntries.push(JSON.stringify({category, message, fields})),
++      info: (category, message, fields) => void logEntries.push(JSON.stringify({category, message, fields})),
++      warn: (category, message, fields) => void logEntries.push(JSON.stringify({category, message, fields})),
++      error: (category, message, fields) => void logEntries.push(JSON.stringify({category, message, fields})),
++    });
++
++    let executorCalls = 0;
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'get_weather',
++        description: 'Get weather forecast',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {type: 'string'},
++            unit: {type: 'string', enum: ['celsius', 'fahrenheit']},
++          },
++          required: ['location'],
++        },
++      },
++      async () => {
++        executorCalls += 1;
++        return 'ok';
++      }
++    );
++
++    const missingResult = await registry.execute('get_weather', {});
++    const wrongTypeResult = await registry.execute('get_weather', {
++      location: 987654321,
++      requesterEmail: 'alice-secret@example.com',
++    });
++    const badEnumResult = await registry.execute('get_weather', {
++      location: 'Berlin',
++      unit: 'kelvin-secret-unit',
++    });
++
++    const combinedResults = [missingResult.result, wrongTypeResult.result, badEnumResult.result].join('|');
++    const emittedLogs = logEntries.join('|');
++    const sensitiveValues = ['987654321', 'alice-secret@example.com', 'kelvin-secret-unit', 'Berlin'];
++
++    expect({
++      executorCalls,
++      missingHasLocation: /location/i.test(missingResult.result),
++      missingHasRequired: /required/i.test(missingResult.result),
++      wrongTypeHasLocation: /location/i.test(wrongTypeResult.result),
++      wrongTypeHasString: /string/i.test(wrongTypeResult.result),
++      badEnumHasUnit: /unit/i.test(badEnumResult.result),
++      badEnumHasConstraint: /enum|allowed/i.test(badEnumResult.result),
++      leakedInResults: sensitiveValues.some(secret => combinedResults.includes(secret)),
++      leakedInLogs: sensitiveValues.some(secret => emittedLogs.includes(secret)),
++    }).toEqual({
++      executorCalls: 0,
++      missingHasLocation: true,
++      missingHasRequired: true,
++      wrongTypeHasLocation: true,
++      wrongTypeHasString: true,
++      badEnumHasUnit: true,
++      badEnumHasConstraint: true,
++      leakedInResults: false,
++      leakedInLogs: false,
++    });
++  });
++
++  it('forwards valid input with extra properties unmodified without defaults or coercion', async () => {
++    const receivedInputs: Array<Record<string, unknown>> = [];
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'lookup_city',
++        description: 'Look up a city',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            city: {type: 'string'},
++            limit: {type: 'number', default: 10},
++          },
++          required: ['city'],
++        },
++      },
++      async input => {
++        receivedInputs.push(input);
++        return 'found';
++      }
++    );
++
++    const validResponse = await registry.execute('lookup_city', {city: '42', extraTag: 'vip'});
++    const wrongTypeResponse = await registry.execute('lookup_city', {city: 42});
++
++    expect({
++      validResult: validResponse.result,
++      receivedInputs,
++      rejectedHasCity: /city/i.test(wrongTypeResponse.result),
++      rejectedHasString: /string/i.test(wrongTypeResponse.result),
++    }).toEqual({
++      validResult: 'found',
++      receivedInputs: [{city: '42', extraTag: 'vip'}],
++      rejectedHasCity: true,
++      rejectedHasString: true,
++    });
++  });
++
++  it('compiles static schemas at registration, rejects broken schemas, and throws on unknown tools', async () => {
++    const registry = new ToolRegistry();
++    const brokenMessage = registerOutcome(registry, {
++      name: 'broken_tool',
++      description: 'Broken schema',
++      inputSchema: {type: 'not_a_valid_json_schema_type'},
++    });
++
++    let propertiesReads = 0;
++    const trackedSchema: Record<string, unknown> = {
++      type: 'object',
++      get properties() {
++        propertiesReads += 1;
++        return {city: {type: 'string'}};
++      },
++      required: ['city'],
++    };
++
++    registry.register({name: 'ping_city', description: 'Ping city', inputSchema: trackedSchema}, async () => 'pong');
++    const readsAtRegister = propertiesReads;
++
++    for (let step = 0; step < 10; step++) {
++      await registry.execute('ping_city', {city: 'London'});
++    }
++    const readsAfterTenExecutes = propertiesReads;
++
++    const unknownError = await registry.execute('missing_tool', {}).then(
++      () => 'resolved',
++      (error: Error) => error.message
++    );
++
++    expect({
++      brokenMentionsTool: brokenMessage.includes('broken_tool'),
++      compiledAtRegister: readsAtRegister > 0,
++      recompiledDuringExecute: readsAfterTenExecutes !== readsAtRegister,
++      unknownError,
++    }).toEqual({
++      brokenMentionsTool: true,
++      compiledAtRegister: true,
++      recompiledDuringExecute: false,
++      unknownError: 'Unknown tool: missing_tool',
++    });
++  });
++
++  it('validates a function-valued tool definition against the schema current at each call', async () => {
++    let activePhase: 'alpha' | 'beta' = 'alpha';
++    const schemaAlpha: Record<string, unknown> = {
++      type: 'object',
++      properties: {alpha: {type: 'string'}},
++      required: ['alpha'],
++    };
++    const schemaBeta: Record<string, unknown> = {
++      type: 'object',
++      properties: {beta: {type: 'string'}},
++      required: ['beta'],
++    };
++    const executedInputs: Array<Record<string, unknown>> = [];
++
++    const registry = new ToolRegistry();
++    registry.register(
++      () => ({
++        name: 'dynamic_action',
++        description: 'Dynamic action',
++        inputSchema: activePhase === 'alpha' ? schemaAlpha : schemaBeta,
++      }),
++      async input => {
++        executedInputs.push(input);
++        return 'ok';
++      }
++    );
++
++    const rejectedAlphaPhase = await registry.execute('dynamic_action', {beta: 'only-beta'});
++    const acceptedAlphaPhase = await registry.execute('dynamic_action', {alpha: 'ok-alpha'});
++
++    activePhase = 'beta';
++    const rejectedBetaPhase = await registry.execute('dynamic_action', {alpha: 'only-alpha'});
++    const acceptedBetaPhase = await registry.execute('dynamic_action', {beta: 'ok-beta'});
++
++    expect({
++      rejectedAlphaMentionsAlpha: /alpha/i.test(rejectedAlphaPhase.result),
++      acceptedAlphaResult: acceptedAlphaPhase.result,
++      rejectedBetaMentionsBeta: /beta/i.test(rejectedBetaPhase.result),
++      acceptedBetaResult: acceptedBetaPhase.result,
++      executedInputs,
++    }).toEqual({
++      rejectedAlphaMentionsAlpha: true,
++      acceptedAlphaResult: 'ok',
++      rejectedBetaMentionsBeta: true,
++      acceptedBetaResult: 'ok',
++      executedInputs: [{alpha: 'ok-alpha'}, {beta: 'ok-beta'}],
++    });
++  });
++});

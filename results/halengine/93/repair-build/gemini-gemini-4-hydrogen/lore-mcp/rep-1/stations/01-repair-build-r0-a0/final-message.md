@@ -1,0 +1,7 @@
+Fixed all four `eslint` findings reported on `src/orchestration/orchestratorHelpers.test.ts`:
+- Combined the two `expect` calls in `returns the defined side when one operand is undefined` (`src/orchestration/orchestratorHelpers.test.ts#L35`) into a single `expect({leftUndefined, rightUndefined}).toEqual(...)` assertion to satisfy `re-lint/max-expects`.
+- Added the three validating spec statements with exact test anchors (`#L29`, `#L35`, `#L43`) in `specs/hal-engine-architecture/spec.md` under `### Across rounds` to satisfy `re-lint/require-spec-link`.
+
+Verified locally with Prettier (`npx prettier --write` / `--check`), Jest (`src/orchestration/orchestratorHelpers.test.ts`: 7/7 passed), `npm run spec:names` (593/593), `npm run check:spec-links` (0 misplaced), `npm run check:spec-status` (0 findings), `node scripts/repoint-spec-anchors.mjs --check origin/main` (0 stale/unresolved/mislabelled), `npm run docs:check`, `npm run docs:check-spikes`, and `npm run check:regions` (`eslint`, `typecheck`, and `build` were not run locally per pod limits). Committed as `6dc63e5`, pushed to `origin/loop-bench/93`, and confirmed `origin/main` is already up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed re-lint/max-expects in orchestratorHelpers.test.ts and added spec links for all three accumulateUsage tests in specs/hal-engine-architecture/spec.md"}}

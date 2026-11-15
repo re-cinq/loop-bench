@@ -1,0 +1,8 @@
+Completed one TDD round for `list_sessions` frame validation:
+
+- **RED**: Added a unit test in `src/transport/ws/validation.test.ts` asserting `list_sessions` validation (bare frame, optional non-negative integer `limit`, optional `before` cursor with 1–128 char `sessionId` and finite-date string/number `updatedAt`, extra-field stripping, and malformed payload rejection) and confirmed it failed (`Unknown message type: list_sessions`).
+- **GREEN & Refactor**: Added `ListSessionsMessage` to `src/types/messages.ts` (`IncomingMessage`) and implemented `list_sessions` validation in `src/transport/ws/validation.ts`. Re-ran `src/transport/ws/validation.test.ts` (4/4 passed; 0 of ours red, 0 regressions observed; acceptance tests not run locally).
+- **Traceability & Housekeeping**: Formatted changed `.ts` files with Prettier, added the `[validated by: ...]` citation in `specs/hal-engine-conversation-list/spec.md`, ran `npm run spec:names:fix` (which also aligned 3 pre-existing drifted acceptance-test anchors in `specs/hal-engine-conversation-list/spec.md`), verified `check:spec-links`, `spec:names`, and `check:spec-status`, updated `CHANGELOG.md` and `.lore/dod.md`, and committed/pushed (`485009f`) to `origin/loop-bench/144`.
+- **Unrelated observations**: `ticket.md` describes `list_conversations` / `UNSUPPORTED`, whereas `.lore/dod.md`, `specs/hal-engine-conversation-list/spec.md`, and `src/transport/conversationList.acceptance.test.ts` define the branch contract as `list_sessions` / `session_list`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Add SessionSummaryFrame, SessionListMessage, and package-root re-exports in src/types/messages.ts and src/index.ts"}}

@@ -1,0 +1,8 @@
+Completed the Red-Green-Refactor round on `loop-bench/144` (`b390683`):
+
+- **Red -> Green:** Added `forwards sessionStore to the message handler so list_sessions reads the configured store` in `src/transport/createServer.test.ts` (verified red, then green after passing `options.sessionStore` to `createMessageHandler` in `src/transport/createServer.ts`).
+- **CI findings resolved:** Fixed all 8 ESLint findings from `round-brief.md` (`re-lint/no-flag-params` in `src/transport/ws/validation.test.ts`, plus `re-lint/no-duplicate-code` and `re-lint/prefer-early-return` via `src/transport/wsTestSupport.ts` and top-level helper cleanup in `src/transport/conversationList.acceptance.test.ts` with all acceptance test cases untouched). On the previous CI run, 2 red tests were branch acceptance tests and 0 were regressions.
+- **Traceability & specs:** Documented `list_sessions` (§ 4.3), `session_list` (§ 5.9), and user-scoping (§ 12) in `specs/hal-engine-websocket-protocol/spec.md`, updated anchor citations in `specs/hal-engine-conversation-list/spec.md`, and ticked the completed facets in `.lore/dod.md`.
+- **Unrelated smells noticed (untouched):** `docs/coding-practices.md:131` informally lists only `'user_message' | 'ping'` in prose when illustrating discriminated unions, and `eslint.config.mjs` retains `re-lint/no-forwarding-class` as an inert rule without type-aware `projectService`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Wire sessionStore into createMessageHandler in createServer.ts, fix CI eslint findings, and document list_sessions and session_list in specs","tdd_next":"acceptance green"}}

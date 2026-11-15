@@ -1,0 +1,7 @@
+Completed one red-green-refactor round on `loop-bench/37` (commit `ed037be`, pushed and synced with `origin/main`):
+- Installed `ajv` (`^8.20.0`) into `package.json` `dependencies` and `package-lock.json`, and bumped the package version to `0.4.0`.
+- Added `src/orchestration/tools/registry.test.ts` (linked from `specs/hal-engine-tool-input-validation/spec.md`) verifying `ToolRegistry.register` throws naming the tool on an invalid static `inputSchema`.
+- Implemented static `inputSchema` compilation in `ToolRegistry.register` (`src/orchestration/tools/registry.ts`) with `new Ajv({strict: false, validateFormats: false, coerceTypes: false, useDefaults: false})`, updated `CHANGELOG.md` and `.lore/dod.md`.
+- Ran `src/orchestration/tools/registry.test.ts` (1 passed, 0 red tests of ours, 0 regressions run/observed here; acceptance tests, full suite, eslint, and tsc are left to CI; Prettier CLI was denied by pod policy so formatting was aligned manually to `.prettierrc`). Spec anchor/link/status and changelog checks passed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv dependency with minor version bump and compile static ToolDefinition inputSchema at ToolRegistry.register time","tdd_next":"Reuse compiled validators for static definitions across execute calls and cache function-valued ToolDefinitionSource validators by schema object reference (WeakMap)"}}

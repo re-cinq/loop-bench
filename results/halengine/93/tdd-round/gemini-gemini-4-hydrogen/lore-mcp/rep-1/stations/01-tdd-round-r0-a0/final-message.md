@@ -1,0 +1,8 @@
+Completed one TDD round closing the per-round usage accumulation helper facet (`0f88f0d`, pushed to `origin/loop-bench/93`, `origin/main` already up to date):
+
+- **RED → GREEN:** Added `accumulateUsage` test in `src/orchestration/orchestratorHelpers.test.ts` (observed RED) and implemented `accumulateUsage` in `src/orchestration/orchestratorHelpers.ts` (5/5 tests passing in `src/orchestration/orchestratorHelpers.test.ts`).
+- **Traceability & DoD:** Cited the new test in `specs/hal-engine-architecture/spec.md#L351` (pointing to `#L29`) and ticked the facet in `.lore/dod.md`.
+- **Test verdict:** 0 red tests of ours in the scoped unit suite; 0 regressions observed locally (acceptance tests in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` were not run locally and remain for CI after the orchestrator wiring facet).
+- **Notes / unrelated observations:** The pod command policy denied running `prettier` and `scripts/check-spec-anchor-names.mjs` directly, so formatting and `#L29` anchor alignment were checked manually against `.prettierrc`. Also, the second acceptance test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` (`counts reported rounds while leaving a turn with no reported usage undefined`) is not yet cited in `specs/hal-engine-config-hooks/spec.md` (part of the remaining hooks spec facet).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}

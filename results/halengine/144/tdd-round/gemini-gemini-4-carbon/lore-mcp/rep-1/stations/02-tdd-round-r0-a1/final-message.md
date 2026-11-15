@@ -1,0 +1,5 @@
+Completed one red-green-refactor round (`6212209`, pushed to `origin/loop-bench/144` and up to date with `origin/main`):
+- **Red / regressions:** 0 regressions; 1 new red unit test written and turned green (`src/transport/ws/listSessions.test.ts`). The 3 acceptance tests in `.lore/dod.md` remain pending `createServer.ts` wiring.
+- **Unrelated observations (untouched):** `ticket.md` uses `list_conversations` / `conversation_list` wording while this branch's `.lore/dod.md` and acceptance suite define `list_sessions` / `session_list`; `CHANGELOG.md`'s earlier `#143` bullet still notes "Nothing in the engine calls it yet".
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle list_sessions in src/transport/ws/messageHandler.ts and sendSessionList in src/transport/ws/sender.ts","tdd_next":"Wire options.sessionStore into createMessageHandler in src/transport/createServer.ts"}}
