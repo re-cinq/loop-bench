@@ -1,0 +1,5 @@
+Implemented `list_sessions` handling in `src/transport/ws/messageHandler.ts` and `src/transport/ws/sender.ts` (wired via `src/transport/createServer.ts`), fixed all ESLint findings in `src/transport/conversationList.acceptance.test.ts` and `src/transport/ws/validation.test.ts`, drained server-side WebSocket closes in `src/transport/wsTestSupport.ts`, and updated shifted spec anchors in `specs/hal-engine-conversation-list/spec.md`.
+
+Verified locally with `node --experimental-vm-modules node_modules/jest/bin/jest.js src/transport src/toolDeadline.test.ts` (19 suites, 218 tests passed), `npx prettier --write`, `npm run spec:names`, `npm run check:spec-links`, `npm run check:spec-status`, `node scripts/repoint-spec-anchors.mjs --check origin/main`, and `bash scripts/check-changelog.sh origin/main`, then committed (`8d5e11c`) and pushed to `origin/loop-bench/144`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"unimplemented list_sessions WebSocket handler and ESLint duplicate-code, early-return, and flag-param errors in tests"}}

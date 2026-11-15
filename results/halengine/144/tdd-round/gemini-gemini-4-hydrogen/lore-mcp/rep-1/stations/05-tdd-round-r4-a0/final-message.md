@@ -1,0 +1,8 @@
+Fixed the CI typecheck failure and completed the final `.lore/dod.md` facet on `loop-bench/144` (pushed as `cafaa73`):
+- `src/transport/ws/messageHandler.test.ts`: typed `(userId: string | number, options?: SessionListOptions)` on the `listFor` mock callback to resolve both `TS7006` implicit-`any` errors.
+- `specs/hal-engine-websocket-protocol/spec.md`: documented `list_sessions` (Section 4.3) and `session_list` (Section 5.9) with field tables, semantics, and trailing `[validated by: ...]` citations (`specs/hal-engine-conversation-list/spec.md` already documented both).
+- `CHANGELOG.md` and `.lore/dod.md`: updated the `[Unreleased]` entry to cover end-to-end `list_sessions` / `session_list` handling and ticked off the final documentation facet.
+
+Verification: `src/transport/ws/messageHandler.test.ts` passed (55/55 tests, 0 red tests of ours, 0 regressions; acceptance tests were not run locally and await CI). Spec checks (`check-spec-links.mjs`, `check-spec-anchor-names.mjs`, `repoint-spec-anchors.mjs --check origin/main`, `check-spec-status.mjs`, `check-doc-regions.mjs`, `check-changelog.sh origin/main`, and `check-doc-paths.mjs` on the touched specs) all passed; running `check-doc-paths.mjs` repo-wide flags `dist/index.js` and `dist/index.d.ts` only because `npm run build` is not run in this pod.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix TS7006 implicit-any types in messageHandler.test.ts and document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md","tdd_next":"acceptance green"}}

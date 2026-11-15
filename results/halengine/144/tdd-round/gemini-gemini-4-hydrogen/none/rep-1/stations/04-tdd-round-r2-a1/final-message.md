@@ -1,0 +1,8 @@
+Completed one TDD round for `#144`:
+
+- **Red:** Added unit test `logs a ws error with userId and error message and answers SERVER_ERROR when listFor rejects` in `src/transport/ws/messageHandler.test.ts` (failed as expected because `wsErrorHandler` logged under category `message` without `userId`).
+- **Green:** Caught `listFor` errors in `handleListSessions` (`src/transport/ws/messageHandler.ts`), logging via `log.error('ws', 'session list failed', {userId: session.userId, error: reason})` and sending `ErrorCodes.SERVER_ERROR` without store details; `src/transport/ws/messageHandler.test.ts` passed (`56/56`).
+- **Traceability & Delivery:** Added the corresponding citation to `specs/hal-engine-conversation-list/spec.md`, ticked the facet in `.lore/dod.md`, ran Prettier, ran `check-spec-anchor-names.mjs --fix`, `check-spec-links.mjs`, and `check-spec-status.mjs`, committed (`97cda95`), pushed to `origin/loop-bench/144`, and verified `origin/main` is up to date.
+- **Red tests accounting:** 0 regressions; in `round-brief.md` (recorded on `69a4688`), all 3 red tests were in `src/transport/conversationList.acceptance.test.ts` (the ticket's acceptance tests), and the 1 new unit test in `src/transport/ws/messageHandler.test.ts` was red in the Red phase and green after implementation.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle listFor errors in src/transport/ws/messageHandler.ts by logging via log.error('ws', ...) with userId and error message and sending ErrorCodes.SERVER_ERROR","tdd_next":"Wire options.sessionStore into createMessageHandler in src/transport/createServer.ts"}}

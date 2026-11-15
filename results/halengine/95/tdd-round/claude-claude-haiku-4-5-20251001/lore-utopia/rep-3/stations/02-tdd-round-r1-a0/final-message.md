@@ -1,0 +1,3 @@
+All facets of ticket #95 are now complete and pushed. This round added the CHANGELOG entry documenting the behavior change where `onError` now fires for non-Error rejections (string, object, undefined), with the original value preserved as `error.cause` for backward compatibility. The implementation and acceptance tests were already complete from the previous round.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CHANGELOG.md entry for non-Error rejection behavior change","tdd_next":"acceptance green"}}

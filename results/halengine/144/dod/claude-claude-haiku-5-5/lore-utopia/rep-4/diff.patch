@@ -1,0 +1,200 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..2d90910
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,36 @@
++# Definition of Done
++
++> the browser holding the socket cannot reach the store, so every consumer that wants a history sidebar has to stand up its own authenticated HTTP route over the same data the engine already authenticated on the upgrade.
++
++**Strategy: `direct`** — The seam exists: `createServer` already takes `sessionStore` and `resume`, and `startEngine`-style tests open a real WebSocket against it. `SessionStore.listFor` already ships on `InMemorySessionStore` (#146), so the frame has something to answer from. What is missing is the frame itself and the `transport.history` option, so the tests fail on behaviour today.
++
++## Done when these pass
++
++- [ ] **answers list_conversations with the user conversations, newest first, as ISO-string summaries, in one conversation_list** — a real socket, a store holding three conversations for the connecting user, one `conversation_list` carrying three summaries in activity order, each time an ISO string, each summary carrying exactly its four fields, and no `stream_end`
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **takes the user from the connection, so a frame naming another user is answered with the connecting user's own list** — a `list_conversations` frame carrying `userId: 'u2'` on a `u1` connection is answered with `u1`'s conversations and none of `u2`'s
++      `src/transport/ws/conversationList.acceptance.test.ts`
++- [ ] **answers list_conversations with an UNSUPPORTED error and no list when the deployer has not enabled history** — with `transport.history` absent, the frame gets one `error` frame coded `UNSUPPORTED` and no `conversation_list`
++      `src/transport/ws/conversationList.acceptance.test.ts`
++
++## Facets
++
++- [ ] `src/types/messages.ts`: add `ListConversationsMessage`, `ConversationListMessage`, `ConversationSummary` and `ConversationCursor` as new interfaces and union members only
++- [ ] `src/types/session.ts`: add `UNSUPPORTED` to `ErrorCodes`
++- [ ] `src/transport/ws/validation.ts`: `list_conversations` case — `limit` integer 1–200, `before` a `{updatedAt, sessionId}` pair; anything else `INVALID_MESSAGE` naming the field
++- [ ] `src/config.ts` and `src/transport/createServer.ts`: `transport.history?: {enabled: boolean}`, default off, threaded like `resume`; the list tests above go green here
++- [ ] `src/transport/ws/messageHandler.ts`: answer `list_conversations` on the non-locked path beside `ping`, user id from `ws.userId`, `UNSUPPORTED` when disabled or when the store has no `listFor`
++- [ ] `src/transport/ws/messageHandler.ts`: a store `listFor` that rejects is answered `SERVER_ERROR` with no store detail, socket left open, failure logged with session id and no content
++- [ ] A `list_conversations` sent during a streaming `user_message` is answered before that turn's `stream_end` (not pinned by an acceptance test yet)
++- [ ] A client reconnecting with `?sessionId=<id>` from a listed row gets `resumed: true` and the replay (existing #45 path; add a test that exercises it)
++- [ ] `specs/hal-engine-websocket-protocol/spec.md` and the conversation-list spec: frames, field tables, authorisation rule, GDPR statement; citations added once the statements exist
++- [ ] `CHANGELOG.md` under `## [Unreleased]`; `example/full-config.ts` edited and `npm run docs:fix` run for `docs/getting-started.md`
++- [ ] Version bump MINOR in the PR body
++
++## Out of scope
++
++- A preview or title on summaries (its own issue)
++- Deleting a conversation from the client (needs its own authorisation decision)
++- Server-side paging state; the client pages with `before`
++- An operator view of another user's conversations
++- Live sync between open tabs (#124)
+diff --git a/src/transport/ws/conversationList.acceptance.test.ts b/src/transport/ws/conversationList.acceptance.test.ts
+new file mode 100644
+index 0000000..c704ab9
+--- /dev/null
++++ b/src/transport/ws/conversationList.acceptance.test.ts
+@@ -0,0 +1,152 @@
++import type {AddressInfo} from 'node:net';
++import {WebSocket} from 'ws';
++import type {Express} from 'express';
++import {createServer} from '../createServer.js';
++import {HAL_WS_SUBPROTOCOL} from './subprotocol.js';
++import {answeringOrchestrator} from '../wsTestSupport.js';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import {setLogger} from '../../shared/logger.js';
++
++// Real upgrades over a real socket: a client asks for its conversations as a frame, and the frames it gets back are the contract.
++
++interface Frame {
++  type: string;
++  code?: string;
++  conversations?: Array<Record<string, unknown>>;
++}
++
++// Opt-in history is a deployer's choice, so it is passed the way a deployer would pass it, as a spread of the config.
++type HistoryOption = {history?: {enabled: boolean}};
++
++const servers: Array<ReturnType<typeof createServer>> = [];
++const clients: WebSocket[] = [];
++
++const eventually = async (check: () => boolean): Promise<void> => {
++  for (let attempt = 0; attempt < 50 && !check(); attempt++) await new Promise(resolve => setTimeout(resolve, 10));
++};
++
++// Silenced for the whole file: the server logs every connection, and these tests read frames, not logs.
++beforeAll(() => {
++  setLogger({debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined});
++});
++
++afterAll(() => {
++  setLogger();
++});
++
++afterEach(async () => {
++  for (const client of clients.splice(0)) client.terminate();
++  for (const hal of servers.splice(0)) {
++    const {wss} = hal;
++    await eventually(() => wss.clients.size === 0);
++    await hal.stop();
++  }
++});
++
++// Conversations are seeded through the store's own write path, one user entry each, so each row's activity is its entry's time.
++const seededStore = (): InMemorySessionStore => {
++  const store = new InMemorySessionStore();
++  const seeds: Array<[sessionId: string, userId: string, sentAt: string]> = [
++    ['older', 'u1', '2026-03-01T10:00:00.000Z'],
++    ['middle', 'u1', '2026-03-02T10:00:00.000Z'],
++    ['newest', 'u1', '2026-03-03T10:00:00.000Z'],
++    ['theirs', 'u2', '2026-03-04T10:00:00.000Z'],
++  ];
++  for (const [sessionId, userId, sentAt] of seeds) {
++    store.create(sessionId, userId).entries.push({role: 'user', content: sessionId, timestamp: sentAt});
++  }
++  return store;
++};
++
++const startEngine = async (store: InMemorySessionStore, historyOption: HistoryOption): Promise<string> => {
++  const hal = createServer({
++    app: (() => undefined) as unknown as Express,
++    wsAuth: async () => ({id: 'u1'}),
++    sessionStore: store,
++    orchestrator: answeringOrchestrator,
++    resume: {enabled: true},
++    ...historyOption,
++  });
++  await hal.start(0);
++  servers.push(hal);
++  const {port} = hal.server.address() as AddressInfo;
++  return `ws://127.0.0.1:${port}/hal/ws`;
++};
++
++// Connects as u1 into one of its own conversations, so the connection itself adds no row to the list.
++// Sends one frame once connected, then a ping the moment its answer arrives: every frame up to that pong is returned.
++const exchange = (base: string, sessionId: string, frame: Record<string, unknown>): Promise<Frame[]> =>
++  new Promise<Frame[]>((resolve, reject) => {
++    const client = new WebSocket(`${base}?sessionId=${sessionId}`, [HAL_WS_SUBPROTOCOL, 't']);
++    clients.push(client);
++    const seen: Frame[] = [];
++    client.on('error', reject);
++    client.on('message', raw => {
++      const received = JSON.parse(String(raw)) as Frame;
++      if (received.type === 'connected') {
++        client.send(JSON.stringify(frame));
++        return;
++      }
++      // A resumed conversation replays its entries on connect; those are not an answer to the frame under test.
++      if (received.type.startsWith('entry_')) return;
++      seen.push(received);
++      if (received.type === 'conversation_list' || received.type === 'error') {
++        client.send(JSON.stringify({type: 'ping', timestamp: 1}));
++      }
++      if (received.type === 'pong') resolve(seen);
++    });
++  });
++
++const sessionIdsOf = (frames: Frame[]): string[] | undefined =>
++  frames.find(frame => frame.type === 'conversation_list')?.conversations?.map(row => String(row.sessionId));
++
++describe('a user lists their conversations over the WebSocket', () => {
++  it('answers list_conversations with the user conversations, newest first, as ISO-string summaries, in one conversation_list', async () => {
++    const base = await startEngine(seededStore(), {history: {enabled: true}});
++
++    const frames = await exchange(base, 'middle', {type: 'list_conversations'});
++    const list = frames.find(frame => frame.type === 'conversation_list');
++
++    expect({
++      types: frames.map(frame => frame.type),
++      sessionIds: sessionIdsOf(frames),
++      updatedAt: list?.conversations?.map(row => row.updatedAt),
++      createdAtIsIso: list?.conversations?.every(
++        row => typeof row.createdAt === 'string' && new Date(row.createdAt).toISOString() === row.createdAt
++      ),
++      keys: list?.conversations?.map(row => Object.keys(row).sort()),
++    }).toEqual({
++      types: ['conversation_list', 'pong'],
++      sessionIds: ['newest', 'middle', 'older'],
++      updatedAt: ['2026-03-03T10:00:00.000Z', '2026-03-02T10:00:00.000Z', '2026-03-01T10:00:00.000Z'],
++      createdAtIsIso: true,
++      keys: [
++        ['createdAt', 'entryCount', 'sessionId', 'updatedAt'],
++        ['createdAt', 'entryCount', 'sessionId', 'updatedAt'],
++        ['createdAt', 'entryCount', 'sessionId', 'updatedAt'],
++      ],
++    });
++  });
++
++  it("takes the user from the connection, so a frame naming another user is answered with the connecting user's own list", async () => {
++    const base = await startEngine(seededStore(), {history: {enabled: true}});
++
++    const frames = await exchange(base, 'middle', {type: 'list_conversations', userId: 'u2'});
++
++    expect({types: frames.map(frame => frame.type), sessionIds: sessionIdsOf(frames)}).toEqual({
++      types: ['conversation_list', 'pong'],
++      sessionIds: ['newest', 'middle', 'older'],
++    });
++  });
++
++  it('answers list_conversations with an UNSUPPORTED error and no list when the deployer has not enabled history', async () => {
++    const base = await startEngine(seededStore(), {});
++
++    const frames = await exchange(base, 'middle', {type: 'list_conversations'});
++
++    expect({
++      types: frames.map(frame => frame.type),
++      code: frames.find(frame => frame.type === 'error')?.code,
++    }).toEqual({types: ['error', 'pong'], code: 'UNSUPPORTED'});
++  });
++});

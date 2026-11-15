@@ -1,0 +1,9 @@
+Fixed the CI failures from `round-brief.md` and completed the remaining `.lore/dod.md` facets:
+
+- Added the missing spec statement and trailing `([validated by: counts reported rounds while leaving a turn with no reported usage undefined](../../src/orchestration/chatOrchestratorUsage.acceptance.test.ts#L67))` citation in `specs/hal-engine-config-hooks/spec.md`, documenting partial/missing usage handling and consumer impact.
+- Added an entry under `## [Unreleased]` → `### Changed` in `CHANGELOG.md` explaining `TotalUsage` aggregation in `afterModelResponse`, missing-usage handling, the `TotalUsage` export, and the migration impact on existing consumers.
+- Verified the unchanged no-tool regression guard (`ChatOrchestrator hooks afterModelResponse receives collected response text and usage` in `src/orchestration/chatOrchestrator.test.ts`) passes (`1 passed`), and checked `repoint-spec-anchors.mjs`, `check-spec-links.mjs`, `check-spec-anchor-names.mjs`, `check-doc-blocks.mjs`, `check-spec-status.mjs`, `check-doc-paths.mjs` (on the edited spec), `prettier --write`, and `check-changelog.sh`.
+- Ticked the remaining facets in `.lore/dod.md`, committed (`258782d`), merged `origin/main` (already up to date), and pushed to `origin/loop-bench/93`.
+- Red tests from previous CI brief: 0 regressions (both CI findings were `re-lint/require-spec-link` on our new acceptance test and missing `CHANGELOG.md` update); 0 red tests remain locally on the regression guard we ran.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Preserve the unchanged no-tool regression guard and update the hooks spec and CHANGELOG with aggregate-usage behavior and consumer impact","tdd_next":"acceptance green"}}

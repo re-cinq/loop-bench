@@ -1,0 +1,304 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..ec3d724
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,49 @@
++# Definition of Done
++
++> Validate `input` against the resolved tool definition's `inputSchema` inside `ToolRegistry.execute`, before the executor runs, using a JSON Schema validator added to `dependencies` — compile a static tool's schema once at `register` time so a broken schema fails at startup, not mid-conversation; a schema produced by a function-valued `ToolDefinitionSource` resolves and compiles per call, cached by the resolved schema object. A rejection returns a `ToolResponse` rather than throwing, so a malformed call becomes something the model can read and correct within the existing `DEFAULT_MAX_TOOL_ROUNDS = 5` budget.
++
++**Strategy: `direct`** — The `ToolRegistry.execute` method is the entry point for tool execution and a clear seam exists. The acceptance tests call `execute` directly and observe the behavior through the returned `ToolResponse`.
++
++## Done when these pass
++
++- [ ] **validates required fields and rejects missing input** — Missing required fields return a `ToolResponse` with a validation error, and the executor is never called
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **passes valid input with unlisted extra properties to executor unchanged** — Valid input with extra properties passes through unchanged to the executor (toEqual check ensures no defaults or coercion)
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **rejects wrong-typed field with message naming field path and type, not value** — Type mismatches are rejected with a message naming the field path and expected type, but never the actual value
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **throws at register time for uncompilable schema** — An invalid schema throws during `register()` with a message naming the tool
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **validates function-valued schemas against current schema on each call** — Function-valued schemas are resolved per call and validated against the current schema, not a stale cached version
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **compiles static schemas once across multiple execute calls** — Static schemas are compiled once at register time and reused across calls
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **throws for unknown tool name** — Unknown tool names still throw `Unknown tool: <name>`, unchanged behavior
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **rejects enum constraint violations** — Enum constraint violations are rejected with a message naming the field, not the invalid value
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ajv` to `dependencies` in package.json
++- [ ] Create validator instance in registry to compile schemas at register time
++- [ ] Add schema compilation to `register()` method; throw on invalid schema
++- [ ] Add input validation to `execute()` method before calling executor
++- [ ] Return validation error as `ToolResponse` instead of throwing
++- [ ] Handle function-valued schemas: resolve per call, cache by resolved schema object
++- [ ] Ensure rejection messages never include property values (redaction)
++
++## Out of scope
++
++- Tool output validation
++- Hallucination detection
++- Per-tool authorization
++- Changing the `Unknown tool: <name>` throw to a `ToolResponse`
++- Retry, timeout, and rate limiting around tool execution
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..e222105
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,243 @@
++import {ToolRegistry} from './registry.js';
++import type {ToolDefinition, ToolExecutor} from '../../types/ai.js';
++
++describe('ToolRegistry input validation', () => {
++  it('validates required fields and rejects missing input', async () => {
++    const registry = new ToolRegistry();
++    let executorCalled = false;
++
++    const definition: ToolDefinition = {
++      name: 'test_tool',
++      description: 'A test tool',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          location: {
++            type: 'string',
++            description: 'Required location',
++          },
++        },
++        required: ['location'],
++      },
++    };
++
++    const executor: ToolExecutor = async () => {
++      executorCalled = true;
++      return 'success';
++    };
++
++    registry.register(definition, executor);
++    const result = await registry.execute('test_tool', {});
++
++    expect(executorCalled).toBe(false);
++    expect(result.result).toContain('location');
++    expect(result.result).toContain('required');
++  });
++
++  it('passes valid input with unlisted extra properties to executor unchanged', async () => {
++    const registry = new ToolRegistry();
++    let receivedInput: Record<string, unknown> | null = null;
++
++    const definition: ToolDefinition = {
++      name: 'test_tool',
++      description: 'A test tool',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          location: {
++            type: 'string',
++            description: 'A location',
++          },
++        },
++        required: ['location'],
++      },
++    };
++
++    const executor: ToolExecutor = async input => {
++      receivedInput = input;
++      return 'success';
++    };
++
++    registry.register(definition, executor);
++    const input = {location: 'Berlin', extraField: 'should pass through', nested: {value: 42}};
++    const result = await registry.execute('test_tool', input);
++
++    expect(result.result).toBe('success');
++    expect(receivedInput).toEqual(input);
++  });
++
++  it('rejects wrong-typed field with message naming field path and type, not value', async () => {
++    const registry = new ToolRegistry();
++    let executorCalled = false;
++
++    const definition: ToolDefinition = {
++      name: 'test_tool',
++      description: 'A test tool',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          location: {
++            type: 'string',
++            description: 'A location',
++          },
++        },
++        required: ['location'],
++      },
++    };
++
++    const executor: ToolExecutor = async () => {
++      executorCalled = true;
++      return 'success';
++    };
++
++    registry.register(definition, executor);
++    const result = await registry.execute('test_tool', {location: 42});
++
++    expect(executorCalled).toBe(false);
++    expect(result.result).toContain('location');
++    expect(result.result).toContain('string');
++    expect(result.result).not.toContain('42');
++  });
++
++  it('throws at register time for uncompilable schema', () => {
++    const registry = new ToolRegistry();
++
++    const definition: ToolDefinition = {
++      name: 'bad_schema_tool',
++      description: 'A tool with bad schema',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          field: {
++            type: 'invalid_type',
++          },
++        },
++      },
++    };
++
++    const executor: ToolExecutor = async () => 'success';
++
++    expect(() => registry.register(definition, executor)).toThrow();
++  });
++
++  it('validates function-valued schemas against current schema on each call', async () => {
++    const registry = new ToolRegistry();
++    let executorCalls = 0;
++    let schemaVersion = 1;
++
++    const definitionSource = () => {
++      const version = schemaVersion;
++      return {
++        name: 'dynamic_tool',
++        description: 'A tool with dynamic schema',
++        inputSchema:
++          version === 1
++            ? {
++                type: 'object',
++                properties: {field1: {type: 'string'}},
++                required: ['field1'],
++              }
++            : {
++                type: 'object',
++                properties: {field2: {type: 'string'}},
++                required: ['field2'],
++              },
++      } as ToolDefinition;
++    };
++
++    const executor: ToolExecutor = async () => {
++      executorCalls++;
++      return 'success';
++    };
++
++    registry.register(definitionSource, executor);
++
++    // First call - schema version 1, requires field1
++    let result = await registry.execute('dynamic_tool', {field1: 'value'});
++    expect(result.result).toBe('success');
++    expect(executorCalls).toBe(1);
++
++    // Schema changes
++    schemaVersion = 2;
++
++    // Second call - schema version 2, requires field2, old field1 should fail
++    result = await registry.execute('dynamic_tool', {field1: 'value'});
++    expect(result.result).toContain('field2');
++    expect(executorCalls).toBe(1);
++
++    // Third call - schema version 2, with correct field
++    result = await registry.execute('dynamic_tool', {field2: 'value'});
++    expect(result.result).toBe('success');
++    expect(executorCalls).toBe(2);
++  });
++
++  it('compiles static schemas once across multiple execute calls', async () => {
++    const registry = new ToolRegistry();
++    let executorCalls = 0;
++
++    const definition: ToolDefinition = {
++      name: 'static_tool',
++      description: 'A tool with static schema',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          value: {type: 'string'},
++        },
++        required: ['value'],
++      },
++    };
++
++    const executor: ToolExecutor = async () => {
++      executorCalls++;
++      return 'success';
++    };
++
++    registry.register(definition, executor);
++
++    // Execute 10 times with valid input
++    for (let i = 0; i < 10; i++) {
++      const result = await registry.execute('static_tool', {value: `test${i}`});
++      expect(result.result).toBe('success');
++    }
++
++    expect(executorCalls).toBe(10);
++  });
++
++  it('throws for unknown tool name', async () => {
++    const registry = new ToolRegistry();
++
++    await expect(registry.execute('unknown_tool', {})).rejects.toThrow('Unknown tool: unknown_tool');
++  });
++
++  it('rejects enum constraint violations', async () => {
++    const registry = new ToolRegistry();
++    let executorCalled = false;
++
++    const definition: ToolDefinition = {
++      name: 'enum_tool',
++      description: 'A tool with enum constraint',
++      inputSchema: {
++        type: 'object',
++        properties: {
++          units: {
++            type: 'string',
++            enum: ['celsius', 'fahrenheit'],
++          },
++        },
++        required: ['units'],
++      },
++    };
++
++    const executor: ToolExecutor = async () => {
++      executorCalled = true;
++      return 'success';
++    };
++
++    registry.register(definition, executor);
++    const result = await registry.execute('enum_tool', {units: 'kelvin'});
++
++    expect(executorCalled).toBe(false);
++    expect(result.result).toContain('units');
++    expect(result.result).not.toContain('kelvin');
++  });
++});

@@ -1,0 +1,178 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..5c369a5
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,40 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`).
++
++**Strategy: `direct`** — `ToolRegistry.register` and `execute` are already the public entry points, and the tests call them with real values. No seam is missing; the behaviour is absent, so each test fails on its assertion.
++
++The red bar is observed locally with the Jest runner on `src/orchestration/tools/registry.acceptance.test.ts`. CI's job is "Test (with coverage floor)" in the "Verify" job of `.github/workflows/ci.yml`, which runs `npm run test:coverage`.
++
++## Done when these pass
++
++- [ ] **refuses a call missing a required property without running the executor** — `execute` returns a result naming `location` as required, and the executor is called zero times.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **refuses a wrong-typed property, naming its path and expected type but not its value** — a number sent for a string is rejected, the result names `location` and `string`, and the value `4242` never appears in it.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **throws at register time for a schema that cannot be compiled, naming the tool** — `register` throws with `broken_tool` in the message.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++- [ ] **validates a function-valued definition against the schema resolved for that call** — the schema is re-resolved per call, so a relaxed schema on the second call is not checked against a stale strict one.
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++## Facets
++
++- [ ] Validate in `ToolRegistry.execute` before the executor runs, returning a `ToolResponse` on rejection (closes the first two tests).
++- [ ] Compile static schemas once in `register`, throwing an error that names the tool on failure (closes the third test).
++- [ ] Resolve and compile function-valued schemas per call, cached by the resolved schema object (closes the fourth test).
++- [ ] Pass-through: valid input with an extra property reaches the executor unchanged, exactly once. This passes on today's code, so it is not a red test here; the implementing round writes it alongside the validator.
++- [ ] Compile-once across ten `execute` calls. Observing this needs a spy on the validator, so the implementing round decides on a seam first.
++- [ ] Redact rejection text and log lines to property paths and constraints (no values).
++- [ ] Chat-loop test in `chatOrchestrator.test.ts`: a rejected call followed by a corrected retry resolves `processMessage`.
++- [ ] Add `ajv` to `dependencies`; the build and the `dist/index.js` import must succeed.
++- [ ] Docs: `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`; CHANGELOG entry; MINOR bump in the PR body with the migration note.
++- [ ] Un-cited statements in `specs/hal-engine-tool-input-validation/spec.md` (pass-through, compile-once, unknown tool, redaction, bounds) each get a test or an explicit decision.
++
++## Out of scope
++
++- Validating tool output.
++- Coercing types, applying defaults, or adding `additionalProperties: false`; there is no opt-out flag.
++- Changing the `Unknown tool: <name>` throw (tracked separately as "Return an unknown tool name to the model instead of throwing").
++- Per-tool authorization.
++- Retry, timeout, and rate limiting around tool execution.
++- Any concrete tool implementation.
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..80935c8
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,34 @@
++# HAL Engine tool input validation
++
++| Field  | Value                  |
++| ------ | ---------------------- |
++| Issue  | re-cinq/HALEngine#37   |
++| Status | In Progress            |
++
++`ToolRegistry.execute` checks the input a model sends against the tool's declared `inputSchema` before the executor runs. A call the schema rejects is answered with a tool result the model can read and correct, not an exception that ends the conversation. This spec states what the registry does with that check: what it refuses, what it lets through, what it reports, and when a broken schema is found.
++
++## Rejection
++
++- A call whose input omits a property the schema lists as required is refused: `execute` resolves a `ToolResponse` whose `result` names the missing property and says it is required, and the executor is not invoked. ([validated by: refuses a call missing a required property without running the executor](../../src/orchestration/tools/registry.acceptance.test.ts#L20))
++- A property whose value has the wrong type is refused with a `result` naming the property path and the expected type. The `result` never contains the offending value. ([validated by: refuses a wrong-typed property, naming its path and expected type but not its value](../../src/orchestration/tools/registry.acceptance.test.ts#L35))
++- A rejection is a returned `ToolResponse`, never a thrown error, so the orchestrator's tool loop carries it back to the model.
++- Rejection messages and log lines name the failing property paths and the constraint that failed, and never a property value.
++
++## Acceptance
++
++- Input the schema accepts reaches the executor exactly as the caller sent it: undeclared extra properties are kept, no default is applied, and no value is coerced.
++- Extra properties the schema does not declare are never rejected.
++
++## Schema compilation
++
++- A static tool's schema is compiled once, when the tool is registered.
++- A schema that cannot be compiled makes `register` throw, and the thrown message names the tool. ([validated by: throws at register time for a schema that cannot be compiled, naming the tool](../../src/orchestration/tools/registry.acceptance.test.ts#L51))
++- For a function-valued definition, the schema applied to a call is the one the function returns for that call, never one cached from an earlier call. ([validated by: validates a function-valued definition against the schema resolved for that call](../../src/orchestration/tools/registry.acceptance.test.ts#L62))
++
++## Unknown tools
++
++- A name no tool is registered under still makes `execute` throw `Unknown tool: <name>`. This is the one failure that remains a throw.
++
++## Bounds
++
++- A rejected call costs one tool round. The orchestrator's `DEFAULT_MAX_TOOL_ROUNDS` bound is what stops a model that keeps sending malformed calls from looping.
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..baead9a
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,86 @@
++import {describe, expect, it} from '@jest/globals';
++import {ToolRegistry} from './registry.js';
++import type {ToolDefinition} from '../../types/ai.js';
++
++// Acceptance for ticket #37: ToolRegistry.execute validates input against the tool's inputSchema.
++
++const LOCATION_SCHEMA = {
++  type: 'object',
++  properties: {location: {type: 'string'}},
++  required: ['location'],
++};
++
++const WEATHER_TOOL: ToolDefinition = {
++  name: 'get_weather',
++  description: 'Forecast for a place',
++  inputSchema: LOCATION_SCHEMA,
++};
++
++describe('ToolRegistry.execute input validation', () => {
++  it('refuses a call missing a required property without running the executor', async () => {
++    const registry = new ToolRegistry();
++    let executorCalls = 0;
++    registry.register(WEATHER_TOOL, async () => {
++      executorCalls += 1;
++      return 'forecast';
++    });
++
++    const response = await registry.execute('get_weather', {});
++
++    expect(response.result).toMatch(/location/);
++    expect(response.result).toMatch(/required/i);
++    expect(executorCalls).toBe(0);
++  });
++
++  it('refuses a wrong-typed property, naming its path and expected type but not its value', async () => {
++    const registry = new ToolRegistry();
++    let executorCalls = 0;
++    registry.register(WEATHER_TOOL, async () => {
++      executorCalls += 1;
++      return 'forecast';
++    });
++
++    const response = await registry.execute('get_weather', {location: 4242});
++
++    expect(response.result).toMatch(/location/);
++    expect(response.result).toMatch(/string/);
++    expect(response.result).not.toContain('4242');
++    expect(executorCalls).toBe(0);
++  });
++
++  it('throws at register time for a schema that cannot be compiled, naming the tool', () => {
++    const registry = new ToolRegistry();
++    const broken: ToolDefinition = {
++      name: 'broken_tool',
++      description: 'Declares a type JSON Schema does not have',
++      inputSchema: {type: 'not-a-json-type'},
++    };
++
++    expect(() => registry.register(broken, async () => 'unreachable')).toThrow(/broken_tool/);
++  });
++
++  it('validates a function-valued definition against the schema resolved for that call', async () => {
++    const registry = new ToolRegistry();
++    let strict = true;
++    let executorCalls = 0;
++    registry.register(
++      () => ({
++        name: 'get_weather',
++        description: 'Forecast for a place',
++        inputSchema: strict ? LOCATION_SCHEMA : {type: 'object', properties: {}},
++      }),
++      async () => {
++        executorCalls += 1;
++        return 'ok';
++      }
++    );
++
++    const strictResponse = await registry.execute('get_weather', {});
++    expect(strictResponse.result).toMatch(/location/);
++
++    strict = false;
++    const looseResponse = await registry.execute('get_weather', {});
++    expect(looseResponse.result).toBe('ok');
++    expect(executorCalls).toBe(1);
++  });
++});

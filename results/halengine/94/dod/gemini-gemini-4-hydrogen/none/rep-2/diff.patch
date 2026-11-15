@@ -1,0 +1,145 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..ecda16c
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,24 @@
++# Definition of Done
++
++> `beforeSession` is awaited before the `try` block opens, so a throw from it escapes before the `catch` and `finally` exist. Neither `onError` nor `afterSession` runs.
++
++**Strategy: `direct`** — `createChatOrchestrator` in `src/orchestration/chatOrchestrator.ts` is the existing seam; calling `processMessage` with `beforeSession`, `onError`, and `afterSession` hooks observes the missing error and cleanup calls directly.
++
++## Done when these pass
++
++- [ ] **fires onError with session and error and still rejects on throw** — throwing an `Error` from `beforeSession` invokes `onError(session, error)` with the same session and error instance while still rejecting the caller
++  `src/orchestration/beforeSessionFailure.acceptance.test.ts`
++- [ ] **runs onError then afterSession and skips turn hooks on throw** — throwing from `beforeSession` runs `onError` followed by `afterSession(session)` without invoking `beforeUserInput`, `afterUserInput`, `beforeModelResponse`, or `afterModelResponse`
++  `src/orchestration/beforeSessionFailure.acceptance.test.ts`
++
++## Facets
++
++- [ ] Move `if (hooks?.beforeSession) await hooks.beforeSession(session);` inside the `try` block in `processMessageStream` (`src/orchestration/chatOrchestrator.ts`)
++- [ ] Verify `specs/hal-engine-config-hooks/spec.md` states what an `afterSession` hook can assume about turn progress when `beforeSession` throws
++- [ ] Add an `## [Unreleased]` entry in `CHANGELOG.md` describing the lifecycle change for consumers whose `beforeSession` throws
++- [ ] Verify existing non-throwing `beforeSession` tests in `src/orchestration/chatOrchestrator.test.ts` and `src/config.test.ts` remain green and unedited
++
++## Out of scope
++
++- The `error instanceof Error` gate on `onError` in `src/orchestration/chatOrchestrator.ts` (tracked in its own issue)
++- Summing `usage` across tool rounds for `afterModelResponse` (HALEngine#93)
+diff --git a/specs/hal-engine-config-hooks/spec.md b/specs/hal-engine-config-hooks/spec.md
+index 5f08b31..98e3892 100644
+--- a/specs/hal-engine-config-hooks/spec.md
++++ b/specs/hal-engine-config-hooks/spec.md
+@@ -19,10 +19,14 @@
+ 
+ - The engine's `start()` method rejects the returned promise when it cannot bind the configured port, rather than emitting an unhandled error event that would take the process down ([validated by: rejects instead of taking the process down with an unhandled error event](../../src/config.test.ts#L174)).
+ 
++## Errors in beforeSession
++
++- When `beforeSession` throws an `Error`, `onError` fires with `(session, error)` and the rejection still reaches the caller ([validated by: fires onError with session and error and still rejects on throw](../../src/orchestration/beforeSessionFailure.acceptance.test.ts#L18)).
++- When `beforeSession` throws, `afterSession` runs after `onError` while `beforeUserInput`, `afterUserInput`, `beforeModelResponse`, and `afterModelResponse` do not run, so an `afterSession` hook can assume no downstream turn phase occurred and must tolerate setup that failed partway through `beforeSession` ([validated by: runs onError then afterSession and skips turn hooks on throw](../../src/orchestration/beforeSessionFailure.acceptance.test.ts#L48)).
++
+ ## Measured semantics — out of scope
+ 
+-These three properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes none of them; each is a separate, out-of-scope change owned by no issue in this epic.
++These two properties of `src/orchestration/chatOrchestrator.ts` are recorded so the hook features that follow specify against real behaviour. This issue changes neither of them; each is a separate, out-of-scope change owned by no issue in this epic.
+ 
+-- `beforeSession` is awaited before the `try` block opens ([chatOrchestrator.ts#L91](../../src/orchestration/chatOrchestrator.ts#L91)), so a throw there escapes before the `catch`/`finally` exist and skips both `onError` and `afterSession`.
+ - The `catch` gates `onError` on `error instanceof Error` ([chatOrchestrator.ts#L150](../../src/orchestration/chatOrchestrator.ts#L150)), so a rejection that is not an `Error` — a thrown string or object — bypasses `onError` entirely while still propagating to the caller.
+ - `afterModelResponse` is called once per user message after the round loop exits ([chatOrchestrator.ts#L148](../../src/orchestration/chatOrchestrator.ts#L148)), and is passed the `lastUsage` local — the most recent round's usage, not a sum across tool rounds, so a deployer using the hook for billing or audit under-counts every turn that ran tools.
+diff --git a/src/orchestration/beforeSessionFailure.acceptance.test.ts b/src/orchestration/beforeSessionFailure.acceptance.test.ts
+new file mode 100644
+index 0000000..104449d
+--- /dev/null
++++ b/src/orchestration/beforeSessionFailure.acceptance.test.ts
+@@ -0,0 +1,88 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import type {OrchestratorHooks} from './chatOrchestrator.js';
++import {answering, writeSignalPromptBuilder} from '../infrastructure/writeSignalTestSupport.js';
++import type {ChatSession} from '../types/session.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++const sessionWith = (content: string): ChatSession => ({
++  sessionId: 's-before-fail',
++  userId: 'u1',
++  entries: [{role: 'user', content, timestamp: SENT_AT}],
++});
++
++const failureMessageOf = (call: Promise<unknown>): Promise<string> =>
++  call.then(() => 'resolved').catch((error: Error) => error.message);
++
++describe('beforeSession failure lifecycle', () => {
++  it('fires onError with session and error and still rejects on throw', async () => {
++    const session = sessionWith('hello');
++    const setupError = new Error('session setup failed');
++    let observedSession: ChatSession | undefined;
++    let observedError: Error | undefined;
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        throw setupError;
++      },
++      onError: async (currentSession, error) => {
++        observedSession = currentSession;
++        observedError = error;
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(answering('hi'), writeSignalPromptBuilder, undefined, {hooks});
++    const outcome = await failureMessageOf(orchestrator.processMessage(session));
++
++    expect({
++      outcome,
++      sameSession: observedSession === session,
++      sameError: observedError === setupError,
++    }).toEqual({
++      outcome: 'session setup failed',
++      sameSession: true,
++      sameError: true,
++    });
++  });
++
++  it('runs onError then afterSession and skips turn hooks on throw', async () => {
++    const session = sessionWith('hello');
++    const callOrder: string[] = [];
++    let afterSessionArg: ChatSession | undefined;
++
++    const hooks: OrchestratorHooks = {
++      beforeSession: async () => {
++        callOrder.push('beforeSession');
++        throw new Error('session setup failed');
++      },
++      beforeUserInput: async (_s, message) => {
++        callOrder.push('beforeUserInput');
++        return message;
++      },
++      afterUserInput: async () => void callOrder.push('afterUserInput'),
++      beforeModelResponse: async (_s, systemPrompt) => {
++        callOrder.push('beforeModelResponse');
++        return systemPrompt;
++      },
++      afterModelResponse: async () => void callOrder.push('afterModelResponse'),
++      onError: async () => void callOrder.push('onError'),
++      afterSession: async currentSession => {
++        afterSessionArg = currentSession;
++        callOrder.push('afterSession');
++      },
++    };
++
++    const orchestrator = createChatOrchestrator(answering('hi'), writeSignalPromptBuilder, undefined, {hooks});
++    const outcome = await failureMessageOf(orchestrator.processMessage(session));
++
++    expect({
++      outcome,
++      callOrder,
++      sameSessionInAfterSession: afterSessionArg === session,
++    }).toEqual({
++      outcome: 'session setup failed',
++      callOrder: ['beforeSession', 'onError', 'afterSession'],
++      sameSessionInAfterSession: true,
++    });
++  });
++});

@@ -1,0 +1,8 @@
+Closed the `Update specs/hal-engine-config-hooks/spec.md with the new guarantee for beforeSession.` facet on `loop-bench/94` (`f3a5cfd`):
+
+- Added unit test `skips subsequent hooks and provider calls when beforeSession throws, passing session and error to onError and unchanged session to afterSession` in `src/orchestration/chatOrchestrator.test.ts` (ran `NODE_OPTIONS=--experimental-vm-modules timeout 300 npx jest src/orchestration/chatOrchestrator.test.ts`: 25 passed, 0 failed; 0 red tests of mine, 0 regressions).
+- Moved the `beforeSession` throw guarantee out of `## Measured semantics — out of scope` into `## Installing hooks through config` in `specs/hal-engine-config-hooks/spec.md`, updated the out-of-scope count from three to two, stated explicitly what `afterSession` can assume about turn progress and resource cleanup, and cited both validating tests.
+- Formatted `src/orchestration/chatOrchestrator.test.ts` with Prettier, repointed shifted anchors across `specs/hal-engine-architecture/spec.md`, `specs/hal-engine-config-hooks/spec.md`, and `specs/hal-engine-tool-input-validation/spec.md`, and checked off the facet in `.lore/dod.md`.
+- Verified `check-spec-anchor-names`, `repoint-spec-anchors --check origin/main`, `check-spec-links`, and `check-spec-status --coverage specs/hal-engine-config-hooks/spec.md` all pass, then pushed `f3a5cfd` to `origin/loop-bench/94` and confirmed `origin/main` is already up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Update specs/hal-engine-config-hooks/spec.md with the new guarantee for beforeSession.","tdd_next":"Document in the CHANGELOG what changes for an existing consumer."}}

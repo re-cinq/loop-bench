@@ -1,0 +1,9 @@
+Closed the second facet in `.lore/dod.md` (`Sum each token field only for provider rounds that report usage, preserving undefined when none do`):
+
+- Added two unit tests for `accumulateUsage` in `src/orchestration/orchestratorHelpers.test.ts` verifying `undefined` when no round reports usage and skipping missing-usage rounds while summing reported token fields.
+- Ran `NODE_OPTIONS=--experimental-vm-modules timeout 300 npx jest --runTestsByPath src/orchestration/orchestratorHelpers.test.ts`: 6 passed, 0 failed (0 red tests of ours, 0 regressions; acceptance tests and full suite were not run).
+- Added `[validated by: ...]` citations for both new tests in `specs/hal-engine-architecture/spec.md`, ticked the facet in `.lore/dod.md`, committed (`7456786`), pushed to `origin/loop-bench/93`, and confirmed `origin/main` is up to date with a clean working tree.
+- Note: running `prettier` was denied by pod policy, so formatting of `src/orchestration/orchestratorHelpers.test.ts` was verified manually against `.prettierrc`.
+- Unrelated / remaining items noticed (left untouched per round scope): the second test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` is not yet cited in `specs/hal-engine-config-hooks/spec.md`, the aggregate-usage note in `specs/hal-engine-config-hooks/spec.md` still sits under `## Measured semantics — out of scope`, and `CHANGELOG.md` has not yet been updated for the `src/` changes in `c8fb5e1`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do","tdd_next":"Preserve the unchanged no-tool regression guard and update the hooks spec and CHANGELOG with the aggregate-usage behavior and its impact on existing consumers"}}

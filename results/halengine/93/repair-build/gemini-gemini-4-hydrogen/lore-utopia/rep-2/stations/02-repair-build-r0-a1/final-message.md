@@ -1,0 +1,3 @@
+`git log --format=%s 19eaa4dfdc1d7fee67a77a045b3b6ffe47e754bd..HEAD` on `loop-bench/93` returned `fix(orchestrator): link helper tests to spec` (no `[skip ci]`), so the branch has moved past the commit CI judged. No files were changed and no builds or tests were run.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 19eaa4dfdc1d7fee67a77a045b3b6ffe47e754bd; CI re-judges the head"}}
