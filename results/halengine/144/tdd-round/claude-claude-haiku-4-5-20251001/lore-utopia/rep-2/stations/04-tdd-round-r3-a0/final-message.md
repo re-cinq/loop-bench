@@ -1,23 +1,36 @@
-I've successfully completed the documentation facet for this round. Here's what was accomplished:
+Perfect! I've successfully completed this TDD round. Here's what was accomplished:
 
-## Summary of Changes
+## Summary
 
-**Phase 1 - Documentation (RED):** 
-The spec documentation and test citations were incomplete - the `spec:names` check showed misaligned line numbers, and the websocket-protocol spec was missing documentation for the new `list_sessions` and `session_list` frames.
+**Facet completed:** Validate `list_sessions` frames with `before` cursor validation
 
-**Phase 2 - Spec Documentation (GREEN):**
-- Added section 4.3 (`list_sessions`) to the websocket-protocol spec documenting the client request format, parameters, and validation constraints
-- Added section 5.9 (`session_list`) to the websocket-protocol spec documenting the server response format with conversation summaries
-- Added citations linking spec statements to their validating tests in both validation.test.ts and conversationList.acceptance.test.ts
-- Ran `npm run spec:names -- --fix` to repoint 6 updated specs' citations to current test line numbers (801 total citations corrected)
+### Changes Made:
 
-**Phase 3 - Verification (REFACTOR):**
-All spec checks now pass:
-- `npm run spec:names`: 803 citations correctly point to their tests
-- `npm run check:spec-links`: 0 misplaced citations
-- `npm run check:spec-status`: 0 findings
-- Updated dod.md marking facet 4 complete
+1. **Fixed TypeScript errors in `validation.ts`:**
+   - Properly type-guarded message fields before comparisons
+   - Implemented comprehensive `before` cursor validation (object check, sessionId length 1-128, valid ISO date)
 
-The branch has been pushed and is up-to-date with main. The acceptance tests now have proper spec-level documentation anchoring their validation requirements.
+2. **Fixed ESLint issues:**
+   - Extracted `delegatingTo` helper to shared `wsTestSupport.ts` (eliminating duplication across 2 test files)
+   - Refactored early returns in test helper function
+   - Updated spec citation line numbers after code shifts
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"documentation for list_sessions and session_list in websocket-protocol spec","tdd_next":"acceptance green"}}
+3. **Added 5 new unit tests:**
+   - Valid before cursor acceptance
+   - Invalid before cursor rejection (not-object, empty sessionId, too-long sessionId, invalid date)
+   - Unknown fields stripping (userId)
+
+4. **Test Results:** All 8 validation tests pass ✓
+
+### Files Changed:
+- `src/transport/ws/validation.ts` — Added before cursor validation
+- `src/transport/ws/validation.test.ts` — Added comprehensive test coverage
+- `src/transport/wsTestSupport.ts` — Extracted shared test helper
+- `src/transport/conversationList.acceptance.test.ts` — Removed duplication, improved readability
+- `src/transport/sessionResume.test.ts` — Removed duplication
+- `specs/hal-engine-conversation-list/spec.md` — Fixed test line number citations
+- `.lore/dod.md` — Marked before cursor validation facet as complete
+
+The validation layer is now complete with full support for `list_sessions` frame validation, handling both optional `limit` and `before` parameters with proper error messages.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"reject invalid before cursor (not object, invalid sessionId, invalid updatedAt)","tdd_next":"thread sessionStore into createMessageHandler"}}

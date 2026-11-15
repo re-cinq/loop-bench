@@ -1,0 +1,9 @@
+Completed one TDD round closing the first facet in `.lore/dod.md`:
+
+- **Red:** Added `coerces thrown non-Error values to Error with cause for onError while preserving Error instances and rethrowing unchanged` in `src/orchestration/chatOrchestrator.test.ts` and confirmed it failed (`callCount: 0` for `'string boom'`, plain object, and `undefined`).
+- **Green:** Added `coerceToError` and `formatRejection` in `src/orchestration/chatOrchestrator.ts` so `hooks.onError` receives an `Error` preserving the original rejection as `cause` (while `Error` instances pass through unchanged and the original value is still rethrown), and verified the new unit test passes (`1 passed, 26 skipped`).
+- **Refactor & Traceability:** Formatted modified `.ts` files with Prettier, updated `specs/hal-engine-config-hooks/spec.md` and repointed shifted spec anchors (`repoint-spec-anchors.mjs`, `spec:names`, `check:spec-links`, `check:spec-status` all clean), ticked the closed facet in `.lore/dod.md`, re-verified the unit test passes, committed (`f2faac2`), pushed to `origin/loop-bench/95`, and merged `origin/main` (`Already up to date`).
+
+Red tests in this round: 0 of ours, 0 regressions observed locally (only the newly written unit test was run; CI judges the full suite and acceptance tests).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Coerce caught non-Error rejections to Error with cause and readable message for hooks.onError in src/orchestration/chatOrchestrator.ts","tdd_next":"Confirm existing Error-instance tests remain green without modification and add CHANGELOG.md entry under Unreleased"}}

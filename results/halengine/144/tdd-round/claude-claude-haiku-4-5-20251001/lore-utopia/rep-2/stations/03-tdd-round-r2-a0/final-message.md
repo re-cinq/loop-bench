@@ -1,27 +1,12 @@
-## Round Summary
+This round implemented limit validation for the `list_sessions` message, completing the "Reject invalid limit values" facet through one TDD cycle:
 
-**Phase 1 - RED**: ✓ Wrote test `returns list_sessions with only string or number updatedAt in cursor, not Date` to verify the wire-protocol cursor type is compatible with ListSessionsMessage.
+**Changes made:**
+- Fixed the vitest import issue in validation.test.ts (project uses Jest, not Vitest)
+- Added a focused test case for rejecting invalid limit values (0, negatives, floats, >200, non-integers)
+- Implemented limit validation in `validateListSessionsMessage()` requiring integers 1–200
+- Updated `.lore/dod.md` to mark the facet complete
+- All 5 tests pass
 
-**Phase 2 - GREEN**: ✓ Fixed the typecheck error by:
-- Creating `SessionCursorWire` interface that excludes `Date` from the wire protocol
-- Updating `ListSessionsMessage.before` to use `SessionCursorWire` instead of `SessionCursor`
-- Updating `handleListSessions` function signature to accept `ListSessionsMessage` type
-- Exporting the new type from the public API
+The next facet to work on is validating the `before` cursor structure (object type, sessionId length 1–128, valid updatedAt date string).
 
-**Phase 3 - REFACTOR**: ✓ Formatted code with prettier (minimal, clean changes)
-
-**Results**:
-- ✓ Test passes (5/5 tests in validation.test.ts)
-- ✓ Typecheck passes (fixed messageHandler.ts:111 error)
-- ✓ Commit created and pushed
-
-**Facet closed**: Fixed compilation errors from the already-completed "Handle list_sessions" facet by creating proper wire-protocol types
-
-**Next facet**: Document `list_sessions` and `session_list` in specs
-
-**Known unfixed lints** (pre-existing, not in scope for this round):
-- Duplicate code between acceptance tests and sessionResume.test.ts
-- Missing spec links in validation and acceptance tests
-- Nested-if and prefer-early-return issues in acceptance test
-
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix typecheck in list_sessions handler","tdd_next":"document list_sessions and session_list in specs"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Reject invalid limit values (non-integer, negative, >200)","tdd_next":"Reject invalid before cursor (not object, invalid sessionId, invalid updatedAt)"}}

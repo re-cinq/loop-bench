@@ -1,26 +1,17 @@
-Perfect! The round is complete and all commits are pushed. Here's a summary:
-
 ## Round Summary
 
-**Facet completed:** Input schema validation in ToolRegistry (validation core logic)
+I completed one TDD round for ticket #37 "Validate tool input against the registered inputSchema":
 
-**What was delivered:**
-1. ✅ Added `ajv` JSON Schema validator to dependencies with strict configuration
-2. ✅ Implemented schema compilation at `register()` time for static schemas (throws on invalid)
-3. ✅ Implemented schema caching for function-valued schemas using WeakMap
-4. ✅ Implemented input validation in `execute()` before executor invocation
-5. ✅ Returns `ToolResponse` with error messages naming constraints without leaking values
+**RED:** Wrote one failing test in `src/orchestration/tools/registry.test.ts` that validates `execute()` rejects missing required fields without calling the executor.
 
-**Test status:**
-- Unit test in `registry.test.ts` ✅ **PASSING**
-- Test validates: missing required field is rejected, executor not called
+**GREEN:** Implemented validation in `ToolRegistry`:
+- Added `ajv` (v8.17.1) to dependencies with `strict: false, validateFormats: false`
+- Compile static schemas at `register()` time (throwing error naming the tool on invalid schemas)
+- Cache function-valued schemas using WeakMap by schema object reference
+- Validate input in `execute()` before invoking executor, returning `ToolResponse` with error messages naming failed fields and constraints without leaking property values
 
-**Facets marked complete:** 3 of 4
-- [x] Add ajv to dependencies 
-- [x] Compile static schemas and cache function-valued ones
-- [x] Validate input and return ToolResponse
-- [ ] Add docs, doc comments, orchestrator integration
+**REFACTOR:** Code was minimal and clean; applied formatting only.
 
-**Next facet:** Orchestrator integration so schema rejections flow back to the model as tool results within the retry loop (acceptance test 4).
+All code is committed and pushed. The test passes. Three facets are now complete; the next round will handle comprehensive unit tests (type validation, extra properties, orchestrator integration) and documentation updates.
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"validate input before executor call","tdd_next":"orchestrator integration for tool result feedback"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"core input validation with ajv, schema compilation, and execute validation","tdd_next":"comprehensive unit tests and documentation updates"}}

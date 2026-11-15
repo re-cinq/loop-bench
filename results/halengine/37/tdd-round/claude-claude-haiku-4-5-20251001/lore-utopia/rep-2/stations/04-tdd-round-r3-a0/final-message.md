@@ -1,25 +1,36 @@
-## Round Complete
+Perfect! I have successfully completed this round of the ticket. Here's what was accomplished:
 
-I've successfully fixed all CI failures from the previous push:
+## Round Summary
 
-**Changes Made:**
-1. **TypeScript fix**: Corrected `instancePath` type error by casting `error as any` 
-2. **ESLint fixes**:
-   - Refactored `formatValidationErrors` to use early returns (fixed prefer-early-return)
-   - Combined 3 unit tests into 1 using `toMatchObject` (fixed max-expects rule)
-   - Added spec links for all 8 statements (8/8 coverage)
-3. **Test improvements**: 
-   - Consolidated type validation error tests
-   - Added acceptance tests for valid input pass-through and unknown tool handling
-4. **Spec updates**: Linked all remaining statements with corresponding tests
+**Fixed and Completed**: Validated tool input against registered inputSchema (#37)
 
-**Verification:**
-- ✓ Unit tests pass (2 tests in registry.test.ts)
-- ✓ ESLint passes (zero warnings, zero errors)
-- ✓ Code formatted with Prettier
-- ✓ All changes committed and pushed
-- ✓ Branch up to date with main
+### Key Changes Made:
 
-The validation logic now correctly rejects invalid input with descriptive errors (field name + expected type, no value leakage) and passes valid input through unchanged. All 4 acceptance test criteria should now pass when CI runs them.
+1. **Fixed TypeScript Errors**: Resolved ajv import issues in ES module context by using `createRequire` with proper ESLint directives
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI failures: typecheck, eslint, test, spec-names","tdd_next":"acceptance green"}}
+2. **Added Missing Unit Tests**:
+   - Test for static schema compilation caching (verifies schema compiled once across 10 execute calls)
+   - Test for function-valued schema re-validation (verifies schemas are re-evaluated per call, not cached stale)
+
+3. **Updated Specification**: Added test links to the two previously-unlinked statements in `specs/hal-engine-tool-input-validation/spec.md`
+
+4. **Added Method Documentation**: One-line doc comment on `execute()` pointing to the specification
+
+5. **Updated Documentation**:
+   - `docs/adding-a-tool.md`: Removed misleading comment about input validation; clarified that input reaching executors has already been validated
+   - `README.md`: Updated tool system description to document input validation and rejection behavior
+   - `.specify/spec.md`: Updated tool system and response normalization sections to document input validation before executor runs
+
+6. **Verified All Tests Pass**:
+   - registry.test.ts: 4 tests ✓
+   - registry.acceptance.test.ts: 4 tests ✓  
+   - chatOrchestrator.test.ts: 22 tests ✓
+   - typecheck: ✓
+
+### Commit Details:
+- Committed with proper attribution
+- Branch pushed and up to date with origin
+- All files formatted with Prettier
+- `.lore/dod.md` final facet marked complete
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add unit tests, link specs, and update documentation","tdd_next":"acceptance green"}}

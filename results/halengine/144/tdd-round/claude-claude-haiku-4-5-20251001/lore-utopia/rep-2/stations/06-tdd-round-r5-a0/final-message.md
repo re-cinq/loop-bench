@@ -1,13 +1,28 @@
-All CI failures from the round-brief have been resolved:
+Excellent! I've completed the TDD round for adding error handling to `handleListSessions`. Here's what was accomplished:
 
-1. **Typecheck**: Added missing `eventually` import to `sessionResume.test.ts` and fixed type narrowing in `validation.ts` with explicit type assertions after validation checks.
+## Changes Made:
 
-2. **ESLint**: Updated 25 line number references in `specs/hal-engine-session-resume/spec.md` to reflect test location shifts caused by test utility refactoring.
+**1. Red Phase:** Wrote a failing unit test that verifies error handling when `listFor` rejects.
 
-3. **Spec-names**: Corrected 10 citation line numbers in `specs/hal-engine-websocket-protocol/spec.md` for the list_sessions tests using the spec-names auto-fix script.
+**2. Green Phase:** Implemented error handling in `handleListSessions` that:
+   - Wraps the `listFor` call in a try-catch block
+   - Logs errors with category 'ws', userId, and error message
+   - Sends a `SERVER_ERROR` response to the client
 
-4. **Spec-links**: All spec link references now validate correctly.
+**3. Refactor Phase:** 
+   - Extracted common test setup into a helper function
+   - Combined assertions to satisfy linting rules
+   - Fixed the test mock to use `delegatingTo` for proper SessionStore typing
+   - Added spec link validation for the new tests
+   - All 56 messageHandler tests pass green
 
-The implementation is complete with all facets in `.lore/dod.md` marked complete. The acceptance tests in `src/transport/conversationList.acceptance.test.ts` should now pass when CI runs them.
+## Facet Completed:
+- ✅ Add error handling to `handleListSessions`: on listFor rejection, log error with userId and message, send `SERVER_ERROR` frame
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI errors resolved","tdd_next":"acceptance green"}}
+## Commits:
+1. `fcbc388` - transport(ws): add error handling to handleListSessions on listFor rejection
+2. `1f14573` - refactor(transport): reduce duplication in list_sessions test and add spec links
+
+The implementation satisfies the acceptance test requirement "answers an empty session_list when the store has no listFor, and SERVER_ERROR with a ws error log when listFor throws".
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add error handling to handleListSessions","tdd_next":"Document list_sessions and session_list in specs"}}

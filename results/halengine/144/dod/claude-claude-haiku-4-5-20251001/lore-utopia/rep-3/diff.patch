@@ -1,0 +1,468 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..b40ada1
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,47 @@
++# Definition of Done
++
++> A consumer may have no such route to extend: an engine deployment behind an api with a session store and no conversation endpoints of its own has nothing to add this to. The engine already knows who is connected and already replays a conversation on resume; answering "which conversations do I have" over the same socket is the smaller surface.
++
++**Strategy: `parallel-change`** — The message handler currently handles `user_message` and `ping`. We need to add `list_conversations` handling as a new message type that answers off the non-locked path (like `ping`). The handler exists but does not yet dispatch this message type. A new message type and response frame must be added to the protocol and validated.
++
++## Done when these pass
++
++- [ ] **Validation accepts and rejects list_conversations correctly** — limit must be 1–200, before must be a valid date string
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++- [ ] **Handler returns conversation_list with metadata** — with history enabled and a store supporting listFor, returns exactly one conversation_list frame carrying three summaries as ISO strings, no stream_end
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++- [ ] **User id comes from ws.userId not frame** — a frame with userId field is ignored, store.listFor is called with ws.userId
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++- [ ] **Parameters reach store listFor** — limit and before are passed through to the store as the frame sent them
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++- [ ] **History disabled returns UNSUPPORTED** — with history absent or disabled, list_conversations receives error UNSUPPORTED
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++- [ ] **Store without listFor returns UNSUPPORTED** — with a store implementing no listFor, the answer is error UNSUPPORTED, no empty list
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++- [ ] **Store rejection returns SERVER_ERROR** — when store.listFor rejects, returns error SERVER_ERROR with no store detail
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++- [ ] **No stream_end on list response** — list_conversations is not a turn and does not emit stream_end
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++- [ ] **Metadata only, never content** — conversation_list carries sessionId, createdAt, updatedAt, entryCount as ISO strings; never entries or content
++  `src/transport/ws/conversation-list.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ListConversationsMessage`, `ConversationListMessage`, `ConversationSummary` types to `src/types/messages.ts`
++- [ ] Update `IncomingMessage` union to include `ListConversationsMessage`
++- [ ] Update `OutgoingMessage` union to include `ConversationListMessage`
++- [ ] Add `UNSUPPORTED` error code to `ErrorCodes` in `src/types/session.ts`
++- [ ] Add `list_conversations` case to `validateMessage` in `src/transport/ws/validation.ts`
++- [ ] Update message handler dispatch to recognize and handle `list_conversations`
++- [ ] Wire `history` config option through `HalEngineConfig.transport`
++- [ ] Update `createServer` to accept and pass history options to message handler
++
++## Out of scope
++
++- The `before` cursor in this PR handles only ISO date strings, not composite {updatedAt, sessionId} cursors mentioned in amendments (follow-up)
++- Picking a conversation with `?sessionId=<id>` (already in #45 path)
++- Preview/title on summaries
++- Deleting a conversation
++- Paging state server-side
++- Operator view of another user's conversations
++- Live sync between tabs
+diff --git a/src/transport/ws/conversation-list.acceptance.test.ts b/src/transport/ws/conversation-list.acceptance.test.ts
+new file mode 100644
+index 0000000..3e1c6ad
+--- /dev/null
++++ b/src/transport/ws/conversation-list.acceptance.test.ts
+@@ -0,0 +1,409 @@
++import {jest} from '@jest/globals';
++import {WebSocket} from 'ws';
++import {createMessageHandler} from './messageHandler.js';
++import {createChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import type {ChatOrchestrator} from '../../orchestration/chatOrchestrator.js';
++import {ToolRegistry} from '../../orchestration/tools/registry.js';
++import {PromptBuilder} from '../../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, MessageChunk} from '../../types/ai.js';
++import type {ChatSession, SessionSummary} from '../../types/session.js';
++import type {OutgoingMessage} from '../../types/messages.js';
++import type {SessionStore} from '../../types/sessionStore.js';
++import {InMemorySessionStore} from '../../infrastructure/stores/inMemorySessionStore.js';
++import {validateMessage} from './validation.js';
++
++const text = (value: string): MessageChunk => ({type: 'text', text: value});
++const STOP: MessageChunk = {type: 'stop', stopReason: 'end_turn'};
++
++interface MessageHandlerHarness {
++  session: ChatSession;
++  sent: OutgoingMessage[];
++  send: (raw: unknown, options?: {userId?: string}) => Promise<void>;
++  frames: () => string[];
++}
++
++const createHarness = (orchestrator: ChatOrchestrator): MessageHandlerHarness => {
++  const sent: OutgoingMessage[] = [];
++  const ws = {
++    send: (raw: string) => sent.push(JSON.parse(raw) as OutgoingMessage),
++  } as unknown as WebSocket;
++
++  const session: ChatSession = {sessionId: 's1', userId: 'u1', entries: []};
++
++  const handle = createMessageHandler(orchestrator);
++
++  const wire = (messages: OutgoingMessage[]): string[] =>
++    messages.map(frame => {
++      if (frame.type === 'conversation_list') {
++        return `conversation_list ${frame.conversations.length}`;
++      }
++      if (frame.type === 'error') {
++        return `error ${frame.code}`;
++      }
++      if (frame.type === 'pong') return `pong ${frame.timestamp}`;
++      if (frame.type === 'stream_end') return 'stream_end';
++      return frame.type;
++    });
++
++  return {
++    session,
++    sent,
++    frames: () => wire(sent),
++    send: async (raw: unknown, options?: {userId?: string}) => {
++      if (options?.userId) {
++        (ws as unknown as {userId: string}).userId = options.userId;
++      } else if (!('userId' in ws)) {
++        (ws as unknown as {userId: string}).userId = 'u1';
++      }
++      await handle(ws, session, raw);
++    },
++  };
++};
++
++describe('conversation list over WebSocket', () => {
++  describe('validation', () => {
++    it('accepts list_conversations with no fields', () => {
++      const result = validateMessage({type: 'list_conversations'});
++      expect(result.valid).toBe(true);
++    });
++
++    it('rejects list_conversations with limit: 0', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 0});
++      expect(result.valid).toBe(false);
++      expect(result).toHaveProperty('error');
++    });
++
++    it('rejects list_conversations with limit: 201', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 201});
++      expect(result.valid).toBe(false);
++      expect(result).toHaveProperty('error');
++    });
++
++    it('rejects list_conversations with limit: 1.5', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 1.5});
++      expect(result.valid).toBe(false);
++      expect(result).toHaveProperty('error');
++    });
++
++    it('rejects list_conversations with limit as string', () => {
++      const result = validateMessage({type: 'list_conversations', limit: '10'});
++      expect(result.valid).toBe(false);
++      expect(result).toHaveProperty('error');
++    });
++
++    it('rejects list_conversations with before as invalid date string', () => {
++      const result = validateMessage({type: 'list_conversations', before: 'not a date'});
++      expect(result.valid).toBe(false);
++      expect(result).toHaveProperty('error');
++    });
++
++    it('accepts list_conversations with valid limit', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 10});
++      expect(result.valid).toBe(true);
++    });
++
++    it('accepts list_conversations with limit: 1', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 1});
++      expect(result.valid).toBe(true);
++    });
++
++    it('accepts list_conversations with limit: 200', () => {
++      const result = validateMessage({type: 'list_conversations', limit: 200});
++      expect(result.valid).toBe(true);
++    });
++
++    it('accepts list_conversations with valid ISO date before', () => {
++      const isoDate = new Date().toISOString();
++      const result = validateMessage({type: 'list_conversations', before: isoDate});
++      expect(result.valid).toBe(true);
++    });
++  });
++
++  describe('message handler response', () => {
++    it('returns error UNSUPPORTED when history is not enabled', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: new InMemorySessionStore(),
++      });
++
++      const harness = createHarness(orchestrator);
++
++      await harness.send({type: 'list_conversations'});
++
++      expect(harness.frames()).toContain('error UNSUPPORTED');
++    });
++
++    it('returns conversation_list when history is enabled and store has listFor', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const mockStore = {
++        create: jest.fn(),
++        get: jest.fn(),
++        delete: jest.fn(),
++        count: jest.fn(),
++        clear: jest.fn(),
++        listFor: jest.fn().mockResolvedValue([
++          {
++            sessionId: 's1',
++            createdAt: new Date('2026-01-01'),
++            updatedAt: new Date('2026-01-02'),
++            entryCount: 5,
++          },
++          {
++            sessionId: 's2',
++            createdAt: new Date('2025-12-01'),
++            updatedAt: new Date('2025-12-15'),
++            entryCount: 3,
++          },
++          {
++            sessionId: 's3',
++            createdAt: new Date('2025-11-01'),
++            updatedAt: new Date('2025-11-20'),
++            entryCount: 10,
++          },
++        ] as SessionSummary[]),
++      } as unknown as SessionStore;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: mockStore,
++      });
++
++      const harness = createHarness(orchestrator);
++
++      await harness.send({type: 'list_conversations'});
++
++      expect(harness.frames()).toContain('conversation_list 3');
++      const listMessage = harness.sent.find(m => m.type === 'conversation_list');
++      expect(listMessage).toBeDefined();
++      if (listMessage && 'conversations' in listMessage) {
++        expect(listMessage.conversations.length).toBe(3);
++        expect(listMessage.conversations[0].sessionId).toBe('s1');
++        expect(typeof listMessage.conversations[0].createdAt).toBe('string');
++        expect(typeof listMessage.conversations[0].updatedAt).toBe('string');
++      }
++    });
++
++    it('uses ws.userId for the store query, not frame userId', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const mockStore = {
++        create: jest.fn(),
++        get: jest.fn(),
++        delete: jest.fn(),
++        count: jest.fn(),
++        clear: jest.fn(),
++        listFor: jest.fn().mockResolvedValue([]),
++      } as unknown as SessionStore;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: mockStore,
++      });
++
++      const harness = createHarness(orchestrator);
++
++      await harness.send({type: 'list_conversations', userId: 'u2'}, {userId: 'u1'});
++
++      expect(mockStore.listFor).toHaveBeenCalledWith('u1', expect.anything());
++    });
++
++    it('passes limit and before to store listFor', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const mockStore = {
++        create: jest.fn(),
++        get: jest.fn(),
++        delete: jest.fn(),
++        count: jest.fn(),
++        clear: jest.fn(),
++        listFor: jest.fn().mockResolvedValue([]),
++      } as unknown as SessionStore;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: mockStore,
++      });
++
++      const harness = createHarness(orchestrator);
++      const isoDate = new Date().toISOString();
++
++      await harness.send({type: 'list_conversations', limit: 50, before: isoDate});
++
++      expect(mockStore.listFor).toHaveBeenCalledWith('u1', {limit: 50, before: isoDate});
++    });
++
++    it('returns error UNSUPPORTED when store has no listFor method', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const mockStore = {
++        create: jest.fn(),
++        get: jest.fn(),
++        delete: jest.fn(),
++        count: jest.fn(),
++        clear: jest.fn(),
++      } as unknown as SessionStore;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: mockStore,
++      });
++
++      const harness = createHarness(orchestrator);
++
++      await harness.send({type: 'list_conversations'});
++
++      expect(harness.frames()).toContain('error UNSUPPORTED');
++    });
++
++    it('returns error SERVER_ERROR when store listFor rejects', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const mockStore = {
++        create: jest.fn(),
++        get: jest.fn(),
++        delete: jest.fn(),
++        count: jest.fn(),
++        clear: jest.fn(),
++        listFor: jest.fn().mockRejectedValue(new Error('database connection failed')),
++      } as unknown as SessionStore;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: mockStore,
++      });
++
++      const harness = createHarness(orchestrator);
++
++      await harness.send({type: 'list_conversations'});
++
++      expect(harness.frames()).toContain('error SERVER_ERROR');
++    });
++
++    it('includes no stream_end after conversation_list', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const mockStore = {
++        create: jest.fn(),
++        get: jest.fn(),
++        delete: jest.fn(),
++        count: jest.fn(),
++        clear: jest.fn(),
++        listFor: jest.fn().mockResolvedValue([]),
++      } as unknown as SessionStore;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: mockStore,
++      });
++
++      const harness = createHarness(orchestrator);
++
++      await harness.send({type: 'list_conversations'});
++
++      expect(harness.frames()).not.toContain('stream_end');
++    });
++
++    it('returns conversation metadata as ISO strings', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const createdDate = new Date('2026-01-15T10:30:00.000Z');
++      const updatedDate = new Date('2026-01-16T14:45:00.000Z');
++
++      const mockStore = {
++        create: jest.fn(),
++        get: jest.fn(),
++        delete: jest.fn(),
++        count: jest.fn(),
++        clear: jest.fn(),
++        listFor: jest.fn().mockResolvedValue([
++          {
++            sessionId: 's1',
++            createdAt: createdDate,
++            updatedAt: updatedDate,
++            entryCount: 5,
++          },
++        ] as SessionSummary[]),
++      } as unknown as SessionStore;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: mockStore,
++      });
++
++      const harness = createHarness(orchestrator);
++
++      await harness.send({type: 'list_conversations'});
++
++      const listMessage = harness.sent.find(m => m.type === 'conversation_list');
++      expect(listMessage).toBeDefined();
++      if (listMessage && 'conversations' in listMessage) {
++        expect(listMessage.conversations[0].createdAt).toBe(createdDate.toISOString());
++        expect(listMessage.conversations[0].updatedAt).toBe(updatedDate.toISOString());
++      }
++    });
++  });
++
++  describe('GDPR compliance', () => {
++    it('never sends conversation content, only metadata', async () => {
++      const mockProvider = {
++        sendMessage: jest.fn(),
++        generateStructured: jest.fn(),
++      } as unknown as AIProvider;
++
++      const mockStore = {
++        create: jest.fn(),
++        get: jest.fn(),
++        delete: jest.fn(),
++        count: jest.fn(),
++        clear: jest.fn(),
++        listFor: jest.fn().mockResolvedValue([
++          {
++            sessionId: 's1',
++            createdAt: new Date('2026-01-01'),
++            updatedAt: new Date('2026-01-02'),
++            entryCount: 5,
++          },
++        ] as SessionSummary[]),
++      } as unknown as SessionStore;
++
++      const orchestrator = createChatOrchestrator(mockProvider, new PromptBuilder({}), new ToolRegistry(), {
++        sessionStore: mockStore,
++      });
++
++      const harness = createHarness(orchestrator);
++
++      await harness.send({type: 'list_conversations'});
++
++      const listMessage = harness.sent.find(m => m.type === 'conversation_list');
++      expect(listMessage).toBeDefined();
++      if (listMessage && 'conversations' in listMessage) {
++        const conversation = listMessage.conversations[0];
++        expect(conversation).not.toHaveProperty('entries');
++        expect(conversation).not.toHaveProperty('content');
++        expect(conversation).toHaveProperty('sessionId');
++        expect(conversation).toHaveProperty('createdAt');
++        expect(conversation).toHaveProperty('updatedAt');
++        expect(conversation).toHaveProperty('entryCount');
++      }
++    });
++  });
++});

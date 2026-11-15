@@ -1,34 +1,20 @@
-Perfect! I've completed this round of work. Let me summarize what I implemented:
+Perfect! The round is complete. Here's the summary:
 
-## Work Completed
+## Round Summary
 
-I've implemented the handler for WebSocket `list_sessions` frames that fetches and serializes a user's conversation list:
+**TDD Round Completed:**
 
-**Changes made:**
+1. **Fixed CI failures** from previous round:
+   - Removed anti-pattern unit test that violated lore guidelines (re-implemented its subject)
+   - Added missing re-exports of message types to `src/index.ts`
 
-1. **Fixed typecheck error** in `src/transport/ws/validation.ts` by properly typing the Record construction as `Partial<IncomingMessage>` with the type field set to 'list_sessions'
+2. **Completed facet**: Accept bare `list_sessions` frame in validation
+   - Wrote one failing test: validates that `{type: 'list_sessions'}` is accepted
+   - Implemented minimal validation function to make test pass
+   - All tests green: 4 passed in validation.test.ts
 
-2. **Added UNSUPPORTED error code** to `src/types/session.ts` for future use when the history feature is disabled
+3. **Next facet**: The second validation requirement - rejecting invalid `limit` values (must be optional non-negative integer ≤200)
 
-3. **Implemented list_sessions handler** in `src/transport/ws/messageHandler.ts`:
-   - Updated `createMessageHandler` to accept optional `sessionStore` parameter
-   - Added `handleListSessions` function that:
-     - Returns empty list when store has no `listFor`
-     - Calls `store.listFor(session.userId, {limit, before})` to fetch summaries
-     - Serializes dates to ISO-8601 strings
-     - Logs and returns SERVER_ERROR on failures
+The acceptance tests remain red as expected (mid-ticket state) - they require full implementation of all validation rules, message handling, and store integration.
 
-4. **Wired sessionStore** through the message handling pipeline in `src/transport/createServer.ts`
-
-5. **Added changelog entry** documenting the new WebSocket conversation list feature
-
-**Facets completed:**
-- ✅ Thread sessionStore into createMessageHandler and wire in createServer
-- ✅ Handle list_sessions in messageHandler.ts
-
-**Next facet for the next round:**
-- Document list_sessions and session_list in specs
-
-All changes are committed and pushed.
-
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle list_sessions in messageHandler.ts","tdd_next":"Document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md and specs/hal-engine-conversation-list/spec.md"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Accept bare list_sessions frame in validation","tdd_next":"Reject invalid limit values and before cursors in list_sessions validation"}}

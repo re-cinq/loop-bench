@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` in `src/orchestration/onErrorNonError.acceptance.test.ts` (line 12) with the deterministic timestamp `'2026-01-01T00:00:00.000Z'` to resolve `re-lint/no-nondeterministic-tests` while preserving spec line-number anchors. Formatted with Prettier, verified `src/orchestration/onErrorNonError.acceptance.test.ts` (2/2 tests passed), `npm run spec:names` (604 citations passed), and `node scripts/repoint-spec-anchors.mjs --check origin/main`, then committed and pushed `971f2d6` to `origin/loop-bench/95`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replaced non-deterministic new Date() in src/orchestration/onErrorNonError.acceptance.test.ts:12 with a fixed ISO timestamp"}}

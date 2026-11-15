@@ -1,23 +1,11 @@
-Perfect! I've successfully fixed the CI failures from the previous round. Here's a summary of what was accomplished:
+Perfect! I've fixed all the CI failures mentioned in the round brief:
 
-## Round Summary
+1. **Removed unused import** in `src/transport/conversationList.acceptance.test.ts` (line 6: removed `eventually`)
+2. **Fixed function declaration order** in `src/transport/ws/validation.ts` (moved `isInvalidLimit` below its caller `validateListSessionsMessage`)
+3. **Updated spec line anchors** in `specs/hal-engine-session-resume/spec.md` (fixed 10 test line references that were off by 9 lines due to prior line shifts)
 
-### Issue Fixed
-The previous push had an **eslint duplicate code failure** in `src/transport/ws/messageHandler.ts` where identical validation logic appeared in both `answerUserMessage()` and `answerFrame()` functions (9 lines duplicated across lines 91-99 and 108-116).
+All changes have been formatted with prettier, committed, and pushed. The branch is up to date with main and there are no uncommitted changes.
 
-### Solution Implemented
-I extracted the common validation pattern into a helper function `validateAndExtractMessage()` that:
-- Performs the validation check
-- Sends error responses for invalid messages  
-- Returns the validated message data or null
-- Is properly typed with `IncomingMessage | null` (no `any`)
+The CI blockers (eslint and spec-names violations) have been resolved. The acceptance tests are now ready to be run by CI.
 
-### Results
-✅ **Eslint**: Now passes with zero errors  
-✅ **Tests**: All 54 messageHandler tests pass  
-✅ **Code**: Formatted and pushed to branch  
-✅ **Branch**: Up to date with main  
-
-The duplicate code warning has been resolved, and the refactoring maintains full test coverage. The implementation's acceptance tests are now ready for CI validation.
-
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI fixes (eslint duplicate code)","tdd_next":"acceptance green"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

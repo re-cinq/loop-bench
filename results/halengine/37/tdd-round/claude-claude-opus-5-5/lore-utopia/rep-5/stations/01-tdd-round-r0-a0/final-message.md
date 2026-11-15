@@ -1,0 +1,13 @@
+I closed one facet this round: `ToolRegistry.register` now checks a static tool's `inputSchema` when the tool is registered, and throws an error naming the tool if the schema isn't valid JSON Schema. The commit is pushed, the branch already contains `origin/main` (so there was nothing to merge), and it is not ahead of its upstream.
+
+- **Red:** I added `src/orchestration/tools/registry.test.ts` with one test: registering `lookup_order` with `required: 'orderId'` (invalid because `required` must be a list) must throw an error mentioning `lookup_order`. It failed because `register` didn't throw.
+- **Green:** I added `ajv` ^8 (installed 8.20.0) to `dependencies` in `package.json` and `package-lock.json`. In `src/orchestration/tools/registry.ts` it is set up with `strict: false` and `validateFormats: false`, and no coercion, defaults or `additionalProperties`. `register` builds a validator for static definitions, keeps it on the stored tool for the next round to use, and on failure throws `Tool <name> has an invalid inputSchema: …`. The test then passed.
+- **Refactor:** nothing needed. Prettier was run on the two changed TypeScript files.
+- **Traceability:** the "compiled once at `register` time" statement in `specs/hal-engine-tool-input-validation/spec.md` now links to the new test at `#L4`. This repo has no reanchor script, and the existing acceptance-test links point at a file I didn't change, so they are still correct.
+- **Also updated:** an `[Unreleased]` entry in `CHANGELOG.md`, and `.lore/dod.md`. The register-time facet is ticked. The ajv facet stays unticked because the MINOR version bump is still to do. I added a new unchecked facet for caching validators for tool definitions that are produced by a function, keyed by the schema object.
+
+**Tests:** I ran only my new test, and it passes. There was no CI verdict yet: no round brief exists. That makes 1 red test mine and 0 regressions. The coverage graph lists no tests for `registry.ts`, and a search found only `chatOrchestrator.test.ts:384` registering a tool, with `{type: 'object'}`, which still compiles. Of the four acceptance tests, I expect only the register-time one to pass after this change; CI will confirm.
+
+**Not acted on:** none observed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Compile static inputSchema with ajv at register time, throwing an error naming the tool on an invalid schema","tdd_next":"Validate input in ToolRegistry.execute before the executor, returning a ToolResponse naming failing paths/constraints without leaking values"}}

@@ -1,0 +1,7 @@
+Nothing left to write on `loop-bench/95`: the CI findings `round-brief.md` reported against `f2faac2` (`new Date()` in `src/orchestration/onErrorNonError.acceptance.test.ts:12` and the missing `CHANGELOG.md` entry) were already resolved and pushed in `9512fd6` (`origin/loop-bench/95` is up to date, `origin/main` is an ancestor of `HEAD`, and all facets in `.lore/dod.md` are ticked).
+
+Verified lightweight checks in this pod (`prettier --check` on the three changed `.ts` files, `check-spec-links`, `check-spec-anchor-names`, `check-spec-status`, `repoint-spec-anchors --check origin/main`, `check-changelog.sh origin/main`, `check-doc-blocks`, `check-spike-status`, `check-doc-regions` all passed; `check-doc-paths` flagged only `dist/` artifacts because build is omitted here). The round ran no Jest tests here (none were written this round, and acceptance/full-suite/eslint/typecheck/build runs are left to CI); red tests: 0 ours, 0 regressions observed locally.
+
+Unrelated/minor note (untouched): `formatRejection` in `src/orchestration/chatOrchestrator.ts` has a few defensive branches (`thrown === null`, `JSON.stringify` returning `undefined`, and the circular-reference `catch`) without dedicated unit cases yet; CI's `test:coverage` step will confirm whether `src/orchestration/` stays above its `80.85%` branch threshold.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

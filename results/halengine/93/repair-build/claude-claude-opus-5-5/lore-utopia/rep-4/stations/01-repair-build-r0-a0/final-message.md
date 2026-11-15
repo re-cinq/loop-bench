@@ -1,0 +1,8 @@
+I fixed all four eslint errors CI reported in `src/orchestration/orchestratorHelpers.test.ts` and pushed the fix to `loop-bench/93`. The branch was already up to date with `origin/main`, and nothing is left unpushed. I didn't run eslint here, so CI's next run will confirm the lint passes.
+
+- **`re-lint/max-expects` (line 35):** the test "returns the defined side when one operand is undefined" checked two cases with two `expect`s. I split it into two tests with one `expect` each: "returns the next usage when nothing has accumulated yet" and "keeps the accumulated usage when the next round reported none". The assertions are unchanged.
+- **`re-lint/require-spec-link` (lines 29, 35, 41):** the `accumulateUsage` tests weren't linked from any spec. I added three statements under "Across rounds" in `specs/hal-engine-architecture/spec.md`, next to the existing statements for this helper file. Between them they link all four `accumulateUsage` tests, now at lines 29, 35, 40 and 45.
+
+I ran Prettier on the test file and it changed nothing. I left the spec unformatted because the repo's `prettier:check` only covers `.ts` files, and Prettier was reformatting unrelated sections of the markdown. `jest` on `orchestratorHelpers.test.ts` passes 8 of 8. There were no earlier recorded failures on this file.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"eslint: accumulateUsage tests lacked spec links and one test had 2 expects; split it and linked all four from hal-engine-architecture spec"}}

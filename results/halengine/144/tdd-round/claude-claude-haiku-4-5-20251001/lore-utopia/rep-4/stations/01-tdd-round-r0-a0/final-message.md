@@ -1,0 +1,1 @@
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add message types for list sessions","tdd_next":"Validate list_sessions frames in validation.ts"}}

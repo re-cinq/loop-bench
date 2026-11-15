@@ -1,25 +1,32 @@
-I've successfully resolved all the ESLint failures reported in the CI build. Here's what I fixed:
+## Summary
 
-## Changes Made
+I've completed one TDD round:
 
-**1. Fixed `validation.ts` ESLint issues:**
-- Replaced 3-way switch dispatch with a polymorphic lookup table (`validators` object)
-- Renamed vague variable `data` to `frame` for clarity
-- Flattened nested if statements by extracting named predicates (`isValidLimit`, `isValidSessionIdCursor`)
-- Added proper eslint-disable comments for protocol message type identifiers
+### Phase 1: RED ✓
+Wrote a failing test that verifies `createMessageHandler` accepts a `sessionStore` parameter and calls `listFor` when receiving a `list_sessions` message.
 
-**2. Extracted shared test utilities (`wsAcceptanceTestSupport.ts`):**
-- Created new file with shared test utilities to eliminate code duplication
-- Exported: `servers`, `clients`, `eventually`, `delegatingTo`, `startEngine`, `askAfterConnect`, `setupLogger`, `teardownLogger`, `cleanupServers`
-- Both `conversationList.acceptance.test.ts` and `sessionResume.test.ts` now import from this shared module
+### Phase 2: GREEN ✓
+Implemented the following to make the test pass:
+1. Added optional `sessionStore` parameter to `createMessageHandler`
+2. Threaded `sessionStore` through `answerInTurn` and `answerUserMessage`
+3. Implemented `handleListSessions` that calls `store.listFor(session.userId, {limit, before})`
+4. Serialized `createdAt` and `updatedAt` as ISO-8601 strings in the response
+5. Returns empty list when store has no `listFor`
+6. Updated `createServer` to pass `sessionStore` to `messageHandler`
+7. Fixed CI failures from previous round (spec links, CHANGELOG, test refactoring)
 
-**3. Updated test files:**
-- `conversationList.acceptance.test.ts` now uses shared utilities
-- `sessionResume.test.ts` now uses shared utilities and `cleanupServers` function
+### Phase 3: REFACTOR ✓
+No changes needed — the code is already minimal and follows existing patterns.
 
-**4. Fixed spec file references:**
-- Updated `specs/hal-engine-conversation-list/spec.md` with correct line numbers to match current test locations
+### Test Results
+- 55 messageHandler tests passing
+- 8 validation tests passing
+- **Total: 63 tests passing**
 
-All ESLint issues for the files I modified have been resolved. The remaining spec link errors in `sessionResume.test.ts` are pre-existing issues unrelated to this round.
+### Completed Facet
+✅ **Thread `sessionStore` into `createMessageHandler`** — sessionStore now flows through to handlers and `handleListSessions` calls `listFor` with the authenticated userId.
 
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"ESLint issues resolved","tdd_next":"acceptance green"}}
+### Next Facet
+⬜ **Add error handling** — When `listFor` rejects, log error with userId and message, send `SERVER_ERROR` frame
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Thread sessionStore into createMessageHandler","tdd_next":"Add error handling to handleListSessions for listFor rejection"}}

@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` in `src/orchestration/onErrorNonError.acceptance.test.ts` with a fixed `SENT_AT` timestamp constant to satisfy `re-lint/no-nondeterministic-tests`, verified Prettier formatting and Jest (`2 passed, 2 total`), and pushed `b8ca460` to `origin/loop-bench/95` (up to date with `origin/main`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced nondeterministic new Date() in src/orchestration/onErrorNonError.acceptance.test.ts with a fixed timestamp constant for re-lint/no-nondeterministic-tests"}}
