@@ -1,0 +1,8 @@
+Completed one red-green-refactor round on `loop-bench/93` (`2d87916`):
+
+- Added and exported `TotalUsage` (`src/types/ai.ts`, `src/types/index.ts`, `src/index.ts`), updated `OrchestratorHooks.afterModelResponse` (`totalUsage?: TotalUsage`), replaced `lastUsage` retention in `chatOrchestrator.ts` with `accumulateUsage(totalUsage, outcome.usage)`, and verified with unit test `passes TotalUsage summed across tool rounds to afterModelResponse` in `src/orchestration/chatOrchestrator.test.ts` while leaving `receives collected response text and usage` untouched.
+- Resolved all CI findings from `round-brief.md`: linked `chatOrchestratorUsage.acceptance.test.ts#L67` (and the new unit test plus updated `#L153` anchor) in `specs/hal-engine-config-hooks/spec.md`, synced `OrchestratorHooks` doc-blocks in `CLAUDE.md` and `specs/hal-engine-architecture/spec.md`, and added the `CHANGELOG.md` entry under `[Unreleased] -> Changed`.
+- Red test breakdown from CI's verdict: 0 regressions; only the ticket's acceptance suite (`src/orchestration/chatOrchestratorUsage.acceptance.test.ts`) was red prior to this round, and our 1 new unit test went red then green (`25/25` passing in `src/orchestration/chatOrchestrator.test.ts`).
+- Unrelated smell noticed (not acted on): CI's Jest run logged a post-teardown `console.log` warning from `src/transport/ws/connectionHandler.ts:104` when a WebSocket `close` event fired asynchronously after a suite completed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named TotalUsage contract and update hooks spec and CHANGELOG","tdd_next":"acceptance green"}}

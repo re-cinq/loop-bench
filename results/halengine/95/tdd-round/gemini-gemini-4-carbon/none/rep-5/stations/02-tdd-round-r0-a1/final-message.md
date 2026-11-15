@@ -1,0 +1,5 @@
+Nothing was changed in this round because there is nothing left to write: commit `77f439f` on `loop-bench/95` already closes every facet in `.lore/dod.md` (`coerceError` in `src/orchestration/chatOrchestrator.ts` wrapping non-`Error` rejections with `cause` while passing `Error` instances through unchanged and rethrowing the original value, unit coverage in `src/orchestration/onErrorCoercion.test.ts` for string/object/`undefined`/`Error`, `src/orchestration/chatOrchestrator.test.ts` left unedited, `specs/hal-engine-config-hooks/spec.md` updated with valid `#Lnn` citations, and the `CHANGELOG.md` entry under `## [Unreleased]`), no `round-brief.md` or CI failures exist, and the branch is clean and up to date with both `origin/loop-bench/95` and `origin/main`.
+
+Red tests: 0 ours, 0 regressions (this round ran no tests here because no new test or code remained to be written). Unrelated smell noticed and left untouched: `src/orchestration/onErrorNonError.acceptance.test.ts` uses `new Date().toISOString()` rather than a fixed ISO timestamp string.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

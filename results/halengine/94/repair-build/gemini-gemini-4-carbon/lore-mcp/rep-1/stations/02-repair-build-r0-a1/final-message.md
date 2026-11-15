@@ -1,0 +1,3 @@
+CI judged `c3cd08a9719fc2b94390d5b6e91bcbe417f649a3`, and `git log --format=%s c3cd08a9719fc2b94390d5b6e91bcbe417f649a3..HEAD` shows a newer non-`[skip ci]` commit (`4c97fa2fef9322ff5e48892195549a462d2d550f`: `test(orchestrator): fix PromptBuilderConfig and max-expects in beforeSession acceptance test`). Leaving the workspace unchanged so CI re-judges `HEAD`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past c3cd08a9719fc2b94390d5b6e91bcbe417f649a3; CI re-judges the head"}}

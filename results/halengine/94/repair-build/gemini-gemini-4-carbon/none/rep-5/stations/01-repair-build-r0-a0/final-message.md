@@ -1,0 +1,3 @@
+Fixed `PromptBuilderConfig` properties (`identity`, `responseGuidelines`) and consolidated the three `expect` calls into one `toEqual` assertion in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`, repointed the `#L35` citation in `specs/hal-engine-config-hooks/spec.md`, verified the test passes, formatted, and pushed `0594a64` to `origin/loop-bench/94`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"invalid PromptBuilderConfig properties (TS2353) and 3 expect calls violating re-lint/max-expects in chatOrchestrator.beforeSession.acceptance.test.ts"}}

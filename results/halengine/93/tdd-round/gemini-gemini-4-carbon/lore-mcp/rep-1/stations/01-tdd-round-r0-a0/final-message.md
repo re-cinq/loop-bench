@@ -1,0 +1,6 @@
+Completed one red-green-refactor round (`785b891`) for `accumulateUsage` in `src/orchestration/orchestratorHelpers.ts` and its unit test in `src/orchestration/orchestratorHelpers.test.ts`, linked in `specs/hal-engine-architecture/spec.md` and recorded in `.lore/dod.md`.
+
+- **Red tests / regressions:** 0 red tests remain in the file written this round (1 new test started red and is now green); 0 regressions observed (no prior CI failure brief existed on this branch).
+- **Unacted-on observations:** The second acceptance test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` (`counts reported rounds while leaving a turn with no reported usage undefined`) is not yet cited by a statement in `specs/hal-engine-config-hooks/spec.md` (deferred to the spec/CHANGELOG facet).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}

@@ -1,0 +1,5 @@
+Resolved all CI failures reported on `77f439f` (`eslint` `re-lint/no-nondeterministic-tests` + `re-lint/require-spec-link` in `src/orchestration/onErrorNonError.acceptance.test.ts` and `spec-names` `#L52`/`#L63` -> `#L53`/`#L64` in `specs/hal-engine-config-hooks/spec.md`), formatted with Prettier, verified `src/orchestration/onErrorCoercion.test.ts` passes, and pushed `b809308`.
+
+Red tests: 0 ours, 0 regressions (all failures on the previous push were `eslint` and `spec-names` checks). Unrelated smell noted and left untouched: `saveSession` in `src/orchestration/chatOrchestrator.ts` formats non-`Error` store throws with `String(error)` (`"[object Object]"`) rather than `inspect(error)`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI eslint non-deterministic Date and repoint spec-names anchors","tdd_next":"acceptance green"}}

@@ -1,0 +1,5 @@
+Nothing was changed in this round because all work for Ticket #95 is already complete and pushed on `origin/loop-bench/95` (`c37afbe`, up to date with `origin/main` `684b294`):
+- Every facet in `.lore/dod.md` is checked off (`toError` coercion in `src/orchestration/chatOrchestrator.ts` preserving `Error` instances and wrapping non-`Error` values with a readable message and `{cause: error}` while rethrowing the original value, existing `Error` tests unedited, unit test in `src/orchestration/chatOrchestrator.test.ts#L671`, spec citations in `specs/hal-engine-config-hooks/spec.md`, and `CHANGELOG.md` entry under `## [Unreleased]`).
+- No `round-brief.md` or CI failure findings exist, and no tests were written or run in this round (0 red tests were mine, 0 were regressions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_next":"acceptance green"}}

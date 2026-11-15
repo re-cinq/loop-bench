@@ -1,0 +1,7 @@
+Completed one red-green-refactor round on `loop-bench/94` (`f24fab6`):
+
+- **Red → Green → Refactor:** Added a failing unit test in `src/orchestration/chatOrchestrator.test.ts` verifying that a throwing `beforeSession` invokes `onError` then `afterSession` without advancing to user-input/model hooks while still propagating the rejection, then moved `hooks?.beforeSession` inside `processMessageStream`'s `try` block in `src/orchestration/chatOrchestrator.ts` (1 red test written by me in the red phase, now green; 0 regressions).
+- **Traceability, Changelog & DoD:** Promoted the `beforeSession` failure guarantee into `specs/hal-engine-config-hooks/spec.md` (`## Installing hooks through config`), repointed shifted `#Lnn` citations, added a consumer-facing `### Fixed` entry in `CHANGELOG.md`, and ticked the closed facets in `.lore/dod.md`.
+- **Unrelated smells noticed (untouched, out of scope):** `catch` in `src/orchestration/chatOrchestrator.ts` gates `hooks.onError` on `error instanceof Error` (skipping non-`Error` rejections), and `afterModelResponse` receives `lastUsage` from the most recent round rather than summed usage across tool rounds.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts, update specs/hal-engine-config-hooks/spec.md, and document in CHANGELOG.md","tdd_next":"acceptance green"}}
