@@ -1,0 +1,10 @@
+`onError` now fires for every rejection, and the round is pushed. Only my new test file ran here. I did not run the two acceptance tests, so CI has to confirm those.
+
+- **Test:** I added `src/orchestration/onErrorCause.test.ts`. It checks that a string, a plain object and `undefined` each reach `onError` once as an `Error` whose `cause` is the original value. It also checks that the caller still gets the original rejection. A fourth case checks that an `Error` instance comes through as the same instance. The three non-`Error` cases failed before the fix, and all four pass now.
+- **Code:** in `src/orchestration/chatOrchestrator.ts`, the `catch` no longer gates `onError` on `instanceof Error`. A new `toError` helper passes an `Error` through unchanged and wraps anything else with `cause` set to the original. A string becomes the message as is, and other values use `JSON.stringify` or `String` as a fallback. The caller still receives the raw rejection.
+- **Docs:** I added a CHANGELOG entry under `[Unreleased]` / `### Changed`. The spec line in `specs/hal-engine-config-hooks/spec.md` already described the new guarantee, so I left it alone.
+- **Checklist:** I ticked the three facets in `.lore/dod.md` and added one unchecked item for CI to confirm the acceptance tests. The existing `chatOrchestrator.test.ts` tests were not run either; the `Error` pass-through is covered only by my new fourth case.
+- **Delivery:** I formatted the changed files, merged `origin/main` (already up to date), and pushed. The branch is not ahead of its upstream.
+- **Red tests:** the three that failed were mine, and none were regressions.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"onError called with Error (cause preserved) for non-Error rejections; CHANGELOG entry","tdd_next":"acceptance green"}}

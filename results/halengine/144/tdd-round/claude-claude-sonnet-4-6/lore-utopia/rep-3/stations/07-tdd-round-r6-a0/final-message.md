@@ -1,0 +1,5 @@
+Branch is pushed and up to date. The fix: the `describe` + `it.each` structure was invisible to `check:spec-anchor-names` (which uses a regex that only matches `it(` or `describe(` calls, not `it.each`), while `require-spec-link` only recognizes `it` and `test` calls (not describe). This created a mismatch where the citation at L55 pointed to the describe block (satisfying spec:names) but the it.each at L56 had no coverage (failing require-spec-link). Converting to a single `it('rejects malformed list_sessions frames', ...)` at L55 satisfies both: spec:names finds the `it` declaration at L55 matching the citation's name and line, and require-spec-link finds the citation at L55 within the test's span. 0 regressions caused; 1 CI finding fixed.
+
+No unrelated smells noticed beyond this targeted fix.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix ESLint require-spec-link failure: convert describe+it.each to single it at spec-cited line","tdd_next":"acceptance green"}}

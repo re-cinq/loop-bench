@@ -1,0 +1,5 @@
+Branch is up to date. No unrelated smells to report.
+
+**What this round fixed:** Three CI failures from the previous push — a `PromptBuilderConfig` typecheck error (changed `baseSystemPrompt`/`systemPromptSuffix`/`contextConfig` to `identity`), a `re-lint/max-expects` violation (consolidated 3 expects into one `toEqual`), and `spec-names`/`require-spec-link` failures caused by spec citation line numbers shifting when the previous round inserted a new test (repointed all shifted citations in `hal-engine-architecture/spec.md`, `hal-engine-tool-input-validation/spec.md`, and `hal-engine-config-hooks/spec.md`). 0 regressions, 0 new tests written (this was a repair round, not a new facet round).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix CI failures: typecheck, eslint max-expects, spec-names/require-spec-link","tdd_next":"acceptance green"}}

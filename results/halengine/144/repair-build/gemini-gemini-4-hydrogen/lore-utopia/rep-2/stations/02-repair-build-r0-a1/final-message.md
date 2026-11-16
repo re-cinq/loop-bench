@@ -1,0 +1,3 @@
+`git log --format=%s 5cd4e6710184e4c23ab8d932710998781bdd6208..HEAD` on `loop-bench/144` shows commit `fix(transport): handle list_sessions frames and clear lint errors (#144)` (without `[skip ci]`), so the branch has moved since CI judged `5cd4e6710184e4c23ab8d932710998781bdd6208`. Made no changes and ran no build or test commands.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 5cd4e6710184e4c23ab8d932710998781bdd6208; CI re-judges the head"}}

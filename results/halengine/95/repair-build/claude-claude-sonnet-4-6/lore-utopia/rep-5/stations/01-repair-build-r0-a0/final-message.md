@@ -1,0 +1,3 @@
+Fixed the lint error by replacing `new Date().toISOString()` with the static timestamp `'2024-01-01T00:00:00.000Z'` in the acceptance test. The `re-lint/no-nondeterministic-tests` rule requires injected or deterministic values instead of live `Date` calls. Committed and pushed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replaced new Date().toISOString() with a static timestamp in onErrorNonError.acceptance.test.ts to satisfy re-lint/no-nondeterministic-tests"}}

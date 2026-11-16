@@ -1,0 +1,3 @@
+Branch is pushed and up to date. The fix updated 15 stale spec citations across 3 spec files (`specs/hal-engine-architecture/spec.md`, `specs/hal-engine-config-hooks/spec.md`, `specs/hal-engine-tool-input-validation/spec.md`) — all test line numbers that shifted by 6 after the non-Error wrapping test was inserted. This fixes both the `eslint require-spec-link` failures (spec links now fall within the correct test spans) and the `spec-names` failures (anchor names now match the tests at the corrected lines). No new code was written; this was a pure traceability fix.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix 15 stale spec citations causing eslint and spec-names CI failures","tdd_next":"acceptance green"}}

@@ -1,0 +1,10 @@
+I fixed the lint findings I could reach and pushed. Six remain, so the build probably still fails on eslint. The two test files I touched pass: 68 tests, all green. I didn't run the acceptance tests. Merging `origin/main` was clean, and the branch isn't ahead of its upstream.
+
+- **`validation.ts`:** I replaced the three-way `switch` with a lookup table and split the cursor check into its own function with guard clauses. I also renamed the vague `data` variable. This should clear `prefer-polymorphism`, `no-vague-names` and `no-nested-if`. The CI log was truncated after the `validation.ts:96` finding, so I couldn't see whether it listed more findings after it.
+- **`messageHandler.test.ts:713`:** `listFor.mock.calls[0]` is now `listFor.mock.lastCall`, which clears `max-member-chain`.
+- **Spec link:** I added a `validated by` citation to `specs/hal-engine-websocket-protocol/spec.md` pointing at `validation.test.ts#L40`. That clears `require-spec-link` for the malformed-frame test.
+- **Still red, unfixed:** the four findings on `conversationList.acceptance.test.ts` (three `no-duplicate-code` hits against `sessionResume.test.ts`, one `prefer-early-return` at line 67). I can't edit that file, and the same duplication is flagged on the `sessionResume.test.ts` side, so a shared helper would only move the duplicate. This needs a human decision, for example a lint exemption for the acceptance file. I recorded it as an unchecked facet in `.lore/dod.md`.
+- **Test run:** the repo uses Jest, not vitest, so I ran the two files with `node --experimental-vm-modules node_modules/jest/bin/jest.js`.
+- **Red tests:** none of my tests are red and I caused no regressions; the failures are all lint.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"CI lint repairs in validation.ts, messageHandler.test.ts and the spec link","tdd_next":"decide how to resolve the duplicate-code and early-return lint findings on the untouchable acceptance test"}}

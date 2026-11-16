@@ -1,0 +1,9 @@
+This round fixed the CI test failure, but the eslint findings and the remaining docs and orchestrator-test work are still open.
+
+- **Test failure:** The enum no-leak test in `registry.test.ts` failed in CI because `namesPath` came back false, so the rejection text didn't name `/kind`. It passes locally against ajv 8.20.0, and the lockfile pins 8.20.0, so I couldn't reproduce the failure. My best guess is that CI resolved an ajv 6, which reports `dataPath` (`.kind`) instead of `instancePath` (`/kind`). The earlier "ajv6-shaped types" note points the same way. I made `describeError` in `registry.ts` accept either field and report the path as `/kind` for both. I ran `registry.test.ts` only, and all 5 tests pass locally. That run wouldn't have caught an ajv 6 problem, so CI will show whether the guess was right.
+- **Test counts:** One red test this round, and it was a test I wrote. No regressions.
+- **eslint:** Two findings remain in `registry.acceptance.test.ts`, at lines 141 and 143 (`prefer-early-return` and `max-member-chain`). I'm not allowed to edit acceptance tests, so the owner has to decide how to resolve them.
+- **Still to do:** The `chatOrchestrator.test.ts` tool-loop test, the docs updates (`docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `ADR-002`), `example/weather-tool.ts`, `CHANGELOG.md` and the spec links. I left the unfinished dod facet unticked, since this round only fixed CI.
+- **Push:** Committed and pushed. Merging `origin/main` produced nothing, and the branch is not ahead of its upstream.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix enum rejection path naming across ajv 6/8 error shapes","tdd_next":"chatOrchestrator tool-loop test; docs/README/.specify/CHANGELOG; acceptance-test eslint findings need owner decision"}}

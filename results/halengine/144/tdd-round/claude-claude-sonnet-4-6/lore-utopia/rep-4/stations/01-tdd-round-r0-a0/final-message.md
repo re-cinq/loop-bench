@@ -1,0 +1,3 @@
+Branch is up to date and pushed. This round closed facets 1–4 (types, validation, handler threading, `list_sessions` dispatch). The only remaining facet is spec documentation (facet 5). No regressions — 0 tests were mine that failed, 0 regressions from existing tests. The unrelated smell I noticed: the `import type {SessionCursor}` in messageHandler uses an inline import expression rather than a top-level import — harmless, can be cleaned up in refactor.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"list_sessions validation, types, handler threading, and dispatch — all three acceptance tests now pass","tdd_next":"document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md and specs/hal-engine-conversation-list/spec.md"}}

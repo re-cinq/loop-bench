@@ -1,0 +1,1 @@
+Done. The regression is fixed — `answerUserMessage` now calls `await answerFrame(ws, session, validation)` with the correct 3-argument signature. All 55 `messageHandler.test.ts` tests pass, the DoD facets for "Thread sessionStore" and "Handle list_sessions" are ticked, and both commits are pushed.

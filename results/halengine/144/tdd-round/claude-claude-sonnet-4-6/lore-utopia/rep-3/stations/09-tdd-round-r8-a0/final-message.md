@@ -1,0 +1,3 @@
+Branch is up to date and clean. I fixed 7 stale spec-link line numbers across two spec files (`specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-npm-release/spec.md`) — the previous round's test insertion shifted `it(` calls by one line each, causing `re-lint/require-spec-link` and `spec:names` to both fail. The `spec:names --fix` command repointed all seven citations automatically.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix 7 stale spec-link line numbers (eslint + spec-names)","tdd_next":"acceptance green"}}

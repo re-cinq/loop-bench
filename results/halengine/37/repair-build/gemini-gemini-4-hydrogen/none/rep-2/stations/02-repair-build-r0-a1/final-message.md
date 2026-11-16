@@ -1,0 +1,3 @@
+Branch `loop-bench/37` has moved past the CI-judged SHA `7ccea884f1d7cb84a96ee5242a0436b047ec021b` (`fea10c9fb16214434de27264db3bd990dc2ac3ee feat(tools): validate input in ToolRegistry`, without `[skip ci]`), so CI has not judged the new `HEAD` yet. No changes were made and no builds or tests were run.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"branch moved past 7ccea884f1d7cb84a96ee5242a0436b047ec021b; CI re-judges the head"}}

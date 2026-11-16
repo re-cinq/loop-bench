@@ -1,0 +1,3 @@
+Fixed the CI spec-names failure. The `it.each(...)('name', ...)` pattern isn't matched by the DECLARATION regex in `check-spec-anchor-names.mjs` (which only matches `it('name', ...)`), so I updated the spec citation to point at the wrapping `describe('rejects malformed list_sessions frames', ...)` block at line 55 instead.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec-names CI failure: repoint citation from it.each name to describe block name","tdd_next":"acceptance green"}}

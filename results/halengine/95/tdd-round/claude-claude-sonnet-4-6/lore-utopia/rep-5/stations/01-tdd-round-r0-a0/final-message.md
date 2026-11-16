@@ -1,0 +1,3 @@
+Branch is pushed and up to date. The fix is in: one line changed in `chatOrchestrator.ts` removes the `instanceof Error` gate and wraps any non-Error with `new Error(String(error), {cause: error})`. The test, CHANGELOG, and DoD are all updated.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"coerce non-Error rejections to Error in catch block; onError now always fires","tdd_next":"acceptance green"}}

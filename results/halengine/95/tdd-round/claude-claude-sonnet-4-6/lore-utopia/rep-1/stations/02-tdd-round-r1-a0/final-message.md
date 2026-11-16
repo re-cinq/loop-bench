@@ -1,0 +1,3 @@
+All 4 CI failures fixed and pushed. The branch is up to date with no unpushed commits. 0 regressions caused; 0 new tests written (this round was CI fixes only).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix ESLint spec-link and nondeterministic-test violations from previous round","tdd_next":"add CHANGELOG.md entry under [Unreleased] for the non-Error coercion behaviour change"}}

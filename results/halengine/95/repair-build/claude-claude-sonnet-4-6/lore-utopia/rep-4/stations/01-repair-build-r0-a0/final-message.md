@@ -1,0 +1,3 @@
+The fix is in. The lint error was `new Date()` on line 12 of `onErrorNonError.acceptance.test.ts` — the `re-lint/no-nondeterministic-tests` rule flags it as making tests non-repeatable. Replaced it with a fixed ISO timestamp `'2024-01-01T00:00:00.000Z'`. The commit is pushed and the branch is up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replaced new Date() with fixed timestamp in sessionWith() helper to satisfy re-lint/no-nondeterministic-tests"}}

@@ -1,0 +1,3 @@
+The DoD facets are already correctly marked. Facet 4 (the CI fix facet) stays ticked — the remaining issue was a spec-link placement bug that's now fixed. The next round takes the last open facet.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"fix spec-link misplacement: combined two separate validated-by parentheticals on the missing-required-field statement into one trailing parenthetical, resolving both eslint/require-spec-link and spec-links CI failures","tdd_next":"complete remaining doc/test work (extra-property passthrough, wrong-typed rejection, compile-once, function-source per-call, chatOrchestrator tool-loop test, doc updates)"}}

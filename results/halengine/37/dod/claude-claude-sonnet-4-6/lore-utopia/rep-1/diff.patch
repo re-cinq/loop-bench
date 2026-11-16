@@ -1,0 +1,184 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..1afa3e5
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,37 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor
++> without ever checking the declared `inputSchema`.
++
++**Strategy: `direct`** — The seam already exists: `ToolRegistry.execute` in `src/orchestration/tools/registry.ts` is a public method the acceptance tests call directly. No production code exists for the validation, so all three tests fail because the executor is invoked on invalid input (or the rejection text is never generated).
++
++## Done when these pass
++
++- [ ] **returns a ToolResponse naming the missing required field and never calls the executor** — executor call count is 0 and result names the missing field when required property is absent
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **never includes the offending value in the returned ToolResponse** — the rejection result differs from executor output and does not contain the value that failed validation
++  `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **resolves processMessage when a corrected call follows a rejected one, with rejection text visible to the provider** — full orchestrator loop resolves and the round-2 tool result contains the rejected field name
++  `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add `ajv` compilation to `ToolRegistry.register` for static schemas; compile once, store alongside the executor
++- [ ] Add per-call compilation (cached by schema object identity) for function-valued `ToolDefinitionSource`
++- [ ] In `execute`, validate `input` against the compiled validator before calling the executor; on failure return `{result: ajv error messages joined, naming paths and constraints}`
++- [ ] Ensure error messages name field paths (e.g. `/location`) and constraint keywords but never property values
++- [ ] Add `register` throw for uncompilable schema (naming the tool)
++- [ ] Add one-line doc comment on `execute` pointing at `specs/hal-engine-tool-input-validation/spec.md`
++- [ ] Add tool-loop test to `chatOrchestrator.test.ts` as specified in the ticket
++- [ ] Update `docs/adding-a-tool.md`, `README.md`, `CHANGELOG.md`, and `.specify/spec.md`
++
++## Out of scope
++
++- Validating tool output
++- Adding `additionalProperties: false` to schemas (explicitly excluded)
++- Coercing types or injecting defaults
++- Changing the `Unknown tool: <name>` throw to a return
++- Per-tool authorization
++- Retry, timeout, and rate limiting around tool execution
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..f4c3500
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,16 @@
++# Tool Input Validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | In Progress          |
++
++`ToolRegistry.execute` validates incoming tool input against the declared `inputSchema` before invoking the executor. A call whose input does not satisfy the schema is returned to the model as a `ToolResponse` describing the constraint that failed; the executor is never invoked, and no input value ever appears in the returned text.
++
++## Validation Contract
++
++- When `execute` is called with input that is missing a required field, it returns a `ToolResponse` whose `result` names the missing field and the executor is never called ([validated by: returns a ToolResponse naming the missing required field and never calls the executor](../../src/orchestration/tools/registry.acceptance.test.ts#L4)).
++
++- The text returned on a validation failure never contains the offending input value, so a field holding user-identifying data cannot leak from the registry into the conversation ([validated by: never includes the offending value in the returned ToolResponse](../../src/orchestration/tools/registry.acceptance.test.ts#L27)).
++
++- When an orchestrated conversation contains a tool call that the registry rejects, `processMessage` resolves rather than throws, and the rejection text is part of the tool result the provider receives on the next round so the model can self-correct ([validated by: resolves processMessage when a corrected call follows a rejected one, with rejection text visible to the provider](../../src/orchestration/chatOrchestrator.acceptance.test.ts#L9)).
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..86e667e
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,58 @@
++import type {AIProvider, MessageChunk, SendMessageParams, ToolResultContent, ToolResultMessage} from '../types/ai.js';
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {ToolRegistry} from './tools/registry.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++
++const PROMPT_BUILDER = new PromptBuilder({identity: 'test'});
++
++describe('ChatOrchestrator tool validation loop', () => {
++  it('resolves processMessage when a corrected call follows a rejected one, with rejection text visible to the provider', async () => {
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'weather',
++        description: 'get weather',
++        inputSchema: {type: 'object', properties: {location: {type: 'string'}}, required: ['location']},
++      },
++      async input => `weather in ${input.location as string}`
++    );
++
++    let round = 0;
++    let round2ToolResultContent = '';
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        round++;
++        if (round === 2) {
++          const toolResults = params.messages
++            .filter((m): m is ToolResultMessage => m.role === 'user' && Array.isArray(m.content))
++            .flatMap(m => m.content.filter(c => c.type === 'tool_result'));
++          round2ToolResultContent = toolResults[0]?.content ?? '';
++        }
++        if (round === 1) {
++          yield {type: 'tool_use', toolCall: {id: 'c1', name: 'weather', input: {}}};
++          yield {type: 'stop', stopReason: 'tool_use'};
++        } else {
++          yield {type: 'text', text: 'done'};
++          yield {type: 'stop', stopReason: 'end_turn'};
++        }
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++
++    const session = {
++      sessionId: 's1',
++      userId: 'u1',
++      entries: [{role: 'user' as const, content: 'go', timestamp: '2026-01-01T00:00:00.000Z'}],
++    };
++    const orchestrator = createChatOrchestrator(provider, PROMPT_BUILDER, registry);
++
++    const result = await orchestrator.processMessage(session);
++
++    expect({result, rejectionMentionsLocation: round2ToolResultContent.includes('location')}).toEqual({
++      result: 'done',
++      rejectionMentionsLocation: true,
++    });
++  });
++});
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..a1d73f1
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,49 @@
++import {ToolRegistry} from './registry.js';
++
++describe('ToolRegistry.execute input validation', () => {
++  it('returns a ToolResponse naming the missing required field and never calls the executor', async () => {
++    const registry = new ToolRegistry();
++    let callCount = 0;
++    registry.register(
++      {
++        name: 'weather',
++        description: 'get weather',
++        inputSchema: {type: 'object', properties: {location: {type: 'string'}}, required: ['location']},
++      },
++      async () => {
++        callCount++;
++        return 'sunny';
++      }
++    );
++
++    const result = await registry.execute('weather', {});
++
++    expect({callCount, namesMissingField: result.result.includes('location')}).toEqual({
++      callCount: 0,
++      namesMissingField: true,
++    });
++  });
++
++  it('never includes the offending value in the returned ToolResponse', async () => {
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'lookup',
++        description: 'lookup',
++        inputSchema: {type: 'object', properties: {id: {type: 'integer'}}, required: ['id']},
++      },
++      async () => 'found'
++    );
++    const sensitiveValue = 'alice@example.com';
++
++    const result = await registry.execute('lookup', {id: sensitiveValue});
++
++    expect({
++      isValidationFailure: result.result !== 'found',
++      containsValue: result.result.includes(sensitiveValue),
++    }).toEqual({
++      isValidationFailure: true,
++      containsValue: false,
++    });
++  });
++});

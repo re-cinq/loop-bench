@@ -1,0 +1,3 @@
+Branch is pushed and up to date. The fix adds 5 spec citations to `specs/hal-engine-config-hooks/spec.md`, satisfying the `re-lint/require-spec-link` ESLint rule for all previously unlinked tests: the second acceptance test at line 67 of `chatOrchestratorUsage.acceptance.test.ts` and the four `accumulateUsage` unit tests in `orchestratorHelpers.test.ts`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add spec citations for all new tests (ESLint require-spec-link)","tdd_next":"acceptance green"}}

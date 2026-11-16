@@ -1,0 +1,3 @@
+The branch is pushed and up to date. The fix replaced `new Date().toISOString()` with the fixed string `'2024-01-01T00:00:00.000Z'` in the `sessionWith` helper, satisfying the `re-lint/no-nondeterministic-tests` rule.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"replaced new Date().toISOString() with a fixed timestamp in onErrorNonError.acceptance.test.ts to pass re-lint/no-nondeterministic-tests"}}
