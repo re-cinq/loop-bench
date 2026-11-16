@@ -1,0 +1,9 @@
+Completed one red-green-refactor round on `loop-bench/93` (`0445cea`, pushed and up to date with `origin/main`):
+
+- **RED**: Added `passes totalUsage summing every round across a tool loop` in `src/orchestration/chatOrchestrator.test.ts` and ran it via `scripts/lore-run-test.mjs`; it failed receiving final-round usage (`20/6/26`) instead of summed usage (`30/10/40`).
+- **GREEN**: Exported `TotalUsage` (`src/types/ai.ts`, `src/types/index.ts`, `src/index.ts`), updated `OrchestratorHooks.afterModelResponse` (`totalUsage?: TotalUsage`) in `src/orchestration/chatOrchestrator.ts`, and replaced `lastUsage` retention with `addRoundUsage` accumulation.
+- **REFACTOR**: Typed the new test with `TotalUsage`, added the spec citation in `specs/hal-engine-architecture/spec.md`, synchronized doc-blocks (`CLAUDE.md`, `specs/hal-engine-architecture/spec.md`) and spec anchors, formatted all modified `.ts` files with Prettier, and ticked the closed facet in `.lore/dod.md`.
+
+Verified `src/orchestration/chatOrchestrator.test.ts` (`25 passed, 0 failed`; 0 red tests of ours, 0 regressions; acceptance tests in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` were not run locally). Note: `scripts/check-doc-paths.mjs` reports 3 pre-existing `dist/` paths in `.specify/spec.md` and `specs/hal-engine-npm-release/spec.md` when `dist/` is unbuilt.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit.","tdd_next":"Sum each token field only for provider rounds that report usage, preserving undefined when none do."}}

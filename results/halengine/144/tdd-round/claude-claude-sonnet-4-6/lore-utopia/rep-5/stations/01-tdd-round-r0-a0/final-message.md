@@ -1,14 +1,5 @@
 Branch is pushed and up to date. 
 
-**Summary of this round:**
-- Added `ListSessionsMessage`, `SessionSummaryFrame`, `SessionListMessage` to `src/types/messages.ts` and their union members
-- Added `list_sessions` validation in `validation.ts` (non-negative integer limit, 1–128 char sessionId, parseable updatedAt, strips unknown fields)
-- Added `sessionStore` optional parameter to `createMessageHandler` and wired it in `createServer.ts`
-- Added `answerListSessions` handler that reads `session.userId` (not the frame's userId), calls `listFor`, serializes Dates to ISO, returns empty list when no listFor, logs + returns SERVER_ERROR on throw
-- Wrote 11 new unit tests for validation, all passing
+This round closed 4 facets in one pass: types, validation, threading `sessionStore`, and the `list_sessions` handler. The validation test I wrote went red then green. The remaining open facets are re-exporting the new types from `src/index.ts` and spec documentation.
 
-The one remaining facet is spec documentation (`specs/hal-engine-websocket-protocol/spec.md` and `specs/hal-engine-conversation-list/spec.md`).
-
-Unrelated smells noticed but not touched: `index.ts` doesn't yet re-export the new types (DoD facet 1 says to do this).
-
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"validate list_sessions frames + handle in messageHandler off the lock","tdd_next":"document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md and specs/hal-engine-conversation-list/spec.md"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"validate list_sessions frames + dispatch handler","tdd_next":"re-export ListSessionsMessage/SessionSummaryFrame/SessionListMessage from src/index.ts, then spec documentation"}}

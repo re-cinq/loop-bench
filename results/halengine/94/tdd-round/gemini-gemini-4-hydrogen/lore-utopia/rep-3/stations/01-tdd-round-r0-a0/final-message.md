@@ -1,0 +1,6 @@
+Completed TDD round 1 for ticket #94:
+- **Red -> Green**: Added `runs onError then afterSession when it throws, and still rejects to the caller` in `src/orchestration/chatOrchestrator.test.ts` (1 red test authored by this round, 0 regressions), moved `if (hooks?.beforeSession) await hooks.beforeSession(session);` inside the `try` block in `src/orchestration/chatOrchestrator.ts`, and re-ran `src/orchestration/chatOrchestrator.test.ts` (24/24 passing). Acceptance tests were not run locally.
+- **Traceability & DoD**: Cited the new test in `specs/hal-engine-architecture/spec.md`, updated shifted `#Lnn` anchors in `specs/hal-engine-architecture/spec.md`, `specs/hal-engine-config-hooks/spec.md`, and `specs/hal-engine-tool-input-validation/spec.md` (verified manually via `grep -n "it("` and checked against `.prettierrc`, as `npx prettier` and `node scripts/check-spec-anchor-names.mjs` were denied by pod policy), and ticked Facet 1 in `.lore/dod.md`.
+- **Delivery**: Committed as `ec9f112`, pushed to `origin/loop-bench/94`, merged `origin/main` (already up to date), and confirmed `git status` is clean.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts","tdd_next":"Update specs/hal-engine-config-hooks/spec.md with the new guarantee for beforeSession"}}

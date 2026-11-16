@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` in `src/orchestration/onErrorNonError.acceptance.test.ts` with a fixed `SENT_AT` timestamp constant (`'2026-01-01T00:00:00.000Z'`) to fix the `re-lint/no-nondeterministic-tests` eslint error, formatted with Prettier, verified `src/orchestration/onErrorNonError.acceptance.test.ts` passes (2/2 tests), and pushed commit `e0bdc48` to `origin/loop-bench/95` (up to date with `origin/main`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced nondeterministic new Date().toISOString() with a fixed timestamp in src/orchestration/onErrorNonError.acceptance.test.ts"}}

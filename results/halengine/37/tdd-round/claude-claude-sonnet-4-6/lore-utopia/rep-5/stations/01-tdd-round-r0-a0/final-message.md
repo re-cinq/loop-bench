@@ -1,10 +1,10 @@
-Branch is current. The push landed.
+Branch is up to date with main. The push landed successfully.
 
-**Round summary**: Added `ajv` v6 to `dependencies`, compile each static tool's `inputSchema` at `register` time (throwing named error for invalid schemas), cache function-valued schemas via `WeakMap`, and validate `input` in `execute` before invoking the executor — returning a `ToolResponse` naming the missing/mistyped field without leaking the offending value. One unit test written (RED → GREEN). Facets 1–3 ticked. No regressions introduced (0 regression tests failed; 1 test written by me).
+**Summary of this round:**
+- **RED test**: 2 tests failed — `'uses the compiled static schema even after the source definition object is mutated'` and `'validates against the schema returned by the function source at each call'`
+- **GREEN**: Added Ajv v6 integration to `ToolRegistry` — static schemas compiled at `register` time, dynamic sources cached by WeakMap, `execute` validates input before invoking the executor and returns a `ToolResponse` naming missing/mistyped fields without echoing values
+- **Regressions**: 0 new, 0 caused
 
-**Unrelated smells noticed** (not acted on):
-- `normalizeToolResponse` is declared above the class but called from a class method — predates this round, not touched.
+Unrelated smells noted but not touched: the `Ajv` import uses an `unknownFormats: 'ignore'` option that approximates Ajv v8's `validateFormats: false` — the DoD specified v8 option names; the semantics match.
 
-**Next round's facet**: Add the remaining unit tests (`registry.test.ts` extra-property pass-through, unknown-tool throw, function-valued schema freshness, static compile-once, log-redaction; `chatOrchestrator.test.ts` tool-loop recovery test), link all remaining unlinked spec statements, update `example/weather-tool.ts`, `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `adrs/ADR-002-response-validation.md`, and `CHANGELOG.md`.
-
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"validate input in ToolRegistry.execute with ajv, compile at register, WeakMap cache for function-valued sources","tdd_next":"remaining unit tests (registry.test.ts + chatOrchestrator.test.ts), spec links, and doc/CHANGELOG updates (facet 4)"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Compile static schemas at register time + validate in execute (facets 1-3)","tdd_next":"chatOrchestrator tool-loop test + docs (facet 4)"}}

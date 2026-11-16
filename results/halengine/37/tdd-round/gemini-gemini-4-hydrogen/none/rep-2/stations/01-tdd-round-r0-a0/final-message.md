@@ -1,8 +1,4 @@
-Completed one red-green-refactor round for static `inputSchema` compilation at `ToolRegistry.register` time:
+Completed one red-green-refactor round for static `inputSchema` compilation at `ToolRegistry.register` time (`d9c3bca` pushed to `origin/loop-bench/37`, up to date with `origin/main`).
+`src/orchestration/tools/registry.test.ts` passed (`1 passed, 0 failed`, `0` red tests of mine, `0` regressions run locally; CI will run the acceptance tests, full suite, typecheck, and lint).
 
-- **Red:** Added `src/orchestration/tools/registry.test.ts` testing that `ToolRegistry.register` throws synchronously naming the tool when a static `inputSchema` fails compilation; confirmed failure (`Received function did not throw`).
-- **Green:** Added `ajv` (`^8.20.0`) to `dependencies` in `package.json` and `package-lock.json`, configured `new Ajv({strict: false, validateFormats: false})` in `src/orchestration/tools/registry.ts`, and compiled static `ToolDefinition.inputSchema` in `register()` via `compileSchema`.
-- **Refactor & Traceability:** Formatted changed TypeScript files with Prettier, added the `[validated by: ...]` citation in `specs/hal-engine-tool-input-validation/spec.md`, verified `check-spec-anchor-names.mjs`, `check-spec-links.mjs`, and `repoint-spec-anchors.mjs --check origin/main`, updated `.lore/dod.md`, and committed/pushed (`8e2e291`) to `origin/loop-bench/37` (up to date with `origin/main`).
-- **Tests:** Ran only `src/orchestration/tools/registry.test.ts` (`1 passed, 0 failed`; 0 regressions). Acceptance tests, full suite, typecheck, lint, and build were not run locally per pod rules.
-
-LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv to dependencies and compile static ToolDefinition.inputSchema at ToolRegistry.register time","tdd_next":"Validate input in ToolRegistry.execute and cache function-valued ToolDefinitionSource validators by schema reference"}}
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv to dependencies with MINOR version bump and compile static ToolDefinition inputSchema at ToolRegistry.register time","tdd_next":"Reuse compiled static validator across execute calls and cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap)"}}

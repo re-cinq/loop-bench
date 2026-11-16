@@ -1,0 +1,8 @@
+Completed the TDD round for #95:
+
+- **Red:** Added `wraps non-Error rejections with cause and readable message while rethrowing the original value` to `src/orchestration/chatOrchestrator.test.ts` covering string, plain object, `undefined`, and circular object rejections; running `npm test -- src/orchestration/chatOrchestrator.test.ts` failed on that new test (`1 failed, 26 passed, 27 total`).
+- **Green & Refactor:** Updated `src/orchestration/chatOrchestrator.ts` so `hooks.onError` always runs in `catch`, passing `Error` instances through unchanged and wrapping non-`Error` values via `new Error(describeRejection(error), {cause: error})` while still rethrowing the original rejection unchanged. Re-ran `npm test -- src/orchestration/chatOrchestrator.test.ts` (`27 passed, 27 total`: 0 failing tests, 0 regressions; `src/orchestration/onErrorNonError.acceptance.test.ts` was not run locally).
+- **Traceability, Changelog, Formatting & Push:** Added the new test citation to `specs/hal-engine-config-hooks/spec.md`, added the `## [Unreleased]` entry in `CHANGELOG.md`, ticked all facets in `.lore/dod.md`, ran `npm run prettier`, `npm run spec:names:fix`, `npm run check:spec-links`, and `npm run check:spec-status` (0 findings), committed (`f2825bc`), pushed `origin HEAD`, and verified `origin/main` merges cleanly (`Already up to date`, `## loop-bench/95...origin/loop-bench/95`).
+- **Unrelated smell noted (not acted on):** `src/orchestration/onErrorNonError.acceptance.test.ts` constructs `sentAt` with `new Date().toISOString()`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Coerce non-Error rejections for onError, verify existing Error tests pass, and update CHANGELOG.md","tdd_next":"acceptance green"}}

@@ -1,0 +1,8 @@
+Completed one red-green-refactor round and resolved the CI findings on `loop-bench/37` (commit `933828e`, pushed and up to date with `origin/main`):
+
+- **WeakMap caching (`src/orchestration/tools/registry.ts`, `src/orchestration/tools/registry.test.ts`)**: Added a unit test asserting function-valued `ToolDefinitionSource` schemas are compiled lazily on `execute` and cached in a `WeakMap` by schema object reference, implemented `resolveValidator` using `dynamicValidators`, and verified `src/orchestration/tools/registry.test.ts` passes (2/2).
+- **CI fixes**: Attached `{cause: error}` in `compileSchema` (`src/orchestration/tools/registry.ts`), fixed the `re-lint/prefer-early-return` and `re-lint/max-member-chain` errors in `src/orchestration/tools/registry.acceptance.test.ts` without altering test assertions, and added an `## [Unreleased]` entry to `CHANGELOG.md` (`scripts/check-changelog.sh origin/main` passed).
+- **Traceability & DoD**: Cited the new unit test in `specs/hal-engine-tool-input-validation/spec.md` (`check-spec-anchor-names` and `check-spec-links` passed) and ticked the facet in `.lore/dod.md`.
+- **Red tests vs regressions**: 0 regressions; only the ticket's red acceptance tests (`src/orchestration/tools/registry.acceptance.test.ts`) remain red pending execute-time validation.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap)","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor and return a non-leaking rejection ToolResponse"}}

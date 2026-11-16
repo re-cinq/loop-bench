@@ -1,0 +1,7 @@
+Completed one red-green-refactor round for ticket #94:
+
+- **RED:** Added unit test `fires onError and afterSession in order without calling the provider when it throws` in `src/orchestration/chatOrchestrator.test.ts` and ran `src/orchestration/chatOrchestrator.test.ts` (1 failed, 23 passed).
+- **GREEN & REFACTOR:** Moved `if (hooks?.beforeSession) await hooks.beforeSession(session);` inside the `try` block in `src/orchestration/chatOrchestrator.ts`, tightened variable ordering in the new test, added its traceability citation to `specs/hal-engine-architecture/spec.md`, repointed shifted spec anchors (`scripts/check-spec-anchor-names.mjs --fix` and `scripts/repoint-spec-anchors.mjs`), formatted changed TypeScript files with Prettier, and checked off Facet 1 in `.lore/dod.md`.
+- **Verification & Delivery:** Re-ran `src/orchestration/chatOrchestrator.test.ts` (24 passed, 0 failed; 0 red tests of mine, 0 regressions). Committed (`5e17391`), pushed to `origin/loop-bench/94`, and merged `origin/main` (already up to date).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Move beforeSession inside the try block in chatOrchestrator.ts","tdd_next":"Update specs/hal-engine-config-hooks/spec.md with the new guarantee for beforeSession"}}

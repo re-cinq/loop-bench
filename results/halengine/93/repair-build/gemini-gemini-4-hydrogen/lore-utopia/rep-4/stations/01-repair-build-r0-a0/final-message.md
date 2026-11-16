@@ -1,0 +1,7 @@
+Fixed the four ESLint failures on `src/orchestration/orchestratorHelpers.test.ts` and pushed commit `9e418f6` to `origin/loop-bench/93` (`origin/main` already up to date):
+
+- Combined the two `expect()` calls in `returns the defined side when one operand is undefined` (`src/orchestration/orchestratorHelpers.test.ts:35`) into a single object assertion (`re-lint/max-expects`).
+- Added a `### Usage accumulation` subsection in `specs/hal-engine-architecture/spec.md` with trailing `validated by` citations for all three `accumulateUsage` tests at lines 29, 35, and 46 (`re-lint/require-spec-link`).
+- Verified locally with `npx prettier --check src/orchestration/orchestratorHelpers.test.ts`, `npm run spec:names`, `npm run check:spec-links`, `npm run check:spec-status`, `node scripts/repoint-spec-anchors.mjs --check origin/main`, `npm run docs:check`, and `node --experimental-vm-modules node_modules/jest/bin/jest.js src/orchestration/orchestratorHelpers.test.ts` (7/7 passed). ESLint, typecheck, and build were not run in this pod per memory constraints.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Added missing spec citations and collapsed duplicate expect calls in src/orchestration/orchestratorHelpers.test.ts"}}

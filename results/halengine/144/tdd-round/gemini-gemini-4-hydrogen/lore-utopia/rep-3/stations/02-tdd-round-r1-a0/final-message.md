@@ -1,0 +1,11 @@
+Completed one TDD round and addressed the CI failures from `81276c7`:
+
+- **Facet closed:** Added `SessionSummaryFrame` and `SessionListMessage` to `src/types/messages.ts`, included `SessionListMessage` in `OutgoingMessage`, and re-exported `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` from `src/types/index.ts` and `src/index.ts` (ticked in `.lore/dod.md`). Added coverage in `src/index.test.ts` and linked it in `specs/hal-engine-conversation-list/spec.md`.
+- **CI findings fixed:**
+  - `eslint`: Replaced duplicated server/client setup and `delegatingTo` in `src/transport/conversationList.acceptance.test.ts` with `wsTestSupport` helpers and `minimalStore`, flipped the `connected` branch in `askAfterConnect` for `re-lint/prefer-early-return`, and constructed `invalidPayloads` via `.map` in `src/transport/ws/validation.test.ts` to eliminate `re-lint/no-duplicate-code`.
+  - `spec-names`: Updated shifted `#Lnn` anchors in `specs/hal-engine-conversation-list/spec.md` and `specs/hal-engine-subprotocol-marker/spec.md` (`check-spec-anchor-names`: 796/796 valid).
+  - `changelog`: Added an entry under `## [Unreleased]` in `CHANGELOG.md` (`check-changelog.sh origin/main` passes).
+- **Verification:** Ran Prettier on all changed files and ran `src/index.test.ts` and `src/transport/ws/validation.test.ts` (2 suites, 6 tests passed; 0 regressions; acceptance tests in `src/transport/conversationList.acceptance.test.ts` were not run locally and remain red pending the remaining facets; eslint and tsc were not run locally per pod limits).
+- **Git:** Committed as `c1e0b32`, pushed to `origin/loop-bench/144`, and verified `origin/main` is already up to date with a clean working tree.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add SessionSummaryFrame and SessionListMessage to src/types/messages.ts, include them in OutgoingMessage, re-export list types from src/index.ts, and fix CI lint/spec-names/changelog failures","tdd_next":"Thread sessionStore into createMessageHandler and wire it in src/transport/createServer.ts"}}

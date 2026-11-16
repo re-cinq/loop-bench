@@ -1,0 +1,6 @@
+Restored Ajv v6 compatibility in `src/orchestration/tools/registry.ts` (`error.instancePath ?? error.dataPath` and comma-joined union type splitting), added a unit test (`formatValidationErrors`) in `src/orchestration/tools/registry.test.ts`, cited it in `specs/hal-engine-tool-input-validation/spec.md`, updated `.lore/dod.md`, formatted the TypeScript files with Prettier, and pushed commit `8c9370b` to `origin/loop-bench/37`.
+
+- **CI failure breakdown:** 0 regressions; both red tests in `src/orchestration/tools/registry.test.ts` on `1e96366` were newly added ticket tests failing because `1e96366` removed the Ajv v6 `dataPath` fallback.
+- **Test execution:** This round ran no tests after editing because `npm test -- --runTestsByPath src/orchestration/tools/registry.test.ts` was denied by pod policy after the edits (an earlier run before editing passed 7/7 against local `ajv@8.20.0`); CI will verify the push.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix Ajv v6 dataPath and union type formatting in registry.ts with cited unit test","tdd_next":"Update example/weather-tool.ts, docs/adding-a-tool.md, README.md, .specify/spec.md, adrs/ADR-002-response-validation.md, and CHANGELOG.md"}}

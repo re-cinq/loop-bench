@@ -1,0 +1,6 @@
+Completed one RED-GREEN-REFACTOR round for #144 on `loop-bench/144` (commit `81276c7`, pushed to `origin/loop-bench/144`, up to date with `origin/main`).
+
+- **Changes:** Added `ListSessionsMessage` to `IncomingMessage` in `src/types/messages.ts`, implemented `list_sessions` validation in `src/transport/ws/validation.ts` (optional non-negative integer `limit`, optional `before` cursor with 1–128 char `sessionId` and finite-date `updatedAt`, stripping unknown fields), added the unit test in `src/transport/ws/validation.test.ts` with its citation in `specs/hal-engine-conversation-list/spec.md`, formatted all 5 touched files with Prettier, and ticked Facet 2 in `.lore/dod.md`.
+- **Tests:** Ran `src/transport/ws/validation.test.ts` via Jest (RED: 1 failed, 3 passed; GREEN & post-format: 4 passed, 0 failed). Red tests: 0 yours, 0 regressions (acceptance tests in `src/transport/conversationList.acceptance.test.ts` were not run locally).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Add SessionSummaryFrame and SessionListMessage to src/types/messages.ts, include them in OutgoingMessage, and re-export list types from src/index.ts"}}

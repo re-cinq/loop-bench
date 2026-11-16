@@ -1,0 +1,7 @@
+Completed and pushed commit `3feaa9a` to `origin/loop-bench/93` (up to date with `origin/main`):
+
+- **Unit test (`src/orchestration/chatOrchestrator.test.ts`)**: Added `sums only rounds that report usage and passes undefined when none do`, keeping `receives collected response text and usage` unchanged; ran `src/orchestration/chatOrchestrator.test.ts` (26/26 passed; 0 red tests ours, 0 regressions). Acceptance tests, `eslint`, `typecheck`, and `build` were not run locally and are left to CI.
+- **CI fixes & traceability**: Linked `src/orchestration/chatOrchestratorUsage.acceptance.test.ts#L67` in `specs/hal-engine-config-hooks/spec.md` (and updated `chatOrchestrator.ts#L150` -> `#L151`), linked the new unit test in `specs/hal-engine-architecture/spec.md`, repointed `specs/hal-engine-tool-input-validation/spec.md`, added the `### Changed` entry and migration note in `CHANGELOG.md`, and ticked the closed facets in `.lore/dod.md`.
+- **Unrelated observation (not acted on)**: `README.md`, `docs/getting-started.md`, `example/full-config.ts`, and `example/server.ts` still name the third callback argument `usage` rather than `totalUsage` in example snippets.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do; update hooks spec, spec links, and CHANGELOG","tdd_next":"acceptance green"}}

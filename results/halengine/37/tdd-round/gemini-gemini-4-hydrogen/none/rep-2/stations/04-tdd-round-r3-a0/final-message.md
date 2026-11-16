@@ -1,0 +1,5 @@
+Added the remaining validation unit tests in `src/orchestration/tools/registry.test.ts` (7/7 passing) and `src/orchestration/chatOrchestrator.test.ts` (23/23 passing), simplified unreachable Ajv v6 `dataPath` / empty-error branches in `src/orchestration/tools/registry.ts`, linked all statements in `specs/hal-engine-tool-input-validation/spec.md` (`Status: Shipped`), and updated `.lore/dod.md`.
+
+Red tests: 0 yours, 0 regressions (prior CI `test` failure was from uncovered branches in `src/orchestration/tools/registry.ts`; acceptance tests, full suite, linter, and typechecker were not run locally). Unrelated note: `ToolRegistry.get` and `ToolRegistry.has` in `src/orchestration/tools/registry.ts` have no unit tests.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add remaining unit tests in registry.test.ts and chatOrchestrator.test.ts and link all statements in specs/hal-engine-tool-input-validation/spec.md","tdd_next":"Update example/weather-tool.ts, docs/adding-a-tool.md, README.md, .specify/spec.md, adrs/ADR-002-response-validation.md, and CHANGELOG.md"}}

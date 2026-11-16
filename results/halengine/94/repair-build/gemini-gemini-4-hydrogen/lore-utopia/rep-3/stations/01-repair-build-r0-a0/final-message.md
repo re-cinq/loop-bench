@@ -1,0 +1,7 @@
+Fixed both CI findings in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` and updated the shifted spec anchor in `specs/hal-engine-config-hooks/spec.md` (`#L40` → `#L32`):
+- Replaced the invalid `PromptBuilderConfig` fields (`baseSystemPrompt`, `systemPromptSuffix`, `contextConfig`) with `{identity: 'You are HAL.'}` to match `PromptBuilderConfig`.
+- Combined the three `expect` calls into a single `expect({rejectedError, caughtError, afterSessionRan}).toEqual(...)` assertion to satisfy `re-lint/max-expects`.
+
+Verified with `./node_modules/.bin/prettier --check src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts`, scoped Jest (`npm test -- src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts src/orchestration/chatOrchestrator.test.ts`: 2 suites, 25 passed), `node scripts/repoint-spec-anchors.mjs --check origin/main`, `npm run spec:names`, `npm run check:spec-links`, and `npm run check:spec-status`, then committed (`c4af328`) and pushed to `origin/loop-bench/94` (`origin/main` already up to date).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Fixed invalid PromptBuilderConfig properties and collapsed 3 expects into 1 in src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts, and updated its spec anchor to #L32"}}
