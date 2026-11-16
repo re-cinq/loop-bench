@@ -1,0 +1,8 @@
+Fixed all four ESLint errors in `src/orchestration/orchestratorHelpers.test.ts` on branch `loop-bench/93` (commit `b67f3e3`):
+
+- Consolidated the two `expect` calls in `returns the defined side when one operand is undefined` (`src/orchestration/orchestratorHelpers.test.ts#L35`) into a single object assertion (`re-lint/max-expects`).
+- Added validating statements with trailing `[validated by: ...]` links in `specs/hal-engine-architecture/spec.md` for all three `accumulateUsage` tests (`#L29`, `#L35`, `#L43`) (`re-lint/require-spec-link`).
+
+Verified locally with Prettier check on all branch TypeScript files, `npm run spec:names` (593 citations), `npm run check:spec-links` (0 misplaced), `npm run check:spec-status` (0 findings), `node scripts/repoint-spec-anchors.mjs --check origin/main` (0 stale), `npm run docs:check`, `npm run docs:check-spikes`, `npm run check:regions`, `bash scripts/check-changelog.sh origin/main`, and targeted Jest suites (`src/orchestration/orchestratorHelpers.test.ts` and `src/orchestration/chatOrchestrator.acceptance.test.ts`: 2 suites, 9 tests passed). Pushed `b67f3e3` to `origin/loop-bench/93` and verified `origin/main` is already up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"consolidated two expect calls into one object assertion and added spec citations in specs/hal-engine-architecture/spec.md for all three accumulateUsage tests in src/orchestration/orchestratorHelpers.test.ts"}}

@@ -1,0 +1,8 @@
+Fixed the CI failure on `f90a1e2` where `formatErrorPath` in `src/orchestration/tools/registry.ts` threw `TypeError: Cannot read properties of undefined (reading 'length')` when Ajv omitted `instancePath` and emitted `dataPath` instead:
+
+- **Red:** Added `formats error paths whether the validator reports dataPath or instancePath` in `src/orchestration/tools/registry.test.ts`, reproducing the `TypeError` on `undefined` `instancePath` (1 red test authored this round; 0 regressions reported in `round-brief.md`, where only the ticket's acceptance tests in `src/orchestration/tools/registry.acceptance.test.ts` failed).
+- **Green & Refactor:** Updated `AjvErrorObject` and `formatErrorPath` in `src/orchestration/tools/registry.ts` to read `validationError.instancePath ?? validationError.dataPath` and normalize both `/`-delimited and `.`-delimited paths (returning `'input'` when empty or undefined), updated the shifted anchors and added the new citation in `specs/hal-engine-tool-input-validation/spec.md`, formatted the TypeScript files with Prettier, and verified all 8 tests in `src/orchestration/tools/registry.test.ts` pass.
+- **Unrelated smell noted (not touched):** The CI `test` environment appears to resolve Ajv v6 (`dataPath`) rather than the `ajv@^8.20.0` declared in `package.json` / `package-lock.json`.
+- **Landed:** Committed as `12a23a8` on `loop-bench/37`, pushed to `origin/loop-bench/37`, and merged `origin/main` (already up to date; `git status` clean and synchronized).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle both Ajv dataPath and instancePath error paths in ToolRegistry without crashing when instancePath is undefined","tdd_next":"acceptance green"}}

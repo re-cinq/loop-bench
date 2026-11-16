@@ -1,0 +1,8 @@
+Completed one red-green-refactor round for ticket #93:
+
+- **RED:** Added `sums usage across rounds that report it and leaves usage undefined when none do` to `src/orchestration/chatOrchestrator.test.ts`; running `src/orchestration/chatOrchestrator.test.ts` failed with `{inputTokens: 5, outputTokens: 3, totalTokens: 8}` instead of `{inputTokens: 15, outputTokens: 5, totalTokens: 20}` (1 red test written by this round, 0 regressions).
+- **GREEN & REFACTOR:** Replaced final-round usage retention in `src/orchestration/chatOrchestrator.ts` with `accumulateUsage` extracted to `src/orchestration/orchestratorHelpers.ts`, cited the new test in `specs/hal-engine-architecture/spec.md`, ticked the facet in `.lore/dod.md`, and formatted the changed TypeScript files with Prettier.
+- **Verification & Push:** `src/orchestration/chatOrchestrator.test.ts` passed (25/25) after refactoring, `check-spec-links.mjs` and `check-spec-anchor-names.mjs` passed on `specs/hal-engine-architecture/spec.md`, and commit `1d3d5c8` is pushed to `origin/loop-bench/93` (up to date with `origin/main`). Acceptance tests, full test suite, typecheck, and lint were not run locally and will be judged by CI.
+- **Unrelated observations:** `specs/hal-engine-config-hooks/spec.md` only cites the first test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` (`#L44`), not the second (`counts reported rounds while leaving a turn with no reported usage undefined`); left untouched.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit"}}

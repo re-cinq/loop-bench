@@ -1,0 +1,7 @@
+Completed the red-green-refactor round for `#95` on branch `loop-bench/95` (commit `9229aaf`, pushed to `origin/loop-bench/95`, `origin/main` already up to date):
+
+- **Red:** Added `wraps a non-Error rejection in an Error with cause preserved while rethrowing the original` in `src/orchestration/chatOrchestrator.test.ts`; running `src/orchestration/chatOrchestrator.test.ts` failed with 1 red test (mine) and 26 passing (0 regressions).
+- **Green & Refactor:** Updated `src/orchestration/chatOrchestrator.ts` (`toHookError` / `describeRejection`) so any caught non-`Error` rejection is wrapped in an `Error` with a readable `message` and `cause` preserved for `hooks.onError` while `Error` instances pass through unchanged and the original rejection still propagates; re-ran `src/orchestration/chatOrchestrator.test.ts` with 27/27 passing (0 red tests, 0 regressions).
+- **Docs & Gates:** Updated `specs/hal-engine-config-hooks/spec.md`, repaired shifted anchors across `specs/hal-engine-architecture/spec.md` and `specs/hal-engine-tool-input-validation/spec.md`, added the `## [Unreleased]` entry in `CHANGELOG.md`, checked off all three facets in `.lore/dod.md`, and verified Prettier (`--check`), `check-spec-anchor-names`, `check-spec-links`, `check-spec-status`, and `repoint-spec-anchors --check origin/main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Wrap non-Error rejections in Error with cause for hooks.onError, keep Error instances and rethrown rejections unchanged, and add CHANGELOG entry","tdd_next":"acceptance green"}}

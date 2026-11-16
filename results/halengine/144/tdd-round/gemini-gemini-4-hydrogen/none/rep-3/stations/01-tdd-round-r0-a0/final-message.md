@@ -1,0 +1,7 @@
+Completed one red-green-refactor round for #144:
+
+- **Red → Green → Refactor:** Added failing unit tests in `src/transport/ws/validation.test.ts` for `list_sessions` validation, added `ListSessionsMessage`, `SessionSummaryFrame`, and `SessionListMessage` to `src/types/messages.ts` (`IncomingMessage` / `OutgoingMessage`) with re-exports in `src/types/index.ts` and `src/index.ts`, implemented `list_sessions` validation in `src/transport/ws/validation.ts`, formatted with Prettier, added spec citations in `specs/hal-engine-conversation-list/spec.md`, and ticked the first two facets in `.lore/dod.md`.
+- **Test results:** `src/transport/ws/validation.test.ts` passed (5/5 tests). Acceptance tests, full suite, linter, typechecker, and build were not run locally (handled by CI).
+- **Pre-existing issue noticed (untouched):** `check-spec-anchor-names.mjs` reported 3 pre-existing stale anchors in `specs/hal-engine-conversation-list/spec.md` for `src/transport/conversationList.acceptance.test.ts` (`#L87` -> `#L93`, `#L129` -> `#L134`, `#L161` -> `#L163`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ListSessionsMessage, SessionSummaryFrame, and SessionListMessage types/exports and validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Thread sessionStore into createMessageHandler (optional parameter) and wire it in src/transport/createServer.ts"}}

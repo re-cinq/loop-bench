@@ -1,0 +1,12 @@
+Completed the `WeakMap` validator caching round and resolved all CI failures from `round-brief.md` on `loop-bench/37` (commit `739bce0`):
+
+- **CI fixes (`round-brief.md`)**:
+  - Updated `src/orchestration/tools/registry.ts` to resolve the `Ajv` constructor via default import (`ajv`) without `SchemaObject` or named `Ajv` ESM exports (compatible with both `ajv@8.20.0` and `ajv@6.x` under `NodeNext`/Jest ESM), and attached `{cause: error}` in `compileSchema` (`preserve-caught-error`).
+  - Fixed the two `re-lint` findings (`re-lint/prefer-early-return`, `re-lint/max-member-chain`) in `src/orchestration/tools/registry.acceptance.test.ts` without altering assertions or `it()` line anchors.
+  - Added an `## [Unreleased]` entry in `CHANGELOG.md` (`scripts/check-changelog.sh` passes).
+- **TDD round (`WeakMap` caching & static validator reuse)**:
+  - **RED**: Added `caches compiled validators for function-valued tool definitions by schema object reference` in `src/orchestration/tools/registry.test.ts` (1 red test authored by us, 0 regressions).
+  - **GREEN**: Added `dynamicValidators` (`WeakMap`) and `resolveValidator` in `src/orchestration/tools/registry.ts` to reuse static `tool.validate` and cache compiled validators for function-valued `ToolDefinitionSource` schemas by schema object reference; `src/orchestration/tools/registry.test.ts` passes (`2 passed, 2 total`).
+  - **Spec / DoD**: Linked the new test in `specs/hal-engine-tool-input-validation/spec.md#L21` (`#L22` in `registry.test.ts`), checked off the facet in `.lore/dod.md`, verified Prettier, single-file TypeScript diagnostics (`[]`), `check-spec-anchor-names`, `check-spec-links`, `repoint-spec-anchors --check origin/main`, and `check-spec-status`, and pushed to `origin/loop-bench/37` (up to date with `origin/main`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap) and reuse compiled static validators on execute","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor, returning a ToolResponse ({result}) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at specs/hal-engine-tool-input-validation/spec.md"}}

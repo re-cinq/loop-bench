@@ -1,0 +1,9 @@
+Completed one red-green-refactor round on `loop-bench/37` (commit `572bb35`, pushed and up to date with `origin/main`):
+
+- **RED**: Added `src/orchestration/tools/registry.test.ts` testing that `ToolRegistry.register` throws synchronously naming the tool when given an invalid static `inputSchema`, linked from `specs/hal-engine-tool-input-validation/spec.md`, and confirmed the test failed (`0 passed, 1 failed`).
+- **GREEN**: Installed `ajv` (`^8.20.0`) into `package.json` `dependencies` and `package-lock.json`, bumped the package version to `0.4.0`, and implemented static `inputSchema` compilation in `src/orchestration/tools/registry.ts` using `new Ajv({strict: false, validateFormats: false, coerceTypes: false, useDefaults: false, allErrors: true})`. `src/orchestration/tools/registry.test.ts` now passes (`1 passed, 1 total`).
+- **REFACTOR / Delivery**: Checked Prettier formatting and spec anchor/link checks (`check-spec-anchor-names`, `check-spec-links`, `repoint-spec-anchors --check origin/main`), updated `.lore/dod.md`, committed, and pushed.
+
+No `round-brief.md` was present, so there were 0 prior CI red tests and 0 regressions from this round; acceptance tests, typechecking, linting, and the full suite were not run in this pod.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv runtime dependency (minor bump 0.4.0) and compile static ToolDefinition.inputSchema at ToolRegistry.register time","tdd_next":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap) and reuse compiled validators in ToolRegistry.execute"}}

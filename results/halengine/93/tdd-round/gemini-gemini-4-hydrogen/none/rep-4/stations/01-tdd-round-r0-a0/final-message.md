@@ -1,0 +1,7 @@
+Completed one red-green-refactor round for Facet 2 of ticket #93 (`3ddf276` pushed to `origin/loop-bench/93`, up to date with `origin/main`).
+
+- Added `accumulateUsage` in `src/orchestration/orchestratorHelpers.ts` and a unit test in `src/orchestration/orchestratorHelpers.test.ts` (`5 passed, 5 total`; 0 red tests of mine, 0 regressions observed; acceptance tests were not run in this pod).
+- Formatted changed `.ts` files with Prettier, cited the new test in `specs/hal-engine-architecture/spec.md`, and checked off the facet in `.lore/dod.md`.
+- Note: `specs/hal-engine-config-hooks/spec.md` currently cites `reports the summed usage from every provider call in a turn with two tool rounds`, while the second test in `src/orchestration/chatOrchestratorUsage.acceptance.test.ts` (`counts reported rounds while leaving a turn with no reported usage undefined`) is not yet cited by a spec statement (relevant when addressing the remaining hooks spec / ESLint `require-spec-link` facet).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserving undefined when none do.","tdd_next":"Replace final-round retention with a deliberately named total-usage contract whose public type makes aggregation explicit."}}

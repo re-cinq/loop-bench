@@ -1,0 +1,7 @@
+Fixed all three CI ESLint failures from `round-brief.md` and pushed commit `aa79f59` to `origin/loop-bench/37` (already up to date with `origin/main`):
+- `src/orchestration/chatOrchestrator.test.ts`: destructured `const [firstPart] = last.content;` to eliminate the 3-hop `last.content[0]?.content` chain (`re-lint/max-member-chain`).
+- `src/orchestration/tools/registry.test.ts`: rewrote `captureLogs` using `Logger['info']` so it shares no duplicated block with `src/orchestration/tools/registry.acceptance.test.ts` (`re-lint/no-duplicate-code`) and keeps all spec anchor line numbers unchanged.
+- Verified with Prettier, `src/orchestration/tools/registry.test.ts` + `src/orchestration/chatOrchestrator.test.ts` (28/28 passed; 0 red tests ours, 0 regressions; acceptance tests not run locally), `check-spec-anchor-names.mjs` (404 citations valid), and `repoint-spec-anchors.mjs --check origin/main` (0 stale).
+- Remaining facet in `.lore/dod.md`: adding `ajv` to `package.json` `dependencies`, updating `package-lock.json`, and bumping the version `MINOR` (`0.3.0` -> `0.4.0`) was denied by the pod's build-config modification policy and remains unchecked.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Fix CI ESLint failures (re-lint/max-member-chain in chatOrchestrator.test.ts and re-lint/no-duplicate-code in registry.test.ts)","tdd_next":"Add ajv to dependencies in package.json and package-lock.json and bump the package version MINOR"}}

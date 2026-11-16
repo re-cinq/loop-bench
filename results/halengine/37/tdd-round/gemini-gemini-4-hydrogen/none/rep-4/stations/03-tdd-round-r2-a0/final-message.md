@@ -1,0 +1,6 @@
+Completed the dynamic `ToolDefinitionSource` schema caching and validation round:
+- Added a test in `src/orchestration/tools/registry.test.ts` (3/3 tests passing) and `WeakMap`-backed dynamic validator resolution in `src/orchestration/tools/registry.ts`.
+- Updated `specs/hal-engine-tool-input-validation/spec.md`, `.lore/dod.md`, and `CHANGELOG.md`, ran Prettier and `check-spec-anchor-names.mjs --fix` / `check-spec-links.mjs`, committed (`1ce9ed1`), merged `origin/main` (already up to date), and pushed to `origin/loop-bench/37`.
+- Red tests: 0 unit test failures in this round and 0 regressions in `round-brief.md` (CI's red tests were only the ticket's acceptance tests in `src/orchestration/tools/registry.acceptance.test.ts`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap) and validate resolved dynamic schemas on execute","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor, returning a ToolResponse ({result}) that names failing field paths and expected types/required fields without echoing or logging offending values, and add the one-line doc comment pointing at specs/hal-engine-tool-input-validation/spec.md"}}

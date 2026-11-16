@@ -1,0 +1,9 @@
+Fixed the CI findings from `round-brief.md` and completed the WeakMap caching facet for function-valued tool schemas:
+
+- `src/orchestration/tools/registry.ts`: loaded `ajv` via `createRequire(import.meta.url)` with type-only `Ajv`, `Options`, and `ValidateFunction` imports (fixing both `TS2693` and Node ESM `SyntaxError`), attached `{cause: error}` in `compileToolSchema` (`preserve-caught-error`), and added `WeakMap` caching (`dynamicValidators` / `resolveValidator`) for function-valued `ToolDefinitionSource` schemas.
+- `src/orchestration/tools/registry.acceptance.test.ts`: fixed `re-lint/prefer-early-return` and `re-lint/max-member-chain` findings in the stub provider's `sendMessage` generator without altering test behavior.
+- `src/orchestration/tools/registry.test.ts`: added a test verifying `ToolRegistry.execute` compiles and caches function-valued `inputSchema` objects by reference (`2 passed, 2 total`; acceptance tests and the full suite were not run locally per pod rules, so 0 local red tests and 0 observed regressions this round).
+- `specs/hal-engine-tool-input-validation/spec.md`, `.lore/dod.md`, and `CHANGELOG.md`: linked the new test statement, checked off the `WeakMap` caching facet, and added an entry under `## [Unreleased]`.
+- Verified Prettier formatting (`prettier --check` on `registry.ts` and `registry.test.ts`), spec traceability checks (`check-spec-anchor-names.mjs`, `check-spec-links.mjs`, `check-spec-status.mjs`, `repoint-spec-anchors.mjs --check origin/main`), and `scripts/check-changelog.sh origin/main`, then committed (`bb3eb84`) and pushed `loop-bench/37`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap) and fix CI findings","tdd_next":"Validate input in ToolRegistry.execute before invoking the executor, returning a ToolResponse naming failing paths and expected types without leaking values"}}

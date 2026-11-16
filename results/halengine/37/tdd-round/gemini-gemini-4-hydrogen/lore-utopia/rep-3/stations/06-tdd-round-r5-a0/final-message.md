@@ -1,0 +1,7 @@
+Closed the CI `test` coverage-threshold failure on `src/orchestration/` by covering the remaining validation formatting and structured `ToolResponse` paths in `src/orchestration/tools/registry.test.ts` and simplifying redundant dead branches in `src/orchestration/tools/registry.ts`.
+
+- **Tests run**: `src/orchestration/tools/registry.test.ts` (8/8 passed; 0 red tests, 0 regressions).
+- **Traceability & formatting**: Linked the two new tests (`#L236`, `#L292`) in `specs/hal-engine-tool-input-validation/spec.md`, verified with `repoint-spec-anchors.mjs --check`, `check-spec-anchor-names.mjs`, and `check-spec-links.mjs`, formatted the changed `.ts` files with Prettier, updated `.lore/dod.md`, and pushed commit `ac7e7ca` to `origin/loop-bench/37` (up to date with `origin/main`).
+- **Unrelated smells noticed**: `ToolRegistry.get()`, the `.map` callback in `ToolRegistry.getPromptInstructions()`, and `ToolRegistry.getExamplePrompts()` in `src/orchestration/tools/registry.ts` remain uncovered by unit tests.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Close src/orchestration/ Jest coverage threshold gaps with unit tests for nested required paths, union types, root failures, keyword fallback, and ToolResponse returns","tdd_next":"acceptance green"}}

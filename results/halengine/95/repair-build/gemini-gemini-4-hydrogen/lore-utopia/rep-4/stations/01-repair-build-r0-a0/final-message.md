@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` with the fixed timestamp `'2026-01-01T00:00:00.000Z'` in `src/orchestration/onErrorNonError.acceptance.test.ts` to resolve the `re-lint/no-nondeterministic-tests` error, verified formatting with `npx prettier --write src/orchestration/onErrorNonError.acceptance.test.ts` and ran `node --experimental-vm-modules node_modules/jest/bin/jest.js src/orchestration/onErrorNonError.acceptance.test.ts` (2/2 tests passed), then committed (`57690a6`) and pushed to `origin/loop-bench/95` (already up to date with `origin/main`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"re-lint/no-nondeterministic-tests on new Date() in src/orchestration/onErrorNonError.acceptance.test.ts"}}

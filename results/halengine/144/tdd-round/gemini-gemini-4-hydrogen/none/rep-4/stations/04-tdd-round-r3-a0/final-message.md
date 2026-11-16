@@ -1,0 +1,6 @@
+Implemented `list_sessions` handling in `src/transport/ws/messageHandler.ts` and `sendSessionList` in `src/transport/ws/sender.ts`, verified with a Red-Green-Refactor cycle in `src/transport/ws/messageHandler.test.ts` (55/55 passing).
+
+- Prior CI failures from `round-brief.md`: 2 acceptance tests in `src/transport/conversationList.acceptance.test.ts` (both expected for this ticket), 0 regressions; local test run covered only `src/transport/ws/messageHandler.test.ts` (0 red tests remaining in that suite).
+- Updated spec citations (`check-spec-anchor-names.mjs --fix`, `check-spec-links.mjs`, `check-spec-status.mjs`), ticked the facet in `.lore/dod.md`, formatted changed `.ts` files with Prettier, committed `3b3633e`, and pushed to `origin/loop-bench/144` (already up to date with `origin/main`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle list_sessions in src/transport/ws/messageHandler.ts and src/transport/ws/sender.ts","tdd_next":"Document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md and specs/hal-engine-conversation-list/spec.md"}}

@@ -1,0 +1,6 @@
+Fixed the CI failures on `loop-bench/37` (`d0e1020`, pushed and up to date with `origin/main`):
+- `src/orchestration/tools/registry.ts`: switched `ajv` import to `import {default as Ajv} from 'ajv'`, preserved `{cause: error}` in `compileSchema`, added the one-line doc comment on `execute`, and implemented `ToolRegistry.execute` validation against compiled schemas (`WeakMap`-cached for function-valued `ToolDefinitionSource`s) returning `ToolResponse` rejections without logging or echoing offending values.
+- `src/orchestration/tools/registry.acceptance.test.ts`: fixed `re-lint/prefer-early-return` and `re-lint/max-member-chain` in the orchestrator retry test.
+- `src/orchestration/tools/registry.test.ts`, `specs/hal-engine-tool-input-validation/spec.md`, `CHANGELOG.md`: added unit tests for pass-through extra properties, `enum` rejection, `Unknown tool` throw, static single-compile reuse, and dynamic schema caching; cited all tests and set spec status to `Shipped`; verified Prettier, spec/doc/changelog gates, and 41/41 passing tests across `registry.test.ts`, `registry.acceptance.test.ts`, `chatOrchestrator.test.ts`, and `config.test.ts`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"fixed ajv ESM/NodeNext import, preserve-caught-error, acceptance test lint errors, and implemented ToolRegistry.execute inputSchema validation"}}

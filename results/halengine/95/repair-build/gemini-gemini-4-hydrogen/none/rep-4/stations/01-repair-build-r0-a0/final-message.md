@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` in `src/orchestration/onErrorNonError.acceptance.test.ts` with a fixed `SENT_AT` timestamp constant to satisfy `re-lint/no-nondeterministic-tests`. Formatted with Prettier, ran Jest on `src/orchestration/onErrorNonError.acceptance.test.ts` (2/2 passed), committed (`5fd4f3b`), and pushed to `origin/loop-bench/95`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced nondeterministic new Date() with fixed SENT_AT timestamp in onErrorNonError.acceptance.test.ts"}}

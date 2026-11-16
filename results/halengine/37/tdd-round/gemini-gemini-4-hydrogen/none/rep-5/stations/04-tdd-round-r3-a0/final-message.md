@@ -1,0 +1,7 @@
+Fixed the CI failures from `11a817d` (`re-lint/max-member-chain` and `dataPath` fallback in `src/orchestration/tools/registry.ts`, `re-lint/no-duplicate-code` in `src/orchestration/tools/registry.test.ts` — 1 red test from our branch, 0 regressions) and closed the final facet in `.lore/dod.md`:
+
+- Added `Unknown tool: <name>` and schema-B rejection coverage in `src/orchestration/tools/registry.test.ts` and the tool-loop rejection-recovery test in `src/orchestration/chatOrchestrator.test.ts`.
+- Linked all statements in `specs/hal-engine-tool-input-validation/spec.md`, updated `Status` to `Shipped`, repointed shifted spec anchors (`specs/hal-engine-architecture/spec.md`, `specs/hal-engine-config-hooks/spec.md`), and updated `example/weather-tool.ts`, `docs/adding-a-tool.md`, `README.md`, `.specify/spec.md`, `adrs/ADR-002-response-validation.md`, and `CHANGELOG.md`.
+- Verified `src/orchestration/tools/registry.test.ts` and `src/orchestration/chatOrchestrator.test.ts` (`28 passed, 28 total`), doc/spec gates, and pushed `933f677` to `origin/loop-bench/37` (up to date with `origin/main`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add unit tests in src/orchestration/tools/registry.test.ts and src/orchestration/chatOrchestrator.test.ts, link remaining spec statements, update docs/examples/ADR-002/CHANGELOG, and fix CI failures","tdd_next":"acceptance green"}}

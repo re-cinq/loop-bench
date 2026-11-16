@@ -1,0 +1,5 @@
+Fixed both CI-reported errors in `src/orchestration/chatOrchestrator.beforeSession.acceptance.test.ts` (replaced invalid `PromptBuilderConfig` fields with `identity` and `responseGuidelines`, and consolidated the 3 `expect` calls into one `expect(...).toEqual(...)` assertion) and updated the resulting line anchor in `specs/hal-engine-config-hooks/spec.md` (`#L40` -> `#L35`).
+
+Verified locally with Prettier, targeted Jest suites (`chatOrchestrator.beforeSession.acceptance.test.ts` and `chatOrchestrator.test.ts`: 25/25 passed), `npm run spec:names`, `npm run check:spec-links`, and `node scripts/repoint-spec-anchors.mjs --check origin/main`; pushed commit `01604b3` to `origin/loop-bench/94` (already up to date with `origin/main`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced invalid PromptBuilderConfig fields and consolidated 3 expect calls to 1 in chatOrchestrator.beforeSession.acceptance.test.ts, and repointed its spec anchor"}}

@@ -1,0 +1,8 @@
+Completed one red-green-refactor round for static `inputSchema` compilation at `ToolRegistry.register` time:
+
+- **RED**: Added `src/orchestration/tools/registry.test.ts` testing that `ToolRegistry.register` throws synchronously naming the tool when a static `inputSchema` cannot be compiled; verified it failed (`Received function did not throw`).
+- **GREEN**: Added `ajv` (`^8.20.0`) to `dependencies` in `package.json` and `package-lock.json`, configured `new Ajv({strict: false, validateFormats: false})` in `src/orchestration/tools/registry.ts`, and compiled static `inputSchema` at `register` time via `compileSchema` (wrapping errors with the tool name). Re-ran `src/orchestration/tools/registry.test.ts`: 1 passed, 0 failed.
+- **REFACTOR & TRACEABILITY**: Formatted all modified files with Prettier, linked `src/orchestration/tools/registry.test.ts#L4` in `specs/hal-engine-tool-input-validation/spec.md`, verified `check-spec-links.mjs` and `check-spec-anchor-names.mjs`, updated `.lore/dod.md`, committed (`07b1e9b`), pushed to `origin/loop-bench/37`, and merged `origin/main` (already up to date).
+- **Test summary**: 1 unit test written by us (0 red locally after green, 0 regressions; acceptance tests and full suite were not run locally per instructions).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv to dependencies and compile static ToolDefinition.inputSchema at ToolRegistry.register time (throwing an error naming the tool on invalid schemas)","tdd_next":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap) and reuse compiled static validators on execute"}}

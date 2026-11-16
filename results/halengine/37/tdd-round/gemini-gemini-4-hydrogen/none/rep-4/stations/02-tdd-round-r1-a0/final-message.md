@@ -1,0 +1,6 @@
+- Fixed the two CI-reported ESLint findings (`re-lint/prefer-early-return` and `re-lint/max-member-chain`) in `src/orchestration/tools/registry.acceptance.test.ts` without altering test assertions or behavior.
+- Added a failing test in `src/orchestration/tools/registry.test.ts` (`reuses the compiled static validator across execute calls without re-reading inputSchema`), stored `staticValidate` on `StoredTool` in `src/orchestration/tools/registry.ts` so `execute` validates static tool input without re-reading `definition.inputSchema`, and verified `src/orchestration/tools/registry.test.ts` passes (2/2 tests).
+- Formatted changed TypeScript files with Prettier, linked the new test in `specs/hal-engine-tool-input-validation/spec.md`, updated `CHANGELOG.md` and `.lore/dod.md`, and pushed `6bff71f` to `origin/loop-bench/37`.
+- Red tests: 0 regressions, 0 of our unit tests are red (the pre-existing acceptance tests in `src/orchestration/tools/registry.acceptance.test.ts` remain for CI to judge across the remaining facets).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Reuse compiled static validators on execute without re-reading definition.inputSchema","tdd_next":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap) and validate resolved dynamic schemas on execute"}}

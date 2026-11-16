@@ -1,0 +1,8 @@
+Implemented `list_sessions` handling in `src/transport/ws/messageHandler.ts` and `sendSessionList` in `src/transport/ws/sender.ts`:
+
+- **Red/Green/Refactor**: Added 4 unit tests in `src/transport/ws/messageHandler.test.ts` (ISO date serialization and forwarding `{limit, before}` for `session.userId`, empty `session_list` when `sessionStore` or `listFor` is absent, `ws` error logging with `userId` and `SERVER_ERROR` when `listFor` rejects, and unlocked execution while a `user_message` stream is active). Verified all 4 failed before the implementation and all 58 tests in `src/transport/ws/messageHandler.test.ts` pass after formatting.
+- **Traceability & DoD**: Cited the new tests in `specs/hal-engine-conversation-list/spec.md`, ran `node scripts/check-spec-anchor-names.mjs --fix`, verified `check-spec-links.mjs` and `check-spec-status.mjs`, and checked off the facet in `.lore/dod.md`.
+- **CI status**: In the prior CI verdict (`round-brief.md`), 2 acceptance tests in `src/transport/conversationList.acceptance.test.ts` were red for this ticket and 0 tests were regressions.
+- **Unrelated note**: `ticket.md` mentions `conversations:list` / `conversations`, whereas `.lore/dod.md`, `specs/hal-engine-conversation-list/spec.md`, and `src/transport/conversationList.acceptance.test.ts` on this branch specify `list_sessions` / `session_list`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Handle list_sessions in src/transport/ws/messageHandler.ts and sendSessionList in src/transport/ws/sender.ts","tdd_next":"Document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md and specs/hal-engine-conversation-list/spec.md"}}

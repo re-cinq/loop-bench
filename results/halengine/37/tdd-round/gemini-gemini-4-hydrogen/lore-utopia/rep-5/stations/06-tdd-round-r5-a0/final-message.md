@@ -1,0 +1,7 @@
+- Added a spec-linked unit test (`names the dotted field path when a nested required property is omitted`) in `src/orchestration/tools/registry.test.ts` and linked it in `specs/hal-engine-tool-input-validation/spec.md` (`#L199`).
+- Refactored `src/orchestration/tools/registry.ts` to remove unreachable defensive branches (`dataPath`, `hasDefaultFunction` extra guards, and redundant `missingProperty` / `instancePath` fallbacks) so `src/orchestration/` stays above the `jest.config.js` coverage floor (`npm run test:coverage` in CI failed on `3265fd9`).
+- Formatted with Prettier and ran `src/orchestration/tools/registry.test.ts`: 7/7 tests passed (0 red tests of ours, 0 regressions; acceptance tests and full suite were not run in this pod per round rules).
+- Unrelated existing uncovered methods in `src/orchestration/tools/registry.ts` (`get`, `has`, `getExamplePrompts`, and `getPromptInstructions` map callback) were left untouched.
+- Committed (`f90a1e2`), pushed `origin/loop-bench/37`, and verified `origin/main` is already up to date.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Cover nested required field paths and remove unreachable validation branches in ToolRegistry to restore src/orchestration/ coverage above the Jest floor","tdd_next":"acceptance green"}}

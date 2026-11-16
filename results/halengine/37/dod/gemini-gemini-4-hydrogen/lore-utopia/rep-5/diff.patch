@@ -1,0 +1,333 @@
+diff --git a/.lore/dod.md b/.lore/dod.md
+new file mode 100644
+index 0000000..7e8dd56
+--- /dev/null
++++ b/.lore/dod.md
+@@ -0,0 +1,38 @@
++# Definition of Done
++
++> `ToolRegistry.execute` looks a tool up, logs the input's key names, and calls the executor without ever checking the declared `inputSchema` (`src/orchestration/tools/registry.ts`).
++
++**Strategy: `direct`** — `ToolRegistry.register`, `ToolRegistry.execute`, `setLogger`, and `createChatOrchestrator` already exist as direct entry points, so acceptance tests call the real registry and orchestrator seams without doubles.
++
++## Done when these pass
++
++- [ ] **returns a ToolResponse naming the missing required property and does not invoke the executor** — `ToolRegistry.execute` rejects missing required fields before calling the executor and names the missing property as required
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **rejects wrong-typed or disallowed-enum fields naming path and constraint without leaking values** — type and `enum` rejections name the failing field path and expected constraint while omitting offending property values from both `ToolResponse.result` and logger output
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **throws synchronously at register time when inputSchema is uncompilable and names the tool** — `ToolRegistry.register` compiles static schemas up front and fails synchronously with the tool name on an uncompilable schema
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **validates a function-valued ToolDefinitionSource against the schema current at each execute call** — dynamic tool definitions resolve and validate against the schema returned at that call rather than a stale cached validator
++      `src/orchestration/tools/registry.acceptance.test.ts`
++
++- [ ] **resolves after a rejected tool call by returning the validation error to the model and passing the retry unchanged** — `createChatOrchestrator` feeds validation rejections back to the model so it can retry within `maxToolRounds`, and valid inputs with unlisted properties pass through without coercion or injected defaults
++      `src/orchestration/chatOrchestrator.acceptance.test.ts`
++
++## Facets
++
++- [ ] Add a JSON Schema validator (`ajv`) to `package.json` `dependencies` (not `devDependencies` or `peerDependencies`) and ensure `npm run build` plus ESM import of `dist/index.js` succeeds
++- [ ] Compile static tool `inputSchema` once at `ToolRegistry.register` time (throwing synchronously with the tool name on failure), and cache per resolved schema object for function-valued `ToolDefinitionSource`
++- [ ] Validate `input` in `ToolRegistry.execute` against the resolved schema before invoking the executor, returning `{result: ...}` on failure with failing path and constraint and zero leaked input values in `result` or logs, while leaving `Unknown tool: <name>` throwing unchanged
++- [ ] Add unit tests in `src/orchestration/tools/registry.test.ts` (including single-compilation across repeated calls and `Unknown tool: <name>`) and `src/orchestration/chatOrchestrator.test.ts`, and link them in `specs/hal-engine-tool-input-validation/spec.md`
++- [ ] Add a one-line doc comment on `ToolRegistry.execute` pointing to `specs/hal-engine-tool-input-validation/spec.md`
++- [ ] Update `README.md`, `docs/adding-a-tool.md`, `.specify/spec.md`, and `CHANGELOG.md` (with MINOR bump / migration note in PR)
++
++## Out of scope
++
++- Changing `Unknown tool: <name>` from throwing to returning a `ToolResponse`
++- Validating tool output, hallucination detection, or evaluation harnesses
++- Per-tool authorization (`ToolContext` boundary) or `beforeToolCall` veto hooks
++- Retry, timeout, or rate limiting around tool execution
+diff --git a/specs/hal-engine-tool-input-validation/spec.md b/specs/hal-engine-tool-input-validation/spec.md
+new file mode 100644
+index 0000000..e985d5c
+--- /dev/null
++++ b/specs/hal-engine-tool-input-validation/spec.md
+@@ -0,0 +1,21 @@
++# Tool Input Validation
++
++| Field  | Value                |
++| ------ | -------------------- |
++| Issue  | re-cinq/HALEngine#37 |
++| Status | In Progress          |
++
++`ToolRegistry.execute` validates tool call arguments against the resolved tool definition's `inputSchema` before invoking the tool executor, returning a descriptive `ToolResponse` on validation failure so the model can self-correct within the tool loop instead of aborting the turn.
++
++## Validation Contract
++
++- `ToolRegistry.execute` validates `input` against the resolved tool definition's `inputSchema` before invoking the executor; when a required property is missing, it returns a `ToolResponse` naming the missing property as required and never invokes the executor ([validated by: returns a ToolResponse naming the missing required property and does not invoke the executor](../../src/orchestration/tools/registry.acceptance.test.ts#L10)).
++- Validation rejects wrong-typed fields and disallowed `enum` values with a `ToolResponse` naming the failing property path and expected constraint while omitting property values from both the returned `result` and every log line ([validated by: rejects wrong-typed or disallowed-enum fields naming path and constraint without leaking values](../../src/orchestration/tools/registry.acceptance.test.ts#L42)).
++- Validation enforces `required`, declared types, and `enum` only without injecting `additionalProperties: false`, coercing types, or applying schema defaults; when the model sends a malformed tool call followed by a corrected retry carrying an unlisted property, `createChatOrchestrator` delivers the validation error to the model and resolves once the retry executes with the corrected input unchanged ([validated by: resolves after a rejected tool call by returning the validation error to the model and passing the retry unchanged](../../src/orchestration/chatOrchestrator.acceptance.test.ts#L10)).
++- Calling `execute` with an unregistered tool name still throws `Unknown tool: <name>`.
++
++## Schema Compilation
++
++- A static `ToolDefinition` registered via `ToolRegistry.register` compiles its `inputSchema` synchronously at registration time and throws an error naming the tool if compilation fails ([validated by: throws synchronously at register time when inputSchema is uncompilable and names the tool](../../src/orchestration/tools/registry.acceptance.test.ts#L103)).
++- A static tool's compiled validator is reused across subsequent `execute` calls without recompiling on every invocation.
++- A function-valued `ToolDefinitionSource` resolves its definition per `execute` call and validates against the schema current at that call rather than a stale cached schema ([validated by: validates a function-valued ToolDefinitionSource against the schema current at each execute call](../../src/orchestration/tools/registry.acceptance.test.ts#L118)).
+diff --git a/src/orchestration/chatOrchestrator.acceptance.test.ts b/src/orchestration/chatOrchestrator.acceptance.test.ts
+new file mode 100644
+index 0000000..61cf274
+--- /dev/null
++++ b/src/orchestration/chatOrchestrator.acceptance.test.ts
+@@ -0,0 +1,92 @@
++import {createChatOrchestrator} from './chatOrchestrator.js';
++import {ToolRegistry} from './tools/registry.js';
++import {PromptBuilder} from '../infrastructure/builders/promptBuilder.js';
++import type {AIProvider, Message, MessageChunk, SendMessageParams} from '../types/ai.js';
++import type {ChatSession} from '../types/session.js';
++
++const SENT_AT = '2026-01-01T00:00:00.000Z';
++
++describe('ChatOrchestrator schema rejection retry acceptance', () => {
++  it('resolves after a rejected tool call by returning the validation error to the model and passing the retry unchanged', async () => {
++    const executorInputs: Array<Record<string, unknown>> = [];
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'get_weather',
++        description: 'Look up weather for a location',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {type: 'string'},
++            units: {type: 'string', default: 'celsius'},
++          },
++          required: ['location'],
++        },
++      },
++      async input => {
++        executorInputs.push(input);
++        return 'Sunny, 20C';
++      }
++    );
++
++    const capturedRounds: Message[][] = [];
++    const rounds: MessageChunk[][] = [
++      [
++        {type: 'tool_use', toolCall: {id: 'call-1', name: 'get_weather', input: {}}},
++        {type: 'stop', stopReason: 'tool_use'},
++      ],
++      [
++        {
++          type: 'tool_use',
++          toolCall: {id: 'call-2', name: 'get_weather', input: {location: 'Berlin', extraTag: 'keep'}},
++        },
++        {type: 'stop', stopReason: 'tool_use'},
++      ],
++      [
++        {type: 'text', text: 'Forecast ready.'},
++        {type: 'stop', stopReason: 'end_turn'},
++      ],
++    ];
++    let roundIndex = 0;
++
++    const provider: AIProvider = {
++      async *sendMessage(params: SendMessageParams): AsyncGenerator<MessageChunk> {
++        capturedRounds.push(params.messages.map(msg => ({...msg})));
++        for (const chunk of rounds[roundIndex++] ?? []) yield chunk;
++      },
++      async generateStructured<T>(): Promise<T> {
++        return {} as T;
++      },
++    };
++
++    const promptBuilder = new PromptBuilder({identity: 'You are a test assistant.'});
++    const orchestrator = createChatOrchestrator(provider, promptBuilder, registry);
++    const session: ChatSession = {
++      sessionId: 's-retry',
++      userId: 'u1',
++      entries: [{role: 'user', content: 'Weather please', timestamp: SENT_AT}],
++    };
++
++    const reply = await orchestrator.processMessage(session);
++    const roundOneText = extractToolResultContent(capturedRounds[1] ?? [], 'call-1');
++
++    expect({
++      reply,
++      executorInputs,
++      mentionsLocation: roundOneText.includes('location'),
++      mentionsRequired: /required/i.test(roundOneText),
++    }).toEqual({
++      reply: 'Forecast ready.',
++      executorInputs: [{location: 'Berlin', extraTag: 'keep'}],
++      mentionsLocation: true,
++      mentionsRequired: true,
++    });
++  });
++});
++
++function extractToolResultContent(messages: Message[], toolUseId: string): string {
++  const last = messages[messages.length - 1];
++  if (!last || last.role !== 'user' || typeof last.content === 'string') return '';
++  const match = last.content.find(entry => entry.type === 'tool_result' && entry.toolUseId === toolUseId);
++  return match?.content ?? '';
++}
+diff --git a/src/orchestration/tools/registry.acceptance.test.ts b/src/orchestration/tools/registry.acceptance.test.ts
+new file mode 100644
+index 0000000..ed4fd1e
+--- /dev/null
++++ b/src/orchestration/tools/registry.acceptance.test.ts
+@@ -0,0 +1,158 @@
++import {ToolRegistry} from './registry.js';
++import {setLogger} from '../../shared/logger.js';
++import type {Logger} from '../../shared/logger.js';
++
++describe('ToolRegistry inputSchema validation acceptance', () => {
++  afterEach(() => {
++    setLogger();
++  });
++
++  it('returns a ToolResponse naming the missing required property and does not invoke the executor', async () => {
++    let callCount = 0;
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'get_weather',
++        description: 'Look up weather for a location',
++        inputSchema: {
++          type: 'object',
++          properties: {location: {type: 'string'}},
++          required: ['location'],
++        },
++      },
++      async () => {
++        callCount += 1;
++        return 'forecast';
++      }
++    );
++
++    const response = await registry.execute('get_weather', {});
++
++    expect({
++      callCount,
++      mentionsLocation: response.result.includes('location'),
++      mentionsRequired: /required/i.test(response.result),
++    }).toEqual({
++      callCount: 0,
++      mentionsLocation: true,
++      mentionsRequired: true,
++    });
++  });
++
++  it('rejects wrong-typed or disallowed-enum fields naming path and constraint without leaking values', async () => {
++    const capturedLogs: Array<{category: string; message: string; fields?: Record<string, unknown>}> = [];
++    const record = (category: string, message: string, fields?: Record<string, unknown>) =>
++      void capturedLogs.push({category, message, fields});
++    const logger: Logger = {debug: record, info: record, warn: record, error: record};
++    setLogger(logger);
++
++    let callCount = 0;
++    const registry = new ToolRegistry();
++    registry.register(
++      {
++        name: 'weather_check',
++        description: 'Check weather with units',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            location: {type: 'string'},
++            units: {type: 'string', enum: ['celsius', 'fahrenheit']},
++          },
++          required: ['location'],
++        },
++      },
++      async () => {
++        callCount += 1;
++        return 'ok';
++      }
++    );
++
++    const wrongTypeResponse = await registry.execute('weather_check', {
++      location: 99887766,
++      secretToken: 'SECRET_PII_12345',
++    });
++    const wrongEnumResponse = await registry.execute('weather_check', {
++      location: 'Berlin',
++      units: 'SECRET_KELVIN_VAL',
++    });
++
++    const serializedLogs = JSON.stringify(capturedLogs);
++    const forbiddenValues = ['99887766', 'SECRET_PII_12345', 'SECRET_KELVIN_VAL'];
++
++    expect({
++      callCount,
++      typeNamesField: wrongTypeResponse.result.includes('location'),
++      typeNamesExpected: /string/i.test(wrongTypeResponse.result),
++      enumNamesField: wrongEnumResponse.result.includes('units'),
++      enumNamesConstraint: /enum|allowed/i.test(wrongEnumResponse.result),
++      leakedInTypeResult: forbiddenValues.some(secret => wrongTypeResponse.result.includes(secret)),
++      leakedInEnumResult: forbiddenValues.some(secret => wrongEnumResponse.result.includes(secret)),
++      leakedInLogs: forbiddenValues.some(secret => serializedLogs.includes(secret)),
++    }).toEqual({
++      callCount: 0,
++      typeNamesField: true,
++      typeNamesExpected: true,
++      enumNamesField: true,
++      enumNamesConstraint: true,
++      leakedInTypeResult: false,
++      leakedInEnumResult: false,
++      leakedInLogs: false,
++    });
++  });
++
++  it('throws synchronously at register time when inputSchema is uncompilable and names the tool', () => {
++    const registry = new ToolRegistry();
++
++    expect(() =>
++      registry.register(
++        {
++          name: 'broken_tool',
++          description: 'Tool with an uncompilable schema',
++          inputSchema: {type: 'unrecognized_json_type'},
++        },
++        async () => 'ok'
++      )
++    ).toThrow(/broken_tool/);
++  });
++
++  it('validates a function-valued ToolDefinitionSource against the schema current at each execute call', async () => {
++    let requiredField = 'city';
++    const receivedInputs: Array<Record<string, unknown>> = [];
++    const registry = new ToolRegistry();
++    registry.register(
++      () => ({
++        name: 'dynamic_lookup',
++        description: 'Lookup with changing schema',
++        inputSchema: {
++          type: 'object',
++          properties: {
++            city: {type: 'string'},
++            postalCode: {type: 'string'},
++          },
++          required: [requiredField],
++        },
++      }),
++      async input => {
++        receivedInputs.push(input);
++        return 'ok';
++      }
++    );
++
++    const firstResponse = await registry.execute('dynamic_lookup', {city: 'Paris'});
++    requiredField = 'postalCode';
++    const secondResponse = await registry.execute('dynamic_lookup', {city: 'Paris'});
++    const thirdResponse = await registry.execute('dynamic_lookup', {postalCode: '75001'});
++
++    expect({
++      receivedInputs,
++      firstSucceeded: firstResponse.result === 'ok',
++      secondNamesPostalCode: secondResponse.result.includes('postalCode'),
++      thirdSucceeded: thirdResponse.result === 'ok',
++    }).toEqual({
++      receivedInputs: [{city: 'Paris'}, {postalCode: '75001'}],
++      firstSucceeded: true,
++      secondNamesPostalCode: true,
++      thirdSucceeded: true,
++    });
++  });
++});

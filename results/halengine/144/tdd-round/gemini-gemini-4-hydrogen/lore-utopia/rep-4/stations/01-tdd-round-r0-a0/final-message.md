@@ -1,0 +1,7 @@
+Completed one TDD round for #144 (`list_sessions` frame validation in `src/transport/ws/validation.ts`), committed as `2e2a4f0` and pushed to `origin/loop-bench/144` (already up to date with `origin/main`).
+
+- **Changes**: Added `ListSessionsMessage` to `src/types/messages.ts` (`IncomingMessage`), implemented `validateListSessionsMessage` in `src/transport/ws/validation.ts` (validating optional non-negative integer `limit`, optional `before` with 1–128 char `sessionId` and finite-date `updatedAt` string or number, and stripping unknown fields such as `userId`), added two unit tests in `src/transport/ws/validation.test.ts` with spec links in `specs/hal-engine-conversation-list/spec.md`, formatted the `.ts` files with Prettier, and ticked the facet in `.lore/dod.md`.
+- **Tests**: Ran `src/transport/ws/validation.test.ts` only — 1 of our 2 new tests failed RED before implementation, and all 5 tests in `src/transport/ws/validation.test.ts` passed GREEN after (0 regressions observed; acceptance tests and full suite were not run locally).
+- **Unrelated smells noticed**: `src/types/index.ts` appears to be an unused barrel file missing newer exports like `PingMessage` and `SessionLookup` (left untouched).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Validate list_sessions frames in src/transport/ws/validation.ts","tdd_next":"Add SessionSummaryFrame and SessionListMessage to src/types/messages.ts and re-export them with ListSessionsMessage from src/index.ts"}}

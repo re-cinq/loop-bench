@@ -1,0 +1,5 @@
+Resolved the CI `re-lint/no-duplicate-code` failure in `src/transport/ws/messageHandler.test.ts` (replacing the duplicated stub with `jest.fn` and distinct test data without touching `src/transport/conversationList.acceptance.test.ts`), documented `list_sessions` (§ 4.3) and `session_list` (§ 5.9) in `specs/hal-engine-websocket-protocol/spec.md`, updated spec anchors and `.lore/dod.md`, formatted all modified files with Prettier, and pushed commit `f15ac22` to `origin/loop-bench/144`.
+
+- Tests run locally: `src/transport/ws/messageHandler.test.ts` (58 passed, 0 failed; 0 of our tests red, 0 regressions). Spec checks (`check-spec-anchor-names.mjs`, `repoint-spec-anchors.mjs`, `check-spec-links.mjs`, `check-spec-status.mjs`) all passed.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Document list_sessions and session_list in specs/hal-engine-websocket-protocol/spec.md and specs/hal-engine-conversation-list/spec.md (and fix re-lint/no-duplicate-code in src/transport/ws/messageHandler.test.ts)","tdd_next":"acceptance green"}}

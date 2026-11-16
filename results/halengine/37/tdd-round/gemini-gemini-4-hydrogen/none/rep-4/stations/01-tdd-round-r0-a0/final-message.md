@@ -1,0 +1,7 @@
+Completed one TDD round (`02298e4` on `loop-bench/37`, pushed and up to date with `origin/main`):
+
+- **RED -> GREEN -> REFACTOR**: Added `src/orchestration/tools/registry.test.ts` testing that `ToolRegistry.register` throws synchronously naming the tool on an invalid static `inputSchema`, implemented static schema compilation via `Ajv` in `src/orchestration/tools/registry.ts`, formatted with Prettier, cited `src/orchestration/tools/registry.test.ts#L4` in `specs/hal-engine-tool-input-validation/spec.md`, and updated `CHANGELOG.md` and `.lore/dod.md`.
+- **Tests**: Ran `src/orchestration/tools/registry.test.ts` (`1 passed, 1 total`); 0 red tests of mine and 0 regressions observed locally (the acceptance test file and full suite were not run locally).
+- **Policy constraint**: Editing `package.json` and `package-lock.json` (and running `npm install`) was denied by pod policy without interactive confirmation; `ajv@6.15.0` is present in `node_modules` and `package-lock.json` via `eslint`, so adding `ajv` to `dependencies` in `package.json`/`package-lock.json` remains unchecked in `.lore/dod.md`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Compile static ToolDefinition.inputSchema at ToolRegistry.register time (throwing an error naming the tool on invalid schemas)","tdd_next":"Reuse compiled static validators on execute and cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap)"}}

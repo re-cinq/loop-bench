@@ -1,0 +1,3 @@
+Replaced `new Date().toISOString()` on line 12 of `src/orchestration/onErrorNonError.acceptance.test.ts` with the deterministic timestamp `'2026-01-01T00:00:00.000Z'` to resolve the `re-lint/no-nondeterministic-tests` ESLint failure without shifting cited line numbers, formatted with Prettier, verified `src/orchestration/onErrorNonError.acceptance.test.ts` passes (`2 passed, 2 total`), and pushed commit `3d90374` to `origin/loop-bench/95` (with `origin/main` already up to date).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"ci_fixed":"Replaced nondeterministic new Date().toISOString() in src/orchestration/onErrorNonError.acceptance.test.ts with a fixed ISO timestamp"}}

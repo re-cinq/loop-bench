@@ -1,0 +1,5 @@
+Added unit test coverage for `accumulateUsage` in `src/orchestration/orchestratorHelpers.test.ts`, linked `src/orchestration/chatOrchestratorUsage.acceptance.test.ts#L67` in `specs/hal-engine-config-hooks/spec.md` and the new unit test in `specs/hal-engine-architecture/spec.md`, added the `## [Unreleased]` entry in `CHANGELOG.md`, and updated `.lore/dod.md`.
+
+Verified `src/orchestration/orchestratorHelpers.test.ts` (5 passed; 0 red tests of ours, 0 regressions), formatted with Prettier, confirmed `scripts/check-changelog.sh`, `scripts/check-spec-anchor-names.mjs`, `scripts/check-spec-links.mjs`, `scripts/repoint-spec-anchors.mjs --check origin/main`, `scripts/check-doc-blocks.mjs`, `scripts/check-spec-status.mjs`, and `scripts/check-doc-regions.mjs` pass, and pushed commit `7e7f719` to `origin/loop-bench/93` (up to date with `origin/main`).
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Sum each token field only for provider rounds that report usage, preserve the no-tool regression guard, and update the hooks spec and CHANGELOG","tdd_next":"acceptance green"}}

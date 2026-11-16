@@ -1,0 +1,5 @@
+Simplified Ajv 8 error formatting in `src/orchestration/tools/registry.ts` to eliminate dead/unreachable branches that lowered `src/orchestration/tools/` and `src/orchestration/` coverage, added unit tests in `src/orchestration/tools/registry.test.ts` covering `format`-annotated schemas / non-object root rejections and `ToolRegistry` metadata/lookup accessors (`has`, `get`, `getPromptInstructions`, `getExamplePrompts`), and linked them in `specs/hal-engine-tool-input-validation/spec.md`.
+
+Verified `src/orchestration/tools/registry.test.ts` (8/8 passed; 0 red tests of ours, 0 regressions observed locally) plus `check-spec-anchor-names.mjs` and `check-spec-links.mjs` on `specs/hal-engine-tool-input-validation/spec.md`, formatted with Prettier, committed (`ea2b225`), pushed to `origin/loop-bench/37`, and synced with `origin/main`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Remove dead Ajv error-formatting branches and cover ToolRegistry metadata/root-type validation in registry.test.ts for the CI test/coverage failure","tdd_next":"acceptance green"}}

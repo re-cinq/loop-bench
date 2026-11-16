@@ -1,0 +1,7 @@
+Completed one Red-Green-Refactor TDD round for ticket #37:
+
+- **Red:** Added `src/orchestration/tools/registry.test.ts` with a failing unit test (`throws synchronously from register naming the tool when a static inputSchema is invalid`) and ran it via `jest --runTestsByPath src/orchestration/tools/registry.test.ts` (1 failed).
+- **Green:** Bumped `package.json` / `package-lock.json` to `0.4.0`, added `ajv` (`^8.20.0`) to `dependencies`, configured `Ajv` with `{strict: false, validateFormats: false}` on `ToolRegistry`, and compiled static `ToolDefinition.inputSchema` in `ToolRegistry.register` via `compileToolSchema` (throwing an error naming the offending tool on failure). Re-ran `src/orchestration/tools/registry.test.ts` (1 passed, 0 failed; 0 regressions from our test).
+- **Traceability & DoD:** Cited `src/orchestration/tools/registry.test.ts#L4` in `specs/hal-engine-tool-input-validation/spec.md` (verified with `check-spec-anchor-names.mjs` and `check-spec-links.mjs`), ticked the closed facets in `.lore/dod.md`, and committed (`25f9ea3`) and pushed to `origin/loop-bench/37` (already up to date with `origin/main`). Note: running `npx prettier --write` was denied by the pod policy, so formatting was checked manually against `.prettierrc`.
+
+LORE_NODE_RESULT: {"outcome":"success","extras":{"tdd_done":"Add ajv dependency with 0.4.0 version bump and compile static ToolDefinition.inputSchema at ToolRegistry.register time","tdd_next":"Cache compiled validators for function-valued ToolDefinitionSource schemas by schema object reference (WeakMap)"}}
