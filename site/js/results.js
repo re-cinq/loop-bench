@@ -42,7 +42,7 @@ const COLUMNS = [
 ];
 
 const bench = await mountChrome(loadBench);
-document.getElementById('header').append(header('RESULTS MATRIX'));
+document.getElementById('header').append(header('Results matrix'));
 const app = document.getElementById('app');
 const state = { sort: 'cost', dir: 'asc', ...readHash() };
 const selected = () => (state.sel ? state.sel.split(',') : []);

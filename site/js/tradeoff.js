@@ -12,7 +12,7 @@ const X_AXES = {
 };
 
 const bench = await mountChrome(loadBench);
-document.getElementById('header').append(header('COST VS QUALITY'));
+document.getElementById('header').append(header('Cost vs quality'));
 const app = document.getElementById('app');
 const state = { x: 'cost', ...readHash() };
 
