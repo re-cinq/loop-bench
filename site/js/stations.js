@@ -3,7 +3,7 @@ import { mountChrome } from './chrome.js';
 import { el, harnessMark, markOf, header, loadBench, loreTag, minutes, money, panel, spreadNode, unique, whole, mount } from './lib.js';
 
 const bench = await mountChrome(loadBench);
-document.getElementById('header').append(header('STATION VISITS'));
+document.getElementById('header').append(header('Station visits'));
 const app = document.getElementById('app');
 
 function stationTable(rows) {

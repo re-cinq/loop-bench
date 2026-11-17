@@ -12,7 +12,7 @@ const LABEL_LINE = 14;
 const ALL = 'all';
 
 const bench = await mountChrome(loadBench);
-document.getElementById('header').append(header('KNOWLEDGE BASE: NONE VS LORE VS UTOPIA'));
+document.getElementById('header').append(header('Knowledge base: none vs Lore vs Utopia'));
 const app = document.getElementById('app');
 const byId = new Map(bench.cells.map((cell) => [cell.id, cell]));
 const stations = unique(bench.lorePairs.map((pair) => pair.station));

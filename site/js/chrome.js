@@ -21,7 +21,7 @@ function storeTheme(theme) {
 }
 
 const currentTheme = () => document.documentElement.dataset.theme || 'dark';
-const themeLabel = () => (currentTheme() === 'dark' ? '[light]' : '[dark]');
+const themeLabel = () => (currentTheme() === 'dark' ? 'Light' : 'Dark');
 
 function renderNav() {
   const here = location.pathname.split('/').pop() || 'index.html';

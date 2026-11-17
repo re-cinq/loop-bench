@@ -42,12 +42,7 @@ export function panel(title, ...children) {
   return box;
 }
 
-export function header(title) {
-  const inner = Math.max(title.length + 4, 32);
-  const node = el('div', { class: 'header-box' });
-  node.append('╔' + '═'.repeat(inner) + '╗\n║  ', el('span', { class: 'title' }, title), ' '.repeat(inner - 2 - title.length) + '║\n╚' + '═'.repeat(inner) + '╝');
-  return node;
-}
+export const header = (title) => el('h1', { class: 'page-title' }, title);
 
 export const money = (v) => (v == null ? '–' : `$${v.toFixed(2)}`);
 export const minutes = (v) => (v == null ? '–' : `${v.toFixed(1)} min`);

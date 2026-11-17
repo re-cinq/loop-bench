@@ -6,7 +6,7 @@ import { mdToHtml } from './markdown.js';
 const FRONT_METRICS = ['green', 'rounds', 'cost', 'time', 'correct', 'complete', 'close'].map((key) => METRICS.find((m) => m.key === key));
 
 const bench = await mountChrome(loadBench);
-document.getElementById('header').append(header('WHICH MODEL RUNS EACH STATION BEST'));
+document.getElementById('header').append(header('Which model runs each station best'));
 const app = document.getElementById('app');
 const done = bench.cells.filter(isDone);
 

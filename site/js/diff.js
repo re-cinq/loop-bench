@@ -4,7 +4,7 @@ import { cellName, el, header, isDone, loadBench, mount, panel, readHash, two, u
 import { isTestPath, parsePatch } from './patch.js';
 
 const bench = await mountChrome(loadBench);
-document.getElementById('header').append(header('FILES & DIFFS'));
+document.getElementById('header').append(header('Files and diffs'));
 const app = document.getElementById('app');
 
 /** Every branch a side can show: each replicate of each finished cell, then each ticket's merged pull request. */
