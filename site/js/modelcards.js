@@ -36,11 +36,12 @@ export function trackPositions(values) {
 const FIELD_OF_MEASURE = { works: 'share', cost: 'cost', time: 'minutes' };
 const nameOrder = (a, b) => a.maker.localeCompare(b.maker) || a.model.localeCompare(b.model, undefined, { numeric: true });
 
-/** Entries best first for the chosen key: works high to low, cost and time low to high; models without a value come last. */
+/** Entries best first for the chosen key: works high to low (only for models that ran every ticket), cost and time low to high; models without a comparable value come last. */
 export function sortEntries(entries, sortKey) {
   const [measure, task] = sortKey.split(':');
   if (measure === 'name') return [...entries].sort(nameOrder);
-  const valueOf = (entry) => entry.tasks[task]?.[FIELD_OF_MEASURE[measure]] ?? null;
+  const comparable = (entry) => measure !== 'works' || entry.tasks[task]?.ranked;
+  const valueOf = (entry) => (comparable(entry) ? entry.tasks[task]?.[FIELD_OF_MEASURE[measure]] ?? null : null);
   const direction = measure === 'works' ? -1 : 1;
   return [...entries].sort((a, b) => {
     const [first, second] = [valueOf(a), valueOf(b)];

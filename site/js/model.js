@@ -25,15 +25,18 @@ const models = [...new Map(taskKeys.flatMap((task) => rowsByTask[task]).map((row
   .sort((a, b) => a.model.localeCompare(b.model, undefined, { numeric: true }));
 const modelKeys = new Set(models.map(keyOf));
 
-function chosenFromUrl() {
-  const fromHash = readHash().m;
-  const fromQuery = new URLSearchParams(location.search).get('m');
-  const chosen = fromHash ?? fromQuery ?? '';
-  return modelKeys.has(chosen) ? chosen : '';
+function stateFromUrl() {
+  const hash = readHash();
+  const chosen = hash.m ?? new URLSearchParams(location.search).get('m') ?? '';
+  return {
+    m: modelKeys.has(chosen) ? chosen : '',
+    sort: isSortKey(hash.sort) ? hash.sort : DEFAULT_SORT,
+    group: hash.group === '1',
+    view: hash.view === 'table' ? 'table' : 'cards',
+  };
 }
 
-const hashState = readHash();
-const state = { m: chosenFromUrl(), sort: isSortKey(hashState.sort) ? hashState.sort : DEFAULT_SORT, group: hashState.group === '1', view: hashState.view === 'table' ? 'table' : 'cards' };
+const state = stateFromUrl();
 history.replaceState(null, '', location.pathname + location.hash);
 
 const percent = (share) => `${Math.round(share * 100)}%`;
@@ -248,4 +251,5 @@ function render() {
   mount(app, ...(state.m ? detail(state.m) : overview()));
 }
 
+window.addEventListener('hashchange', () => { Object.assign(state, stateFromUrl()); render(); });
 render();

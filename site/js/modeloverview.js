@@ -35,7 +35,7 @@ function steadinessStrip(counts) {
   const total = counts.always + counts.flips + counts.never;
   const title = `${counts.always} setups always work, ${counts.flips} flip between runs, ${counts.never} never work`;
   const parts = SEGMENTS.filter(([key]) => counts[key]).map(([key, , cssClass]) => el('div', { class: `m-seg ${cssClass}`, style: `flex-grow: ${counts[key]}` }));
-  return el('div', { class: 'm-strip-cell', title }, [el('div', { class: 'm-steady' }, parts), el('span', { class: 'm-strip-text' }, total ? `${counts.flips} flip` : '–')]);
+  return el('div', { class: 'm-strip-cell', title }, [el('div', { class: 'm-steady' }, parts), el('span', { class: 'm-strip-text' }, total ? `flips: ${counts.flips}` : '–')]);
 }
 
 function track(place, valueText, title) {

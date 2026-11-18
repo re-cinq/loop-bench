@@ -35,6 +35,11 @@ describe("sortEntries", () => {
     expect(names(sortEntries(entries, "works:tdd-round"))).toEqual(["a", "b", "c"]);
   });
 
+  it("puts a model that skipped a ticket after the others for works", () => {
+    const withGap = [entry("x", "Google", { dod: figures(1, 1, false) }), entry("y", "Google", { dod: figures(0.2) })];
+    expect(names(sortEntries(withGap, "works:dod"))).toEqual(["y", "x"]);
+  });
+
   it("puts the cheapest first for cost", () => {
     expect(names(sortEntries(entries, "cost:tdd-round"))).toEqual(["b", "a", "c"]);
   });
