@@ -1,8 +1,12 @@
 // Shared helpers for every page: DOM building, number formatting, and the facets a cell is filtered by.
+import { setTickets } from './tickets.js';
+
 export async function loadBench() {
   const res = await fetch('data/bench.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`fetch data/bench.json: ${res.status}`);
-  return res.json();
+  const bench = await res.json();
+  setTickets(bench.tickets);
+  return bench;
 }
 
 export function el(tag, attrs = {}, children = []) {
@@ -79,14 +83,14 @@ export const meanOf = (spread) => spread?.mean ?? null;
 export const METRICS = [
   { key: 'green', label: 'reached green', value: (c) => (c.runs ? c.reachedGreen / c.runs : null), format: (v) => `${Math.round(v * 100)}%`, better: 'higher' },
   { key: 'rounds', label: 'rounds', value: (c) => meanOf(c.rounds), spread: (c) => c.rounds, format: one, better: 'lower' },
-  { key: 'cost', label: 'cost / loop', value: (c) => meanOf(c.costUsd), spread: (c) => c.costUsd, format: money, better: 'lower' },
-  { key: 'time', label: 'time / loop', value: (c) => meanOf(c.minutes), spread: (c) => c.minutes, format: minutes, better: 'lower' },
-  { key: 'correct', label: 'judge correct', value: (c) => meanOf(c.correctness), spread: (c) => c.correctness, format: one, better: 'higher' },
-  { key: 'complete', label: 'judge complete', value: (c) => meanOf(c.completeness), spread: (c) => c.completeness, format: one, better: 'higher' },
-  { key: 'close', label: 'judge close', value: (c) => meanOf(c.closeness), spread: (c) => c.closeness, format: one, better: 'higher' },
-  { key: 'redgreen', label: 'dod red→green', value: (c) => (c.redToGreen ? c.redToGreen.passed / c.redToGreen.of : null), format: (v) => `${Math.round(v * 100)}%`, better: 'higher' },
+  { key: 'cost', label: 'cost per run', value: (c) => meanOf(c.costUsd), spread: (c) => c.costUsd, format: money, better: 'lower' },
+  { key: 'time', label: 'working time per run', value: (c) => meanOf(c.minutes), spread: (c) => c.minutes, format: minutes, better: 'lower' },
+  { key: 'correct', label: 'AI reviewer correct', value: (c) => meanOf(c.correctness), spread: (c) => c.correctness, format: one, better: 'higher' },
+  { key: 'complete', label: 'AI reviewer complete', value: (c) => meanOf(c.completeness), spread: (c) => c.completeness, format: one, better: 'higher' },
+  { key: 'close', label: 'AI reviewer close', value: (c) => meanOf(c.closeness), spread: (c) => c.closeness, format: one, better: 'higher' },
+  { key: 'redgreen', label: 'tests fail, then pass', value: (c) => (c.redToGreen ? c.redToGreen.passed / c.redToGreen.of : null), format: (v) => `${Math.round(v * 100)}%`, better: 'higher' },
   { key: 'files', label: 'files', value: (c) => meanOf(c.files), spread: (c) => c.files, format: whole, better: null },
-  { key: 'jaccard', label: 'jaccard vs PR', value: (c) => meanOf(c.jaccard), spread: (c) => c.jaccard, format: two, better: 'higher' },
+  { key: 'jaccard', label: 'overlap with the real fix', value: (c) => meanOf(c.jaccard), spread: (c) => c.jaccard, format: two, better: 'higher' },
 ];
 
 export function metricNode(metric, cell) {
@@ -131,4 +135,13 @@ export function deltaBar(metric, delta, bound) {
     ]),
     el('div', { class: 'delta-bar-scale' }, [el('span', {}, `−${metric.format(bound)}`), el('span', {}, '0'), el('span', {}, `+${metric.format(bound)}`)]),
   ]);
+}
+
+/** Puts the page address on the clipboard; when the browser refuses, the button says so and the address stays in the bar. */
+export function copyLinkButton() {
+  const button = el('button', { onclick: async () => {
+    const copied = await navigator.clipboard.writeText(location.href).then(() => true, () => false);
+    button.textContent = copied ? 'Link copied' : 'Copy the address from the address bar';
+  } }, 'Copy link');
+  return button;
 }

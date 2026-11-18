@@ -1,6 +1,7 @@
 // The results website's one data file: every cell as numbers rather than markdown, the with/without-Lore pairs, and the per-station spend.
 import type { LoopRecord, StationRunRecord } from "./records.js";
 import { progressOf, type ModelProgress, type PlannedCell } from "./progress.js";
+import { modelStatsOf, type ModelStats, type TicketSize } from "./model-stats.js";
 import { cellsOf, type CellSummary, type PendingCell } from "./report.js";
 import { spreadOf, type Spread } from "./stats.js";
 
@@ -62,6 +63,12 @@ export interface StationSpend {
   failures: Record<string, number>;
 }
 
+export interface SiteTicket {
+  number: number;
+  title: string;
+  size: TicketSize | null;
+}
+
 export interface SiteData {
   experimentId: string;
   subjectRepo: string;
@@ -75,6 +82,9 @@ export interface SiteData {
   stations: StationSpend[];
   /** Per model, finished loops against the loops the experiment file plans for it. */
   progress: ModelProgress[];
+  /** Per task, model, knowledge base and ticket: success, cost, minutes, reviewer scores, plus one row per run and the knowledge-base differences. */
+  modelStats: ModelStats;
+  tickets: readonly SiteTicket[];
 }
 
 export interface SiteInput {
@@ -87,6 +97,8 @@ export interface SiteInput {
   pending: readonly PendingCell[];
   stationRuns: readonly StationRunRecord[];
   plannedCells: readonly PlannedCell[];
+  tiers: Readonly<Record<number, TicketSize>>;
+  tickets: readonly SiteTicket[];
 }
 
 export function siteDataOf(input: SiteInput): SiteData {
@@ -104,6 +116,8 @@ export function siteDataOf(input: SiteInput): SiteData {
     lorePairs: lorePairsOf(cells),
     stations: stationSpendOf(input.stationRuns),
     progress: progressOf(input.plannedCells, new Set(input.loops.map((loop) => loop.loop_id))),
+    tickets: input.tickets,
+    modelStats: modelStatsOf({ loops: input.loops, stationRuns: input.stationRuns, tiers: input.tiers }),
   };
 }
 

@@ -1,8 +1,8 @@
-// The results as a table per cell, replicates folded into mean and spread, in the shape of docs/building-lore/decompose-model-comparison.md.
 import { effortLabel } from "./effort.js";
+import { KNOWLEDGE_BASES, SIZE_KEYS, TASK_KEYS, compareKnowledgeBases, knowledgeEffectOf, moneySpentOf, repeatDisagreement, shakySizesOf, type KnowledgeComparison } from "./findings.js";
+import type { KnowledgeBase, RunRow } from "./model-stats.js";
+import { RECOMMENDED_WEIGHTS, ranked, reliableChoices, splitByCoverage, summarizeModels, type ModelSummary } from "./ranking.js";
 import type { LoopRecord } from "./records.js";
-import { formatSpread, spreadOf } from "./stats.js";
-import type { VisitRow } from "./station-report.js";
 
 export interface CellSummary {
   key: string;
@@ -13,6 +13,17 @@ export interface CellSummary {
   context: string;
   prompt: string;
   loops: LoopRecord[];
+}
+
+/** A planned cell with no finished loop yet, shown so every model in the matrix is visible. */
+export interface PendingCell {
+  ticket: number;
+  station: string;
+  agent: string;
+  effort: string;
+  context: string;
+  prompt: string;
+  status: "running" | "not run yet";
 }
 
 export function cellsOf(loops: readonly LoopRecord[]): CellSummary[] {
@@ -33,158 +44,181 @@ export function cellsOf(loops: readonly LoopRecord[]): CellSummary[] {
   return [...byKey.values()].sort(compareCells);
 }
 
-/** Ticket, then station, then model name, then context and prompt: the same model's rows sit together. */
-function compareRows(a: RowKey, b: RowKey): number {
+function compareCells(a: CellSummary, b: CellSummary): number {
   return a.ticket - b.ticket || a.station.localeCompare(b.station) || a.agent.localeCompare(b.agent) || a.context.localeCompare(b.context) || a.prompt.localeCompare(b.prompt);
 }
 
-interface RowKey {
-  ticket: number;
-  station: string;
-  agent: string;
-  context: string;
-  prompt: string;
+export interface ReportInput {
+  runs: readonly RunRow[];
+  generatedAt: string;
+  siteUrl: string | null;
 }
 
-function compareCells(a: CellSummary, b: CellSummary): number {
-  return compareRows(a, b);
-}
-
-const CONTEXT_LABEL: Record<string, string> = { none: "without Lore", "lore-mcp": "with Lore", "lore-utopia": "Lore on Utopia" };
-const contextLabel = (context: string): string => CONTEXT_LABEL[context] ?? context;
-/** `claude/claude-haiku-4-5-20251001` reads as `claude-haiku-4-5-20251001 (claude)`: the model id once, the CLI after it. */
-const agentLabel = (agent: string): string => {
-  const [harness = "", model = ""] = agent.split("/");
-
-  return `\`${model}\` (${harness})`;
+const TASK_LABELS: Record<string, { title: string; activity: string }> = {
+  dod: { title: "Write the tests", activity: "writing the tests" },
+  "tdd-round": { title: "Write the code", activity: "writing the code" },
+  "repair-build": { title: "Fix a broken build", activity: "fixing a broken build" },
 };
+const KNOWLEDGE_BASE_LABELS: Record<KnowledgeBase, string> = { none: "none", "lore-mcp": "Lore", "lore-utopia": "Utopia" };
+const TOP_MODELS_SHOWN = 5;
+const MISSING_SITE_URL = "<website address not set: pass --site-url or set LOOP_BENCH_SITE_URL>";
 
-const money = (value: number): string => `$${value.toFixed(2)}`;
-const minutes = (value: number): string => `${(value / 60_000).toFixed(1)} min`;
-const one = (value: number): string => value.toFixed(1);
-const count = (value: number): string => String(Math.round(value));
+const percent = (share: number): string => `${Math.round(share * 100)}%`;
+const plural = (count: number, word: string): string => `${count} ${word}${count === 1 ? "" : "s"}`;
+const money = (value: number | null): string => {
+  if (value === null) {
+    return "unknown";
+  }
 
-/** A planned cell with no finished loop yet, shown so every model in the matrix is visible. */
-export interface PendingCell {
-  ticket: number;
-  station: string;
-  agent: string;
-  effort: string;
-  context: string;
-  prompt: string;
-  status: "running" | "not run yet";
+  const digits = value >= 1000 ? 0 : 2;
+
+  return value < 0.01 ? "under $0.01" : `$${value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+};
+const minutesShort = (value: number | null): string => {
+  if (value === null) {
+    return "unknown";
+  }
+
+  return value < 1 ? "under 1 min" : `${Math.round(value)} min`;
+};
+const minutesLong = (value: number | null): string => {
+  if (value === null) {
+    return "an unknown time";
+  }
+
+  return value < 1 ? "under a minute" : plural(Math.round(value), "minute");
+};
+const worksIn = (row: ModelSummary): string => `${row.successes} of ${plural(row.runs, "run")} (${percent(row.successRate)})`;
+const table = (headers: readonly string[], rows: readonly (readonly string[])[]): string =>
+  [`| ${headers.join(" | ")} |`, `|${headers.map(() => "---").join("|")}|`, ...rows.map((row) => `| ${row.join(" | ")} |`)].join("\n");
+
+function introOf(runs: readonly RunRow[], generatedAt: string, siteUrl: string | null): string {
+  const models = new Set(runs.map((run) => `${run.harness}/${run.model}`)).size;
+  const tickets = new Set(runs.map((run) => run.ticket)).size;
+
+  return [
+    `As of ${generatedAt.slice(0, 10)}, we measured ${plural(runs.length, "run")} by ${plural(models, "AI model")} on ${plural(tickets, "ticket")}, each run being one model doing one job: writing the tests, writing the code, or fixing a broken build. A run works when the project's checks pass on what the model delivered.`,
+    `Together the runs cost ${money(moneySpentOf(runs).total)} at list prices. The full results are on the website: ${siteUrl ?? MISSING_SITE_URL}`,
+  ].join(" ");
 }
 
-/** The ticket as a row shows it: its number and, when the experiment names it, its complexity. */
-export type TicketTiers = Readonly<Record<number, string>>;
+const HOW_TO_READ = `Every ticket counts equally, however often it was run. Models are ranked on quality (70% how often the result works, 30% the AI reviewer score, which is not used for writing the tests), price and speed, with quality counting three times as much as each of the other two; price and speed are compared on a log scale. A model that skipped a ticket is not ranked. "Still works" means working at least three quarters as often as the most reliable model.`;
 
-const ticketLabel = (ticket: number, tiers: TicketTiers): string => (tiers[ticket] ? `#${ticket} ${tiers[ticket]}` : `#${ticket}`);
+function recommendationOf(row: ModelSummary): string {
+  const strength = row.strength === "few" ? ` Only ${plural(row.runs, "run")} so far, so treat it as a hint.` : "";
 
-export function renderResultsTable(cells: readonly CellSummary[], pending: readonly PendingCell[] = [], tiers: TicketTiers = {}): string {
-  const header = [
-    "| Ticket | Station varied | Model (CLI) | Effort | Lore | Prompt | Runs | Reached green | Rounds | Cost per loop | Time per loop | Judge correctness | Judge completeness | Judge closeness | dod red→green | Files (Jaccard vs PR) | +/− lines |",
-    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+  return `Recommended: **${row.model}**. It works in ${worksIn(row)}, about ${money(row.costUsd?.median ?? null)} and ${minutesLong(row.minutes?.median ?? null)} a run.${strength}`;
+}
+
+function topTableOf(task: string, rows: readonly ModelSummary[]): string {
+  const reviewed = task !== "dod";
+  const headers = ["Model", "Works", "Usual cost", "Usual time", ...(reviewed ? ["AI reviewer score"] : []), "Cost per working result"];
+
+  return table(headers, rows.map((row) => [
+    row.model,
+    worksIn(row),
+    money(row.costUsd?.median ?? null),
+    minutesShort(row.minutes?.median ?? null),
+    ...(reviewed ? [row.review === null ? "none" : `${row.review.toFixed(1)} of 5`] : []),
+    row.costPerSuccessUsd === null ? "never worked" : money(row.costPerSuccessUsd),
+  ]));
+}
+
+function taskSectionOf(task: string, runs: readonly RunRow[]): string {
+  const sizeOfTicket = Object.fromEntries(runs.map((run) => [run.ticket, run.size]));
+  const summaries = summarizeModels(runs.filter((run) => run.task === task), { reviewed: task !== "dod" });
+  const { fullyTested, notFullyTested } = splitByCoverage(summaries, sizeOfTicket);
+  const top = ranked(fullyTested, RECOMMENDED_WEIGHTS).slice(0, TOP_MODELS_SHOWN);
+  const { cheapest, fastest } = reliableChoices(fullyTested);
+  const skipped = notFullyTested.map((row) => `${row.model} (${row.missingText})`);
+  const lines = [
+    top.length === 0 ? "No model has run every ticket for this job yet." : [recommendationOf(top[0]!), topTableOf(task, top)].join("\n\n"),
+    cheapest && `Cheapest that still works: ${cheapest.model}, ${money(cheapest.costPerSuccessUsd)} per working result (works in ${percent(cheapest.successRate)} of runs).`,
+    fastest && `Fastest that still works: ${fastest.model}, about ${minutesLong(fastest.minutesPerSuccess)} per working result (works in ${percent(fastest.successRate)} of runs).`,
+    skipped.length > 0 && `Not ranked because they skipped a ticket: ${skipped.join(", ")}.`,
   ];
-  const rows = cells.map((cell): RowKey & { line: string } => {
-    const loops = cell.loops;
-    const judged = loops.flatMap((loop) => (loop.judge ? [loop.judge] : []));
-    const dod = loops.flatMap((loop) => (loop.dod_check ? [loop.dod_check] : []));
-    const structural = loops.flatMap((loop) => (loop.structural ? [loop.structural] : []));
 
-    return { ...cell, line: `| ${[
-      ticketLabel(cell.ticket, tiers),
-      cell.station,
-      agentLabel(cell.agent),
-      cell.effort,
-      contextLabel(cell.context),
-      cell.prompt,
-      String(loops.length),
-      `${loops.filter((loop) => loop.reached_green).length}/${loops.length}`,
-      formatSpread(spreadOf(loops.map((loop) => loop.rounds)), one),
-      formatSpread(spreadOf(loops.map((loop) => loop.total_cost_usd)), money),
-      formatSpread(spreadOf(loops.map((loop) => loop.total_wall_ms)), minutes),
-      formatSpread(spreadOf(judged.map((judge) => judge.correctness)), one),
-      formatSpread(spreadOf(judged.map((judge) => judge.completeness_vs_ticket)), one),
-      formatSpread(spreadOf(judged.map((judge) => judge.closeness_to_reference)), one),
-      dod.length === 0 ? "—" : `${dod.filter((check) => check.red_on_base && check.green_with_reference).length}/${dod.length}`,
-      formatSpread(spreadOf(structural.map((item) => item.files)), count) + (structural.length ? ` (${formatSpread(spreadOf(structural.map((item) => item.jaccard_files)), (value) => value.toFixed(2))})` : ""),
-      structural.length ? `+${count(spreadOf(structural.map((item) => item.additions))?.mean ?? 0)}/−${count(spreadOf(structural.map((item) => item.deletions))?.mean ?? 0)}` : "—",
-    ].join(" | ")} |` };
-  });
-
-  const pendingRows = pending.map((cell) => ({
-    ...cell,
-    line: `| ${ticketLabel(cell.ticket, tiers)} | ${cell.station} | ${agentLabel(cell.agent)} | ${cell.effort} | ${contextLabel(cell.context)} | ${cell.prompt} | 0 | ${cell.status} | — | — | — | — | — | — | — | — | — |`,
-  }));
-
-  return [...header, ...[...rows, ...pendingRows].sort(compareRows).map((row) => row.line)].join("\n");
+  return [`## ${TASK_LABELS[task]!.title}`, ...lines.filter(Boolean)].join("\n\n");
 }
 
-export function renderEndReasons(cells: readonly CellSummary[], tiers: TicketTiers = {}): string {
-  const rows = cells.map((cell): string => {
-    const reasons = new Map<string, number>();
+function knowledgeLineOf(comparison: KnowledgeComparison): string {
+  const activity = TASK_LABELS[comparison.task]!.activity;
 
-    for (const loop of cell.loops) {
-      reasons.set(loop.end_reason, (reasons.get(loop.end_reason) ?? 0) + 1);
-    }
+  if (comparison.setups === 0) {
+    return `- For ${activity}, no setup ran with none, Lore and Utopia.`;
+  }
+  const [none, lore, utopia] = KNOWLEDGE_BASES.map((kb) => percent(comparison.byKnowledgeBase[kb].successRate));
 
-    return `| ${ticketLabel(cell.ticket, tiers)} | ${cell.station} | ${agentLabel(cell.agent)} | ${contextLabel(cell.context)} | ${[...reasons].map(([reason, n]) => `${reason} ×${n}`).join(", ")} |`;
-  });
-
-  return ["| Ticket | Station varied | Model (CLI) | Lore | How the loops ended |", "|---|---|---|---|---|", ...rows].join("\n");
+  return `- For ${activity}, a knowledge base ${knowledgeEffectOf(comparison)}: runs work ${none} of the time with none, ${lore} with ${KNOWLEDGE_BASE_LABELS["lore-mcp"]} and ${utopia} with ${KNOWLEDGE_BASE_LABELS["lore-utopia"]}. That is over ${plural(comparison.setups, "setup")}, and Lore had a single run in ${comparison.loreSetupsWithOneRun} of them.`;
 }
 
-export function renderReport(input: { experimentId: string; loops: readonly LoopRecord[]; pending: readonly PendingCell[]; visits: readonly VisitRow[]; promptsLoreSha: string; subjectRepo: string; generatedAt: string; conclusions: string; tiers?: TicketTiers }): string {
-  const cells = cellsOf(input.loops);
+function knowledgeSectionOf(runs: readonly RunRow[]): string {
+  const comparisons = TASK_KEYS.map((task) => compareKnowledgeBases(runs, task));
+  const setups = comparisons.reduce((sum, comparison) => sum + comparison.setups, 0);
+  const singleRuns = comparisons.reduce((sum, comparison) => sum + comparison.loreSetupsWithOneRun, 0);
+  const caveat = singleRuns * 2 > setups ? " Most Lore setups have only one run, so these are hints, not proof." : "";
 
-  return `# Which model runs each implementation-loop station best
+  return [
+    "### Does a knowledge base help?",
+    `A setup is one model on one ticket for one job. Only setups that ran with none, with Lore and with Utopia are compared, so the three are judged on the same work.${caveat}`,
+    comparisons.map(knowledgeLineOf).join("\n"),
+  ].join("\n\n");
+}
 
-**For people choosing the model behind one of Lore's agents.** Results of \`${input.experimentId}\` as of ${input.generatedAt}: ${input.loops.length} loops over ${cells.length} cells on ${input.subjectRepo}, prompts from lore \`${input.promptsLoreSha.slice(0, 8)}\`.
+function steadinessLineOf(runs: readonly RunRow[]): string {
+  const { repeated, flipped } = repeatDisagreement(runs);
 
-## Why we measured
+  if (repeated === 0) {
+    return "No setup was run more than once, so we cannot say how much repeats disagree.";
+  }
 
-The implementation loop's stations (\`dod\`, \`tdd-round\`, \`repair-build\`) each run on a model nobody chose by measurement. This bench replays merged tickets from their base commit with each harness and model, with and without the Lore MCP server, and repeats every cell so a lucky run shows as spread rather than as a rank.
+  return `Of ${plural(repeated, "setup")} run two or more times, ${flipped} (${percent(flipped / repeated)}) both worked and failed on different repeats, so one run is a weak guide.`;
+}
 
-## Results
+function hardTicketsLineOf(runs: readonly RunRow[]): string {
+  const shaky = shakySizesOf(runs).map((item) => `${TASK_LABELS[item.task]!.activity} on the ${item.size} ticket (best: ${percent(item.successRate)})`);
 
-Each row is one cell: one station varied against the production baseline, every other station at baseline. Each ticket carries its complexity: small (the merged change touched 1 production file, under 20 lines), medium (a few files, ~100 lines) or large (many files across modules). Rows are sorted by model name; cells that have not finished a loop yet show as running or not run yet. Values are the mean over the cell's runs, with min–max and standard deviation in parentheses.
+  return shaky.length > 0
+    ? `No model works in three quarters of runs for ${new Intl.ListFormat("en", { type: "conjunction" }).format(shaky)}.`
+    : "For every job and ticket size, at least one model works in three quarters of runs.";
+}
 
-${renderResultsTable(cells, input.pending, input.tiers ?? {})}
+function moneyLineOf(runs: readonly RunRow[]): string {
+  const { total, wasted } = moneySpentOf(runs);
 
-What the columns mean:
+  return `${money(wasted)} of the ${money(total)} with a recorded cost (${percent(wasted / total)}) went to runs that did not work.`;
+}
 
-- **Effort**: the reasoning effort the varied agent ran at. Where the experiment set none, the CLI's default applies, inferred because no CLI reports it: claude code's documented default (high, medium on Opus 5.5, Sonnet 5.5 and Haiku 5.5; Haiku 4.5 has no thinking), the level gemini-cli 0.62 sends (high for the Gemini 3 models, nothing for Gemini 4 Argon, which then runs at the API's medium), and codex's per-model default from its model list.
-- **Reached green**: the loop ended with the subject's CI checks passing on the pushed branch.
-- **Rounds**: tdd rounds the loop spent (12 is the budget).
-- **Cost**: every model's token counts at its standard market price per million tokens, read 2026-10-19 (\`src/core/pricing.ts\`). No launch or promotional discounts: Gemini 4 Argon is priced at its December rate and gpt-5.6-sol at its pre-promotion rate, so the numbers hold for a long-term decision. Claude and Codex runs used subscriptions; their dollar figures are what the same tokens cost on the API.
-- **Judge**: a fixed model's 1–5 scores against the issue and the merged pull request.
-- **dod red→green**: the agent's acceptance tests failed on the base commit and passed once the merged pull request's production code was applied.
-- **Files (Jaccard vs PR)**: files the branch touched, and the overlap of that set with the merged pull request's.
+function limitsOf(runs: readonly RunRow[]): string {
+  const sizeOfTicket = new Map(runs.map((run) => [run.ticket, run.size ?? "other"]));
+  const sizeCounts = SIZE_KEYS.map((size) => [size, [...sizeOfTicket.values()].filter((ticketSize) => ticketSize === size).length] as const).filter(([, count]) => count > 0);
+  const { runsWithoutCost } = moneySpentOf(runs);
 
-### How the loops ended
+  return [
+    `- The results rest on ${plural(sizeOfTicket.size, "ticket")} of one project (${sizeCounts.map(([size, count]) => `${count} ${size}`).join(", ")}), so they may not carry over to other code.`,
+    "- An AI, not a person, gives the reviewer score.",
+    "- Time is the model's own working time as its tool reports it, without the wait for the project's checks.",
+    `- ${plural(runsWithoutCost, "run")} of ${runs.length} have no recorded cost and are left out of the cost figures.`,
+    "- Costs are list prices for the work done, not what a subscription charged.",
+  ].join("\n");
+}
 
-${renderEndReasons(cells, input.tiers ?? {})}
+export function renderReport({ runs, generatedAt, siteUrl }: ReportInput): string {
+  if (runs.length === 0) {
+    return "# Which AI model should do which job\n\nNo runs have finished yet.\n";
+  }
 
-## What we read in it
-
-${input.conclusions}
-
-## What would improve it
-
-_(written by hand from \`analyze\` and \`propose\`)_
-
-## How it was run
-
-- Prompts: the bodies of lore's \`libs/shared/src/agent-defaults/loop-*.md\` at \`${input.promptsLoreSha}\`, with \`/workspace\` pointed at a local directory per run.
-- Each run: a bare \`origin\` with \`main\` at the ticket's base commit; the subject's CI commands run locally on the pushed head between rounds.
-- Agents: bare \`claude\`, \`gemini\` and \`codex\` CLIs under a scratch HOME with only credentials copied in.
-
-## Limits
-
-- Local CI is one Node version on one machine, not GitHub's matrix.
-- Codex has no Bash guard, so its rounds may run acceptance tests the others are refused.
-- In the \`lore-mcp\` arm every station of the loop has the Lore MCP server, the tdd rounds included, so a with-or-without difference is Lore's effect on the whole loop, not on the varied station alone.
-- In the \`lore-mcp\` arm the Lore memory holds episodes from the real runs on these tickets.
-
-`;
+  return [
+    "# Which AI model should do which job",
+    introOf(runs, generatedAt, siteUrl),
+    HOW_TO_READ,
+    ...TASK_KEYS.map((task) => taskSectionOf(task, runs)),
+    "## What we learned",
+    knowledgeSectionOf(runs),
+    ["### How much repeats disagree", steadinessLineOf(runs)].join("\n\n"),
+    ["### Which tickets are too hard", hardTicketsLineOf(runs)].join("\n\n"),
+    ["### Where the money goes", moneyLineOf(runs)].join("\n\n"),
+    "## Limits",
+    limitsOf(runs),
+  ].join("\n\n").concat("\n");
 }

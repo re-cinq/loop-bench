@@ -1,17 +1,4 @@
-// The statistics the context-qa report needs beyond a spread: percentiles, the coefficient of variation, and an exact McNemar test on paired outcomes.
-
-/** The p-th percentile (0–100) by linear interpolation; null for no values. */
-export function percentile(values: readonly number[], p: number): number | null {
-  if (values.length === 0) {
-    return null;
-  }
-  const sorted = [...values].sort((a, b) => a - b);
-  const rank = (p / 100) * (sorted.length - 1);
-  const low = Math.floor(rank);
-  const high = Math.ceil(rank);
-
-  return sorted[low]! + (sorted[high]! - sorted[low]!) * (rank - low);
-}
+// The statistics the context-qa report needs beyond a spread: the coefficient of variation, and an exact McNemar test on paired outcomes.
 
 /** Standard deviation over mean; null when the mean is 0 or there are fewer than two values. */
 export function coefficientOfVariation(values: readonly number[]): number | null {

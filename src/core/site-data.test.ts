@@ -74,6 +74,8 @@ const input = (overrides: Partial<SiteInput>): SiteInput => ({
   pending: [],
   stationRuns: [],
   plannedCells: [],
+  tiers: {},
+  tickets: [],
   ...overrides,
 });
 
@@ -121,5 +123,11 @@ describe("siteDataOf", () => {
     const data = siteDataOf(input({ loops: [loop({ loop_id: "a" })], plannedCells: [{ ...planned, loop_id: "a" }, { ...planned, loop_id: "b" }] }));
 
     expect(data.progress).toMatchObject([{ harness: "claude", model: "opus", done: 1, planned: 2 }]);
+  });
+
+  it("carries 1 green coding run as 1 small-ticket run row in bench.json", () => {
+    const data = siteDataOf(input({ loops: [loop({ loop_id: "a", varied_station: "tdd-round" })], tiers: { 93: "small" } }));
+
+    expect(data.modelStats.runs).toMatchObject([{ loopId: "a", task: "tdd-round", size: "small", success: true }]);
   });
 });

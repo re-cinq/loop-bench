@@ -1,27 +1,30 @@
-// Two branches side by side: which files each changed, and each file's hunks next to the other's. Either side can be the merged pull request.
+// Two results side by side: which files each changed, and each file's hunks next to the other's. Either side can be the merged pull request.
 import { mountChrome } from './chrome.js';
-import { cellName, el, header, isDone, loadBench, mount, panel, readHash, two, unique, writeHash } from './lib.js';
+import { copyLinkButton, el, header, loadBench, mount, panel, readHash, unique, writeHash } from './lib.js';
 import { isTestPath, parsePatch } from './patch.js';
+import { ticketName } from './tickets.js';
+import { KNOWLEDGE_BASES, TASKS } from './words.js';
 
 const bench = await mountChrome(loadBench);
-document.getElementById('header').append(header('Files and diffs'));
+document.getElementById('header').append(header('What did two results change?'));
 const app = document.getElementById('app');
 
-/** Every branch a side can show: each replicate of each finished cell, then each ticket's merged pull request. */
-const SOURCES = [
-  ...bench.cells.filter(isDone).flatMap((cell) => cell.loopIds.map((loopId, i) => ({
-    key: `loop:${loopId}`, ticket: cell.ticket, label: `${cellName(cell)}${cell.loopIds.length > 1 ? ` · rep ${i + 1}` : ''}`, url: `data/diffs/${loopId}.patch`,
-  }))),
-  ...unique(bench.cells.map((cell) => cell.ticket)).map((ticket) => ({ key: `pr:${ticket}`, ticket, label: `merged PR · ticket #${ticket}`, url: `data/diffs/pr-${ticket}.patch` })),
-];
+const allRuns = [...bench.modelStats.runs].sort((a, b) => a.ticket - b.ticket || a.setup.localeCompare(b.setup) || a.replicate - b.replicate);
+const setupLabel = (run) => `${run.model} · ${TASKS[run.task].label} · ${KNOWLEDGE_BASES[run.knowledgeBase].label} · ${ticketName(run.ticket, run.size, { short: true })}`;
+const runSources = allRuns.map((run) => ({ key: `loop:${run.loopId}`, setup: run.setup, ticket: run.ticket, replicate: run.replicate, label: `${setupLabel(run)} · run ${run.replicate}`, url: `data/diffs/${run.loopId}.patch` }));
+const fixSources = bench.tickets.map(({ number }) => ({ key: `pr:${number}`, setup: null, ticket: number, label: `The real fix for ${ticketName(number, null, { short: true })}`, url: `data/diffs/pr-${number}.patch` }));
+const SOURCES = [...runSources, ...fixSources];
 const sourceOf = (key) => SOURCES.find((source) => source.key === key);
+const runsOfSetup = (setup) => runSources.filter((source) => source.setup === setup);
+const setupOptions = [...new Map(allRuns.map((run) => [run.setup, setupLabel(run)]))];
 
 function initialState() {
   const hash = readHash();
-  const fromCells = (hash.cells ?? '').split(',').map((id) => bench.cells.find((cell) => cell.id === id)?.loopIds[0]).filter(Boolean).map((id) => `loop:${id}`);
-  const first = SOURCES.find((source) => source.key.startsWith('loop:'));
-  const a = hash.a ?? fromCells[0] ?? first?.key;
-  const b = hash.b ?? fromCells[1] ?? (sourceOf(a) ? `pr:${sourceOf(a).ticket}` : undefined);
+  const loopOfCell = (id) => bench.cells.find((cell) => cell.id === id)?.loopIds[0];
+  const fromCells = (hash.cells ?? '').split(',').map(loopOfCell).filter(Boolean).map((id) => `loop:${id}`);
+  const first = runSources[0];
+  const a = sourceOf(hash.a) ? hash.a : fromCells[0] ?? first?.key;
+  const b = sourceOf(hash.b) ? hash.b : fromCells[1] ?? (sourceOf(a) ? `pr:${sourceOf(a).ticket}` : undefined);
   return { a, b, file: hash.file, raw: hash.raw };
 }
 const state = initialState();
@@ -42,8 +45,18 @@ function patchOf(source) {
 }
 
 function sidePicker(side) {
-  return el('label', {}, [side.toUpperCase(), el('select', { onchange: (e) => { state[side] = e.target.value; state.file = ''; render(); } },
-    SOURCES.map((source) => el('option', { value: source.key, selected: state[side] === source.key }, source.label)))]);
+  const current = sourceOf(state[side]);
+  const choose = (key) => { state[side] = key; state.file = ''; render(); };
+  const chosenSetup = current.setup ?? current.key;
+  const result = el('label', {}, [`Result ${side.toUpperCase()}`, el('select', { onchange: (event) => choose(event.target.value.startsWith('pr:') ? event.target.value : runsOfSetup(event.target.value)[0].key) }, [
+    el('optgroup', { label: 'A model\'s work' }, setupOptions.map(([setup, text]) => el('option', { value: setup, selected: chosenSetup === setup }, text))),
+    el('optgroup', { label: 'The real fix the team merged' }, fixSources.map((source) => el('option', { value: source.key, selected: chosenSetup === source.key }, source.label))),
+  ])]);
+  const siblings = current.setup ? runsOfSetup(current.setup) : [];
+  if (siblings.length < 2) return result;
+  const runPicker = el('label', {}, ['Run', el('select', { onchange: (event) => choose(event.target.value) },
+    siblings.map((source) => el('option', { value: source.key, selected: current.key === source.key }, `run ${source.replicate} of ${siblings.length}`)))]);
+  return el('span', { class: 'filters' }, [result, runPicker]);
 }
 
 const changeNode = (file) => (file
@@ -51,7 +64,7 @@ const changeNode = (file) => (file
   : el('span', { class: 'dim' }, 'not changed'));
 
 function fileTable(rows) {
-  const head = el('tr', {}, ['file', 'in', 'A', 'B'].map((label) => el('th', {}, label)));
+  const head = el('tr', {}, ['File', 'Changed by', 'A', 'B'].map((label) => el('th', {}, label)));
   const body = rows.map((row) => el('tr', { class: `clickable ${state.file === row.path ? 'row-sel' : ''}`, onclick: () => { state.file = row.path; render(); } }, [
     el('td', {}, [row.path, isTestPath(row.path) ? el('span', { class: 'lore-tag' }, 'test') : null]),
     el('td', { class: row.where === 'both' ? 'accent' : 'warn' }, row.where),
@@ -94,15 +107,18 @@ function sidesNode(row, sources) {
   ])));
 }
 
+const filesText = (count) => `${count} ${count === 1 ? 'file' : 'files'}`;
+const overlapSentence = ({ a, b, shared, either }) => `A changed ${filesText(a)} and B changed ${filesText(b)}; ${shared} ${shared === 1 ? 'file was' : 'files were'} changed by both${either ? ` (${Math.round((shared / either) * 100)}% of the ${filesText(either)} either one touched)` : ''}.`;
+
 async function render() {
   writeHash(state);
   const sources = { a: sourceOf(state.a), b: sourceOf(state.b) };
   const pickers = el('div', { class: 'filters' }, [sidePicker('a'), sidePicker('b'), el('button', { onclick: () => { [state.a, state.b] = [state.b, state.a]; render(); } }, '[swap]'),
     el('label', { title: 'Both sides of every changed .ts file are run through the repository\'s prettier before they are compared, and blank-line-only changes are dropped.' }, [
-      el('input', { type: 'checkbox', checked: state.raw === 'on', onchange: (e) => { state.raw = e.target.checked ? 'on' : ''; render(); } }), 'show formatting changes (raw patch)',
-    ])]);
+      el('input', { type: 'checkbox', checked: state.raw === 'on', onchange: (e) => { state.raw = e.target.checked ? 'on' : ''; render(); } }), 'also show formatting-only changes',
+    ]), copyLinkButton()]);
   if (!sources.a || !sources.b) {
-    mount(app, el('div', { class: 'note' }, 'No finished loop has a diff yet.'));
+    mount(app, el('div', { class: 'note' }, 'No run has a recorded change yet.'));
     return;
   }
 
@@ -116,13 +132,10 @@ async function render() {
   const selected = rows.find((row) => row.path === state.file);
 
   mount(app,
-    el('p', { class: 'dim' }, 'Pick two branches. Each is the whole change a loop pushed from the ticket\'s base commit, or the change the team merged. Click a file to read both sides\' hunks next to each other.'),
-    sources.a.ticket === sources.b.ticket ? null : el('div', { class: 'note' }, 'These two branches solve different tickets, so their files are not expected to overlap.'),
-    panel('BRANCHES', pickers, el('p', {}, [
-      `A changed ${mapA.size} files, B changed ${mapB.size}; ${shared} in both. `,
-      el('span', { class: 'dim' }, `Jaccard overlap ${two(rows.length ? shared / rows.length : 0)}.`),
-    ]), fileTable(rows)),
-    selected ? panel(selected.path, sidesNode(selected, sources)) : el('p', { class: 'dim' }, 'Click a file above to see its diff.'),
+    el('p', { class: 'dim' }, 'Pick two results. Each is everything one run of a model changed in the project for a ticket, or the real fix the team merged. The table lists the files each changed; click a file to read the two versions of its changes next to each other.'),
+    panel('WHICH FILES DID EACH CHANGE?', el('p', { class: 'answer' }, overlapSentence({ a: mapA.size, b: mapB.size, shared, either: rows.length })), sources.a.ticket === sources.b.ticket ? null : el('div', { class: 'note' }, 'These two results are for different tickets, so they are not expected to change the same files.')),
+    panel('WHICH TWO RESULTS?', pickers, fileTable(rows)),
+    selected ? panel(selected.path, sidesNode(selected, sources)) : el('p', { class: 'dim' }, 'Click a file above to see its changes.'),
   );
 }
 

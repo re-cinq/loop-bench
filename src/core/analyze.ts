@@ -37,6 +37,8 @@ const CodexItem = z.object({
   item: z.object({ type: z.string(), command: z.string().optional(), aggregated_output: z.string().optional(), changes: z.unknown().optional(), server: z.string().optional(), tool: z.string().optional() }),
 });
 
+export const TEST_RUN_PATTERN = /\b(vitest|jest|pytest|npm test|npm run test|go test|cargo test)\b/;
+
 export function analyzeTranscript(harness: Harness, stdout: string): TranscriptAnalysis {
   const lines = streamLines(stdout);
   const calls = { claude: claudeCalls, gemini: geminiCalls, codex: codexCalls }[harness](lines);
@@ -50,7 +52,7 @@ export function analyzeTranscript(harness: Harness, stdout: string): TranscriptA
     shell_commands: calls.filter((call) => call.kind === "shell").map((call) => call.detail),
     guard_blocked: blocked,
     reinstalls_or_builds: calls.filter((call) => call.kind === "shell" && /\b(npm (ci|i|install)|npm run build|tsc -b|pip install|cargo build|go build)\b/.test(call.detail)).length,
-    test_runs: calls.filter((call) => call.kind === "shell" && /\b(vitest|jest|pytest|npm test|npm run test|go test|cargo test)\b/.test(call.detail)).length,
+    test_runs: calls.filter((call) => call.kind === "shell" && TEST_RUN_PATTERN.test(call.detail)).length,
     repeated_reads: reads.length - new Set(reads).size,
     lore_calls: calls.filter((call) => call.kind === "mcp").map((call) => call.name),
     first_edit_index: firstIndex(calls, (call) => call.kind === "edit"),

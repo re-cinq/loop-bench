@@ -4,8 +4,9 @@ import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { loadExperiment, subjectEnv, type ExperimentConfig } from "./config/experiment.js";
-import { analyzeTranscript, type TranscriptAnalysis } from "./core/analyze.js";
-import type { VisitRow } from "./core/station-report.js";
+import { analyzeTranscript } from "./core/analyze.js";
+import type { TicketSize } from "./core/model-stats.js";
+import { runFactsOf, type Visit as RunVisit, type VisitAnalysis } from "./core/test-facts.js";
 import type { BenchRecord, LoopRecord, StationRunRecord } from "./core/records.js";
 import { ciFeedbackOf, handoffOf, roundBriefOf, type CheckResult } from "./core/round-brief.js";
 import { diffOf, git } from "./workspace/git.js";
@@ -18,6 +19,7 @@ import { ContextModeSchema, HarnessSchema, StationSchema, type ContextMode, type
 import { cellPath, plannedLoops, type PlannedLoop } from "./core/matrix.js";
 import { breadthFirst } from "./core/order.js";
 import { costOf } from "./core/pricing.js";
+import { modelStatsOf } from "./core/model-stats.js";
 import { renderReport, type PendingCell } from "./core/report.js";
 import { siteDataOf } from "./core/site-data.js";
 import { effortLabel } from "./core/effort.js";
@@ -55,7 +57,7 @@ const USAGE = `loop-bench <command> [options]
   score --batch submit|status|collect [--limit n]  judge those loops as one Vertex batch job (needs judge.batch in the experiment file)
   analyze     --experiment <file>             transcript metrics per station visit -> analysis.json
   propose     --experiment <file> --station <s> [--worst 5]
-  report      --experiment <file>             rewrite results/<experiment>/REPORT.md and print it
+  report      --experiment <file> [--site-url <url>]  rewrite results/<experiment>/REPORT.md, a short plain-language summary, and print it (the url can also come from LOOP_BENCH_SITE_URL)
   site        --experiment <file>             write the results website's data to site/data/
   site-deps   --experiment <file>             install the prettier each ticket's base commit pins (what CI needs for the site)
   run ... --parallel <n>                      run n loops at a time (default 1)
@@ -93,6 +95,7 @@ async function main(argv: readonly string[]): Promise<void> {
       apply: { type: "boolean", default: false },
       shard: { type: "string" },
       batch: { type: "string" },
+      "site-url": { type: "string" },
     },
   });
   const config = (): ExperimentConfig => loadExperiment(values.experiment);
@@ -124,7 +127,7 @@ async function main(argv: readonly string[]): Promise<void> {
     case "propose":
       return proposeFor(config(), values.station, Number(values.worst));
     case "report":
-      return void process.stdout.write(writeReport(config()));
+      return void process.stdout.write(writeReport(config(), values["site-url"]));
     case "site":
       return writeSiteData(config());
     case "site-deps":
@@ -500,41 +503,11 @@ function reportInputs(config: ExperimentConfig): ReportInputs {
   };
 }
 
-/** The one markdown file holding everything: tables from results.jsonl, every visit with its analysis, and the conclusions written beside it. */
-function writeReport(config: ExperimentConfig): string {
-  const { records, loops, experimentDir, promptsLoreSha, generatedAt, conclusions } = reportInputs(config);
-  // One walk of the tree, not one per visit: per visit it read every record.json again, thousands of times over.
-  const visitDirById = new Map<string, string>();
-
-  for (const dir of visitDirs(config.id)) {
-    const id = readRecordId(dir);
-
-    if (id !== null && !visitDirById.has(id)) {
-      visitDirById.set(id, dir);
-    }
-  }
-  const visits: VisitRow[] = latestStationRuns(records).map((record) => {
-    const loop = loops.find((candidate) => candidate.loop_id === record.loop_id);
-    const visitDir = visitDirById.get(record.run_id);
-    const analysisPath = visitDir ? join(visitDir, "analysis.json") : null;
-
-    return {
-      record,
-      analysis: analysisPath && existsSync(analysisPath) ? (JSON.parse(readFileSync(analysisPath, "utf8")) as TranscriptAnalysis) : null,
-      cellPath: loop?.cell_path ?? (visitDir ? relative(paths.resultsDir, join(visitDir, "..", "..")) : record.loop_id),
-    };
-  });
-  const markdown = renderReport({
-    experimentId: config.id,
-    tiers: Object.fromEntries(config.tickets.flatMap((ticket) => (ticket.complexity ? [[ticket.number, ticket.complexity]] : []))),
-    loops,
-    pending: pendingCells(config, loops),
-    visits,
-    promptsLoreSha,
-    subjectRepo: config.subject.repo,
-    generatedAt,
-    conclusions,
-  });
+/** The plain-language summary: runs from the same numbers the website ranks, written beside the experiment's records. */
+function writeReport(config: ExperimentConfig, siteUrl: string | null = process.env.LOOP_BENCH_SITE_URL ?? null): string {
+  const { records, loops, experimentDir, generatedAt } = reportInputs(config);
+  const { runs } = modelStatsOf({ loops, stationRuns: latestStationRuns(records), tiers: ticketSizesOf(config) });
+  const markdown = renderReport({ runs, generatedAt, siteUrl });
 
   mkdirSync(experimentDir, { recursive: true });
   writeFileSync(join(experimentDir, "REPORT.md"), markdown);
@@ -556,6 +529,8 @@ async function writeSiteData(config: ExperimentConfig): Promise<void> {
     pending: pendingCells(config, loops),
     stationRuns: latestStationRuns(records),
     plannedCells: plannedLoops(config),
+    tiers: ticketSizesOf(config),
+    tickets: config.tickets.map((ticket) => ({ number: ticket.number, title: ticket.title, size: ticket.complexity ?? null })),
   });
 
   mkdirSync(dataDir, { recursive: true });
@@ -563,37 +538,82 @@ async function writeSiteData(config: ExperimentConfig): Promise<void> {
   if (existsSync(join(experimentDir, "results.jsonl"))) {
     copyFileSync(join(experimentDir, "results.jsonl"), join(dataDir, "results.jsonl"));
   }
-  await writeSiteDiffs(config, loops, join(dataDir, "diffs"));
+  const ownWork = await writeSiteDiffs(config, loops, join(dataDir, "diffs"));
+
+  writeSiteRuns(loops, ownWork, join(dataDir, "runs"));
   log(`[loop-bench] site data written to ${relative(ROOT, dataDir)}: ${data.cells.length} cells, ${data.lorePairs.length} Lore pairs`);
+}
+
+function ticketSizesOf(config: ExperimentConfig): Record<number, TicketSize> {
+  return Object.fromEntries(config.tickets.flatMap((ticket) => (ticket.complexity ? [[ticket.number, ticket.complexity]] : [])));
+}
+
+/** One small file per run with what its tests and its order of work looked like, fetched by the run and repeats pages only when opened. `ownWork` holds, per coding or build-fix run, the diff from the branch it was handed to where it ended. */
+function writeSiteRuns(loops: readonly LoopRecord[], ownWork: ReadonlyMap<string, string>, runsDir: string): void {
+  mkdirSync(runsDir, { recursive: true });
+  for (const loop of loops) {
+    const cellDir = join(paths.resultsDir, loop.cell_path);
+    const readIfPresent = (name: string): string | null => (existsSync(join(cellDir, name)) ? readFileSync(join(cellDir, name), "utf8") : null);
+    const facts = runFactsOf({ loopId: loop.loop_id, task: loop.varied_station, dodMarkdown: readIfPresent("dod.md"), patch: ownWork.get(loop.loop_id) ?? readIfPresent("diff.patch"), visits: visitsOf(cellDir) });
+
+    writeFileSync(join(runsDir, `${loop.loop_id}.json`), JSON.stringify(facts));
+  }
+}
+
+function visitsOf(cellDir: string): RunVisit[] {
+  const stationsDir = join(cellDir, "stations");
+
+  if (!existsSync(stationsDir)) {
+    return [];
+  }
+
+  return readdirSync(stationsDir).sort().map((name) => {
+    const record = JSON.parse(readFileSync(join(stationsDir, name, "record.json"), "utf8")) as { round: number; attempt: number; outcome: string };
+    const analysisPath = join(stationsDir, name, "analysis.json");
+
+    return { round: record.round, attempt: record.attempt, outcome: record.outcome, analysis: existsSync(analysisPath) ? (JSON.parse(readFileSync(analysisPath, "utf8")) as VisitAnalysis) : null };
+  });
 }
 
 /**
  * Each loop's branch diff and each ticket's merged pull request diff, raw and with formatting noise removed, fetched by the diffs page only when someone opens a comparison.
  * A patch already written is kept: a loop's branch and a merged commit never change.
  */
-async function writeSiteDiffs(config: ExperimentConfig, loops: readonly LoopRecord[], diffsDir: string): Promise<void> {
+async function writeSiteDiffs(config: ExperimentConfig, loops: readonly LoopRecord[], diffsDir: string): Promise<Map<string, string>> {
+  const ownWork = new Map<string, string>();
+
   mkdirSync(diffsDir, { recursive: true });
   for (const ticket of config.tickets) {
-    await writeTicketDiffs(config, ticket, loops.filter((loop) => loop.ticket === ticket.number), diffsDir);
+    const ticketOwnWork = await writeTicketDiffs(config, ticket, loops.filter((loop) => loop.ticket === ticket.number), diffsDir);
+
+    ticketOwnWork.forEach((patch, loopId) => ownWork.set(loopId, patch));
   }
+
+  return ownWork;
 }
 
-async function writeTicketDiffs(config: ExperimentConfig, ticket: ExperimentConfig["tickets"][number], ticketLoops: readonly LoopRecord[], diffsDir: string): Promise<void> {
+async function writeTicketDiffs(config: ExperimentConfig, ticket: ExperimentConfig["tickets"][number], ticketLoops: readonly LoopRecord[], diffsDir: string): Promise<Map<string, string>> {
+  const ownWork = new Map<string, string>();
   const prettierBin = prettierBinIn(cachedNodeModulesDir(join(paths.cacheDir, config.id), ticket.base_sha));
   const scratch = mkdtempSync(join(tmpdir(), "loop-bench-site-"));
 
   try {
     await git(["clone", "--bare", "--quiet", config.subject.mirror_dir, scratch], paths.root);
+    const startHeads = await fetchStartHeads(config, ticket, scratch);
     const sources = [
-      { id: `pr-${ticket.number}`, headSha: ticket.merge_sha, rawPatch: null },
+      { id: `pr-${ticket.number}`, headSha: ticket.merge_sha, rawPatch: null, startSha: null },
       ...(await Promise.all(ticketLoops.map(async (loop) => {
         const bundle = join(paths.resultsDir, loop.cell_path, "branch.bundle");
 
         await git(["-c", "gc.auto=0", "-c", "maintenance.auto=false", "fetch", "--quiet", bundle, `refs/heads/loop-bench/${ticket.number}:refs/loops/${loop.loop_id}`], scratch);
 
-        return { id: loop.loop_id, headSha: await git(["rev-parse", `refs/loops/${loop.loop_id}`], scratch), rawPatch: join(paths.resultsDir, loop.cell_path, "diff.patch") };
+        return { id: loop.loop_id, headSha: await git(["rev-parse", `refs/loops/${loop.loop_id}`], scratch), rawPatch: join(paths.resultsDir, loop.cell_path, "diff.patch"), startSha: startHeads.get(loop.varied_station ?? "") ?? null };
       }))),
     ];
+
+    for (const source of sources.filter((candidate) => candidate.startSha)) {
+      ownWork.set(source.id, await diffOf(scratch, source.startSha!, source.headSha));
+    }
 
     for (const source of sources) {
       const raw = join(diffsDir, `${source.id}.patch`);
@@ -610,6 +630,24 @@ async function writeTicketDiffs(config: ExperimentConfig, ticket: ExperimentConf
     // A fetch may leave git's own background housekeeping writing into the scratch repo for a moment.
     rmSync(scratch, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
+
+  return ownWork;
+}
+
+/** The commit a coding or build-fix run was handed, per station: the head of the reference branch it started from. */
+async function fetchStartHeads(config: ExperimentConfig, ticket: ExperimentConfig["tickets"][number], scratch: string): Promise<Map<string, string>> {
+  const heads = new Map<string, string>();
+
+  for (const [station, kind] of [["tdd-round", "dod"], ["repair-build", "red"]] as const) {
+    const bundle = join(paths.artifactsDir, config.id, String(ticket.number), kind, "branch.bundle");
+
+    if (existsSync(bundle)) {
+      await git(["-c", "gc.auto=0", "-c", "maintenance.auto=false", "fetch", "--quiet", bundle, `refs/heads/loop-bench/${ticket.number}:refs/starts/${station}`], scratch);
+      heads.set(station, await git(["rev-parse", `refs/starts/${station}`], scratch));
+    }
+  }
+
+  return heads;
 }
 
 /** Market prices are applied when the report is written, so a corrected price table reaches every run already recorded. */
@@ -657,14 +695,6 @@ function pendingCells(config: ExperimentConfig, loops: readonly LoopRecord[]): P
       status: running ? "running" : "not run yet",
     }];
   });
-}
-
-function readRecordId(dir: string): string | null {
-  try {
-    return (JSON.parse(readFileSync(join(dir, "record.json"), "utf8")) as { run_id?: string }).run_id ?? null;
-  } catch {
-    return null;
-  }
 }
 
 process.stdout.on("error", () => process.exit(0));

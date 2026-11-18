@@ -2,7 +2,8 @@
 import type { Arm } from "./arms.js";
 import type { QuestionKind } from "./bank.js";
 import type { Graded } from "./qa-judge.js";
-import { coefficientOfVariation, mcnemarExact, percentile } from "./qa-stats.js";
+import { percentile } from "../core/stats.js";
+import { coefficientOfVariation, mcnemarExact } from "./qa-stats.js";
 import type { QaTranscript } from "./transcript.js";
 
 /** One fresh claude's answer to one question, with its judgement; the replicate judged twice carries two. */
