@@ -1,6 +1,8 @@
 // Models: how each model behaves, and how steady it is between repeats of the same setup.
 import { mountChrome } from './chrome.js';
 import { copyLinkButton, el, harnessMark, header, loadBench, markOf, mount, panel, readHash, writeHash } from './lib.js';
+import { DEFAULT_SORT, isSortKey, segmentCounts } from './modelcards.js';
+import { overviewNodes } from './modeloverview.js';
 import { cardSentence, minutesRangeText, minutesText, moneyRangeText, moneyText, standingOf, summaryParagraph } from './modelstory.js';
 import { summarizeModels, splitByCoverage } from './rank.js';
 import { ticketName } from './tickets.js';
@@ -30,7 +32,8 @@ function chosenFromUrl() {
   return modelKeys.has(chosen) ? chosen : '';
 }
 
-const state = { m: chosenFromUrl() };
+const hashState = readHash();
+const state = { m: chosenFromUrl(), sort: isSortKey(hashState.sort) ? hashState.sort : DEFAULT_SORT, group: hashState.group === '1', view: hashState.view === 'table' ? 'table' : 'cards' };
 history.replaceState(null, '', location.pathname + location.hash);
 
 const percent = (share) => `${Math.round(share * 100)}%`;
@@ -40,36 +43,50 @@ const shortMoney = (value) => (value == null ? '–' : moneyText(value));
 const shortMinutes = (value) => (value == null ? '–' : minutesText(value));
 const fewTag = () => el('span', { class: 'lore-tag', title: STRENGTHS.few.explain }, STRENGTHS.few.label);
 
-function modelLink(row, children = [harnessMark(markOf(row)), ' ', row.model], attrs = {}) {
-  const onclick = (event) => { event.preventDefault(); state.m = keyOf(row); render(); window.scrollTo(0, 0); };
-  return el('a', { href: `model.html?m=${keyOf(row)}`, onclick, ...attrs }, children);
-}
-
-function picker() {
+function modelSelect() {
   const makerOf = (row) => MAKERS[markOf(row)];
   const groups = [...Map.groupBy(models, makerOf).entries()];
   const select = el('select', { onchange: (event) => { state.m = event.target.value; render(); } }, [
     el('option', { value: '' }, 'All models'),
     ...groups.map(([maker, rows]) => el('optgroup', { label: maker }, rows.map((row) => el('option', { value: keyOf(row), selected: keyOf(row) === state.m }, row.model)))),
   ]);
-  return el('div', { class: 'm-picker' }, [el('label', {}, ['Model', select]), copyLinkButton()]);
+  return el('label', {}, ['Model', select]);
+}
+
+function picker() {
+  return el('div', { class: 'm-picker' }, [modelSelect(), copyLinkButton()]);
+}
+
+function entryOf(model) {
+  const taskFigures = {};
+  const counts = {};
+  const sentences = {};
+  let notFullyTested = null;
+  for (const task of taskKeys) {
+    const row = rowsByTask[task].find((candidate) => keyOf(candidate) === keyOf(model));
+    if (!row) continue;
+    const unranked = coverageByTask[task].notFullyTested.find((candidate) => keyOf(candidate) === keyOf(model));
+    notFullyTested ??= unranked ? `${TASKS[task].label}: ${unranked.missingText}` : null;
+    taskFigures[task] = { share: row.successRate, cost: row.costUsd?.median ?? null, minutes: row.minutes?.median ?? null, ranked: !unranked };
+    counts[task] = segmentCounts(allRuns.filter((run) => run.task === task && keyOf(run) === keyOf(model)));
+    sentences[task] = `${TASKS[task].label}. ${cardSentence(task, row)}`;
+  }
+  const fewRuns = taskKeys.some((task) => rowsByTask[task].find((row) => keyOf(row) === keyOf(model))?.strength === 'few');
+  return { key: keyOf(model), model: model.model, harness: model.harness, mark: markOf(model), maker: MAKERS[markOf(model)], tasks: taskFigures, counts, sentences, notFullyTested, fewRuns };
+}
+
+const overviewEntries = models.map(entryOf);
+
+function chooseModel(key) {
+  state.m = key;
+  render();
+  window.scrollTo(0, 0);
 }
 
 function overview() {
-  const makerOf = (row) => MAKERS[markOf(row)];
-  const card = (model) => {
-    const sentences = taskKeys
-      .map((task) => [task, rowsByTask[task].find((row) => keyOf(row) === keyOf(model))])
-      .filter(([, row]) => row)
-      .map(([task, row]) => el('p', { title: TASKS[task].explain }, [el('strong', {}, `${TASKS[task].label}. `), cardSentence(task, row)]));
-    return el('div', { class: 'm-card' }, [el('h3', {}, modelLink(model)), ...sentences, modelLink(model, 'See how steady it is', { class: 'm-more' })]);
-  };
-  const makerBlock = ([maker, makerModels]) => [el('div', { class: 'm-maker' }, maker), el('div', { class: 'm-cards' }, makerModels.map(card))];
-  return [
-    el('p', { class: 'dim' }, 'Each card says how often a model gets the work done, and what a usual run costs and how long the model works on it. The share that works counts every ticket equally. Pick a model to see how steady it is when the same setup is repeated, how it fails, and whether a knowledge base helps.'),
-    picker(),
-    ...[...Map.groupBy(models, makerOf).entries()].flatMap(makerBlock),
-  ];
+  const choose = (change) => { Object.assign(state, change); render(); };
+  const link = (entry, children) => el('a', { href: `model.html?m=${entry.key}`, onclick: (event) => { event.preventDefault(); chooseModel(entry.key); } }, children);
+  return overviewNodes({ entries: overviewEntries, state, choose, link, extraControls: [modelSelect(), copyLinkButton()] });
 }
 
 function standingsFor(model) {
@@ -225,7 +242,7 @@ function detail(model) {
 }
 
 function render() {
-  writeHash({ m: state.m });
+  writeHash(state.m ? { m: state.m } : { sort: state.sort === DEFAULT_SORT ? null : state.sort, group: state.group ? '1' : null, view: state.view === 'table' ? 'table' : null });
   const title = state.m ? `How does ${state.m.split('/')[1]} behave?` : 'How does each model behave?';
   document.getElementById('header').replaceChildren(header(title));
   mount(app, ...(state.m ? detail(state.m) : overview()));
